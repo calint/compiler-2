@@ -20,8 +20,8 @@ class stmt_builtin_arrays_equal final : public statement {
     bulk_operands operands_;
 
   public:
-    stmt_builtin_arrays_equal(toc& tc, unary_ops uops, const token& src_loc_tk,
-                              tokenizer& tz)
+    stmt_builtin_arrays_equal(parse_toc& tc, unary_ops uops,
+                              const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
           operands_{tc,      tz,       src_loc_tk,
                     "first", "second", bulk_operands::second_use::read} {
@@ -38,7 +38,8 @@ class stmt_builtin_arrays_equal final : public statement {
         operands_.source_to(os);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
 
         // note: the parse rejected a destination that is not a 'bool'
         //       ('expr_any::assert_number_kind')

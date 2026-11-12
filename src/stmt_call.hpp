@@ -127,8 +127,10 @@
 // built-in and not as a value of the element type, which would report its
 // kind, e.g. 'p' of a 'point' for 's i8[]'; an element would give the
 // parameter the whole array's length
-[[nodiscard]] inline auto parse_array_parameter_argument(
-    toc& tc, tokenizer& tz, const std::string_view param) -> stmt_identifier {
+[[nodiscard]] inline auto
+parse_array_parameter_argument(parse_toc& tc, tokenizer& tz,
+                               const std::string_view param)
+    -> stmt_identifier {
 
     // e.g. the '{}' of 'f({})', which has no storage that the parameter
     // refers to
@@ -179,7 +181,7 @@ struct generic_call {
     // note: 'name_tk' is the name as written and 'generic_name' the generic
     //       function, e.g. 'to' and 'tokenizer.to'
     [[nodiscard]] static auto
-    parse(toc& tc, tokenizer& tz, const token& name_tk,
+    parse(parse_toc& tc, tokenizer& tz, const token& name_tk,
           const std::string_view generic_name, const type* const expected_type)
         -> generic_call {
 
@@ -234,7 +236,7 @@ struct generic_call {
     // reports what follows it; 'point.m()' tells a type only when 'm' is a
     // constructor. 'tz' is after the '(', it ends after the argument when the
     // argument tells its type
-    [[nodiscard]] static auto argument_type(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto argument_type(parse_toc& tc, tokenizer& tz,
                                             const size_t index) -> const type* {
 
         [[maybe_unused]] const size_t reached{skip_to_argument(tz, index)};
@@ -290,7 +292,7 @@ struct generic_call {
     // too. 'tz' is after the '(' and is a copy
     // note: the parse records nothing that outlives the error that follows
     static auto assert_argument_parses(
-        toc& tc, tokenizer tz,
+        parse_toc& tc, tokenizer tz,
         const std::span<const generic_signature_param> params,
         const size_t index) -> void {
 
@@ -329,7 +331,7 @@ struct generic_call {
     // for 'func f<T type>(a, b, x T)', or a token after the argument where
     // the list ends. 'tz' is after the '('
     static auto assert_argument_present(
-        toc& tc, const tokenizer& tz,
+        parse_toc& tc, const tokenizer& tz,
         const std::span<const generic_signature_param> params,
         const size_t index) -> void {
 
@@ -357,7 +359,7 @@ struct generic_call {
     // the argument at 'index', which is there, is reported as in a call
     // without type parameters. 'tz' is after the '('
     static auto
-    assert_argument_valid(toc& tc, const tokenizer& tz,
+    assert_argument_valid(parse_toc& tc, const tokenizer& tz,
                           const std::span<const generic_signature_param> params,
                           const size_t index) -> void {
 
@@ -379,7 +381,7 @@ struct generic_call {
     // no surplus one when it is none, reported as in a call without type
     // parameters. 'tz' is after the '('
     static auto assert_arguments_valid_up_to(
-        toc& tc, const tokenizer& tz, const std::string_view generic_name,
+        parse_toc& tc, const tokenizer& tz, const std::string_view generic_name,
         const std::span<const generic_signature_param> params,
         const std::optional<size_t> param_index) -> void {
 
@@ -441,8 +443,8 @@ struct generic_call {
     // e.g. 'point.at(1, 2)', not the method 'point.m()' or 'point.zz(1)',
     // which the parse of the argument reports; 'tk' is the type and 'tz' is
     // after it
-    [[nodiscard]] static auto constructor_call_type(toc& tc, tokenizer& tz,
-                                                    const token& tk)
+    [[nodiscard]] static auto
+    constructor_call_type(parse_toc& tc, tokenizer& tz, const token& tk)
         -> const type* {
 
         std::ignore = tz.seen_char_token('.');
@@ -483,7 +485,8 @@ struct generic_call {
     //      surplus one for a result, are reported as in that call
     //      ('assert_argument_valid'), then "cannot deduce"
     [[nodiscard]] static auto
-    deduced_type_arguments(toc& tc, const tokenizer& tz, const token& name_tk,
+    deduced_type_arguments(parse_toc& tc, const tokenizer& tz,
+                           const token& name_tk,
                            const std::string_view generic_name,
                            const type* const expected_type) -> deduction {
 
@@ -575,7 +578,7 @@ struct generic_call {
     // note: an argument is parsed at the type of its parameter, so it is read
     //       here without a parse, unlike a 'var' initializer, see
     //       'initializer_declaration::deduce_from_initializer'
-    [[nodiscard]] static auto value_type(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto value_type(parse_toc& tc, tokenizer& tz,
                                          const token& tk, const term_kind tm)
         -> const type* {
 
@@ -633,7 +636,7 @@ struct generic_call {
     // the types between '<' and '>', one per type parameter, e.g. 'name' of
     // 'tz.to<name>()'
     [[nodiscard]] static auto
-    written_type_arguments(const toc& tc, const token& name_tk,
+    written_type_arguments(const parse_toc& tc, const token& name_tk,
                            const std::string_view generic_name,
                            const std::span<const token> arg_tks)
         -> std::vector<const type*> {
@@ -701,12 +704,12 @@ struct call_site {
     //       'max scopes in use' report, so a call without temporaries enters
     //       none
     auto compile_with_temporaries(
-        toc& tc, const destination& dst, const bool has_argument_temporary,
-        const bool has_result_temporary,
+        compile_toc& tc, const destination& dst,
+        const bool has_argument_temporary, const bool has_result_temporary,
         const std::function_ref<void(const destination&)> compile) const
         -> void {
 
-        std::optional<toc::scope_entry> temporaries;
+        std::optional<compile_toc::scope_entry> temporaries;
 
         if (has_argument_temporary or has_result_temporary) {
             temporaries.emplace(tc, scope::block());
@@ -731,7 +734,7 @@ struct call_site {
 
     // a variable of the current block that holds the argument at 'index',
     // compiled into it
-    [[nodiscard]] auto make_argument_temporary(toc& tc,
+    [[nodiscard]] auto make_argument_temporary(compile_toc& tc,
                                                const size_t index) const
         -> destination {
 
@@ -754,7 +757,9 @@ struct call_site {
     // the result is written field by field, so its padding is zeroed for
     // '==' to compare instances byte by byte; after the arguments, which may
     // read the destination, e.g. 'p = f(p.a + 1)'
-    auto zero_result_padding(toc& tc, const destination& dst) const -> void {
+    auto zero_result_padding(compile_toc& tc, const destination& dst) const
+        -> void {
+
         if (dst.is_empty()) {
             return;
         }
@@ -779,7 +784,7 @@ struct call_site {
 
   private:
     // a variable in the current block, a root variable of its own
-    [[nodiscard]] auto add_temporary(toc& tc, const std::string& name,
+    [[nodiscard]] auto add_temporary(compile_toc& tc, const std::string& name,
                                      const type& tpe) const -> destination {
 
         tc.add_var(
@@ -867,7 +872,7 @@ class inline_call final {
 
     // a recursion in the check of a body that takes from a call goes to
     // 'check_recursion'
-    auto compile(toc& tc, const destination& dst) const -> void {
+    auto compile(compile_toc& tc, const destination& dst) const -> void {
         const size_t nesting{tc.scopes().inlined_nesting(call_.func->name())};
 
         if (nesting != 0 and tc.scopes().is_in_body_taking_from_call()) {
@@ -911,7 +916,7 @@ class inline_call final {
     }
 
     // the bindings of the arguments of the inlined body, in their order
-    [[nodiscard]] auto bind_arguments(toc& tc,
+    [[nodiscard]] auto bind_arguments(compile_toc& tc,
                                       machine::held_registers& held) const
         -> std::vector<param_binding> {
 
@@ -951,7 +956,7 @@ class inline_call final {
     //      'g(2)' enters and that ends only at 'k == 0'
     //   2. otherwise only its arguments are bound, the body is checked where
     //      the recursion is entered and in its own check
-    auto check_recursion(toc& tc, const destination& dst,
+    auto check_recursion(compile_toc& tc, const destination& dst,
                          const size_t nesting) const -> void {
 
         const bool nests_alike{nests_alike_at_every_call(tc)};
@@ -990,9 +995,9 @@ class inline_call final {
     // the arguments bound as for the body, which is not compiled: an inlined
     // recursion that the check of a body that takes from a call does not
     // expand ('check_recursion')
-    auto compile_arguments_without_body(toc& tc) const -> void {
+    auto compile_arguments_without_body(compile_toc& tc) const -> void {
         // a block holds the temporaries of the call
-        std::optional<toc::scope_entry> temporaries;
+        std::optional<compile_toc::scope_entry> temporaries;
 
         if (has_argument_temporary()) {
             temporaries.emplace(tc, scope::block());
@@ -1007,7 +1012,9 @@ class inline_call final {
 
     // an error found in the inlined body reports where it was called from,
     // an error in the arguments is in the caller and has no call frame
-    auto compile_body(toc& tc, const call_bindings& bindings) const -> void {
+    auto compile_body(compile_toc& tc, const call_bindings& bindings) const
+        -> void {
+
         try {
             call_.func->compile_inlined(tc, call_.tk, bindings.result,
                                         bindings.arguments);
@@ -1019,7 +1026,7 @@ class inline_call final {
 
     // a new register per argument because the index register may belong to
     // an enclosing binding that is used after the call
-    auto compile_body_with_address_registers(toc& tc,
+    auto compile_body_with_address_registers(compile_toc& tc,
                                              call_bindings bindings) const
         -> void {
 
@@ -1051,7 +1058,9 @@ class inline_call final {
         compile_body(tc, bindings);
     }
 
-    auto compile_in_block(toc& tc, const destination& dst) const -> void {
+    auto compile_in_block(compile_toc& tc, const destination& dst) const
+        -> void {
+
         if (call_.func->has_result() and
             call_site::result_type_differs(dst, *call_.func)) {
             // note: a narrower integer, see 'stmt_call::assert_result_type'
@@ -1075,7 +1084,9 @@ class inline_call final {
 
     // the result is made at its type in a register that the body names, the
     // copy into the operand widens it
-    auto compile_widened(toc& tc, const destination& dst) const -> void {
+    auto compile_widened(compile_toc& tc, const destination& dst) const
+        -> void {
+
         statement::compile_through_scratch(
             tc, call_.tk, dst.operand(), call_.func->result_type(),
             [&](const operand& result) -> void {
@@ -1083,7 +1094,9 @@ class inline_call final {
             });
     }
 
-    auto compile_with_bindings(toc& tc, const destination& dst) const -> void {
+    auto compile_with_bindings(compile_toc& tc, const destination& dst) const
+        -> void {
+
         machine& x{tc.machine()};
 
         // scratch registers stay allocated until the inlined body is compiled
@@ -1129,7 +1142,7 @@ class inline_call final {
     // callee around it, a recursion when not 0; a recursion that does not end
     // at compile time runs out of registers before it reaches the nesting
     // limit, the advice is the same
-    auto compile_within_limits(toc& tc, const destination& dst,
+    auto compile_within_limits(compile_toc& tc, const destination& dst,
                                const size_t nesting) const -> void {
 
         assert_inline_nesting(tc, nesting);
@@ -1157,7 +1170,7 @@ class inline_call final {
     }
 
     // the bindings of the result and of the arguments of the inlined body
-    [[nodiscard]] auto make_bindings(toc& tc, const destination& dst,
+    [[nodiscard]] auto make_bindings(compile_toc& tc, const destination& dst,
                                      machine::held_registers& held) const
         -> call_bindings {
 
@@ -1219,7 +1232,7 @@ class inline_call final {
     // the inlined body reaches a place or a value of a built-in type by
     // the binding it gives, see 'stmt_call::argument_places'
     [[nodiscard]] static auto
-    bind_argument(toc& tc, const expr_any& arg,
+    bind_argument(compile_toc& tc, const expr_any& arg,
                   const stmt_def_func_param& param,
                   const std::optional<place>& arg_place,
                   machine::held_registers& held) -> param_binding {
@@ -1257,7 +1270,8 @@ class inline_call final {
     }
 
     // a constant lets the inlined body be decided at compile time
-    [[nodiscard]] static auto bind_expression(toc& tc, const expr_any& arg,
+    [[nodiscard]] static auto bind_expression(compile_toc& tc,
+                                              const expr_any& arg,
                                               const stmt_def_func_param& param,
                                               machine::held_registers& held)
         -> param_binding {
@@ -1287,7 +1301,8 @@ class inline_call final {
 
     // an indexed argument keeps its computed address, e.g.
     // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
-    [[nodiscard]] static auto bind_reference(toc& tc, const place& arg_place,
+    [[nodiscard]] static auto bind_reference(compile_toc& tc,
+                                             const place& arg_place,
                                              const stmt_def_func_param& param,
                                              machine::held_registers& held)
         -> param_binding {
@@ -1376,7 +1391,7 @@ class inline_call final {
 //   2. 'compile_with_arguments': the arguments agree with the parameters,
 //      checked by 'stmt_call::assert_argument_type' before ('assert_call'
 //      asserts it); the body for the array lengths is asked for
-//      ('toc::add_noinline_body') and compiled after 'main'
+//      ('compile_toc::add_noinline_body') and compiled after 'main'
 //      ('stmt_def_func::emit_noinline_body')
 //   3. the addresses are written to the callee frame ('populate_frame': the
 //      frame and stack checks and 'write_frame_slots', which returns the
@@ -1405,7 +1420,7 @@ class noinline_call final {
     // a result destination or an argument that is not a variable in memory,
     // e.g. a register or an expression, goes through a temporary, as does a
     // result that widens into an operand
-    auto compile(toc& tc, const destination& dst) const -> void {
+    auto compile(compile_toc& tc, const destination& dst) const -> void {
         call_.compile_with_temporaries(tc, dst, has_argument_temporary(),
                                        has_result_temporary(dst, *call_.func),
                                        [&](const destination& result) -> void {
@@ -1415,7 +1430,9 @@ class noinline_call final {
     }
 
   private:
-    auto comment_frame_slot(toc& tc, const frame_slot& slot) const -> void {
+    auto comment_frame_slot(compile_toc& tc, const frame_slot& slot) const
+        -> void {
+
         machine& x{tc.machine()};
 
         if (not slot.param_index) {
@@ -1436,7 +1453,7 @@ class noinline_call final {
 
     // what is passed for each argument, in their order; 'held' holds the
     // address registers
-    [[nodiscard]] auto compile_arguments(toc& tc,
+    [[nodiscard]] auto compile_arguments(compile_toc& tc,
                                          machine::held_registers& held) const
         -> std::vector<noinline_arg> {
 
@@ -1474,8 +1491,8 @@ class noinline_call final {
 
     // the arguments are compiled in their order, a call in the index of a
     // place runs before the later arguments as the checks assume
-    auto compile_arguments_and_call(toc& tc, const destination& dst) const
-        -> void {
+    auto compile_arguments_and_call(compile_toc& tc,
+                                    const destination& dst) const -> void {
 
         machine& x{tc.machine()};
 
@@ -1490,7 +1507,7 @@ class noinline_call final {
 
     // 'held' holds the addresses of the arguments, freed once the frame is
     // written
-    auto compile_with_arguments(toc& tc, const destination& dst,
+    auto compile_with_arguments(compile_toc& tc, const destination& dst,
                                 const std::span<const noinline_arg> arguments,
                                 machine::held_registers& held) const -> void {
 
@@ -1542,7 +1559,7 @@ class noinline_call final {
     // allocated until the frame is populated; returns the receiver address
     // of 'write_frame_slots'
     [[nodiscard]] auto populate_frame(
-        toc& tc, const destination& dst,
+        compile_toc& tc, const destination& dst,
         const std::span<const noinline_arg> arguments,
         const operand& frame_address,
         const std::span<const std::optional<size_t>> array_lengths) const
@@ -1565,7 +1582,7 @@ class noinline_call final {
     // returns the address the callee finds in a register, none when no slot
     // is in it
     [[nodiscard]] auto
-    write_frame_slots(toc& tc, const operand& frame_address,
+    write_frame_slots(compile_toc& tc, const operand& frame_address,
                       const destination& dst,
                       const std::span<const noinline_arg> arguments) const
         -> std::optional<operand> {
@@ -1715,7 +1732,7 @@ class builtin_arguments final {
     // the '('; a count below 'min_count' is reported at the name, the next
     // token can be on a later line, a ',' after 'max_count' arguments where
     // it stands, as for a call of a function
-    builtin_arguments(toc& tc, tokenizer& tz, const token& name_tk,
+    builtin_arguments(parse_toc& tc, tokenizer& tz, const token& name_tk,
                       const std::span<const size_t> array_indexes,
                       const size_t min_count, const size_t max_count)
         : open_paren_tk_{tz.seen_char_token('(')} {
@@ -1767,7 +1784,7 @@ class builtin_arguments final {
   private:
     // the next argument: an array or an element of one at the positions of
     // 'array_indexes', otherwise a value
-    auto read_argument(toc& tc, tokenizer& tz,
+    auto read_argument(parse_toc& tc, tokenizer& tz,
                        const std::span<const size_t> array_indexes) -> void {
 
         if (not std::ranges::contains(array_indexes, args_.size())) {
@@ -1791,7 +1808,7 @@ class builtin_arguments final {
     // up to and including the ')', which follows the argument numbered
     // 'max_count' at the latest; a surplus argument is not parsed, e.g. the
     // 'zz' of 'exit(1, zz)'
-    auto read_arguments(toc& tc, tokenizer& tz,
+    auto read_arguments(parse_toc& tc, tokenizer& tz,
                         const std::span<const size_t> array_indexes,
                         const size_t min_count, const size_t max_count,
                         const std::string_view count_text) -> void {
@@ -2001,7 +2018,7 @@ class stmt_call final : public statement {
     // 'tz' is after the name, before its '<' or '('. 'expected_type' is the
     // type the call is assigned to, it tells a type parameter that is the
     // result, e.g. 'x.f = tz.to()'
-    stmt_call(toc& tc, unary_ops uops, const token& tk, tokenizer& tz,
+    stmt_call(parse_toc& tc, unary_ops uops, const token& tk, tokenizer& tz,
               const type* const expected_type)
         : statement{tk, std::move(uops)} {
 
@@ -2022,8 +2039,8 @@ class stmt_call final : public statement {
     }
 
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
-    stmt_call(toc& tc, unary_ops uops, stmt_identifier receiver, tokenizer& tz,
-              const type* const expected_type)
+    stmt_call(parse_toc& tc, unary_ops uops, stmt_identifier receiver,
+              tokenizer& tz, const type* const expected_type)
         : statement{receiver.method_name_token(), std::move(uops)},
           method_dot_tk_{receiver.method_dot_token()} {
 
@@ -2056,7 +2073,7 @@ class stmt_call final : public statement {
 
     // e.g. 'point.at(1, 2)' calls the constructor 'point.at', 'tz' is after
     // 'point'
-    stmt_call(constructor_call_tag /*tag*/, toc& tc, unary_ops uops,
+    stmt_call(constructor_call_tag /*tag*/, parse_toc& tc, unary_ops uops,
               const token& type_tk, tokenizer& tz)
         : statement{type_tk, std::move(uops)},
           constructor_{read_constructor_tokens(tz)},
@@ -2089,7 +2106,8 @@ class stmt_call final : public statement {
         close_paren_tk_.source_to(os);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
 
         // note: the built-ins that parse like a call, e.g. 'exit' and the io
         //       functions, are nodes of their own ('stmt_builtin_*')
@@ -2293,7 +2311,8 @@ class stmt_call final : public statement {
     }
 
     // the function 'name' is a method and the receiver is a value
-    auto assert_method_receiver(const toc& tc, const stmt_identifier& receiver,
+    auto assert_method_receiver(const parse_toc& tc,
+                                const stmt_identifier& receiver,
                                 const std::string_view name) const -> void {
 
         // a constructor has no receiver, it builds its value; a generic
@@ -2416,7 +2435,7 @@ class stmt_call final : public statement {
 
     // each argument in its order, then what the callee reaches of the
     // caller is recorded
-    auto check_arguments(toc& tc) const -> void {
+    auto check_arguments(parse_toc& tc) const -> void {
         const std::vector<std::optional<place>> places{argument_places(tc)};
 
         for (size_t i{}; i < args_.size(); ++i) {
@@ -2439,7 +2458,7 @@ class stmt_call final : public statement {
     // the type names the constructor after the '.', e.g. 'at' of
     // 'point.at(1, 2)', a method of the type is not one; the call is in a
     // function, checked first as for a function call
-    [[nodiscard]] auto constructor_func(const toc& tc) const
+    [[nodiscard]] auto constructor_func(const parse_toc& tc) const
         -> const stmt_def_func& {
 
         // note: only a constructor call asks
@@ -2456,7 +2475,7 @@ class stmt_call final : public statement {
 
         // e.g. the '1' of 'point.1(2)' or the 'var' of 'point.var(2)', as
         // where a constructor is defined
-        toc::assert_valid_name(name_tk);
+        parse_toc::assert_valid_name(name_tk);
 
         // note: the parse took 'tok()' as a type ('classify_term'), the type
         //       a type parameter is bound to names the constructor, e.g.
@@ -2540,7 +2559,7 @@ class stmt_call final : public statement {
     }
 
     // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
-    auto parse_argument(toc& tc, tokenizer& tz, const size_t arg_index,
+    auto parse_argument(parse_toc& tc, tokenizer& tz, const size_t arg_index,
                         const stmt_def_func_param& param,
                         const std::span<const size_t> deducing_args) -> void {
 
@@ -2572,7 +2591,8 @@ class stmt_call final : public statement {
     // from the '(' on, 'what' names the callee; a method receiver is already
     // in 'args_', the parameter gives the type of a literal argument unless
     // its type was deduced from it, see 'generic_call::deducing_args'
-    auto parse_arguments(toc& tc, tokenizer& tz, const std::string_view what,
+    auto parse_arguments(parse_toc& tc, tokenizer& tz,
+                         const std::string_view what,
                          const std::span<const size_t> deducing_args) -> void {
 
         // the type is the result type of the callee, resolved before, so an
@@ -2651,7 +2671,7 @@ class stmt_call final : public statement {
     // what the callee reaches of the caller is the caller's use too, see
     // 'visit_callee_effects'
     auto record_uses_of_call(
-        toc& tc, const std::span<const std::optional<place>> places) const
+        parse_toc& tc, const std::span<const std::optional<place>> places) const
         -> void {
 
         // note: a call outside a function was rejected (the constructors)
@@ -2681,7 +2701,7 @@ class stmt_call final : public statement {
     // '(', e.g. 'convert<i8>(x)', and the callee is the instance they name;
     // an unknown callee is an error here; returns
     // 'generic_call::deducing_args'
-    [[nodiscard]] auto resolve_callee(toc& tc, tokenizer& tz,
+    [[nodiscard]] auto resolve_callee(parse_toc& tc, tokenizer& tz,
                                       const std::string_view name,
                                       const type* const expected_type)
         -> std::vector<size_t> {
@@ -2905,7 +2925,7 @@ class stmt_call final : public statement {
 
     // the type as written, with the type it is bound to when that differs,
     // e.g. 'T (point)'
-    [[nodiscard]] static auto type_description(const toc& tc,
+    [[nodiscard]] static auto type_description(const parse_toc& tc,
                                                const token& type_tk)
         -> std::string {
 

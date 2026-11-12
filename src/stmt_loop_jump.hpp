@@ -23,7 +23,7 @@ class stmt_loop_jump final : public statement {
     // overridden methods
     //
 
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -37,7 +37,7 @@ class stmt_loop_jump final : public statement {
 
         if (tok().is_text("break")) {
             tc.record_break();
-            x.branch(tc.indent(), toc::end_label(loop->name()));
+            x.branch(tc.indent(), compile_toc::end_label(loop->name()));
         } else {
             tc.record_continue();
 

@@ -22,7 +22,7 @@ class stmt_builtin_exit final : public statement {
     builtin_arguments args_;
 
   public:
-    stmt_builtin_exit(toc& tc, const token& src_loc_tk, tokenizer& tz)
+    stmt_builtin_exit(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, args_{tc, tz, src_loc_tk, {}, 1, 1} {
 
         assert_constant_code_fits(tc);
@@ -37,7 +37,7 @@ class stmt_builtin_exit final : public statement {
         args_.source_to(os);
     }
 
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};

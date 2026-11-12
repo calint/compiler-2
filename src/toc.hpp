@@ -59,18 +59,21 @@
 //                   'throw_if_ends_with_semicolon' before them
 //   'ident_resolver' resolves one name by 'lookup'
 //   'definition_checks' the errors of a name defined twice
-//   'toc'           the facade the statements use, owns all of the above and
-//                   'generic_registry', 'definition_order' ('generics.hpp')
-//                   and 'source_locations' ('source_files.hpp'); a method of
-//                   'toc' changes state or combines tables, a query of one
-//                   table goes through its const accessor, e.g.
-//                   'tc.scopes().current_func_scope()'; a table without an
-//                   accessor is asked through 'toc': 'where', 'source_of'
-//                   (the source locations), 'current_definition' (the
-//                   definition order), 'resolve_declared', 'storage_of' (the
-//                   resolver)
-//   generics        'resolve_generic_args' and 'toc::generic_scope', the
-//                   names of the parameters of a generic instance;
+//   'toc_tables'    owns all of the above and 'generic_registry',
+//                   'definition_order' ('generics.hpp') and
+//                   'source_locations' ('source_files.hpp'), held by
+//                   'program'
+//   'toc'           the facade the statements use, a context over the
+//                   tables and the base of one per phase, 'parse_toc' and
+//                   'compile_toc'; a method of a context changes state or
+//                   combines tables, a query of one table goes through its
+//                   const accessor, e.g. 'tc.scopes().current_func_scope()';
+//                   a table without an accessor is asked through the
+//                   context: 'where', 'source_of' (the source locations),
+//                   'current_definition' (the definition order),
+//                   'resolve_declared', 'storage_of' (the resolver)
+//   generics        'resolve_generic_args' and 'parse_toc::generic_scope',
+//                   the names of the parameters of a generic instance;
 //                   'generic_reparse', the definition parsed again for an
 //                   instance
 //
@@ -94,7 +97,8 @@ struct func_info {
 struct noinline_body {
     const stmt_def_func* func{};
     // one per array parameter, in parameter order; a length is unknown only
-    // in a body that is checked, not emitted, see 'toc::add_noinline_body'
+    // in a body that is checked, not emitted, see
+    // 'compile_toc::add_noinline_body'
     std::vector<std::optional<size_t>> array_lengths;
     // the first call that asked for the body, where an error in the body
     // reports it was called from, e.g. 'third(b)'
@@ -102,7 +106,7 @@ struct noinline_body {
     std::string call_source;
 };
 
-// whether a use of a variable reads or writes it, see 'toc::record_use'
+// whether a use of a variable reads or writes it, see 'parse_toc::record_use'
 enum class use_kind : uint8_t { read, write };
 
 // what a function body reaches that its callers name too: global variables
@@ -264,15 +268,15 @@ struct const_info {
 enum class var_kind : uint8_t { var, dat, param, result };
 
 // whether the end of a loop and its counter step are reached by a jump, a
-// 'break' or a 'continue' of it was compiled; read by 'toc::join_loop'
+// 'break' or a 'continue' of it was compiled; read by 'compile_toc::join_loop'
 struct loop_reach {
     bool is_left_by_break{};
     bool is_continued{};
 };
 
 // while a function body compiles: the code after the current statement runs on
-// some path ('toc::is_reachable'), and a 'return' of it was compiled, which
-// jumps to the end of an inlined call ('toc::pop_scope')
+// some path ('compile_toc::is_reachable'), and a 'return' of it was compiled,
+// which jumps to the end of an inlined call ('compile_toc::pop_scope')
 struct func_reach {
     bool is_reachable{true};
     bool is_left_by_return{};
@@ -309,7 +313,7 @@ class scope final {
 
         // compiled without a call, so what it folds is no constant of a call:
         // 'main', a noinline body without array parameters and the body check
-        // of 'stmt_def_func::check_body', see 'toc::check_skipped'
+        // of 'stmt_def_func::check_body', see 'compile_toc::check_skipped'
         bool is_without_call{};
         // of such a body or of a checked body with a length unknown: a call
         // would give it what the check does not have, e.g. the length of an
@@ -1029,8 +1033,8 @@ class scope_stack final {
 
   public:
     // whether the code after the current statement is reached, saved around
-    // code compiled only for its checks, see 'toc::check_skipped': a 'break'
-    // or a 'return' there must not end the paths of the code that runs
+    // code compiled only for its checks, see 'compile_toc::check_skipped': a
+    // 'break' or a 'return' there must not end the paths of the code that runs
     struct reach_state {
         // the innermost loop, the one a 'break' or a 'continue' of skipped
         // code marks
@@ -1211,7 +1215,7 @@ class scope_stack final {
     }
 
     [[nodiscard]] auto reach_state_now() const -> reach_state {
-        // see 'toc::is_reachable'
+        // see 'compile_toc::is_reachable'
         if (not is_in_func()) {
             return {};
         }
@@ -1312,7 +1316,7 @@ class scope_stack final {
         max_scope_count_ = count;
     }
 
-    // see 'toc::is_reachable'
+    // see 'compile_toc::is_reachable'
     auto set_reachable(const bool is_reachable) -> void {
         if (not is_in_func()) {
             return;
@@ -1431,8 +1435,8 @@ class storage_layout final {
     size_t max_frame_size_bytes_{};
 
   public:
-    // the peaks that a dry run or a version of 'toc::emit_most_efficient'
-    // raises and 'restore_peaks' puts back
+    // the peaks that a dry run or a version of
+    // 'compile_toc::emit_most_efficient' raises and 'restore_peaks' puts back
     struct peaks {
         size_t max_body_vars_size_bytes{};
         size_t max_frame_size_bytes{};
@@ -1576,7 +1580,7 @@ class storage_layout final {
 
         const ::machine& x{machine_.get()};
 
-        // note: 'toc::add_dat' checked the dats against the target
+        // note: 'parse_toc::add_dat' checked the dats against the target
         assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <
                x.max_storage_bytes());
 
@@ -2191,7 +2195,7 @@ class definition_checks final {
 
         if (types_.get().exists(name)) {
             // note: a built-in type name is rejected by
-            //       'toc::assert_valid_unqualified_name'
+            //       'parse_toc::assert_valid_unqualified_name'
 
             assert(not types_.get().is_builtin(name));
 
@@ -2308,43 +2312,764 @@ class definition_checks final {
     }
 };
 
-// the context of every node: the names, their storage, the machine and the
-// phase; the program is parsed first ('is_compiling_' false), then compiled
-// ('begin_compile'), after which every scope and its storage is released
-// ('assert_released'); the formatter sorts the methods by name, so by phase:
+// the tables of the program, owned by 'program' and shared by its two
+// phases: the program is parsed with a 'parse_toc', then compiled with a
+// 'compile_toc', each a 'toc' over these tables; each phase starts and ends
+// without scopes, the root scope is entered again by the compile
+struct toc_tables final {
+    // 'builtin_types' are the types of the language, shared with the machine
+    toc_tables(::machine& backend_in, const builtin_type_set& builtin_types,
+               const source_files& files, const size_t vars_capacity_bytes)
+        : backend{backend_in}, locations{files}, scopes{order},
+          data{backend_in.data_alignment()}, funcs{order}, generics{order},
+          types{order}, definitions{scopes, funcs, types, generics, locations},
+          builtins{backend_in, builtin_types},
+          resolver{scopes, backend_in, funcs, generics, builtins},
+          storage{backend_in, scopes, data, vars_capacity_bytes} {
+
+        // the built-in types are looked up by name like the defined ones
+        for (const type* const tp : builtin_types.all()) {
+            types.add_builtin(tp->name(), *tp);
+        }
+
+        // the default type has a name of its own so that it is portable
+        types.add_builtin(reserved_names::default_type_name,
+                          builtins.default_type());
+    }
+
+    toc_tables(const toc_tables&) = delete;
+    toc_tables(toc_tables&&) = delete;
+    auto operator=(const toc_tables&) -> toc_tables& = delete;
+    auto operator=(toc_tables&&) -> toc_tables& = delete;
+    ~toc_tables() = default;
+
+    std::reference_wrapper<::machine> backend;
+    source_locations locations;
+    // before the tables, which refer to it
+    definition_order order;
+    scope_stack scopes;
+    data_table data;
+    function_table funcs;
+    generic_registry generics;
+    type_table types;
+    definition_checks definitions;
+    builtin_roles builtins;
+    ident_resolver resolver;
+    storage_layout storage;
+};
+
+// the context of every node, the table of contents: the names, their storage
+// and the machine; what both phases do, the queries and the declarations of
+// names, while the phase is the type of the context: 'parse_toc' for the
+// parse, 'compile_toc' for the compile, so a parse-time constructor takes a
+// 'parse_toc', a 'compile' a 'compile_toc' and what both run, e.g. 'fold' or
+// the declarations of a function body, a 'toc'
 //
-//   program        'begin_definition', 'begin_compile', 'assert_released',
-//                  'get_main_or_throw', 'usage', all from 'program'
-//   parse          'add_type', 'add_func', 'add_func_instance',
+//   both           'add_var' and 'add_const' (placed and commented only by
+//                  'compile_toc'), 'resolve_declared', 'storage_of',
+//                  'use_at', 'overflow_check' without a destination,
+//                  'get_main_or_throw', 'assert_released', 'usage'
+//   tables         'builtins', 'checks', 'data', 'definitions', 'funcs',
+//                  'generics', 'layout', 'machine', 'scopes', 'types'
+//
+// the tables are read through these const accessors, a change goes through a
+// method of a context, which may combine tables (README 7.6)
+class toc {
+    std::reference_wrapper<toc_tables> tables_;
+
+  public:
+    toc(const toc&) = delete;
+    toc(toc&&) = delete;
+    auto operator=(const toc&) -> toc& = delete;
+    auto operator=(toc&&) -> toc& = delete;
+
+    virtual ~toc() = default;
+
+    //
+    // virtual methods
+    //
+
+    // a constant of the innermost scope, e.g. a 'let' that folds or a
+    // constant argument of a generic instance
+    virtual auto add_const(const token& src_loc_tk, std::string_view name,
+                           const folded_value& constant) -> void = 0;
+
+    // a variable of the innermost scope; the parse only declares the name
+    virtual auto add_var(const var_info& var, var_kind kind) -> void = 0;
+
+    //
+    // class methods
+    //
+
+    // the scopes of the phase are popped
+    auto assert_released() const -> void {
+        // note: the scopes hold the storage in use, see 'storage_layout'
+        assert(tables().scopes.is_empty());
+    }
+
+    [[nodiscard]] auto builtins() const -> const builtin_roles& {
+        return tables().builtins;
+    }
+
+    // what '--checks' turned on that the target honors, held by the machine
+    [[nodiscard]] auto checks() const -> const check_options& {
+        const ::machine& x{machine()};
+        return x.checks();
+    }
+
+    [[nodiscard]] auto data() const -> const data_table& {
+        return tables().data;
+    }
+
+    // a check of a name read at the parse, e.g. a type name is checked where
+    // it is read, before the body, so the field type 'p' of a second
+    // 'type p {x p}' names the first 'p'
+    [[nodiscard]] auto definitions() const -> const definition_checks& {
+        return tables().definitions;
+    }
+
+    [[nodiscard]] auto funcs() const -> const function_table& {
+        return tables().funcs;
+    }
+
+    [[nodiscard]] auto generics() const -> const generic_registry& {
+        return tables().generics;
+    }
+
+    // no token names a missing 'main'
+    [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
+        const function_table& table{funcs()};
+
+        if (not table.has(reserved_names::main)) {
+            throw compile_error::file_level("function 'main' not found");
+        }
+
+        return *table.get(reserved_names::main).def;
+    }
+
+    [[nodiscard]] auto layout() const -> const storage_layout& {
+        return tables().storage;
+    }
+
+    [[nodiscard]] auto machine() const -> const ::machine& {
+        return tables().backend.get();
+    }
+
+    // the overflow check of the arithmetic of a value without a destination,
+    // e.g. a comparison side or an argument, as '--checks' asks
+    [[nodiscard]] auto overflow_check() const -> machine::runtime_check {
+        return {
+            .enabled{checks().overflow},
+        };
+    }
+
+    // the declared name 'ident', e.g. the whole array of 'ps[1]'; the free
+    // 'make_ident_info' of a path gives what the path names, its element
+    [[nodiscard]] auto resolve_declared(const token& src_loc_tk,
+                                        const std::string_view ident) const
+        -> ident_info {
+
+        return tables().resolver.resolve(src_loc_tk, ident);
+    }
+
+    [[nodiscard]] auto scopes() const -> const scope_stack& {
+        return tables().scopes;
+    }
+
+    // see 'ident_resolver::resolve_storage'
+    [[nodiscard]] auto storage_of(const std::string_view name,
+                                  const access_path& path) const
+        -> std::optional<storage_path> {
+
+        return tables().resolver.resolve_storage(name, path);
+    }
+
+    [[nodiscard]] auto types() const -> const type_table& {
+        return tables().types;
+    }
+
+    [[nodiscard]] auto usage() const -> usage_statistics {
+        const toc_tables& t{tables()};
+
+        return {
+            .max_scope_count{t.scopes.max_scope_count()},
+            .max_body_vars_size_bytes{t.storage.max_body_vars_size_bytes()},
+            .dat_size_bytes{t.data.total_size_bytes()},
+            .dat_var_padding_bytes{t.data.dat_var_padding_bytes()},
+            .uninstantiated_generics{t.generics.uninstantiated_func_names()},
+        };
+    }
+
+    // a value used without a destination at 'width'
+    [[nodiscard]] auto use_at(const type& width) const -> value_use {
+        return {
+            .width{&width},
+            .checks_overflow{overflow_check().enabled},
+        };
+    }
+
+  protected:
+    explicit toc(toc_tables& tables_in) : tables_{tables_in} {}
+
+    // the declaration that both phases make, the declared constant is in the
+    // innermost scope
+    auto declare_const(const token& src_loc_tk, const std::string_view name,
+                       const folded_value& constant) -> void {
+
+        toc_tables& t{tables()};
+
+        t.definitions.assert_name_free(src_loc_tk, "constant", name);
+
+        t.scopes.back().add_const(name, {
+                                            .src_loc_tk{src_loc_tk},
+                                            .constant{constant},
+                                        });
+
+        t.scopes.record_if_global(name);
+    }
+
+    // the declaration that both phases make, the declared variable is in the
+    // innermost scope
+    auto declare_var(const var_info& var, const var_kind kind) -> var_info& {
+        toc_tables& t{tables()};
+
+        if (kind == var_kind::param or kind == var_kind::result) {
+            t.definitions.assert_not_declared_in_scope(var.src_loc_tk,
+                                                       var.name);
+        } else {
+            t.definitions.assert_name_free(var.src_loc_tk, "variable",
+                                           var.name);
+        }
+
+        var_info& declared{t.scopes.back().add_var(var, kind)};
+
+        t.scopes.record_if_global(var.name);
+
+        return declared;
+    }
+
+    [[nodiscard]] auto tables() -> toc_tables& { return tables_.get(); }
+
+    [[nodiscard]] auto tables() const -> const toc_tables& {
+        return tables_.get();
+    }
+};
+
+// the context of the parse: the names are declared without storage and the
+// definitions are added to the tables; a generic instance is parsed inside
+// the parse that needs it, in a 'generic_scope'
+//
+//   program        'begin_definition'
+//   definitions    'add_type', 'add_func', 'add_func_instance',
 //                  'add_generic_func', 'add_generic_method',
 //                  'add_generic_type', 'add_generic_type_instance',
 //                  'add_dat', 'mark_generic_func_instantiated',
-//                  'generic_scope', 'assert_loop_names_free',
-//                  'assert_valid_unqualified_name',
-//                  'current_definition',
-//                  'constant_value_of', 'record_use',
-//                  'record_result_passed_as_mut',
-//                  'parse_nesting_scope', 'make_var_read_only',
+//                  'generic_scope', 'current_definition'
+//   names          'assert_loop_names_free', 'assert_valid_unqualified_name',
+//                  'assert_valid_name', 'constant_value_of',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
-//                  'source_of', 'type_param_named', 'where'
-//   compile        'add_binding', 'add_read_only_constant',
+//                  'type_param_named', 'make_var_read_only'
+//   body uses      'record_use', 'record_result_passed_as_mut'
+//   source         'parse_nesting_scope', 'source_of', 'where'
+class parse_toc final : public toc {
+    // the most levels of blocks and expressions inside each other, the parsers
+    // recurse for each of them so the limit keeps the source from exhausting
+    // the stack
+    static constexpr size_t max_parse_nesting_{128};
+
+    // the parsers recurse on the one stack, e.g. a generic instance is parsed
+    // inside the parse that needs it, so the levels are counted once for all
+    // of them, see 'parse_nesting_scope'
+    size_t parse_nesting_{};
+
+  public:
+    // a scope of the scope stack while it lives, also when an error unwinds,
+    // e.g. 'const parse_toc::scope_entry block{tc, scope::block()};'
+    class scope_entry final {
+        parse_toc& tc_;
+        // the scopes below this one, the scopes are left in stack order
+        size_t outer_scope_count_{};
+
+      public:
+        scope_entry(parse_toc& tc, scope scp)
+            : tc_{tc}, outer_scope_count_{tc.scopes().count()} {
+
+            tc_.tables().scopes.push(std::move(scp));
+        }
+
+        scope_entry(const scope_entry&) = delete;
+        scope_entry(scope_entry&&) = delete;
+        auto operator=(const scope_entry&) -> scope_entry& = delete;
+        auto operator=(scope_entry&&) -> scope_entry& = delete;
+
+        ~scope_entry() {
+            assert(tc_.scopes().count() == outer_scope_count_ + 1);
+
+            tc_.tables().scopes.pop();
+        }
+    };
+
+    // one level of nesting while it lives
+    class parse_nesting_scope final {
+        parse_toc& tc_;
+
+      public:
+        // the error is located at 'src_loc_tk', e.g. the '{' of a block
+        parse_nesting_scope(parse_toc& tc, const token& src_loc_tk) : tc_{tc} {
+            if (tc_.parse_nesting_ >= max_parse_nesting_) {
+                throw compile_error{
+                    src_loc_tk,
+                    std::format("nesting is too deep, the limit is {} levels",
+                                max_parse_nesting_)};
+            }
+
+            ++tc_.parse_nesting_;
+        }
+
+        parse_nesting_scope(parse_toc& tc, const tokenizer& tz)
+            : parse_nesting_scope{tc, tz.peek_token_position()} {}
+
+        parse_nesting_scope(const parse_nesting_scope&) = delete;
+        parse_nesting_scope(parse_nesting_scope&&) = delete;
+        auto operator=(const parse_nesting_scope&)
+            -> parse_nesting_scope& = delete;
+        auto operator=(parse_nesting_scope&&) -> parse_nesting_scope& = delete;
+
+        ~parse_nesting_scope() { --tc_.parse_nesting_; }
+    };
+
+    // while an instance of a generic definition is parsed, each parameter names
+    // its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
+    // parameters of an enclosing instance are hidden and only the definitions
+    // up to the generic one are seen, all of it ends with the scope
+    class generic_scope final {
+        parse_toc& tc_;
+        definition_order::instance_scope visible_;
+        // the constants are in a block of their own
+        std::optional<scope_entry> constants_block_;
+
+      public:
+        generic_scope(parse_toc& tc, const size_t definition)
+            : tc_{tc}, visible_{tc.tables().order, definition} {
+
+            tc_.tables().types.enter_params();
+        }
+
+        generic_scope(const generic_scope&) = delete;
+        generic_scope(generic_scope&&) = delete;
+        auto operator=(const generic_scope&) -> generic_scope& = delete;
+        auto operator=(generic_scope&&) -> generic_scope& = delete;
+
+        ~generic_scope() {
+            constants_block_.reset();
+            tc_.tables().types.exit_params();
+        }
+
+        // an argument is located at its parameter
+        auto add_args(const std::span<const generic_arg> args) -> void {
+            for (const generic_arg& arg : args) {
+                if (arg.is_type()) {
+                    tc_.tables().types.add_param(arg.param_tk, arg.type_ref());
+                } else {
+                    add_const(arg.param_tk, arg.constant());
+                }
+            }
+        }
+
+        // a method of an instance of a generic type sees the generic type as
+        // the instance and its type arguments, e.g. 'list' names 'str' and 'T'
+        // names 'i8'; its constants are not added here, the body adds them
+        // where it is parsed and compiled ('stmt_def_func::add_constants')
+        auto add_receiver(const generic_type_instance& instance) -> void {
+            const generic_type_info& generic{
+                tc_.generics().get_type(instance.generic_name),
+            };
+
+            // note: a generic type is registered under its 'src_loc_tk'
+            tc_.tables().types.add_receiver(generic.src_loc_tk,
+                                            *instance.type_ptr);
+
+            add_args(instance.type_args());
+        }
+
+      private:
+        auto add_const(const token& param_tk, const int64_t value) -> void {
+            if (not constants_block_) {
+                constants_block_.emplace(tc_, scope::block());
+            }
+
+            tc_.add_const(param_tk, param_tk.text(),
+                          folded_value::untyped(value));
+        }
+    };
+
+    explicit parse_toc(toc_tables& tables_in) : toc{tables_in} {}
+
+    //
+    // overridden methods
+    //
+
+    // declared, as at the compile, without a comment
+    auto add_const(const token& src_loc_tk, const std::string_view name,
+                   const folded_value& constant) -> void final {
+
+        declare_const(src_loc_tk, name, constant);
+    }
+
+    // the name only; a variable in storage is placed by the compile
+    auto add_var(const var_info& var, const var_kind kind) -> void final {
+        std::ignore = declare_var(var, kind);
+    }
+
+    //
+    // class methods
+    //
+
+    // the parse places the data of 'dat' after the dats before it and
+    // declares the variable 'var' that names it, the compile declares it again
+    // with 'compile_toc::add_var'
+    auto add_dat(const stmt_def_dat& dat, const var_info& var) -> void {
+        toc_tables& t{tables()};
+
+        // note: a name declared twice is reported before where it is declared
+        t.definitions.assert_name_free(var.src_loc_tk, "variable", var.name);
+
+        // note: a 'dat' in a block is rejected when it is parsed
+        assert(t.scopes.is_at_root());
+
+        const size_t size_bytes{
+            t.storage.var_storage_size_bytes(var.src_loc_tk, var),
+        };
+
+        t.data.add_dat(dat, var.src_loc_tk,
+                       t.storage.var_storage_alignment(var), size_bytes);
+
+        // the dats reach no further than the target addresses, 'place_dat'
+        // asserts it at the compile
+        t.storage.assert_dats_and_vars_fit_target(var.src_loc_tk);
+
+        add_var(var, var_kind::dat);
+    }
+
+    auto add_func(std::string name, func_info info) -> void {
+        toc_tables& t{tables()};
+
+        t.definitions.assert_function_not_defined(info.src_loc_tk, name,
+                                                  info.generic_method);
+
+        t.funcs.add(std::move(name), std::move(info));
+    }
+
+    // keeps the instance alive, the function table refers to it
+    auto add_func_instance(std::shared_ptr<const stmt_def_func> instance)
+        -> void {
+
+        tables().funcs.add_instance(std::move(instance));
+    }
+
+    auto add_generic_func(std::string name, generic_func_info info) -> void {
+        toc_tables& t{tables()};
+
+        t.definitions.assert_function_not_defined(info.src_loc_tk, name,
+                                                  info.generic_method());
+
+        t.generics.add_func(std::move(name), std::move(info));
+    }
+
+    // a method is defined once for its generic type, also when no alias
+    // makes an instance of the type
+    auto add_generic_method(const generic_func_info& method) -> void {
+        toc_tables& t{tables()};
+
+        t.definitions.assert_generic_method_not_defined(method);
+
+        t.generics.add_method(method);
+    }
+
+    auto add_generic_type(generic_type_info info) -> void {
+        // note: the name was checked by 'assert_type_not_defined'
+        tables().generics.add_type(std::move(info));
+    }
+
+    auto add_generic_type_instance(generic_type_instance instance) -> void {
+        tables().generics.add_type_instance(std::move(instance));
+    }
+
+    auto add_type(const token& src_loc_tk, const type& tpe) -> void {
+        // note: the name was checked by 'assert_type_not_defined'
+        assert_type_fits_target(src_loc_tk, tpe);
+
+        tables().types.add(src_loc_tk, tpe);
+    }
+
+    // the names a 'foo' declares are no type parameter either, see
+    // 'assert_valid_unqualified_name'
+    auto assert_loop_names_free(const token& foo_tk) const -> void {
+        for (const std::string_view name : reserved_names::foo_names) {
+            if (const type* const bound{type_param_named(name)}) {
+                throw compile_error{
+                    foo_tk,
+                    std::format("'foo' declares {}, which names the "
+                                "type {}",
+                                in_quotes(name), in_quotes(bound->name()))};
+            }
+        }
+    }
+
+    // a name of a type, function, variable, constant, data or parameter, which
+    // is used without a qualifier
+    auto assert_valid_unqualified_name(const token& name_tk) const -> void {
+        assert_valid_name(name_tk);
+
+        if (reserved_names::find_builtin_function(name_tk.text()) != nullptr) {
+            throw compile_error{name_tk,
+                                std::format("{} is a built-in function",
+                                            in_quotes(name_tk.text()))};
+        }
+
+        // a value would hide the type only in some places, e.g. 'i8(300)'
+        // still converts after 'var i8 = 3'
+        if (types().is_builtin(name_tk.text())) {
+            throw compile_error{name_tk,
+                                std::format("{} is a built-in type",
+                                            in_quotes(name_tk.text()))};
+        }
+
+        // a value would hide a type parameter only in some places, e.g.
+        // 'U(v)' still converts; rejected whatever the argument, so that no
+        // instance decides it
+        if (const type* const bound{type_param_named(name_tk.text())}) {
+            throw compile_error{
+                name_tk,
+                std::format("{} is a generic parameter, here the type {}, use "
+                            "another name",
+                            in_quotes(name_tk.text()),
+                            in_quotes(bound->name()))};
+        }
+    }
+
+    // a top-level definition starts, see 'definition_order'
+    auto begin_definition() -> void { tables().order.begin_definition(); }
+
+    // a number, untyped, or a constant with its type
+    [[nodiscard]] auto constant_value_of(const token& tk) const
+        -> std::optional<folded_value> {
+
+        if (const std::optional<int64_t> value{
+                constant_parser::parse_constant(tk, tk.text()),
+            }) {
+
+            return folded_value::untyped(*value);
+        }
+
+        // a broken number, as in a value
+        if (tk.is_number()) {
+            throw_unparsed_number(tk, tk.text());
+        }
+
+        return scopes().const_value(tk.text());
+    }
+
+    [[nodiscard]] auto current_definition() const -> size_t {
+        return tables().order.current();
+    }
+
+    [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
+                                         const std::string_view name) const
+        -> const stmt_def_func& {
+
+        if (funcs().has(name)) {
+            return *funcs().get(name).def;
+        }
+
+        // e.g. 'x(1)' after 'var x = 1', a call still calls a hidden function
+        if (scopes().lookup(name).is_value()) {
+            throw_not_a_function(src_loc_tk, "value", name);
+        }
+
+        // e.g. 'box(1)' of 'type box<T type> {x T}'
+        if (generics().has_type(name)) {
+            throw_generic_type_not(src_loc_tk, name, "a function");
+        }
+
+        // e.g. the 'f'a'' of 'f'a'(1)', which no definition can name
+        if (not is_identifier(name)) {
+            throw_invalid_name(src_loc_tk, name);
+        }
+
+        throw compile_error{
+            src_loc_tk, std::format("function {} not found", in_quotes(name))};
+    }
+
+    [[nodiscard]] auto get_type_or_throw(const token& type_tk) const
+        -> const type& {
+
+        // note: a declared type is read by 'statement::read_declared_type'
+        //       and 'func_result::read', which reject a string
+
+        assert(not type_tk.is_string());
+
+        const std::string_view name{type_tk.text()};
+
+        if (not types().has(name)) {
+            if (generics().has_type(name)) {
+                throw_generic_type_not(type_tk, name, "a type");
+            }
+
+            // e.g. the 'i8;' of 'type t { a i8; }'
+            throw_if_ends_with_semicolon(type_tk);
+
+            throw compile_error{
+                type_tk, std::format("type {} not found", in_quotes(name))};
+        }
+
+        const type& tp{types().get(name)};
+
+        // note: 'void' is the type of what has no value, it has no size
+        if (tp.is_same(builtins().void_type())) {
+            throw compile_error{
+                type_tk,
+                std::format("{} is not a type of a value", in_quotes(name))};
+        }
+
+        // the default type is the widest integer the target computes with,
+        // e.g. 'i32' on rv32i
+        const type& widest{builtins().default_type()};
+
+        if (tp.is_builtin() and tp.size_bytes() > widest.size_bytes()) {
+            throw compile_error{
+                type_tk,
+                std::format("{} is not available on this target, use 'i32' "
+                            "or 'int'",
+                            in_quotes(name))};
+        }
+
+        return tp;
+    }
+
+    // a plain or a generic function, unlike 'funcs().has'
+    [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
+        return funcs().has(name) or generics().has_func(name);
+    }
+
+    // the variable declared last in this scope, e.g. a 'let' variable once
+    // its initializer is parsed
+    auto make_var_read_only(const std::string_view name,
+                            const read_only_cause cause) -> void {
+
+        tables().scopes.back().make_var_read_only(name, cause);
+    }
+
+    auto mark_generic_func_instantiated(const std::string_view name) -> void {
+        tables().generics.mark_func_instantiated(name);
+    }
+
+    // see 'body_uses::is_result_passed_as_mut'
+    auto record_result_passed_as_mut() -> void {
+        tables().scopes.record_result_passed_as_mut();
+    }
+
+    // resolved 'storage' that the body being parsed uses, see 'body_uses',
+    // e.g. a path in it or a global that a function it calls uses, so a
+    // local of the same name does not shadow it; none outside a function or
+    // without storage
+    auto record_use(const std::optional<storage_path>& storage,
+                    const use_kind kind) -> void {
+
+        scope_stack& stack{tables().scopes};
+
+        if (not storage or not stack.is_in_func()) {
+            return;
+        }
+
+        stack.record_storage_use(*storage, kind == use_kind::write);
+    }
+
+    // the text of the file of the token
+    [[nodiscard]] auto source_of(const token& src_loc_tk) const
+        -> std::string_view {
+
+        return tables().locations.source_of(src_loc_tk);
+    }
+
+    // the type a type parameter of the instance being parsed is bound to,
+    // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
+    // type of a method, which names its instance like a type name does
+    [[nodiscard]] auto type_param_named(const std::string_view name) const
+        -> const type* {
+
+        if (not types().is_type_param(name)) {
+            return nullptr;
+        }
+
+        return &types().get(name);
+    }
+
+    // where 'src_loc_tk' is, for a message, e.g. '4:9'
+    [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
+        return tables().locations.for_message(src_loc_tk);
+    }
+
+    //
+    // statics
+    //
+
+    // a name is an identifier that is not a keyword
+    static auto assert_valid_name(const token& name_tk) -> void {
+        if (not name_tk.is_word()) {
+            throw compile_error{name_tk, "expected a name"};
+        }
+
+        if (not is_identifier(name_tk.text())) {
+            throw_invalid_name(name_tk, name_tk.text());
+        }
+
+        if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {
+            throw compile_error{
+                name_tk,
+                std::format("{} is a keyword", in_quotes(name_tk.text()))};
+        }
+    }
+
+  private:
+    // a value of the type, e.g. a parameter, is addressed by the target even
+    // when no storage of it is ever allocated; a value is smaller than the
+    // address space, so its size and element counts fit an address
+    auto assert_type_fits_target(const token& src_loc_tk, const type& tpe) const
+        -> void {
+
+        const ::machine& x{machine()};
+
+        const size_t max_bytes{x.max_storage_bytes()};
+
+        if (tpe.size_bytes() < max_bytes) {
+            return;
+        }
+
+        throw compile_error{
+            src_loc_tk,
+            std::format("type {} of {} B is too large, the target allows at "
+                        "most {} B",
+                        in_quotes(tpe.name()), tpe.size_bytes(),
+                        max_bytes - 1)};
+    }
+};
+
+// the context of the compile, made after the parse: the declarations are
+// placed, comment where they are stored and the storage capacity is checked,
+// e.g. a parameter 'self' of a type larger than the vars section holds an
+// address once the body is compiled; it holds what only the compile has:
+//
+//   program        'emitted_bodies', 'checked_bodies'
+//   code           'add_binding', 'add_read_only_constant',
 //                  'add_noinline_body', 'dry_run', 'check_skipped',
 //                  'emit_most_efficient', 'create_unique_label',
 //                  'is_dry_run', 'call_path_at', 'next_frame_address',
-//                  'use_of', 'overflow_check' of a destination, the
-//                  listing indent ('indent', 'indent_scope'), the
-//                  reachability
-//                  ('is_reachable', 'end_path', 'record_break',
+//                  'use_of', 'overflow_check' of a destination, the machine
+//   listing        'indent', 'indent_scope', 'end_label', 'continue_label'
+//   reachability   'is_reachable', 'end_path', 'record_break',
 //                  'record_continue', 'record_return', 'join_loop',
-//                  'path_merge')
-//   both           'add_var' and 'add_const' (placed and commented only while
-//                  compiling), 'scope_entry', 'resolve_declared',
-//                  'use_at', 'overflow_check' without a destination and
-//                  'storage_of'
-//   tables         'builtins', 'checked_bodies', 'checks', 'data',
-//                  'definitions', 'emitted_bodies', 'funcs', 'generics',
-//                  'layout', 'machine', 'scopes', 'types'
-//   statics        'assert_valid_name', 'continue_label', 'end_label'
+//                  'path_merge'
 //
 // a statement may be compiled more than once (each inlined call, both
 // versions of 'emit_most_efficient', dry runs, 'check_body'), so what a
@@ -2357,8 +3082,6 @@ class definition_checks final {
 //
 // the modes a node does not see, each set by one function and read elsewhere:
 //
-//   'is_compiling_'           set by 'begin_compile'; read by 'scope_entry',
-//                             'add_var' and 'add_const' (storage and comments)
 //   'is_dry_run_'             set by 'dry_run' ('dry_run_scope'); read by
 //                             'add_noinline_body' (a body to check, not
 //                             emit) and through 'is_dry_run' by
@@ -2371,39 +3094,14 @@ class definition_checks final {
 //                             body with a length unknown; read for
 //                             any function by 'inline_call::compile' through
 //                             'scope_stack::is_in_body_taking_from_call'
-class toc final {
-    // the most levels of blocks and expressions inside each other, the parsers
-    // recurse for each of them so the limit keeps the source from exhausting
-    // the stack
-    static constexpr size_t max_parse_nesting_{128};
-
-    std::reference_wrapper<::machine> machine_;
-    source_locations locations_;
-    // before the tables, which refer to it
-    definition_order order_;
-    scope_stack scopes_;
-    data_table data_;
-    function_table funcs_;
+class compile_toc final : public toc {
     // the bodies to emit and those that only a dry run asks for, checked and
     // not emitted
     noinline_body_list emitted_bodies_;
     noinline_body_list checked_bodies_;
-    generic_registry generics_;
-    type_table types_;
-    definition_checks definitions_;
-    builtin_roles builtins_;
-    ident_resolver resolver_;
-    storage_layout storage_;
-    // false while the program is parsed: the names are declared without
-    // storage and without comments
-    bool is_compiling_{};
     // inside 'dry_run', also in a version inside it: the code compiled is
     // discarded, so a noinline call asks for a body to check, not to emit
     bool is_dry_run_{};
-    // the parsers recurse on the one stack, e.g. a generic instance is parsed
-    // inside the parse that needs it, so the levels are counted once for all
-    // of them, see 'parse_nesting_scope'
-    size_t parse_nesting_{};
     // the indent of the listing lines the code being compiled emits, see
     // 'indent_scope'
     size_t indent_{};
@@ -2417,19 +3115,19 @@ class toc final {
         scope_stack::reach_state reach{};
     };
 
-    // what a dry run changes in 'toc' is put back when it ends, also when an
-    // error unwinds: the 'compile_state', the read-only constants and the
-    // mode ('is_dry_run')
+    // what a dry run changes in the context is put back when it ends, also
+    // when an error unwinds: the 'compile_state', the read-only constants and
+    // the mode ('is_dry_run')
     class dry_run_scope final {
-        toc& tc_;
+        compile_toc& tc_;
         compile_state kept_state_{};
         size_t kept_constant_count_{};
         bool was_dry_run_{};
 
       public:
-        explicit dry_run_scope(toc& tc)
+        explicit dry_run_scope(compile_toc& tc)
             : tc_{tc}, kept_state_{tc.compile_state_now()},
-              kept_constant_count_{tc.data_.constant_count()},
+              kept_constant_count_{tc.data().constant_count()},
               was_dry_run_{tc.is_dry_run_} {
 
             tc.is_dry_run_ = true;
@@ -2442,7 +3140,7 @@ class toc final {
 
         ~dry_run_scope() {
             tc_.restore_compile_state(kept_state_);
-            tc_.data_.resize_constants(kept_constant_count_);
+            tc_.tables().data.resize_constants(kept_constant_count_);
             tc_.is_dry_run_ = was_dry_run_;
         }
     };
@@ -2451,11 +3149,11 @@ class toc final {
     // the code compiled while it lives is written at 'indent_in', e.g. one
     // more for the statements of a block; put back also when an error unwinds
     class indent_scope final {
-        toc& tc_;
+        compile_toc& tc_;
         size_t outer_indent_{};
 
       public:
-        indent_scope(toc& tc, const size_t indent_in)
+        indent_scope(compile_toc& tc, const size_t indent_in)
             : tc_{tc}, outer_indent_{tc.indent_} {
 
             tc.indent_ = indent_in;
@@ -2475,21 +3173,21 @@ class toc final {
     // merge ends, also when an error unwinds, like
     // 'assignment_flow::path_merge'
     class path_merge final {
-        toc& tc_;
+        compile_toc& tc_;
         bool is_reachable_{};
 
       public:
-        explicit path_merge(toc& tc) : tc_{tc} {}
+        explicit path_merge(compile_toc& tc) : tc_{tc} {}
 
         path_merge(const path_merge&) = delete;
         path_merge(path_merge&&) = delete;
         auto operator=(const path_merge&) -> path_merge& = delete;
         auto operator=(path_merge&&) -> path_merge& = delete;
 
-        ~path_merge() { tc_.scopes_.set_reachable(is_reachable_); }
+        ~path_merge() { tc_.tables().scopes.set_reachable(is_reachable_); }
 
         auto begin_path(const bool is_start_reachable) -> void {
-            tc_.scopes_.set_reachable(is_start_reachable);
+            tc_.tables().scopes.set_reachable(is_start_reachable);
         }
 
         // the path that ran ends here
@@ -2500,31 +3198,31 @@ class toc final {
 
     // a scope of the scope stack while it lives, also when an error unwinds,
     // so a failed version or dry run leaves the scopes of its caller, e.g.
-    // 'const toc::scope_entry block{tc, scope::block()};'; a function scope
-    // compiled is also a frame of the register trace, named by the function
+    // 'const compile_toc::scope_entry block{tc, scope::block()};'; a function
+    // scope is also a frame of the register trace, named by the function
     // and called at 'call_site_tk', so the two stacks agree
     class scope_entry final {
-        toc& tc_;
+        compile_toc& tc_;
         // the scopes below this one, the scopes are left in stack order
         size_t outer_scope_count_{};
         std::optional<::machine::register_trace_scope> trace_frame_;
 
       public:
-        scope_entry(toc& tc, scope scp, const token& call_site_tk = {})
-            : tc_{tc}, outer_scope_count_{tc.scopes_.count()} {
+        scope_entry(compile_toc& tc, scope scp, const token& call_site_tk = {})
+            : tc_{tc}, outer_scope_count_{tc.scopes().count()} {
 
-            if (tc.is_compiling_ and scp.is_func()) {
+            if (scp.is_func()) {
                 trace_frame_.emplace(
                     tc.machine(), call_site_tk, std::string{scp.name()},
                     scp.has_frame() ? ::machine::frame_kind::noinline_body
                                     : ::machine::frame_kind::inlined);
             }
 
-            if (tc.is_compiling_ and scp.has_frame()) {
-                tc_.storage_.begin_frame();
+            if (scp.has_frame()) {
+                tc_.tables().storage.begin_frame();
             }
 
-            tc_.scopes_.push(std::move(scp));
+            tc_.tables().scopes.push(std::move(scp));
         }
 
         scope_entry(const scope_entry&) = delete;
@@ -2533,230 +3231,68 @@ class toc final {
         auto operator=(scope_entry&&) -> scope_entry& = delete;
 
         ~scope_entry() {
-            assert(tc_.scopes_.count() == outer_scope_count_ + 1);
+            assert(tc_.scopes().count() == outer_scope_count_ + 1);
 
             tc_.pop_scope();
         }
     };
 
-    // one level of nesting while it lives
-    class parse_nesting_scope final {
-        toc& tc_;
+    // the parse is over: its scopes are popped, it declared the names
+    // without storage
+    explicit compile_toc(toc_tables& tables_in) : toc{tables_in} {
+        assert(scopes().is_empty());
 
-      public:
-        // the error is located at 'src_loc_tk', e.g. the '{' of a block
-        parse_nesting_scope(toc& tc, const token& src_loc_tk) : tc_{tc} {
-            if (tc_.parse_nesting_ >= max_parse_nesting_) {
-                throw compile_error{
-                    src_loc_tk,
-                    std::format("nesting is too deep, the limit is {} levels",
-                                max_parse_nesting_)};
-            }
-
-            ++tc_.parse_nesting_;
-        }
-
-        parse_nesting_scope(toc& tc, const tokenizer& tz)
-            : parse_nesting_scope{tc, tz.peek_token_position()} {}
-
-        parse_nesting_scope(const parse_nesting_scope&) = delete;
-        parse_nesting_scope(parse_nesting_scope&&) = delete;
-        auto operator=(const parse_nesting_scope&)
-            -> parse_nesting_scope& = delete;
-        auto operator=(parse_nesting_scope&&) -> parse_nesting_scope& = delete;
-
-        ~parse_nesting_scope() { --tc_.parse_nesting_; }
-    };
-
-    // while an instance of a generic definition is parsed, each parameter names
-    // its argument, e.g. 'T' names 'i8' and 'capacity' is the constant 8; the
-    // parameters of an enclosing instance are hidden and only the definitions
-    // up to the generic one are seen, all of it ends with the scope
-    class generic_scope final {
-        toc& tc_;
-        definition_order::instance_scope visible_;
-        // the constants are in a block of their own
-        std::optional<scope_entry> constants_block_;
-
-      public:
-        generic_scope(toc& tc, const size_t definition)
-            : tc_{tc}, visible_{tc.order_, definition} {
-
-            assert(not tc_.is_compiling_);
-
-            tc_.types_.enter_params();
-        }
-
-        generic_scope(const generic_scope&) = delete;
-        generic_scope(generic_scope&&) = delete;
-        auto operator=(const generic_scope&) -> generic_scope& = delete;
-        auto operator=(generic_scope&&) -> generic_scope& = delete;
-
-        ~generic_scope() {
-            constants_block_.reset();
-            tc_.types_.exit_params();
-        }
-
-        // an argument is located at its parameter
-        auto add_args(const std::span<const generic_arg> args) -> void {
-            for (const generic_arg& arg : args) {
-                if (arg.is_type()) {
-                    tc_.types_.add_param(arg.param_tk, arg.type_ref());
-                } else {
-                    add_const(arg.param_tk, arg.constant());
-                }
-            }
-        }
-
-        // a method of an instance of a generic type sees the generic type as
-        // the instance and its type arguments, e.g. 'list' names 'str' and 'T'
-        // names 'i8'; its constants are not added here, the body adds them
-        // where it is parsed and compiled ('stmt_def_func::add_constants')
-        auto add_receiver(const generic_type_instance& instance) -> void {
-            const generic_type_info& generic{
-                tc_.generics().get_type(instance.generic_name),
-            };
-
-            // note: a generic type is registered under its 'src_loc_tk'
-            tc_.types_.add_receiver(generic.src_loc_tk, *instance.type_ptr);
-
-            add_args(instance.type_args());
-        }
-
-      private:
-        auto add_const(const token& param_tk, const int64_t value) -> void {
-            if (not constants_block_) {
-                constants_block_.emplace(tc_, scope::block());
-            }
-
-            tc_.add_const(param_tk, param_tk.text(),
-                          folded_value::untyped(value));
-        }
-    };
-
-    // 'builtins' are the types of the language, shared with the machine
-    toc(::machine& backend, const builtin_type_set& builtins,
-        const source_files& files, const size_t vars_capacity_bytes)
-        : machine_{backend}, locations_{files}, scopes_{order_},
-          data_{backend.data_alignment()}, funcs_{order_}, generics_{order_},
-          types_{order_},
-          definitions_{scopes_, funcs_, types_, generics_, locations_},
-          builtins_{backend, builtins},
-          resolver_{scopes_, backend, funcs_, generics_, builtins_},
-          storage_{backend, scopes_, data_, vars_capacity_bytes} {
-
-        // the built-in types are looked up by name like the defined ones
-        for (const type* const tp : builtins.all()) {
-            types_.add_builtin(tp->name(), *tp);
-        }
-
-        // the default type has a name of its own so that it is portable
-        types_.add_builtin(reserved_names::default_type_name,
-                           builtins_.default_type());
+        tables().scopes.set_max_scope_count(0);
     }
 
-    auto add_binding(const param_binding& binding) -> void {
-        assert(is_compiling_);
+    using toc::machine;
 
-        scopes_.back().add_binding(binding);
-    }
+    using toc::overflow_check;
 
-    // a constant of the innermost scope, e.g. a 'let' that folds or a
-    // constant argument of a generic instance; commented only while compiling
+    //
+    // overridden methods
+    //
+
+    // commented where it is declared
     auto add_const(const token& src_loc_tk, const std::string_view name,
-                   const folded_value& constant) -> void {
+                   const folded_value& constant) -> void final {
 
-        definitions_.assert_name_free(src_loc_tk, "constant", name);
+        declare_const(src_loc_tk, name, constant);
 
-        if (is_compiling_) {
-            ::machine& x{machine()};
+        ::machine& x{machine()};
 
-            x.comment({src_loc_tk, indent_}, "const {} = {}", name,
-                      constant.value);
-        }
-
-        scopes_.back().add_const(name, {
-                                           .src_loc_tk{src_loc_tk},
-                                           .constant{constant},
-                                       });
-
-        scopes_.record_if_global(name);
+        x.comment({src_loc_tk, indent_}, "const {} = {}", name, constant.value);
     }
 
-    // the parse places the data of 'dat' after the dats before it and
-    // declares the variable 'var' that names it, the compile declares it again
-    // with 'add_var'
-    auto add_dat(const stmt_def_dat& dat, const var_info& var) -> void {
-        assert(not is_compiling_);
+    // placed and commented where it is stored; a variable in a register or
+    // at one has no storage
+    auto add_var(const var_info& var, const var_kind kind) -> void final {
+        const token src_loc_tk{var.src_loc_tk};
 
-        // note: a name declared twice is reported before where it is declared
-        definitions_.assert_name_free(var.src_loc_tk, "variable", var.name);
-
-        // note: a 'dat' in a block is rejected when it is parsed
-        assert(scopes_.is_at_root());
-
-        const size_t size_bytes{
-            storage_.var_storage_size_bytes(var.src_loc_tk, var),
+        const bool is_in_storage{
+            std::holds_alternative<in_storage>(var.placement),
         };
 
-        data_.add_dat(dat, var.src_loc_tk, storage_.var_storage_alignment(var),
-                      size_bytes);
+        var_info& declared{declare_var(var, kind)};
 
-        // the dats reach no further than the target addresses, 'place_dat'
-        // asserts it at the compile
-        storage_.assert_dats_and_vars_fit_target(var.src_loc_tk);
+        storage_layout& storage{tables().storage};
 
-        add_var(var, var_kind::dat);
+        // note: a 'dat' here is the compile half of 'parse_toc::add_dat'
+        if (kind == var_kind::dat) {
+            storage.place_dat(src_loc_tk, declared);
+        } else if (is_in_storage) {
+            storage.allocate_var(src_loc_tk, declared);
+        }
+
+        comment_var(src_loc_tk, declared);
     }
 
-    auto add_func(std::string name, func_info info) -> void {
-        assert(not is_compiling_);
+    //
+    // class methods
+    //
 
-        definitions_.assert_function_not_defined(info.src_loc_tk, name,
-                                                 info.generic_method);
-
-        funcs_.add(std::move(name), std::move(info));
-    }
-
-    // keeps the instance alive, 'funcs_' refers to it
-    auto add_func_instance(std::shared_ptr<const stmt_def_func> instance)
-        -> void {
-
-        assert(not is_compiling_);
-
-        funcs_.add_instance(std::move(instance));
-    }
-
-    auto add_generic_func(std::string name, generic_func_info info) -> void {
-        assert(not is_compiling_);
-
-        definitions_.assert_function_not_defined(info.src_loc_tk, name,
-                                                 info.generic_method());
-
-        generics_.add_func(std::move(name), std::move(info));
-    }
-
-    // a method is defined once for its generic type, also when no alias
-    // makes an instance of the type
-    auto add_generic_method(const generic_func_info& method) -> void {
-        assert(not is_compiling_);
-
-        definitions_.assert_generic_method_not_defined(method);
-
-        generics_.add_method(method);
-    }
-
-    auto add_generic_type(generic_type_info info) -> void {
-        assert(not is_compiling_);
-
-        // note: the name was checked by 'assert_type_not_defined'
-        generics_.add_type(std::move(info));
-    }
-
-    auto add_generic_type_instance(generic_type_instance instance) -> void {
-        assert(not is_compiling_);
-
-        generics_.add_type_instance(std::move(instance));
+    auto add_binding(const param_binding& binding) -> void {
+        tables().scopes.back().add_binding(binding);
     }
 
     // a body is emitted once per array lengths, for a call that is
@@ -2767,8 +3303,6 @@ class toc final {
                            std::vector<std::optional<size_t>> array_lengths,
                            const token& call_tk, std::string call_source)
         -> void {
-
-        assert(is_compiling_);
 
         // note: a length is unknown only where 'stmt_def_func::check_body'
         //       passes an unsized array parameter on, in a dry run
@@ -2800,137 +3334,10 @@ class toc final {
                                               std::string bytes)
         -> std::string {
 
-        assert(is_compiling_);
-
         std::string label{create_unique_label(src_loc_tk, kind)};
 
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
-        return data_.add_constant(std::move(label), std::move(bytes));
-    }
-
-    auto add_type(const token& src_loc_tk, const type& tpe) -> void {
-        assert(not is_compiling_);
-
-        // note: the name was checked by 'assert_type_not_defined'
-        assert_type_fits_target(src_loc_tk, tpe);
-
-        types_.add(src_loc_tk, tpe);
-    }
-
-    auto add_var(const var_info& var, const var_kind kind) -> void {
-        const token src_loc_tk{var.src_loc_tk};
-
-        if (kind == var_kind::param or kind == var_kind::result) {
-            definitions_.assert_not_declared_in_scope(src_loc_tk, var.name);
-        } else {
-            definitions_.assert_name_free(src_loc_tk, "variable", var.name);
-        }
-
-        // a variable in a register or at one has no storage; the parse only
-        // declares the names, the compile places them
-        const bool is_in_storage{
-            std::holds_alternative<in_storage>(var.placement),
-        };
-
-        var_info& declared{scopes_.back().add_var(var, kind)};
-
-        // note: a 'dat' here is the compile half of 'add_dat'
-        if (is_compiling_ and kind == var_kind::dat) {
-            storage_.place_dat(src_loc_tk, declared);
-        } else if (is_compiling_ and is_in_storage) {
-            storage_.allocate_var(src_loc_tk, declared);
-        }
-
-        scopes_.record_if_global(var.name);
-
-        if (is_compiling_) {
-            comment_var(src_loc_tk, declared);
-        }
-    }
-
-    // the names a 'foo' declares are no type parameter either, see
-    // 'assert_valid_unqualified_name'
-    auto assert_loop_names_free(const token& foo_tk) const -> void {
-        assert(not is_compiling_);
-
-        for (const std::string_view name : reserved_names::foo_names) {
-            if (const type* const bound{type_param_named(name)}) {
-                throw compile_error{
-                    foo_tk,
-                    std::format("'foo' declares {}, which names the "
-                                "type {}",
-                                in_quotes(name), in_quotes(bound->name()))};
-            }
-        }
-    }
-
-    auto assert_released() const -> void {
-        // note: the scopes hold the storage in use, see 'storage_layout'
-        assert(scopes_.is_empty());
-    }
-
-    // a name of a type, function, variable, constant, data or parameter, which
-    // is used without a qualifier
-    auto assert_valid_unqualified_name(const token& name_tk) const -> void {
-        assert(not is_compiling_);
-
-        assert_valid_name(name_tk);
-
-        if (reserved_names::find_builtin_function(name_tk.text()) != nullptr) {
-            throw compile_error{name_tk,
-                                std::format("{} is a built-in function",
-                                            in_quotes(name_tk.text()))};
-        }
-
-        // a value would hide the type only in some places, e.g. 'i8(300)'
-        // still converts after 'var i8 = 3'
-        if (types_.is_builtin(name_tk.text())) {
-            throw compile_error{name_tk,
-                                std::format("{} is a built-in type",
-                                            in_quotes(name_tk.text()))};
-        }
-
-        // a value would hide a type parameter only in some places, e.g.
-        // 'U(v)' still converts; rejected whatever the argument, so that no
-        // instance decides it
-        if (const type* const bound{type_param_named(name_tk.text())}) {
-            throw compile_error{
-                name_tk,
-                std::format("{} is a generic parameter, here the type {}, use "
-                            "another name",
-                            in_quotes(name_tk.text()),
-                            in_quotes(bound->name()))};
-        }
-    }
-
-    // the parse is over: its scopes are popped, it declared the names
-    // without storage; from here on the declarations are placed, comment
-    // where they are stored and the storage capacity is checked, e.g. a
-    // parameter 'self' of a type larger than the vars section holds an
-    // address once the body is compiled
-    auto begin_compile() -> void {
-        assert(not is_compiling_);
-        assert(scopes_.is_empty());
-
-        scopes_.set_max_scope_count(0);
-
-        // note: the parse compiles no call
-        assert(emitted_bodies_.count() == 0 and checked_bodies_.count() == 0);
-
-        is_compiling_ = true;
-    }
-
-    // a top-level definition starts, see 'definition_order'
-    auto begin_definition() -> void {
-        assert(not is_compiling_);
-
-        order_.begin_definition();
-    }
-
-    // the tables are read through these const accessors, a change goes
-    // through a method of 'toc', which may combine tables (README 7.6)
-    [[nodiscard]] auto builtins() const -> const builtin_roles& {
-        return builtins_;
+        return tables().data.add_constant(std::move(label), std::move(bytes));
     }
 
     // the location of 'src_loc_tk' and the call path of the inlined bodies
@@ -2966,16 +3373,15 @@ class toc final {
     [[nodiscard]] auto call_path_at(const token& src_loc_tk) const
         -> std::string {
 
-        assert(is_compiling_);
+        const std::string_view call_path{scopes().call_path()};
 
-        const std::string_view call_path{scopes_.call_path()};
+        const source_locations& locations{tables().locations};
 
         if (call_path.empty()) {
-            return locations_.for_label(src_loc_tk);
+            return locations.for_label(src_loc_tk);
         }
 
-        return std::format("{}.{}", locations_.for_label(src_loc_tk),
-                           call_path);
+        return std::format("{}.{}", locations.for_label(src_loc_tk), call_path);
     }
 
     // code that the compile skips, e.g. a branch that folds to false or the
@@ -2985,10 +3391,8 @@ class toc final {
     // and in the initializer of a global, which takes nothing from a call
     // either; there every compile rule holds in all code
     auto check_skipped(const std::function_ref<void()> compile) -> void {
-        assert(is_compiling_);
-
-        if (scopes_.is_in_func() and
-            not scopes_.current_func_scope().is_without_call()) {
+        if (scopes().is_in_func() and
+            not scopes().current_func_scope().is_without_call()) {
 
             return;
         }
@@ -2996,7 +3400,7 @@ class toc final {
         // the dry run puts back the reach of the code after it
         dry_run(
             [&] -> void {
-                scopes_.set_reachable(true);
+                tables().scopes.set_reachable(true);
                 compile();
             },
             machine::discarded_code::here);
@@ -3007,57 +3411,13 @@ class toc final {
         return checked_bodies_;
     }
 
-    // what '--checks' turned on that the target honors, held by the machine
-    [[nodiscard]] auto checks() const -> const check_options& {
-        const ::machine& x{machine_.get()};
-        return x.checks();
-    }
-
-    // a number, untyped, or a constant with its type
-    [[nodiscard]] auto constant_value_of(const token& tk) const
-        -> std::optional<folded_value> {
-
-        assert(not is_compiling_);
-
-        if (const std::optional<int64_t> value{
-                constant_parser::parse_constant(tk, tk.text()),
-            }) {
-
-            return folded_value::untyped(*value);
-        }
-
-        // a broken number, as in a value
-        if (tk.is_number()) {
-            throw_unparsed_number(tk, tk.text());
-        }
-
-        return scopes_.const_value(tk.text());
-    }
-
     // 'prefix' and the call path of 'src_loc_tk', e.g. 'if.7.5' for the
     // 'if' at 7:5, see 'call_path_at'
     [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
                                            const std::string_view prefix) const
         -> std::string {
 
-        assert(is_compiling_);
-
         return std::format("{}.{}", prefix, call_path_at(src_loc_tk));
-    }
-
-    [[nodiscard]] auto current_definition() const -> size_t {
-        assert(not is_compiling_);
-
-        return order_.current();
-    }
-
-    [[nodiscard]] auto data() const -> const data_table& { return data_; }
-
-    // a check of a name read at the parse, e.g. a type name is checked where
-    // it is read, before the body, so the field type 'p' of a second
-    // 'type p {x p}' names the first 'p'
-    [[nodiscard]] auto definitions() const -> const definition_checks& {
-        return definitions_;
     }
 
     // runs 'compile' for its errors only: its output, read-only constants and
@@ -3070,8 +3430,6 @@ class toc final {
     // reads the kind inside the run, before it is rethrown
     auto dry_run(const std::function_ref<void()> compile,
                  const machine::discarded_code code) -> void {
-
-        assert(is_compiling_);
 
         const dry_run_scope run{*this};
 
@@ -3095,8 +3453,6 @@ class toc final {
                              const std::function_ref<void()> emit_first,
                              const std::function_ref<void()> emit_second)
         -> void {
-
-        assert(is_compiling_);
 
         const compile_state start{compile_state_now()};
 
@@ -3133,120 +3489,13 @@ class toc final {
     }
 
     // e.g. 'exit' leaves the code after it unreached
-    auto end_path() -> void {
-        assert(is_compiling_);
-
-        scopes_.set_reachable(false);
-    }
-
-    [[nodiscard]] auto funcs() const -> const function_table& { return funcs_; }
-
-    [[nodiscard]] auto generics() const -> const generic_registry& {
-        return generics_;
-    }
-
-    [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
-                                         const std::string_view name) const
-        -> const stmt_def_func& {
-
-        assert(not is_compiling_);
-
-        if (funcs_.has(name)) {
-            return *funcs_.get(name).def;
-        }
-
-        // e.g. 'x(1)' after 'var x = 1', a call still calls a hidden function
-        if (scopes_.lookup(name).is_value()) {
-            throw_not_a_function(src_loc_tk, "value", name);
-        }
-
-        // e.g. 'box(1)' of 'type box<T type> {x T}'
-        if (generics_.has_type(name)) {
-            throw_generic_type_not(src_loc_tk, name, "a function");
-        }
-
-        // e.g. the 'f'a'' of 'f'a'(1)', which no definition can name
-        if (not is_identifier(name)) {
-            throw_invalid_name(src_loc_tk, name);
-        }
-
-        throw compile_error{
-            src_loc_tk, std::format("function {} not found", in_quotes(name))};
-    }
-
-    // no token names a missing 'main'
-    [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
-        if (not funcs_.has(reserved_names::main)) {
-            throw compile_error::file_level("function 'main' not found");
-        }
-
-        return *funcs_.get(reserved_names::main).def;
-    }
-
-    [[nodiscard]] auto get_type_or_throw(const token& type_tk) const
-        -> const type& {
-
-        assert(not is_compiling_);
-
-        // note: a declared type is read by 'statement::read_declared_type'
-        //       and 'func_result::read', which reject a string
-
-        assert(not type_tk.is_string());
-
-        const std::string_view name{type_tk.text()};
-
-        if (not types_.has(name)) {
-            if (generics_.has_type(name)) {
-                throw_generic_type_not(type_tk, name, "a type");
-            }
-
-            // e.g. the 'i8;' of 'type t { a i8; }'
-            throw_if_ends_with_semicolon(type_tk);
-
-            throw compile_error{
-                type_tk, std::format("type {} not found", in_quotes(name))};
-        }
-
-        const type& tp{types_.get(name)};
-
-        // note: 'void' is the type of what has no value, it has no size
-        if (tp.is_same(builtins_.void_type())) {
-            throw compile_error{
-                type_tk,
-                std::format("{} is not a type of a value", in_quotes(name))};
-        }
-
-        // the default type is the widest integer the target computes with,
-        // e.g. 'i32' on rv32i
-        const type& widest{builtins_.default_type()};
-
-        if (tp.is_builtin() and tp.size_bytes() > widest.size_bytes()) {
-            throw compile_error{
-                type_tk,
-                std::format("{} is not available on this target, use 'i32' "
-                            "or 'int'",
-                            in_quotes(name))};
-        }
-
-        return tp;
-    }
+    auto end_path() -> void { tables().scopes.set_reachable(false); }
 
     // the indent of the listing lines the code being compiled emits
     [[nodiscard]] auto indent() const -> size_t { return indent_; }
 
     // see 'dry_run'
-    [[nodiscard]] auto is_dry_run() const -> bool {
-        assert(is_compiling_);
-
-        return is_dry_run_;
-    }
-
-    // a plain or a generic function, unlike 'funcs().has'
-    [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
-        assert(not is_compiling_);
-
-        return funcs_.has(name) or generics_.has_func(name);
-    }
+    [[nodiscard]] auto is_dry_run() const -> bool { return is_dry_run_; }
 
     // the code after the current statement of the function being compiled
     // runs on some path, the words of 'assignment_flow': 'end_path',
@@ -3256,22 +3505,18 @@ class toc final {
     // argument 0; outside a function, in the initializer of a global, every
     // path continues, it makes no call
     [[nodiscard]] auto is_reachable() const -> bool {
-        assert(is_compiling_);
-
-        if (not scopes_.is_in_func()) {
+        if (not scopes().is_in_func()) {
             return true;
         }
 
-        return scopes_.current_func_scope().reach_of_func().is_reachable;
+        return scopes().current_func_scope().reach_of_func().is_reachable;
     }
 
     // the end of a loop is reached by a compiled 'break' or as its
     // 'loop_end' says; called as the last step inside the loop's scope, where
     // the end of its body is the current statement
     auto join_loop() -> void {
-        assert(is_compiling_);
-
-        const scope& loop{scopes_.back()};
+        const scope& loop{scopes().back()};
 
         assert(loop.is_loop());
 
@@ -3285,56 +3530,22 @@ class toc final {
                 (end == loop_end::when_stepped and is_step_reached),
         };
 
-        scopes_.set_reachable(runs_out or reach.is_left_by_break);
+        tables().scopes.set_reachable(runs_out or reach.is_left_by_break);
     }
 
-    [[nodiscard]] auto layout() const -> const storage_layout& {
-        return storage_;
-    }
-
-    [[nodiscard]] auto machine() -> ::machine& { return machine_.get(); }
-
-    [[nodiscard]] auto machine() const -> const ::machine& {
-        return machine_.get();
-    }
-
-    // the variable declared last in this scope, e.g. a 'let' variable once
-    // its initializer is parsed
-    auto make_var_read_only(const std::string_view name,
-                            const read_only_cause cause) -> void {
-
-        assert(not is_compiling_);
-
-        scopes_.back().make_var_read_only(name, cause);
-    }
-
-    auto mark_generic_func_instantiated(const std::string_view name) -> void {
-        assert(not is_compiling_);
-
-        generics_.mark_func_instantiated(name);
+    [[nodiscard]] auto machine() -> ::machine& {
+        return tables().backend.get();
     }
 
     // a callee frame starts aligned for any variable it holds
     [[nodiscard]] auto next_frame_address() const -> operand {
-        assert(is_compiling_);
-
-        return storage_.next_frame_address();
-    }
-
-    // the overflow check of the arithmetic of a value without a destination,
-    // e.g. a comparison side or an argument, as '--checks' asks
-    [[nodiscard]] auto overflow_check() const -> machine::runtime_check {
-        return {
-            .enabled{checks().overflow},
-        };
+        return layout().next_frame_address();
     }
 
     // the overflow check of the arithmetic of a value that 'dst' receives,
     // off where 'dst' wraps
     [[nodiscard]] auto overflow_check(const destination& dst) const
         -> machine::runtime_check {
-
-        assert(is_compiling_);
 
         if (dst.wraps()) {
             return {};
@@ -3346,9 +3557,7 @@ class toc final {
     // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
     // reached, and the code after it unreached
     auto record_break() -> void {
-        assert(is_compiling_);
-
-        scopes_.record_break();
+        tables().scopes.record_break();
         end_path();
     }
 
@@ -3356,143 +3565,27 @@ class toc final {
     // step of a 'foo' and leaves the code after it unreached, see
     // 'loop_end::when_stepped'
     auto record_continue() -> void {
-        assert(is_compiling_);
-
-        scopes_.record_continue();
+        tables().scopes.record_continue();
         end_path();
-    }
-
-    // see 'body_uses::is_result_passed_as_mut'
-    auto record_result_passed_as_mut() -> void {
-        assert(not is_compiling_);
-
-        scopes_.record_result_passed_as_mut();
     }
 
     // a 'return' leaves the code after it unreached and reaches the end of an
     // inlined call
     auto record_return() -> void {
-        assert(is_compiling_);
-
-        scopes_.record_return();
+        tables().scopes.record_return();
         end_path();
     }
 
-    // resolved 'storage' that the body being parsed uses, see 'body_uses',
-    // e.g. a path in it or a global that a function it calls uses, so a
-    // local of the same name does not shadow it; none outside a function or
-    // without storage
-    auto record_use(const std::optional<storage_path>& storage,
-                    const use_kind kind) -> void {
-
-        assert(not is_compiling_);
-
-        if (not storage or not scopes_.is_in_func()) {
-            return;
-        }
-
-        scopes_.record_storage_use(*storage, kind == use_kind::write);
-    }
-
-    // the declared name 'ident', e.g. the whole array of 'ps[1]'; the free
-    // 'make_ident_info' of a path gives what the path names, its element
-    [[nodiscard]] auto resolve_declared(const token& src_loc_tk,
-                                        const std::string_view ident) const
-        -> ident_info {
-
-        return resolver_.resolve(src_loc_tk, ident);
-    }
-
-    [[nodiscard]] auto scopes() const -> const scope_stack& { return scopes_; }
-
-    // the text of the file of the token
-    [[nodiscard]] auto source_of(const token& src_loc_tk) const
-        -> std::string_view {
-
-        assert(not is_compiling_);
-
-        return locations_.source_of(src_loc_tk);
-    }
-
-    // see 'ident_resolver::resolve_storage'
-    [[nodiscard]] auto storage_of(const std::string_view name,
-                                  const access_path& path) const
-        -> std::optional<storage_path> {
-
-        return resolver_.resolve_storage(name, path);
-    }
-
-    // the type a type parameter of the instance being parsed is bound to,
-    // e.g. 'U' bound to 'i8'; null for any other name, also for the generic
-    // type of a method, which names its instance like a type name does
-    [[nodiscard]] auto type_param_named(const std::string_view name) const
-        -> const type* {
-
-        assert(not is_compiling_);
-
-        if (not types_.is_type_param(name)) {
-            return nullptr;
-        }
-
-        return &types_.get(name);
-    }
-
-    [[nodiscard]] auto types() const -> const type_table& { return types_; }
-
-    [[nodiscard]] auto usage() const -> usage_statistics {
-        return {
-            .max_scope_count{scopes_.max_scope_count()},
-            .max_body_vars_size_bytes{storage_.max_body_vars_size_bytes()},
-            .dat_size_bytes{data_.total_size_bytes()},
-            .dat_var_padding_bytes{data_.dat_var_padding_bytes()},
-            .uninstantiated_generics{generics_.uninstantiated_func_names()},
-        };
-    }
-
-    // a value used without a destination at 'width'
-    [[nodiscard]] auto use_at(const type& width) const -> value_use {
-        return {
-            .width{&width},
-            .checks_overflow{overflow_check().enabled},
-        };
-    }
-
     [[nodiscard]] auto use_of(const destination& dst) const -> value_use {
-        assert(is_compiling_);
-
         return {
             .width{&dst.type_ref()},
             .checks_overflow{overflow_check(dst).enabled},
         };
     }
 
-    // where 'src_loc_tk' is, for a message, e.g. '4:9'
-    [[nodiscard]] auto where(const token& src_loc_tk) const -> std::string {
-        assert(not is_compiling_);
-
-        return locations_.for_message(src_loc_tk);
-    }
-
     //
     // statics
     //
-
-    // a name is an identifier that is not a keyword
-    static auto assert_valid_name(const token& name_tk) -> void {
-        if (not name_tk.is_word()) {
-            throw compile_error{name_tk, "expected a name"};
-        }
-
-        if (not is_identifier(name_tk.text())) {
-            throw_invalid_name(name_tk, name_tk.text());
-        }
-
-        if (std::ranges::contains(reserved_names::keywords, name_tk.text())) {
-            throw compile_error{
-                name_tk,
-                std::format("{} is a keyword", in_quotes(name_tk.text()))};
-        }
-    }
 
     // the label of the next iteration of the 'foo' loop 'label' names
     [[nodiscard]] static auto continue_label(const std::string_view label)
@@ -3509,32 +3602,10 @@ class toc final {
     }
 
   private:
-    // a value of the type, e.g. a parameter, is addressed by the target even
-    // when no storage of it is ever allocated; a value is smaller than the
-    // address space, so its size and element counts fit an address
-    auto assert_type_fits_target(const token& src_loc_tk, const type& tpe) const
-        -> void {
-
-        const ::machine& x{machine_.get()};
-
-        const size_t max_bytes{x.max_storage_bytes()};
-
-        if (tpe.size_bytes() < max_bytes) {
-            return;
-        }
-
-        throw compile_error{
-            src_loc_tk,
-            std::format("type {} of {} B is too large, the target allows at "
-                        "most {} B",
-                        in_quotes(tpe.name()), tpe.size_bytes(),
-                        max_bytes - 1)};
-    }
-
     // the comment in the output that tells where a variable is stored, the
     // resolved name shows it
     auto comment_var(const token& src_loc_tk, const var_info& var) -> void {
-        const ident_info name_info{resolver_.resolve_var(var)};
+        const ident_info name_info{tables().resolver.resolve_var(var)};
 
         std::string text{
             std::format("{}: {}", var.name, name_info.type_ref().name()),
@@ -3571,9 +3642,9 @@ class toc final {
 
     [[nodiscard]] auto compile_state_now() const -> compile_state {
         return {
-            .max_scope_count{scopes_.max_scope_count()},
-            .storage{storage_.peaks_now()},
-            .reach{scopes_.reach_state_now()},
+            .max_scope_count{scopes().max_scope_count()},
+            .storage{layout().peaks_now()},
+            .reach{scopes().reach_state_now()},
         };
     }
 
@@ -3582,14 +3653,16 @@ class toc final {
     // 'break' folds away for a constant argument, leaves the code after the
     // call unreached
     auto pop_scope() -> void {
-        const scope& popped{scopes_.back()};
+        scope_stack& stack{tables().scopes};
+
+        const scope& popped{stack.back()};
 
         const bool ends_caller_path{
             popped.is_inlined_func() and
                 not popped.reach_of_func().is_end_reached(),
         };
 
-        scopes_.pop();
+        stack.pop();
 
         if (ends_caller_path) {
             end_path();
@@ -3597,9 +3670,11 @@ class toc final {
     }
 
     auto restore_compile_state(const compile_state& state) -> void {
-        scopes_.set_max_scope_count(state.max_scope_count);
-        storage_.restore_peaks(state.storage);
-        scopes_.restore_reach_state(state.reach);
+        toc_tables& t{tables()};
+
+        t.scopes.set_max_scope_count(state.max_scope_count);
+        t.storage.restore_peaks(state.storage);
+        t.scopes.restore_reach_state(state.reach);
     }
 };
 
@@ -3609,7 +3684,7 @@ class toc final {
 //      as types and constants, e.g. '<i8, 8>' of 'list<T type, capacity>'
 //      gives 'T' 'i8' and 'capacity' 8; a call reads its type arguments in
 //      'stmt_call'
-//   2. a 'toc::generic_scope' makes them names while the text of the
+//   2. a 'parse_toc::generic_scope' makes them names while the text of the
 //      definition is parsed again, 'type_table' holds the type names of the
 //      innermost scope
 //
@@ -3629,7 +3704,7 @@ class toc final {
 }
 
 // e.g. 'i8' of 'list<i8, 8>' for 'T'
-[[nodiscard]] inline auto resolve_type_arg(const toc& tc,
+[[nodiscard]] inline auto resolve_type_arg(const parse_toc& tc,
                                            const std::string_view generic_name,
                                            const std::string_view param_name,
                                            const token& arg_tk) -> const type& {
@@ -3651,7 +3726,7 @@ class toc final {
 }
 
 // e.g. '8' of 'list<i8, 8>' for 'capacity'
-[[nodiscard]] inline auto resolve_const_arg(const toc& tc,
+[[nodiscard]] inline auto resolve_const_arg(const parse_toc& tc,
                                             const std::string_view generic_name,
                                             const std::string_view param_name,
                                             const token& arg_tk) -> int64_t {
@@ -3686,7 +3761,7 @@ class toc final {
 // a type parameter needs a type, a constant parameter a constant, e.g. 'T' is
 // 'i8' and 'capacity' is 8 for '<i8, 8>' of 'list<T type, capacity>'
 [[nodiscard]] inline auto
-resolve_generic_args(const toc& tc, const std::string_view generic_name,
+resolve_generic_args(const parse_toc& tc, const std::string_view generic_name,
                      const std::span<const generic_param> params,
                      const std::span<const token> arg_tks)
     -> std::vector<generic_arg> {
@@ -3719,12 +3794,13 @@ resolve_generic_args(const toc& tc, const std::string_view generic_name,
 // from 'start_tk', and the parse counts toward the nesting of the parse
 // that needs the instance
 class generic_reparse final {
-    toc::generic_scope scope_;
+    parse_toc::generic_scope scope_;
     tokenizer tz_;
-    toc::parse_nesting_scope nesting_;
+    parse_toc::parse_nesting_scope nesting_;
 
   public:
-    generic_reparse(toc& tc, const size_t definition, const token& start_tk)
+    generic_reparse(parse_toc& tc, const size_t definition,
+                    const token& start_tk)
         : scope_{tc, definition}, tz_{tc.source_of(start_tk), start_tk},
           nesting_{tc, tz_} {}
 
@@ -3734,7 +3810,7 @@ class generic_reparse final {
     auto operator=(generic_reparse&&) -> generic_reparse& = delete;
     ~generic_reparse() = default;
 
-    [[nodiscard]] auto scope() -> toc::generic_scope& { return scope_; }
+    [[nodiscard]] auto scope() -> parse_toc::generic_scope& { return scope_; }
 
     [[nodiscard]] auto tz() -> tokenizer& { return tz_; }
 };

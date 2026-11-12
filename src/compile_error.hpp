@@ -77,8 +77,8 @@ class compile_error final : public std::exception {
     //   3. 'inline_call::check_recursion' drops a limit in a recursion of the
     //      check of a body that takes from a call, but not 'inlining_limit'
     //      in one that nests as deep at every call
-    //   4. 'toc::dry_run' rethrows an error as a 'source' one, so that none
-    //      of the others drops it
+    //   4. 'compile_toc::dry_run' rethrows an error as a 'source' one, so
+    //      that none of the others drops it
     enum class error_kind : uint8_t {
         source,
         out_of_registers,
@@ -460,7 +460,7 @@ throw_condition_not_operand(const token& src_loc_tk,
 
 // a second definition of 'name' in its namespace, e.g. the second 'x' of
 // 'type p { x i8, x i8 }'; 'kind' names it, e.g. "field", 'existing_where'
-// is where the first one is ('toc::where')
+// is where the first one is ('parse_toc::where')
 [[noreturn]] inline auto
 throw_already_defined(const token& src_loc_tk, const std::string_view kind,
                       const std::string_view name,

@@ -166,7 +166,9 @@ struct func_head {
     // the '(' is looked for after each word: a word followed by '(', '.' or
     // '<' is the name, e.g. 'func noinline()' and 'func mut.m()' read the
     // keyword as the name, which is then rejected
-    [[nodiscard]] static auto read(const toc& tc, tokenizer& tz) -> func_head {
+    [[nodiscard]] static auto read(const parse_toc& tc, tokenizer& tz)
+        -> func_head {
+
         func_head head{};
         head.start_tk = tz.cur_position_token();
         head.read_name(tz);
@@ -177,7 +179,7 @@ struct func_head {
         // a receiver names a type, e.g. 'point' of 'func point.at()', which
         // 'read_method' checks
         if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '.') {
-            toc::assert_valid_name(head.name_tk);
+            parse_toc::assert_valid_name(head.name_tk);
             head.read_method(tc, tz);
         } else {
             tc.assert_valid_unqualified_name(head.name_tk);
@@ -205,7 +207,7 @@ struct func_head {
     // 'self' and whose constructor builds a 'self', or a generic type, whose
     // instances get the method; the name of a method of a type is that of the
     // type it names, e.g. 'str.print' where 'text' names 'str'
-    auto read_method(const toc& tc, tokenizer& tz) -> void {
+    auto read_method(const parse_toc& tc, tokenizer& tz) -> void {
         const token dot_tk{tz.seen_char_token('.')};
 
         // see 'method_part::receiver_tp'
@@ -273,20 +275,21 @@ struct func_head {
             throw compile_error{name_tk, "expected a method name after '.'"};
         }
 
-        toc::assert_valid_name(name_tk);
+        parse_toc::assert_valid_name(name_tk);
 
         return name_tk;
     }
 
     // e.g. '<T type, U type>', a generic function has type parameters only
-    [[nodiscard]] static auto read_type_params(const toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto read_type_params(const parse_toc& tc,
+                                               tokenizer& tz)
         -> std::vector<token> {
 
         std::vector<token> param_tks;
 
         for (const generic_param& param : generic_param::parse(tz)) {
             // the name first, the kind is suggested with it
-            toc::assert_valid_name(param.name_tk);
+            parse_toc::assert_valid_name(param.name_tk);
 
             if (not param.is_type) {
                 // note: a name no parameter can have first, e.g. 'i8' of
@@ -327,7 +330,7 @@ struct func_result {
     //
 
     // 'tz' is after the ')' of the parameters; none without a result
-    [[nodiscard]] static auto read(const toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto read(const parse_toc& tc, tokenizer& tz)
         -> std::optional<func_result> {
 
         const token name_tk{tz.next_token()};
@@ -404,7 +407,7 @@ struct func_result {
     //
 
     // what follows the result name has no type arguments, 'mut' or '['
-    static auto assert_plain_type(const toc& tc, tokenizer& tz,
+    static auto assert_plain_type(const parse_toc& tc, tokenizer& tz,
                                   const token& type_tk) -> void {
 
         if (type_tk.is_word()) {
@@ -481,7 +484,7 @@ class stmt_def_func final : public statement {
     // a function of the user code, or an instance of a generic definition,
     // e.g. 'tokenizer.to<name>' or 'str.print', see 'func_instantiator';
     // 'tz' is after 'head'
-    stmt_def_func(toc& tc, const token& src_loc_tk, const func_head& head,
+    stmt_def_func(parse_toc& tc, const token& src_loc_tk, const func_head& head,
                   tokenizer& tz, std::optional<func_instance> instance)
         : statement{src_loc_tk}, head_{head}, instance_{std::move(instance)} {
 
@@ -516,7 +519,7 @@ class stmt_def_func final : public statement {
 
     // the body is compiled by its calls: in place by 'compile_inlined', else
     // once per array lengths by 'emit_noinline_body'
-    auto compile([[maybe_unused]] toc& tc,
+    auto compile([[maybe_unused]] compile_toc& tc,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
 
@@ -553,7 +556,7 @@ class stmt_def_func final : public statement {
     // body that takes from a call ends at a limit ('compile_error::is_limit',
     // 'inline_call::check_recursion'); an inlined result is the destination
     // of the call, checked here through an address
-    auto check_body(toc& tc) const -> void {
+    auto check_body(compile_toc& tc) const -> void {
         try {
             dry_run_in_frame(tc, {});
         } catch (compile_error& e) {
@@ -571,8 +574,8 @@ class stmt_def_func final : public statement {
     // the body of a noinline function for array lengths that only a dry run
     // asked for, compiled as 'emit_noinline_body' does, nothing kept; an
     // error in it reports the call that asked for it
-    auto check_noinline_body(toc& tc, const noinline_body& requested) const
-        -> void {
+    auto check_noinline_body(compile_toc& tc,
+                             const noinline_body& requested) const -> void {
 
         assert(requested.func == this);
         assert(not is_inlined());
@@ -585,7 +588,7 @@ class stmt_def_func final : public statement {
 
     // the body in place at the call 'call_tk', under labels named by the
     // call, its result and parameters named by the bindings to the call
-    auto compile_inlined(toc& tc, const token& call_tk,
+    auto compile_inlined(compile_toc& tc, const token& call_tk,
                          const std::optional<param_binding>& result,
                          const std::span<const param_binding> arguments) const
         -> void {
@@ -600,7 +603,7 @@ class stmt_def_func final : public statement {
             std::format("{}..{}", body_label(), call_path),
         };
 
-        const std::string ret_jmp_label{toc::end_label(call_label)};
+        const std::string ret_jmp_label{compile_toc::end_label(call_label)};
 
         machine& x{tc.machine()};
 
@@ -608,13 +611,18 @@ class stmt_def_func final : public statement {
 
         x.label(tc.indent(), call_label);
 
-        const toc::scope_entry body{
+        const compile_toc::scope_entry body{
             tc,
             scope::inlined_func(name(), call_path, ret_jmp_label),
             call_tk,
         };
 
-        add_constants(tc);
+        {
+            // listed like the statements of the body
+            const compile_toc::indent_scope names{tc, tc.indent() + 1};
+
+            add_constants(tc);
+        }
 
         const auto add_binding{
             [&](const param_binding& binding) -> void {
@@ -646,10 +654,10 @@ class stmt_def_func final : public statement {
     }
 
     // where the program starts, 'main' takes nothing from a call
-    auto compile_main(toc& tc) const -> void {
+    auto compile_main(compile_toc& tc) const -> void {
         assert(name() == reserved_names::main);
 
-        const toc::scope_entry main{tc, scope::main_func()};
+        const compile_toc::scope_entry main{tc, scope::main_func()};
 
         machine& x{tc.machine()};
 
@@ -670,8 +678,8 @@ class stmt_def_func final : public statement {
     // the body of a noinline function for one set of array lengths, after
     // 'main'; the lengths are those of the array arguments, one per array
     // parameter; an error in it reports the call that asked for it
-    auto emit_noinline_body(toc& tc, const noinline_body& requested) const
-        -> void {
+    auto emit_noinline_body(compile_toc& tc,
+                            const noinline_body& requested) const -> void {
 
         assert(requested.func == this);
         assert(not is_inlined());
@@ -755,9 +763,6 @@ class stmt_def_func final : public statement {
             return;
         }
 
-        // listed like the statements of the body
-        const toc::indent_scope names{tc, tc.indent() + 1};
-
         for (const generic_arg& constant : instance_->constants) {
             tc.add_const(constant.param_tk, constant.param_tk.text(),
                          folded_value::untyped(constant.constant()));
@@ -815,9 +820,6 @@ class stmt_def_func final : public statement {
 
         assert(array_lengths.empty() or
                array_lengths.size() == array_param_count());
-
-        // listed like the statements of the body
-        const toc::indent_scope names{tc, tc.indent() + 1};
 
         size_t next_array_index{};
 
@@ -911,12 +913,12 @@ class stmt_def_func final : public statement {
     // the body in a frame of its own at the frame base, which the caller
     // holds, inside its 'frame_scope'; returns the size of the frame
     [[nodiscard]] auto compile_in_frame(
-        toc& tc,
+        compile_toc& tc,
         const std::span<const std::optional<size_t>> array_lengths) const
         -> size_t {
 
         // a body is listed from the left also where a call checks it
-        const toc::indent_scope body_indent{tc, 0};
+        const compile_toc::indent_scope body_indent{tc, 0};
 
         // the register is held while the body runs
         std::optional<operand> receiver_register;
@@ -928,13 +930,18 @@ class stmt_def_func final : public statement {
                 {tok(), 1}, x.receiver_register(), tc.builtins().address());
         }
 
-        add_constants(tc);
+        {
+            // listed like the statements of the body
+            const compile_toc::indent_scope names{tc, 1};
 
-        add_signature_vars(tc,
-                           through_frame{
-                               .receiver_register{receiver_register},
-                           },
-                           array_lengths);
+            add_constants(tc);
+
+            add_signature_vars(tc,
+                               through_frame{
+                                   .receiver_register{receiver_register},
+                               },
+                               array_lengths);
+        }
 
         code_.compile(tc, destination{});
         x.return_function(1);
@@ -951,13 +958,14 @@ class stmt_def_func final : public statement {
     // the body compiled in a frame of its own for 'array_lengths', nothing
     // kept
     auto dry_run_in_frame(
-        toc& tc,
+        compile_toc& tc,
         const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
         tc.dry_run(
             [&] -> void {
-                const toc::scope_entry body{tc, frame_scope(array_lengths)};
+                const compile_toc::scope_entry body{tc,
+                                                    frame_scope(array_lengths)};
 
                 std::ignore = compile_in_frame(tc, array_lengths);
             },
@@ -966,11 +974,11 @@ class stmt_def_func final : public statement {
 
     // see 'emit_noinline_body'
     auto emit_in_frame(
-        toc& tc,
+        compile_toc& tc,
         const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
-        const toc::scope_entry body{tc, frame_scope(array_lengths)};
+        const compile_toc::scope_entry body{tc, frame_scope(array_lengths)};
 
         machine& x{tc.machine()};
 
@@ -1069,8 +1077,8 @@ class stmt_def_func final : public statement {
 
     // the function scope is established before the body is parsed, its
     // variables are registered without emitting output
-    auto parse_body(toc& tc, tokenizer& tz) -> void {
-        const toc::scope_entry body{
+    auto parse_body(parse_toc& tc, tokenizer& tz) -> void {
+        const parse_toc::scope_entry body{
             tc,
             is_inlined() ? scope::inlined_func(name(), {}, {})
                          : scope::noinline_func(name(), {}),
@@ -1095,8 +1103,8 @@ class stmt_def_func final : public statement {
     }
 
     // the parameters read into 'list', e.g. 'a i32, b i32', with their types
-    auto parse_params(toc& tc, const stmt_def_func_param::syntax_list& list)
-        -> void {
+    auto parse_params(parse_toc& tc,
+                      const stmt_def_func_param::syntax_list& list) -> void {
 
         for (const stmt_def_func_param::syntax& param : list.params) {
             params_.emplace_back(tc, param);
@@ -1107,7 +1115,7 @@ class stmt_def_func final : public statement {
     }
 
     // the result 'name [type]', without one the type is 'void'
-    auto parse_result(toc& tc, tokenizer& tz) -> void {
+    auto parse_result(parse_toc& tc, tokenizer& tz) -> void {
         result_ = func_result::read(tc, tz);
 
         if (not result_) {
@@ -1128,7 +1136,7 @@ class stmt_def_func final : public statement {
     }
 
     // '(parameters) [result]', then the calls after it know the function
-    auto parse_signature(toc& tc, tokenizer& tz) -> void {
+    auto parse_signature(parse_toc& tc, tokenizer& tz) -> void {
         const stmt_def_func_param::syntax_list list{
             stmt_def_func_param::syntax_list::read(tc, tz),
         };
@@ -1367,7 +1375,8 @@ class func_instantiator final {
     // records a generic function for its calls, or a method of a generic
     // type, e.g. 'func text.print()', for every instance of the type, also
     // those made after this definition
-    static auto define(toc& tc, const token& func_tk, const func_head& head,
+    static auto define(parse_toc& tc, const token& func_tk,
+                       const func_head& head,
                        const generic_signature& signature) -> void {
 
         // note: the definition checked that the '(' follows
@@ -1407,9 +1416,11 @@ class func_instantiator final {
     // the instance of the generic function for the type arguments, e.g.
     // 'tokenizer.to<name>' of 'func tokenizer.to<T type>()', made at the first
     // call that needs it, returns its name
-    [[nodiscard]] static auto instantiate_func(
-        toc& tc, const token& call_tk, const std::string_view generic_name,
-        const std::span<const type* const> type_args) -> std::string {
+    [[nodiscard]] static auto
+    instantiate_func(parse_toc& tc, const token& call_tk,
+                     const std::string_view generic_name,
+                     const std::span<const type* const> type_args)
+        -> std::string {
 
         // note: the reference stays valid while the instance is parsed, a body
         //       defines no generic function
@@ -1458,8 +1469,10 @@ class func_instantiator final {
     // = text<8>'; made in the order they are defined, as a method defined
     // after the alias is, so a body sees the methods a hand-written type
     // would
-    static auto instantiate_methods(
-        toc& tc, const std::vector<generic_type_instance>& levels) -> void {
+    static auto
+    instantiate_methods(parse_toc& tc,
+                        const std::vector<generic_type_instance>& levels)
+        -> void {
 
         for (const generic_func_info& method : tc.generics().methods()) {
             for (const generic_type_instance& level : levels) {
@@ -1477,7 +1490,8 @@ class func_instantiator final {
 
     // an error in the method is in the generic code, the frames name the bases
     // and the alias
-    static auto instantiate_method(toc& tc, const generic_func_info& method,
+    static auto instantiate_method(parse_toc& tc,
+                                   const generic_func_info& method,
                                    const generic_type_instance& receiver)
         -> void {
 
@@ -1494,7 +1508,7 @@ class func_instantiator final {
     // keeps the method it instantiates and the constants of the receiver,
     // e.g. 'str.append<i8>' keeps 'text.append' and those of 'text<8>'
     static auto
-    parse_func_instance(toc& tc, const generic_func_info& generic,
+    parse_func_instance(parse_toc& tc, const generic_func_info& generic,
                         const std::string& name,
                         const std::span<const type* const> type_args,
                         const generic_trace& call_trace) -> void {
@@ -1545,7 +1559,8 @@ class func_instantiator final {
     // definition is parsed again; a method with type parameters of its own is
     // a generic function of the instance, e.g. 'str.append' of 'func
     // text.append<T type>(s T)', which keeps 'text<8>'
-    static auto parse_method_instance(toc& tc, const generic_func_info& method,
+    static auto parse_method_instance(parse_toc& tc,
+                                      const generic_func_info& method,
                                       const generic_type_instance& receiver)
         -> void {
 
@@ -1591,7 +1606,7 @@ class stmt_def_func_generic final : public statement {
 
   public:
     // 'tz' is after the head
-    stmt_def_func_generic(toc& tc, const token& src_loc_tk,
+    stmt_def_func_generic(parse_toc& tc, const token& src_loc_tk,
                           const func_head& head, tokenizer& tz)
         : statement{src_loc_tk} {
 
@@ -1616,7 +1631,7 @@ class stmt_def_func_generic final : public statement {
     }
 
     // only its instances are functions
-    auto compile([[maybe_unused]] toc& tc,
+    auto compile([[maybe_unused]] compile_toc& tc,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
 
@@ -1630,7 +1645,7 @@ class stmt_def_func_generic final : public statement {
     // things; a parameter or a result may hide a constant parameter, which
     // 'is_type_only' leaves out; 'what' names the kind of 'name_tk'
     static auto assert_apart_from_receiver_params(
-        const toc& tc, const func_head& head, const token& name_tk,
+        const parse_toc& tc, const func_head& head, const token& name_tk,
         const std::string_view what, const bool is_type_only) -> void {
 
         const generic_type_info& receiver{
@@ -1680,7 +1695,8 @@ class stmt_def_func_generic final : public statement {
     // instance is made: the type parameters name no built-in and are named
     // apart from the signature, so are those of the generic type of a method,
     // a constructor has a receiver and no type parameters
-    static auto assert_generic_signature(const toc& tc, const func_head& head,
+    static auto assert_generic_signature(const parse_toc& tc,
+                                         const func_head& head,
                                          const generic_signature& signature)
         -> void {
 
@@ -1703,7 +1719,7 @@ class stmt_def_func_generic final : public statement {
     // the parameters and the result of a method of a generic type are named
     // apart from the type parameters of the type
     static auto assert_names_apart_from_receiver_params(
-        const toc& tc, const func_head& head,
+        const parse_toc& tc, const func_head& head,
         const generic_signature& signature) -> void {
 
         for (const generic_signature_param& param : signature.params) {
@@ -1720,7 +1736,8 @@ class stmt_def_func_generic final : public statement {
     // the type parameter 'param_tk' is a valid name apart from the type
     // parameters of the generic type of a method, the function, the receiver
     // type, the parameters and the result
-    static auto assert_type_param_apart(const toc& tc, const func_head& head,
+    static auto assert_type_param_apart(const parse_toc& tc,
+                                        const func_head& head,
                                         const generic_signature& signature,
                                         const token& param_tk) -> void {
 
@@ -1763,7 +1780,7 @@ class stmt_def_func_generic final : public statement {
     // after 'func f<T type>(x T)'; the types are resolved when an instance is
     // parsed; 'tz' is after the '(' of the head
     [[nodiscard]] static auto
-    read_signature(const toc& tc, const func_head& head, tokenizer& tz)
+    read_signature(const parse_toc& tc, const func_head& head, tokenizer& tz)
         -> generic_signature {
 
         generic_signature signature{
@@ -1812,8 +1829,8 @@ class stmt_def_func_generic final : public statement {
 };
 
 // reads the head and makes the statement of the kind that follows it
-inline auto make_stmt_def_func(toc& tc, const token& src_loc_tk, tokenizer& tz)
-    -> std::unique_ptr<statement> {
+inline auto make_stmt_def_func(parse_toc& tc, const token& src_loc_tk,
+                               tokenizer& tz) -> std::unique_ptr<statement> {
 
     const func_head head{func_head::read(tc, tz)};
 

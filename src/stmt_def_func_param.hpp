@@ -41,7 +41,9 @@ class stmt_def_func_param final : public statement {
 
         // e.g. 'v', 'v i32', 'arr[]' and 'arr i32[]' have the default type or
         // an explicit one, brackets follow the type
-        [[nodiscard]] static auto read(const toc& tc, tokenizer& tz) -> syntax {
+        [[nodiscard]] static auto read(const parse_toc& tc, tokenizer& tz)
+            -> syntax {
+
             const token name_tk{tz.next_token()};
 
             if (not name_tk.is_word()) {
@@ -131,7 +133,7 @@ class stmt_def_func_param final : public statement {
         //
 
         // 'tz' is after the '('
-        [[nodiscard]] static auto read(const toc& tc, tokenizer& tz)
+        [[nodiscard]] static auto read(const parse_toc& tc, tokenizer& tz)
             -> syntax_list {
 
             syntax_list list{};
@@ -201,7 +203,7 @@ class stmt_def_func_param final : public statement {
     syntax syntax_;
 
   public:
-    stmt_def_func_param(const toc& tc, const syntax& tokens)
+    stmt_def_func_param(const parse_toc& tc, const syntax& tokens)
         : statement{tokens.name_tk}, syntax_{tokens} {
 
         set_type(syntax_.type_tk ? tc.get_type_or_throw(*syntax_.type_tk)

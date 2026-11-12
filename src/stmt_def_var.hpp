@@ -55,7 +55,7 @@ class initializer_declaration final {
 
   public:
     // 'tz' is at the initializer, after the '='
-    initializer_declaration(toc& tc, tokenizer& tz, const token& name_tk,
+    initializer_declaration(parse_toc& tc, tokenizer& tz, const token& name_tk,
                             const name_in_initializer name_visibility)
         : name_tk_{name_tk}, name_visibility_{name_visibility} {
 
@@ -79,7 +79,9 @@ class initializer_declaration final {
     }
 
     // the value at the deduced type and size
-    [[nodiscard]] auto parse_value(toc& tc, tokenizer& tz) const -> expr_any {
+    [[nodiscard]] auto parse_value(parse_toc& tc, tokenizer& tz) const
+        -> expr_any {
+
         // note: set by the parse, which throws when it fails
         std::optional<expr_any> value;
 
@@ -148,7 +150,9 @@ class initializer_declaration final {
     }
 
     // the name of a definition, e.g. the 'x' of 'var x = 1'
-    [[nodiscard]] static auto read_name(const toc& tc, tokenizer& tz) -> token {
+    [[nodiscard]] static auto read_name(const parse_toc& tc, tokenizer& tz)
+        -> token {
+
         const token name_tk{tz.next_token()};
 
         tc.assert_valid_unqualified_name(name_tk);
@@ -158,7 +162,7 @@ class initializer_declaration final {
 
   private:
     // e.g. 'var s = "hi"' is an 'i8' array of 2
-    auto deduce_declaration(toc& tc, tokenizer& tz) -> void {
+    auto deduce_declaration(parse_toc& tc, tokenizer& tz) -> void {
         // note: the placeholder has the default type until the type is known
         set_type(tc.builtins().default_type());
 
@@ -186,7 +190,7 @@ class initializer_declaration final {
     //       argument tells its type only as a whole term, see
     //       'generic_call::value_type'
 
-    auto deduce_from_initializer(toc& tc, tokenizer& tz) -> void {
+    auto deduce_from_initializer(parse_toc& tc, tokenizer& tz) -> void {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
 
@@ -240,7 +244,7 @@ class initializer_declaration final {
     }
 
     // e.g. 'var a = i8[]{1, 2}' or 'var s = "hi"'
-    auto deduce_literal_length(toc& tc, const tokenizer& tz,
+    auto deduce_literal_length(parse_toc& tc, const tokenizer& tz,
                                const type& element_type) -> void {
 
         shape_ = array_shape::array(std::nullopt);
@@ -270,7 +274,7 @@ class initializer_declaration final {
     }
 
     // e.g. 'var c = a' copies the whole array 'a'
-    auto deduce_whole_array_copy(toc& tc, const token& tk,
+    auto deduce_whole_array_copy(const toc& tc, const token& tk,
                                  const stmt_identifier& ident) -> void {
 
         const ident_info info{make_ident_info(tc, ident)};
@@ -293,7 +297,7 @@ class initializer_declaration final {
     // a value cannot be parsed at its type before the type is known, so the
     // initializer is parsed once to learn the type or size and that tree is
     // dropped
-    auto trial_parse(toc& tc, const tokenizer& tz,
+    auto trial_parse(parse_toc& tc, const tokenizer& tz,
                      const std::function_ref<void(tokenizer&)> parse) const
         -> void {
 
@@ -304,15 +308,15 @@ class initializer_declaration final {
 
     // the variable is in scope while its initializer is parsed, so a read of
     // it, e.g. 'var x = x + 1', resolves and is rejected as uninitialized
-    auto with_placeholder(toc& tc, const std::function_ref<void()> parse) const
-        -> void {
+    auto with_placeholder(parse_toc& tc,
+                          const std::function_ref<void()> parse) const -> void {
 
         if (name_visibility_ == name_in_initializer::hidden) {
             parse();
             return;
         }
 
-        const toc::scope_entry block{tc, scope::initializer()};
+        const parse_toc::scope_entry block{tc, scope::initializer()};
 
         tc.add_var(declared_var(), var_kind::var);
 
@@ -326,7 +330,8 @@ class initializer_declaration final {
     // the element type of a string, 'i8', or of an array literal, null when
     // the initializer is neither or a comparison or a connective continues
     // the literal, e.g. 'var b = [2]{1, 2} == a'
-    [[nodiscard]] static auto literal_element_type(const toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto literal_element_type(const parse_toc& tc,
+                                                   tokenizer& tz)
         -> const type* {
 
         if (tz.peek_char_after_whitespace() == '"') {
@@ -372,7 +377,7 @@ class stmt_def_const final : public statement {
   public:
     // the constant is declared during the parse so later statements can name
     // it, e.g. as an array size
-    stmt_def_const(toc& tc, const token& src_loc_tk, const token& name_tk,
+    stmt_def_const(parse_toc& tc, const token& src_loc_tk, const token& name_tk,
                    const token& equals_tk, const type& tp, expr_any initializer,
                    const folded_value& constant)
         : statement{src_loc_tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
@@ -394,7 +399,7 @@ class stmt_def_const final : public statement {
         initializer_.source_to(os);
     }
 
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         comment_source(tc);
@@ -434,7 +439,7 @@ class stmt_def_var final : public statement {
   public:
     // 'at_name' is the tokenizer after the name, where the destination
     // continues
-    stmt_def_var(toc& tc, const token& tk, tokenizer at_name,
+    stmt_def_var(parse_toc& tc, const token& tk, tokenizer at_name,
                  const token& equals_tk,
                  const initializer_declaration& declaration, expr_any value)
         : statement{tk}, declared_{declaration.declared_var()},
@@ -464,7 +469,7 @@ class stmt_def_var final : public statement {
         assign_var_.source_to(os);
     }
 
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         comment_source(tc);
@@ -475,7 +480,8 @@ class stmt_def_var final : public statement {
         if (const std::optional<folded_value> constant{fold_let(tc)}) {
             // note: the elements of a condition after the one that decides it
             //       are not checked as in a 'var': only constants of a call
-            //       fold here, where 'toc::check_skipped' checks nothing
+            //       fold here, where 'compile_toc::check_skipped' checks
+            //       nothing
 
             tc.add_const(declared_.src_loc_tk, declared_.name, *constant);
             return;
@@ -517,7 +523,7 @@ class stmt_def_var final : public statement {
     // the variable is declared during the parse so later statements can name
     // it, its initializer names it as the destination
     [[nodiscard]] static auto
-    declare_and_assign(toc& tc, const var_info& var, tokenizer at_name,
+    declare_and_assign(parse_toc& tc, const var_info& var, tokenizer at_name,
                        const token& equals_tk, expr_any value)
         -> stmt_assign_var {
 
@@ -534,7 +540,7 @@ class stmt_def_var final : public statement {
 // reads the name and the initializer and makes the statement of the kind they
 // give: a constant for a 'let' that folds, e.g. 'let n = 2 * 3', else a
 // variable
-inline auto make_stmt_def_var(toc& tc, const token& tk, tokenizer& tz)
+inline auto make_stmt_def_var(parse_toc& tc, const token& tk, tokenizer& tz)
     -> std::unique_ptr<statement> {
 
     const token name_tk{initializer_declaration::read_name(tc, tz)};

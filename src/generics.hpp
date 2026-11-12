@@ -24,7 +24,7 @@
 
 //
 // generics: a generic definition is kept as text with its parameters, an
-// instance is that text parsed again in a 'toc::generic_scope' where each
+// instance is that text parsed again in a 'parse_toc::generic_scope' where each
 // parameter names its argument, see 'generic_reparse'; the instantiators
 // are 'type_instantiator' ('stmt_def_type.hpp') and 'func_instantiator'
 // ('stmt_def_func.hpp'), the type arguments of a call are read by

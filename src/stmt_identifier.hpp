@@ -273,7 +273,7 @@ class stmt_identifier final : public statement {
     // scratch registers it allocates; the registers from 'owned_from_' on are
     // the path's own and may be overwritten, the earlier ones are the caller's
     class path_address final {
-        std::reference_wrapper<toc> tc_;
+        std::reference_wrapper<compile_toc> tc_;
         token src_loc_tk_;
         std::reference_wrapper<machine::held_registers> held_;
         size_t owned_from_{};
@@ -283,7 +283,7 @@ class stmt_identifier final : public statement {
         std::optional<operand> index_register_;
 
       public:
-        path_address(toc& tc, const token& src_loc_tk,
+        path_address(compile_toc& tc, const token& src_loc_tk,
                      machine::held_registers& held,
                      std::optional<operand> address_register)
             : tc_{tc}, src_loc_tk_{src_loc_tk}, held_{held},
@@ -321,7 +321,7 @@ class stmt_identifier final : public statement {
         [[nodiscard]] auto fold_indexed_address(const operand& address)
             -> operand {
 
-            toc& tc{tc_.get()};
+            compile_toc& tc{tc_.get()};
 
             std::optional<operand> target{fold_register(address)};
 
@@ -378,7 +378,7 @@ class stmt_identifier final : public statement {
         [[nodiscard]] auto load_held_address(const operand& address_slot)
             -> operand {
 
-            toc& tc{tc_.get()};
+            compile_toc& tc{tc_.get()};
 
             const operand address_register{
                 held_.get().alloc_scratch_register({src_loc_tk_, tc.indent()},
@@ -438,7 +438,7 @@ class stmt_identifier final : public statement {
 
   public:
     // a path of names, fields and indexes from 'tk', which is read
-    stmt_identifier(toc& tc, token tk, tokenizer& tz);
+    stmt_identifier(parse_toc& tc, token tk, tokenizer& tz);
 
     // note: 'expr_any' is incomplete here, the special members are defined in
     //       'stmt_identifier_impl.hpp', where a 'unique_ptr' of it is complete
@@ -460,7 +460,9 @@ class stmt_identifier final : public statement {
         path_source_to(os);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
+
         comment_source(tc);
 
         const ident_info src_info{make_scalar_ident_info(tc, *this)};
@@ -613,7 +615,8 @@ class stmt_identifier final : public statement {
 
     // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
     // 'held' receives the scratch registers of the indexing
-    [[nodiscard]] auto compile_lea(toc& tc, machine::held_registers& held,
+    [[nodiscard]] auto compile_lea(compile_toc& tc,
+                                   machine::held_registers& held,
                                    const lea_request& request) const
         -> operand {
 
@@ -662,7 +665,7 @@ class stmt_identifier final : public statement {
     // storage or computed address, with unary ops a scratch register of
     // 'register_type' that holds the result; the registers go to 'held'
     [[nodiscard]] auto
-    compile_value_operand(toc& tc, const token& src_loc_tk,
+    compile_value_operand(compile_toc& tc, const token& src_loc_tk,
                           const ident_info& info, const type& register_type,
                           const machine::runtime_check& overflow_check,
                           machine::held_registers& held) const -> operand {
@@ -729,8 +732,9 @@ class stmt_identifier final : public statement {
 
     // 'reg' receives the address of what 'info' resolves this statement to;
     // 'src_loc_tk' is the statement that asks for it, e.g. a 'foo'
-    auto load_address(toc& tc, const token& src_loc_tk, const ident_info& info,
-                      const operand& reg) const -> void {
+    auto load_address(compile_toc& tc, const token& src_loc_tk,
+                      const ident_info& info, const operand& reg) const
+        -> void {
 
         machine& x{tc.machine()};
 
@@ -765,7 +769,7 @@ class stmt_identifier final : public statement {
 
     // the operand of what 'info' resolves this statement to, a computed
     // address goes into 'held'
-    [[nodiscard]] auto operand_of(toc& tc, const ident_info& info,
+    [[nodiscard]] auto operand_of(compile_toc& tc, const ident_info& info,
                                   machine::held_registers& held) const
         -> operand {
 
@@ -795,7 +799,9 @@ class stmt_identifier final : public statement {
     // this path is written by 'action', e.g. "assign to" or "read into":
     // a read-only name or a constant is rejected, the write is recorded in the
     // uses of the function
-    auto record_write(toc& tc, const std::string_view action) const -> void {
+    auto record_write(parse_toc& tc, const std::string_view action) const
+        -> void {
+
         const ident_info info{make_ident_info(tc, *this)};
 
         // read-only-ness is fixed where the name is declared, so one check at
@@ -856,7 +862,7 @@ class stmt_identifier final : public statement {
     // 'foo a' or 'f(a)', not a value made of it; anything else, a call, a
     // literal, a type or a function, is rejected at its first token without
     // parsing it; the caller checks that it names an array or an element
-    [[nodiscard]] static auto parse_array_argument(toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto parse_array_argument(parse_toc& tc, tokenizer& tz)
         -> stmt_identifier {
 
         // e.g. the '-' of 'array_length(-a)'
@@ -893,7 +899,7 @@ class stmt_identifier final : public statement {
 
     // a whole array, e.g. the 'a' of 'foo a' or of 'var b = a', not the 'a[1]'
     // of 'foo a[1]'
-    [[nodiscard]] static auto parse_whole_array(toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto parse_whole_array(parse_toc& tc, tokenizer& tz)
         -> stmt_identifier {
 
         stmt_identifier array{parse_array_argument(tc, tz)};
@@ -904,7 +910,7 @@ class stmt_identifier final : public statement {
     }
 
   private:
-    stmt_identifier(toc& tc, token tk, tokenizer& tz, path_reach reach);
+    stmt_identifier(parse_toc& tc, token tk, tokenizer& tz, path_reach reach);
 
     // only signed types exist so a constant must fit the signed range
     auto assert_constant_fits(const ident_info& info,
@@ -964,7 +970,9 @@ class stmt_identifier final : public statement {
     // where only an array is expected, the path does not end at a method,
     // e.g. the 'a.m' of 'array_length(a.m)', or its call, which is named like
     // its callee in the other call messages
-    auto assert_not_method(const toc& tc, const tokenizer& tz) const -> void {
+    auto assert_not_method(const parse_toc& tc, const tokenizer& tz) const
+        -> void {
+
         if (not method_) {
             return;
         }
@@ -1070,7 +1078,7 @@ class stmt_identifier final : public statement {
 
     // a path element with an optional '[index]', 'fld' the field it names
     // and 'prefix' what the path up to it resolves to
-    auto parse_element(toc& tc, tokenizer& tz, const token& tk,
+    auto parse_element(parse_toc& tc, tokenizer& tz, const token& tk,
                        const type_field* fld, const ident_info& prefix) -> void;
 
     auto path_source_to(std::ostream& os) const -> void;
@@ -1111,9 +1119,9 @@ class stmt_identifier final : public statement {
     // resolves; a literal without storage, a call, a type or a function is
     // rejected at 'tk', e.g. the 'point' of 'point.at(1, 2)' or the 'f' of
     // 'f(1).a'
-    static auto assert_term_starts_path(const toc& tc, const tokenizer& tz,
-                                        const token& tk, const term_kind tm)
-        -> void {
+    static auto assert_term_starts_path(const parse_toc& tc,
+                                        const tokenizer& tz, const token& tk,
+                                        const term_kind tm) -> void {
 
         // e.g. the ',' of 'array_copy(, b, 1)'
         if (tm == term_kind::none) {
@@ -1167,9 +1175,11 @@ class stmt_identifier final : public statement {
     // '+ c' or '- c' leaves out for the displacement, e.g. 'ix + 1' compiles
     // 'ix' and returns 1, only without bounds checks since they check the sum
     // in the register
-    [[nodiscard]] static auto compile_checked_index(
-        toc& tc, const expr_any& index_expr, const operand& index_register,
-        const array_shape& shape, const bool is_range) -> int64_t;
+    [[nodiscard]] static auto
+    compile_checked_index(compile_toc& tc, const expr_any& index_expr,
+                          const operand& index_register,
+                          const array_shape& shape, const bool is_range)
+        -> int64_t;
 
     // the field 'name_tk' of what the path up to it resolved to, a constant
     // named 'root' has none
@@ -1189,7 +1199,8 @@ class stmt_identifier final : public statement {
     }
 
     // 'name_tk' after the path so far names a method of the path's type
-    [[nodiscard]] static auto is_method_name(const toc& tc, const tokenizer& tz,
+    [[nodiscard]] static auto is_method_name(const parse_toc& tc,
+                                             const tokenizer& tz,
                                              const ident_info& prefix,
                                              const token& name_tk) -> bool {
 
@@ -1217,7 +1228,8 @@ class stmt_identifier final : public statement {
     // what follows the path read so far, resolved as 'prefix': nothing, a '.'
     // and a field, or a '.' and a method name, which ends the path as its
     // receiver; reads the '.' and the name
-    [[nodiscard]] static auto read_continuation(const toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto read_continuation(const parse_toc& tc,
+                                                tokenizer& tz,
                                                 const ident_info& prefix)
         -> path_continuation {
 
@@ -1238,7 +1250,7 @@ class stmt_identifier final : public statement {
         // e.g. the '$' of 'p.$', which names no field or method; a constant
         // has no field of any name ('field_of')
         if (not prefix.is_const()) {
-            toc::assert_valid_name(next_tk);
+            parse_toc::assert_valid_name(next_tk);
         }
 
         // e.g. the '.add' of 'lst.add(1)'

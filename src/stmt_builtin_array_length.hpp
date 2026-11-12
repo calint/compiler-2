@@ -28,8 +28,8 @@ class stmt_builtin_array_length final : public statement {
     builtin_arguments args_;
 
   public:
-    stmt_builtin_array_length(toc& tc, unary_ops uops, const token& src_loc_tk,
-                              tokenizer& tz)
+    stmt_builtin_array_length(parse_toc& tc, unary_ops uops,
+                              const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
           args_{tc, tz, src_loc_tk, array_indexes_, 1, 1} {
 
@@ -51,7 +51,9 @@ class stmt_builtin_array_length final : public statement {
         args_.source_to(os);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
+
         comment_source(tc);
 
         // note: a narrower destination is rejected by 'assert_not_narrowed'

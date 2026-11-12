@@ -231,9 +231,9 @@ class statement {
     }
 
     // emits the code of the node through 'tc', a value written to 'dst'; may
-    // run more than once, what it adds to 'toc' is the same each time or put
-    // back, see the class comment of 'toc'
-    virtual auto compile([[maybe_unused]] toc& tc,
+    // run more than once, what it adds to 'compile_toc' is the same each time
+    // or put back, see the class comment of 'compile_toc'
+    virtual auto compile([[maybe_unused]] compile_toc& tc,
                          [[maybe_unused]] const destination& dst) const
         -> void {
 
@@ -309,7 +309,7 @@ class statement {
     [[nodiscard]] auto bare_path() const -> const stmt_identifier*;
 
     // the source as a listing comment, not rendered in discarded code
-    auto comment_source(toc& tc) const -> void {
+    auto comment_source(compile_toc& tc) const -> void {
         if (tc.is_dry_run()) {
             return;
         }
@@ -320,7 +320,9 @@ class statement {
     }
 
     // the compile of a value that must fit 'dst', checked like 'fold_checked'
-    auto compile_checked(toc& tc, const destination& dst) const -> void {
+    auto compile_checked(compile_toc& tc, const destination& dst) const
+        -> void {
+
         assert_not_narrowed(tc, dst.type_ref());
         compile(tc, dst);
     }
@@ -369,7 +371,7 @@ class statement {
 
     // e.g. 'box<i8>' as the type of a field, a parameter or a result: only a
     // generic type takes arguments, and there an alias names its instance
-    static auto assert_no_type_arguments(const toc& tc, tokenizer& tz,
+    static auto assert_no_type_arguments(const parse_toc& tc, tokenizer& tz,
                                          const token& type_tk) -> void {
 
         if (tz.peek_char_after_whitespace() != '<') {
@@ -416,7 +418,7 @@ class statement {
     // 'scratch_type', which is then copied into 'dst', so 'dst' keeps its
     // value until the whole value is computed, or the copy widens it
     static auto compile_through_scratch(
-        toc& tc, const token& src_loc_tk, const operand& dst,
+        compile_toc& tc, const token& src_loc_tk, const operand& dst,
         const type& scratch_type,
         const std::function_ref<void(const operand&)> compile_value) -> void {
 
@@ -435,7 +437,8 @@ class statement {
     // the type after the name of a field or a parameter, none for the default
     // type; a keyword names no type, e.g. the 'func' of a definition after a
     // '(' or '{' that is not closed
-    [[nodiscard]] static auto read_declared_type(const toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto read_declared_type(const parse_toc& tc,
+                                                 tokenizer& tz)
         -> std::optional<token> {
 
         const token type_tk{tz.next_token()};

@@ -51,7 +51,7 @@ class type_fields final {
     // definition they are read from, e.g. 'str' and 'text' of
     // 'type str = text<8>'
     // note: the callers dispatch on the '{'
-    type_fields(toc& tc, tokenizer& tz, const token& name_tk,
+    type_fields(parse_toc& tc, tokenizer& tz, const token& name_tk,
                 const token& definition_tk)
         : open_brace_tk_{tz.seen_char_token('{')} {
 
@@ -152,7 +152,7 @@ struct generic_type_use {
 
     // 'user' is what must come after the generic type
     // note: the callers dispatch on the '='
-    [[nodiscard]] static auto parse(const toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse(const parse_toc& tc, tokenizer& tz,
                                     const std::string_view user)
         -> generic_type_use {
 
@@ -208,7 +208,7 @@ struct generic_type_use {
 
     // e.g. 'text' of 'type str = text<8>', 'user' is what must come after the
     // generic type; 'tz' is after 'generic_tk'
-    static auto assert_generic_type(const toc& tc, const tokenizer& tz,
+    static auto assert_generic_type(const parse_toc& tc, const tokenizer& tz,
                                     const token& generic_tk,
                                     const std::string_view user) -> void {
 
@@ -261,7 +261,7 @@ class stmt_def_type_generic final : public statement {
 
   public:
     // errors in the fields are found when an alias parses them
-    stmt_def_type_generic(toc& tc, const token& src_loc_tk,
+    stmt_def_type_generic(parse_toc& tc, const token& src_loc_tk,
                           const token& name_tk, tokenizer& tz)
         : statement{src_loc_tk} {
 
@@ -332,7 +332,7 @@ class stmt_def_type_generic final : public statement {
     }
 
     // only its aliases are types
-    auto compile([[maybe_unused]] toc& tc,
+    auto compile([[maybe_unused]] compile_toc& tc,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
 };
@@ -355,7 +355,7 @@ class type_instantiator final {
     //
 
     // 'tp' becomes the type of the alias 'alias_tk', 'toc' keeps its address
-    static auto instantiate(toc& tc, const token& alias_tk,
+    static auto instantiate(parse_toc& tc, const token& alias_tk,
                             const generic_type_use& use, type& tp) -> void {
 
         const generic_type_info& generic{
@@ -423,7 +423,7 @@ class type_instantiator final {
     // 'instance', e.g. 'list<i8, 8>' for 'text<8>' with
     // 'type text<size> = list<i8, size>'; none for the root 'list'
     [[nodiscard]] static auto
-    base_instance(toc& tc, const generic_type_instance& instance)
+    base_instance(parse_toc& tc, const generic_type_instance& instance)
         -> std::optional<generic_type_instance> {
 
         const generic_type_info& generic{
@@ -440,7 +440,7 @@ class type_instantiator final {
 
         // the scope ends with the return, before the base binds its own
         // parameters, which may have the same names
-        toc::generic_scope scope{tc, generic.definition};
+        parse_toc::generic_scope scope{tc, generic.definition};
         scope.add_args(instance.args);
 
         std::vector<generic_arg> base_args{
@@ -471,7 +471,7 @@ class type_instantiator final {
     // parameters naming the arguments
     // e.g. 'array T[capacity], len' of 'type list<T type, capacity> {...}'
     // with 'T' 'i8' and 'capacity' 8
-    static auto parse_root_fields(toc& tc,
+    static auto parse_root_fields(parse_toc& tc,
                                   const generic_type_instance& instance,
                                   const token& alias_tk, type& tp) -> void {
 
@@ -503,7 +503,7 @@ class stmt_def_type final : public statement {
     type type_;
 
   public:
-    stmt_def_type(toc& tc, const token& src_loc_tk, const token& name_tk,
+    stmt_def_type(parse_toc& tc, const token& src_loc_tk, const token& name_tk,
                   std::variant<type_fields, generic_type_use> definition)
         : statement{src_loc_tk}, name_tk_{name_tk},
           definition_{std::move(definition)}, type_{name_tk.text()} {
@@ -543,7 +543,7 @@ class stmt_def_type final : public statement {
     }
 
     // the field layout of the type as comments
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -571,8 +571,8 @@ class stmt_def_type final : public statement {
 };
 
 // reads the name and makes the statement of the kind that follows it
-inline auto make_stmt_def_type(toc& tc, const token& src_loc_tk, tokenizer& tz)
-    -> std::unique_ptr<statement> {
+inline auto make_stmt_def_type(parse_toc& tc, const token& src_loc_tk,
+                               tokenizer& tz) -> std::unique_ptr<statement> {
 
     const token name_tk{tz.next_token()};
 

@@ -31,18 +31,18 @@ class stmt_block final : public statement {
   public:
     // without '{' the block is one statement unless braces are required,
     // e.g. the 'exit(1)' of 'if a == 1 exit(1)'
-    stmt_block(toc& tc, tokenizer& tz, const block_braces braces = {})
+    stmt_block(parse_toc& tc, tokenizer& tz, const block_braces braces = {})
         : statement{tz.peek_token_position()},
           open_brace_tk_{tz.accept_char_token('{')} {
 
         // note: 'tok' is at the '{' or at the one statement
-        const toc::parse_nesting_scope nesting{tc, tok()};
+        const parse_toc::parse_nesting_scope nesting{tc, tok()};
 
         if (is_one_statement() and braces == block_braces::required) {
             throw compile_error{tz, "expected '{' to begin block"};
         }
 
-        const toc::scope_entry block{tc, scope::block()};
+        const parse_toc::scope_entry block{tc, scope::block()};
 
         if (is_one_statement()) {
             parse_single_statement(tc, tz);
@@ -73,10 +73,10 @@ class stmt_block final : public statement {
     }
 
     // a statement in a block has no destination, its value is not used
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        const toc::scope_entry block{tc, scope::block()};
+        const compile_toc::scope_entry block{tc, scope::block()};
 
         compile_from(tc, 0);
     }
@@ -105,8 +105,8 @@ class stmt_block final : public statement {
     // the parse rejects a statement after a path that does not continue; the
     // compile stops after what it folds and the parse could not, e.g. an 'if'
     // on a constant argument of an inlined call, and the code after it holds
-    // the compile rules too, see 'toc::check_skipped'
-    auto compile_from(toc& tc, const size_t first) const -> void {
+    // the compile rules too, see 'compile_toc::check_skipped'
+    auto compile_from(compile_toc& tc, const size_t first) const -> void {
         for (size_t i{first}; i < statements_.size(); ++i) {
             // e.g. the code after a 'return', or of a branch whose condition
             // never returns, as 'stop() == 1' with 'stop' an inlined 'exit';
@@ -118,7 +118,7 @@ class stmt_block final : public statement {
 
             const statement& stmt{*statements_.at(i)};
 
-            const toc::indent_scope nested{tc, tc.indent() + 1};
+            const compile_toc::indent_scope nested{tc, tc.indent() + 1};
 
             stmt.compile(tc, destination{});
         }
@@ -129,7 +129,7 @@ class stmt_block final : public statement {
     }
 
     // a block without braces is one statement, none at the end of the source
-    auto parse_single_statement(toc& tc, tokenizer& tz) -> void {
+    auto parse_single_statement(parse_toc& tc, tokenizer& tz) -> void {
         if (const std::optional<token> close_brace_tk{
                 tz.accept_char_token('}'),
             }) {
@@ -156,7 +156,7 @@ class stmt_block final : public statement {
 
     // the statements up to the '}', e.g. 'var a = 1 exit(a)' of
     // '{ var a = 1 exit(a) }'
-    auto parse_statements(toc& tc, tokenizer& tz) -> void {
+    auto parse_statements(parse_toc& tc, tokenizer& tz) -> void {
         while (true) {
             close_brace_tk_ = tz.accept_char_token('}');
 

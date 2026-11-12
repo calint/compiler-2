@@ -30,7 +30,7 @@ class stmt_assign_var final : public statement {
     token equals_tk_;
 
   public:
-    stmt_assign_var(toc& tc, tokenizer& tz, stmt_identifier ident,
+    stmt_assign_var(parse_toc& tc, tokenizer& tz, stmt_identifier ident,
                     const token& equals_tk)
         : statement{ident.tok()}, stmt_ident_{std::move(ident)},
           expr_{parse_value(tc, tz, stmt_ident_)}, equals_tk_{equals_tk} {}
@@ -55,7 +55,7 @@ class stmt_assign_var final : public statement {
         expr_.source_to(os);
     }
 
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -243,7 +243,7 @@ class stmt_assign_var final : public statement {
     // the write is recorded before the value parses; the value is parsed as
     // the type of the destination, which gives the type of a literal, e.g.
     // 'a = {1, 2}'
-    [[nodiscard]] static auto parse_value(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_value(parse_toc& tc, tokenizer& tz,
                                           const stmt_identifier& dst)
         -> expr_any {
 

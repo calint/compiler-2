@@ -189,8 +189,8 @@ class assignment_flow final {
         }
 
         // a path that never runs holds the rules as if it ran from the start,
-        // as in the compile ('toc::check_skipped'), e.g. a branch false at the
-        // parse; it leaves the merge and the breaks as they were
+        // as in the compile ('compile_toc::check_skipped'), e.g. a branch false
+        // at the parse; it leaves the merge and the breaks as they were
         auto trace_skipped(const auto& path) -> void {
             const std::optional<assigned_bytes> breaks{flow_.at_breaks_};
 

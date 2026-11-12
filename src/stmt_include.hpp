@@ -50,7 +50,7 @@ class stmt_include final : public statement {
         path_tk_.source_to(os);
     }
 
-    auto compile([[maybe_unused]] toc& tc,
+    auto compile([[maybe_unused]] compile_toc& tc,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
 

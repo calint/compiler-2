@@ -84,7 +84,7 @@ assert_builtin_place(const token& tk,
 
 // the statement of the built-in at 'tk', a conversion to 'converted' when it
 // is not null
-inline auto make_builtin(toc& tc, tokenizer& tz, const token& tk,
+inline auto make_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
                          const type* const converted, unary_ops& uops)
     -> std::unique_ptr<statement> {
 
@@ -126,7 +126,7 @@ inline auto make_builtin(toc& tc, tokenizer& tz, const token& tk,
 // a call of the built-in at 'tk', classified as 'tm', null when 'tk' names
 // none; the catalog says where it may stand ('assert_builtin_place'); 'uops'
 // are taken only by a statement made
-inline auto parse_builtin(toc& tc, tokenizer& tz, const token& tk,
+inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
                           const term_kind tm, unary_ops& uops,
                           const builtin_place at)
     -> std::unique_ptr<statement> {
@@ -204,7 +204,8 @@ inline auto assert_return_without_value(const tokenizer& tz,
 }
 
 // a statement that starts with a keyword, null otherwise
-inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token& tk)
+inline auto parse_keyword_statement(parse_toc& tc, tokenizer& tz,
+                                    const token& tk)
     -> std::unique_ptr<statement> {
 
     if (tk.is_text("var") or tk.is_text("let")) {
@@ -252,7 +253,7 @@ using call_or_identifier =
 
 // a term that is neither a value nor a call, e.g. the 'i8' of 'i8 + 1' or
 // the 'f' of 'f + 1'
-inline auto assert_value_or_call(const toc& tc, const tokenizer& tz,
+inline auto assert_value_or_call(const parse_toc& tc, const tokenizer& tz,
                                  const token& tk, const term_kind tm) -> void {
 
     // e.g. the 'loop' of 'x = loop(1)' or a 'mut' that starts a statement
@@ -313,8 +314,9 @@ inline auto assert_value_or_call(const toc& tc, const tokenizer& tz,
 // function, a generic function, a constructor or a method, otherwise as an
 // identifier, 'uops' go to the call or the identifier and 'expected_type' is
 // the type the call is assigned to or null
-inline auto parse_call_or_identifier(toc& tc, tokenizer& tz, const token& tk,
-                                     const term_kind tm, unary_ops uops,
+inline auto parse_call_or_identifier(parse_toc& tc, tokenizer& tz,
+                                     const token& tk, const term_kind tm,
+                                     unary_ops uops,
                                      const type* const expected_type)
     -> call_or_identifier {
 
@@ -395,7 +397,7 @@ inline auto assert_not_compound_assignment(const tokenizer& tz,
 
 // a statement that starts with a name: a call as in an expression, e.g.
 // 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment
-inline auto parse_name_statement(toc& tc, tokenizer& tz, const token& tk,
+inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
                                  const term_kind tm)
     -> std::unique_ptr<statement> {
 
@@ -471,7 +473,7 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token& tk,
 }
 
 // the kind of the term that 'tk' starts; what is not an operand is rejected
-[[nodiscard]] inline auto classify_operand(const toc& tc, const token& tk,
+[[nodiscard]] inline auto classify_operand(const parse_toc& tc, const token& tk,
                                            const tokenizer& tz) -> term_kind {
 
     // array destinations parse strings in 'expr_any'
@@ -508,7 +510,7 @@ inline auto parse_name_statement(toc& tc, tokenizer& tz, const token& tk,
 }
 
 // called from 'expr_arith', whose elements include it, e.g. a call
-inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
+inline auto parse_operand(parse_toc& tc, tokenizer& tz, unary_ops uops,
                           const type* const destination_type)
     -> std::unique_ptr<statement> {
 
@@ -543,7 +545,7 @@ inline auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
     return std::move(std::get<std::unique_ptr<stmt_identifier>>(parsed));
 }
 
-inline auto parse_statement(toc& tc, tokenizer& tz, const token& tk)
+inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
     -> std::unique_ptr<statement> {
 
     // e.g. the '2' of 'return 2', which takes no value, or ''a' = 1'
@@ -574,7 +576,7 @@ inline auto parse_statement(toc& tc, tokenizer& tz, const token& tk)
 
 // a definition of the top level, 'tk' is its first token; only definitions
 // are allowed there
-[[nodiscard]] inline auto parse_definition(toc& tc, tokenizer& tz,
+[[nodiscard]] inline auto parse_definition(parse_toc& tc, tokenizer& tz,
                                            const token& tk)
     -> std::unique_ptr<statement> {
 

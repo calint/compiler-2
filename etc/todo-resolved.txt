@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 363 (2026-11-12, design: 'toc' split by phase)
+    => done (2026-11-12): 'toc' was two objects selected by
+       'is_compiling_' (25 parse-only and 18 compile-only asserts, 6
+       branches in 'add_var', 'add_const' and 'scope_entry'); now
+       'toc_tables' (owned by 'program') holds the tables and one scope
+       stack, 'toc' is the base with what both phases do (queries,
+       'resolve_declared', 'storage_of', 'use_at', pure virtual 'add_var'
+       and 'add_const'), 'parse_toc' has the parse API ('scope_entry',
+       'parse_nesting_scope', 'generic_scope', definitions, name checks)
+       and 'compile_toc' the compile API (indent, reach, dry runs,
+       versions, noinline bodies, placing 'scope_entry'); 'program' makes
+       the 'parse_toc' in its constructor and the 'compile_toc' in 'build'
+       ('begin_compile' removed); about 305 parameters retyped, code both
+       phases run takes 'toc'; a generic instance is parsed only during
+       the parse, which the types now prove; the listing indent of the
+       body declarations moved to the two compile callers; README 7.6
+       rewritten; listings and errors unchanged; +179 lines in 'src'
 [x] easy: round 362 (2026-11-12, bug hunt of rounds 348 to 360:
     'remove_retests', dword reloads, 'memory_equal' and 'rcx', long labels,
     the definition keyword stop of skipped bodies, the check plumbing, the

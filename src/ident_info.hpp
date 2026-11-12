@@ -387,7 +387,7 @@ class ident_info final {
 };
 
 // where a value is used: the width it is computed at and whether its
-// arithmetic is checked for overflow; made by 'toc::use_of' from a
+// arithmetic is checked for overflow; made by 'compile_toc::use_of' from a
 // destination and by 'toc::use_at' for a value without one
 struct value_use {
     const type* width{};

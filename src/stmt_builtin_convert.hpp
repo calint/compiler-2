@@ -57,7 +57,7 @@ class stmt_builtin_convert final : public statement {
 
   public:
     // note: 'converted' is an integer type, see 'conversion_type'
-    stmt_builtin_convert(toc& tc, unary_ops uops, const token& src_loc_tk,
+    stmt_builtin_convert(parse_toc& tc, unary_ops uops, const token& src_loc_tk,
                          const type& converted, tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)},
           argument_{parse_argument(tc, tz, src_loc_tk)} {
@@ -76,7 +76,8 @@ class stmt_builtin_convert final : public statement {
         argument_.close_paren_tk.source_to(os);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
 
         // note: a list copies a constant itself
         assert(not fold(tc, tc.use_of(dst)));
@@ -157,7 +158,7 @@ class stmt_builtin_convert final : public statement {
     // the arithmetic of the argument wraps, 'uops' apply to the converted
     // value as the target checks them; the argument is an operand, so a
     // narrower call result widens into a wider register, e.g. 'i16((g()))'
-    auto compile_argument(toc& tc, const destination& target,
+    auto compile_argument(compile_toc& tc, const destination& target,
                           const unary_ops& uops) const -> void {
 
         const machine::runtime_check uops_check{tc.overflow_check(target)};
@@ -180,7 +181,7 @@ class stmt_builtin_convert final : public statement {
     // ops apply after it widens in place, e.g. '-i8(x)' of an 'x' of 128
     // overflows 'i8' there; a memory destination gets it from a scratch
     // register
-    auto compile_at_type_register(toc& tc, const destination& dst) const
+    auto compile_at_type_register(compile_toc& tc, const destination& dst) const
         -> void {
 
         machine& x{tc.machine()};
@@ -214,7 +215,7 @@ class stmt_builtin_convert final : public statement {
 
     // the argument in a scratch register of 'scratch_type', the unary ops
     // applied, then stored to 'target'
-    auto compile_in_scratch(toc& tc, const destination& target,
+    auto compile_in_scratch(compile_toc& tc, const destination& target,
                             const unary_ops& uops,
                             const machine::runtime_check& uops_check,
                             const type& scratch_type) const -> void {
@@ -270,7 +271,7 @@ class stmt_builtin_convert final : public statement {
     // keep the bits that the conversion drops; the unary ops apply where the
     // value is used, e.g. 'w + -i8(v)' of a 'v' of -128 adds 128, and under
     // the overflow check to the converted value
-    [[nodiscard]] auto is_made_at_type(const toc& tc,
+    [[nodiscard]] auto is_made_at_type(const compile_toc& tc,
                                        const destination& dst) const -> bool {
 
         if (dst.type_ref().size_bytes() > get_type().size_bytes()) {
@@ -357,7 +358,7 @@ class stmt_builtin_convert final : public statement {
     //
 
     // note: the parse takes a type name followed by '(' as a conversion
-    [[nodiscard]] static auto parse_argument(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_argument(parse_toc& tc, tokenizer& tz,
                                              const token& type_tk)
         -> argument_part {
 

@@ -253,7 +253,7 @@ enum class term_kind : uint8_t {
 // and a generic function of its name, a call 'f(...)' still calls the
 // function; built-in types, built-in functions and keywords are reserved
 // names, nothing hides them
-[[nodiscard]] inline auto classify_term(const toc& tc, const token& tk,
+[[nodiscard]] inline auto classify_term(const parse_toc& tc, const token& tk,
                                         const tokenizer& tz) -> term_kind {
 
     if (tk.is_string()) {
@@ -336,7 +336,7 @@ enum class term_kind : uint8_t {
 // the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'
 // have none, 'get_type_or_throw' rejects 'void' and a type wider than the
 // target
-[[nodiscard]] inline auto conversion_type(const toc& tc, const token& tk)
+[[nodiscard]] inline auto conversion_type(const parse_toc& tc, const token& tk)
     -> const type& {
 
     const type& converted{tc.get_type_or_throw(tk)};
@@ -352,8 +352,8 @@ enum class term_kind : uint8_t {
 // the type of the value of the built-in at 'tk', classified as 'tm', e.g. 'i8'
 // of 'i8(1)', none when 'tk' names no built-in with a value;
 // 'parse_builtin' makes a statement for each
-[[nodiscard]] inline auto builtin_value_type(const toc& tc, const token& tk,
-                                             const term_kind tm)
+[[nodiscard]] inline auto
+builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
     -> const type* {
 
     if (tm == term_kind::conversion) {
@@ -382,7 +382,7 @@ enum class term_kind : uint8_t {
 
 // a call of a generic function without type arguments is the whole value,
 // e.g. 'make()' of 'b = make()', its result type is that of the destination
-[[nodiscard]] inline auto is_whole_generic_call(const toc& tc,
+[[nodiscard]] inline auto is_whole_generic_call(const parse_toc& tc,
                                                 const tokenizer& tz) -> bool {
 
     tokenizer probe{tz};
@@ -401,7 +401,8 @@ enum class term_kind : uint8_t {
 
 // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
 // 'i8 + 1' or 'bool and true' continue an expression
-[[nodiscard]] inline auto is_bare_builtin_type(const toc& tc, const token& tk,
+[[nodiscard]] inline auto is_bare_builtin_type(const parse_toc& tc,
+                                               const token& tk,
                                                const tokenizer& tz) -> bool {
 
     return classify_term(tc, tk, tz) == term_kind::builtin_type and

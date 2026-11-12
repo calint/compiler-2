@@ -235,9 +235,10 @@ class report_renderer final {
 };
 
 // the whole program: the constructor parses the main file and the files it
-// includes into 'parsed_files_', an included file before the file that
-// includes it; 'build' compiles from the parsed statements, the globals then
-// 'main', see 'etc/docs/README.md' section 1.2
+// includes into 'parsed_files_' through a 'parse_toc', an included file before
+// the file that includes it; 'build' compiles from the parsed statements
+// through a 'compile_toc', the globals then 'main', see 'etc/docs/README.md'
+// section 1.2
 class program final {
     // the statements of one file: its includes, then its definitions
     struct parsed_file {
@@ -256,35 +257,38 @@ class program final {
 
     std::reference_wrapper<source_files> files_;
     std::vector<parsed_file> parsed_files_;
-    toc tc_; // table of contents
+    // the names and the storage of the program, see 'toc'
+    toc_tables tables_;
 
   public:
     // the main file is the first of 'files', the included ones are added
     program(machine& backend, const builtin_type_set& builtins,
             source_files& files, const size_t vars_size_bytes)
-        : files_{files}, tc_{backend, builtins, files, vars_size_bytes} {
+        : files_{files}, tables_{backend, builtins, files, vars_size_bytes} {
+
+        parse_toc tc{tables_};
 
         {
-            const toc::scope_entry root{tc_, scope::block()};
+            const parse_toc::scope_entry root{tc, scope::block()};
 
-            parse_files();
+            parse_files(tc);
         }
 
         // the program starts at 'main', its signature is checked where it is
         // defined
-        std::ignore = tc_.get_main_or_throw();
+        std::ignore = tc.get_main_or_throw();
     }
 
     auto build(std::ostream& os) -> void {
-        tc_.begin_compile();
+        compile_toc tc{tables_};
 
-        machine& x{tc_.machine()};
+        machine& x{tc.machine()};
 
         x.start();
-        compile();
+        compile(tc);
         x.finish();
-        report_renderer::write(x, tc_.usage());
-        tc_.assert_released();
+        report_renderer::write(x, tc.usage());
+        tc.assert_released();
 
         x.write_assembly(os);
     }
@@ -305,48 +309,30 @@ class program final {
     }
 
   private:
-    auto compile() -> void {
+    auto compile(compile_toc& tc) -> void {
         {
-            const toc::scope_entry root{tc_, scope::block()};
+            const compile_toc::scope_entry root{tc, scope::block()};
 
             // a global 'var' or 'dat' is declared again with its storage, a
             // type writes its layout comment, a function emits nothing here
             for (const parsed_file& parsed : parsed_files_) {
                 for (const std::unique_ptr<statement>& s : parsed.statements) {
-                    s->compile(tc_, destination{});
+                    s->compile(tc, destination{});
                 }
             }
 
-            tc_.get_main_or_throw().compile_main(tc_);
-            emit_noinline_bodies(tc_);
-            check_function_bodies(tc_);
-            check_noinline_bodies(tc_);
+            tc.get_main_or_throw().compile_main(tc);
+            emit_noinline_bodies(tc);
+            check_function_bodies(tc);
+            check_noinline_bodies(tc);
         }
 
-        machine& x{tc_.machine()};
+        machine& x{tc.machine()};
 
         x.emit_runtime();
 
-        emit_read_only_data(tc_);
-        emit_data_section();
-    }
-
-    auto emit_data_section() -> void {
-        machine& x{tc_.machine()};
-
-        x.begin_data();
-
-        // the zero padding places each dat at the offset the data table gave it
-        for (const placed_dat& dat : tc_.data().dats()) {
-            if (dat.padding_bytes != 0) {
-                x.comment({token{}, 0}, "padding {} B", dat.padding_bytes);
-                x.emit_zero_data(dat.padding_bytes);
-            }
-
-            dat.def->compile_data(tc_);
-        }
-
-        x.reserve_variables(tc_.layout().vars_capacity_bytes());
+        emit_read_only_data(tc);
+        emit_data_section(tc);
     }
 
     // the index of the file in 'files_'
@@ -381,14 +367,14 @@ class program final {
 
     // the definitions after the includes, 'tk' is the first of them; the
     // statements of the file follow those of the files it included
-    auto parse_definitions(open_file& file, token tk) -> void {
+    auto parse_definitions(parse_toc& tc, open_file& file, token tk) -> void {
         while (not tk.is_none()) {
             // a name is seen only after its definition, see
             // 'definition_order'
-            tc_.begin_definition();
+            tc.begin_definition();
 
             file.parsed.statements.emplace_back(
-                parse_definition(tc_, file.tz, tk));
+                parse_definition(tc, file.tz, tk));
 
             tk = file.tz.next_token();
         }
@@ -407,7 +393,7 @@ class program final {
     // file without more includes parses its definitions and is closed; the
     // files are a stack, not nested calls, so an include is no level of the
     // nesting limit
-    auto parse_files() -> void {
+    auto parse_files(parse_toc& tc) -> void {
         std::vector<open_file> open_files;
         open_files.push_back(opened_file(0));
 
@@ -416,7 +402,7 @@ class program final {
             const token tk{file.tz.next_token()};
 
             if (not tk.is_text("include")) {
-                parse_definitions(file, tk);
+                parse_definitions(tc, file, tk);
                 open_files.pop_back();
                 continue;
             }
@@ -473,7 +459,7 @@ class program final {
     // calls; this includes the instances that an alias of a generic type
     // makes of its methods; 'main' takes nothing from a call and was
     // compiled whole
-    static auto check_function_bodies(toc& tc) -> void {
+    static auto check_function_bodies(compile_toc& tc) -> void {
         const stmt_def_func& func_main{tc.get_main_or_throw()};
 
         for (const stmt_def_func* const f : tc.funcs().defs()) {
@@ -488,7 +474,7 @@ class program final {
     // a noinline body that was not emitted, asked for only by skipped code
     // or by 'check_function_bodies', is checked with its array lengths, as
     // an inlined call there is
-    static auto check_noinline_bodies(toc& tc) -> void {
+    static auto check_noinline_bodies(compile_toc& tc) -> void {
 
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
@@ -505,9 +491,27 @@ class program final {
         }
     }
 
+    static auto emit_data_section(compile_toc& tc) -> void {
+        machine& x{tc.machine()};
+
+        x.begin_data();
+
+        // the zero padding places each dat at the offset the data table gave it
+        for (const placed_dat& dat : tc.data().dats()) {
+            if (dat.padding_bytes != 0) {
+                x.comment({token{}, 0}, "padding {} B", dat.padding_bytes);
+                x.emit_zero_data(dat.padding_bytes);
+            }
+
+            dat.def->compile_data(tc);
+        }
+
+        x.reserve_variables(tc.layout().vars_capacity_bytes());
+    }
+
     // each noinline function that is called has one body per array lengths,
     // after 'main'; a function nothing calls leaves no code
-    static auto emit_noinline_bodies(toc& tc) -> void {
+    static auto emit_noinline_bodies(compile_toc& tc) -> void {
 
         // note: the calls in a body can request more bodies, so the count
         //       is read on every pass
@@ -519,7 +523,7 @@ class program final {
         }
     }
 
-    static auto emit_read_only_data(toc& tc) -> void {
+    static auto emit_read_only_data(compile_toc& tc) -> void {
         // no section switches without strings
         if (tc.data().constants().empty()) {
             return;

@@ -13,7 +13,7 @@
 
 #include "token.hpp"
 
-class toc;
+class parse_toc;
 class tokenizer;
 class statement;
 class expr_any;
@@ -23,10 +23,11 @@ class unary_ops;
 // an element of an arithmetic expression after its unary ops 'uops', which
 // the caller read; 'destination_type' is the type a generic call takes for its
 // result, null when not known
-[[nodiscard]] auto parse_operand(toc& tc, tokenizer& tz, unary_ops uops,
+[[nodiscard]] auto parse_operand(parse_toc& tc, tokenizer& tz, unary_ops uops,
                                  const type* destination_type)
     -> std::unique_ptr<statement>;
 
 // a statement of a block, 'tk' its first token
-[[nodiscard]] auto parse_statement(toc& tc, tokenizer& tz, const token& tk)
+[[nodiscard]] auto parse_statement(parse_toc& tc, tokenizer& tz,
+                                   const token& tk)
     -> std::unique_ptr<statement>;

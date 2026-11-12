@@ -34,13 +34,14 @@
 #include "ub_reads.hpp"
 #include "unary_ops.hpp"
 
-inline auto expr_any::parse_instance(toc& tc, tokenizer& tz, const type& tp,
+inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
+                                     const type& tp,
                                      const literal_typing typing)
     -> expr_variant {
 
     const token tk{tz.next_token()};
 
-    const toc::parse_nesting_scope nesting{tc, tz};
+    const parse_toc::parse_nesting_scope nesting{tc, tz};
 
     const term_kind tm{classify_term(tc, tk, tz)};
     const bool is_bare{tm == term_kind::record_type};
@@ -108,7 +109,7 @@ inline auto expr_any::parse_instance(toc& tc, tokenizer& tz, const type& tp,
 
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or
 // 'o.pos = point.at(1, 2)'
-inline auto expr_any::parse_instance_source(toc& tc, tokenizer& tz,
+inline auto expr_any::parse_instance_source(parse_toc& tc, tokenizer& tz,
                                             const token& tk, const term_kind tm,
                                             const type& tp) -> expr_variant {
 
@@ -165,7 +166,7 @@ inline expr_type::expr_type(const token& type_tk, const type& tp)
 }
 
 // the fields of 'tp' in braces, e.g. '{x, y}' of 'obj.pos = {x, y}'
-inline expr_type::expr_type(toc& tc, tokenizer& tz, const token& first_tk,
+inline expr_type::expr_type(parse_toc& tc, tokenizer& tz, const token& first_tk,
                             const type& tp)
     : statement{first_tk} {
 

@@ -73,7 +73,7 @@ enum class value_kind : uint8_t { instance, array };
 
 // the type named at 'type_tk' is 'tp', the type of the destination
 // note: compared by type, a type parameter names the type of its argument
-inline auto assert_names_type(const toc& tc, const token& type_tk,
+inline auto assert_names_type(const parse_toc& tc, const token& type_tk,
                               const type& tp) -> void {
 
     const type& named_type{tc.get_type_or_throw(type_tk)};
@@ -145,7 +145,7 @@ throw_known_literal_type(const tokenizer& tz, const token& type_tk,
 // expected, also one reached into, e.g. 'p = [2]{1, 2}' or
 // 'p = point[2]{}[0]'; a condition may compare one, which the comparison
 // rejects as an operand
-inline auto assert_not_array_literal(const toc& tc, const tokenizer& tz,
+inline auto assert_not_array_literal(const parse_toc& tc, const tokenizer& tz,
                                      const token& tk, const term_kind tm,
                                      const type& tp) -> void {
 
@@ -376,7 +376,7 @@ struct write_step {
 using write_plan = std::vector<write_step>;
 
 // stores the bytes of 'bytes' at 'part_dst'
-inline auto emit_bytes_write(toc& tc, const bytes_write& bytes,
+inline auto emit_bytes_write(compile_toc& tc, const bytes_write& bytes,
                              const destination& part_dst) -> void {
 
     const auto add_constant{
@@ -394,7 +394,7 @@ inline auto emit_bytes_write(toc& tc, const bytes_write& bytes,
 }
 
 // writes the steps of 'plan' at 'dst'
-inline auto emit_write_plan(toc& tc, const write_plan& plan,
+inline auto emit_write_plan(compile_toc& tc, const write_plan& plan,
                             const destination& dst) -> void {
 
     machine& x{tc.machine()};
@@ -457,7 +457,9 @@ class expr_path final : public statement {
     }
 
     // e.g. 'pt1 = pt2' or 'var b = a'
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
+
         const type& dst_type{dst.type_ref()};
 
         const ident_info src_info{make_ident_info(tc, path_)};
@@ -494,7 +496,7 @@ class expr_path final : public statement {
 
     // the source of a whole array copy, an array of 'element_type', e.g. the
     // 'a' of 'var b = a'
-    [[nodiscard]] static auto parse_whole_array(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_whole_array(parse_toc& tc, tokenizer& tz,
                                                 const type& element_type)
         -> expr_path {
 
@@ -535,7 +537,9 @@ class expr_call_result final : public statement {
         call_->source_to(os);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
+
         call_->compile(tc, dst);
     }
 
@@ -566,7 +570,8 @@ class expr_type final : public statement {
 
     // parses an 'expr_any' for each field after 'first_tk', the type name or
     // none at '{', e.g. 'point' of 'point{1, 2}'
-    expr_type(toc& tc, tokenizer& tz, const token& first_tk, const type& tp);
+    expr_type(parse_toc& tc, tokenizer& tz, const token& first_tk,
+              const type& tp);
 
     // a 'unique_ptr' of a class that is incomplete here needs the
     // constructors and the special members where 'expr_any' is complete

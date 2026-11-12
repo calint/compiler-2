@@ -22,7 +22,7 @@ class stmt_def_type_field final : public statement {
 
   public:
     // 'type_name_tk' names the type the field is in
-    stmt_def_type_field(toc& tc, const token& tk, tokenizer& tz,
+    stmt_def_type_field(parse_toc& tc, const token& tk, tokenizer& tz,
                         const token& type_name_tk)
         : statement{tk} {
 
@@ -31,7 +31,7 @@ class stmt_def_type_field final : public statement {
         }
 
         // note: checked where it is read, before the errors of later fields
-        toc::assert_valid_name(tk);
+        parse_toc::assert_valid_name(tk);
 
         type_tk_ = read_declared_type(tc, tz);
 

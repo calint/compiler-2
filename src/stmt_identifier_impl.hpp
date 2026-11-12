@@ -39,10 +39,10 @@ inline auto stmt_identifier::ident_elem::source_to(std::ostream& os) const
     }
 }
 
-inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz)
+inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz)
     : stmt_identifier{tc, tk, tz, path_reach::element} {}
 
-inline stmt_identifier::stmt_identifier(toc& tc, token tk, tokenizer& tz,
+inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,
                                         const path_reach reach)
     : statement{tk} {
 
@@ -295,7 +295,7 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
                                   : element_size_bytes);
 }
 
-inline auto stmt_identifier::parse_element(toc& tc, tokenizer& tz,
+inline auto stmt_identifier::parse_element(parse_toc& tc, tokenizer& tz,
                                            const token& tk,
                                            const type_field* const fld,
                                            const ident_info& prefix) -> void {
@@ -356,7 +356,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
                                                      const operand& address)
     -> operand {
 
-    toc& tc{tc_.get()};
+    compile_toc& tc{tc_.get()};
 
     const token& index_tk{cur_elem.index_expr().tok()};
 
@@ -418,7 +418,7 @@ inline auto stmt_identifier::path_address::add_index(const ident_elem& cur_elem,
 }
 
 inline auto stmt_identifier::compile_checked_index(
-    toc& tc, const expr_any& index_expr, const operand& index_register,
+    compile_toc& tc, const expr_any& index_expr, const operand& index_register,
     const array_shape& shape, const bool is_range) -> int64_t {
 
     machine& x{tc.machine()};

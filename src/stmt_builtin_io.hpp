@@ -97,7 +97,7 @@ class stmt_builtin_io final : public statement {
     builtin_arguments args_;
 
   public:
-    stmt_builtin_io(toc& tc, const io_function& io, unary_ops uops,
+    stmt_builtin_io(parse_toc& tc, const io_function& io, unary_ops uops,
                     const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk, std::move(uops)}, io_{io},
           args_{read_arguments(tc, io, src_loc_tk, tz)} {
@@ -122,7 +122,8 @@ class stmt_builtin_io final : public statement {
         args_.source_to(os);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
 
         // e.g. the 'i' of 'read(0, bs[i].b, f())' with 'f' writing 'i'; the
         // 'b' of 'read(0, b, n)' is written
@@ -228,7 +229,7 @@ class stmt_builtin_io final : public statement {
     // the buffer an array, of whole sectors for a sector function, and a
     // constant range in its bounds: every verdict that needs no code, made
     // before the arguments are compiled
-    [[nodiscard]] auto assert_buffer(toc& tc) const -> place {
+    [[nodiscard]] auto assert_buffer(const toc& tc) const -> place {
         // note: the parse took an array path ('assert_buffer_path'), an
         //       address would bypass the bounds check
 
@@ -265,8 +266,8 @@ class stmt_builtin_io final : public statement {
     // a constant range past the end of the buffer is rejected like the range
     // of 'array_copy', e.g. 'write(1, a, 5)' of 'a = i8[4]', a run-time one is
     // left to the bounds check at run time
-    auto assert_constant_range_in_bounds(toc& tc, const place& buffer) const
-        -> void {
+    auto assert_constant_range_in_bounds(const toc& tc,
+                                         const place& buffer) const -> void {
 
         const ident_info& buffer_info{buffer.info};
 
@@ -333,7 +334,7 @@ class stmt_builtin_io final : public statement {
 
     // the range is checked and the buffer address moves to the start, which
     // is 0 without a start argument
-    auto check_range_from_start(toc& tc, const operand& buffer_reg,
+    auto check_range_from_start(compile_toc& tc, const operand& buffer_reg,
                                 const operand& count,
                                 const std::optional<int64_t> known_count,
                                 const ident_info& buffer_info) const -> void {
@@ -360,7 +361,7 @@ class stmt_builtin_io final : public statement {
     // every argument into the register of the call the target takes it in,
     // 'args', in the order of the arguments, then the range check and the
     // byte count; the count and start are in elements
-    auto compile_arguments(toc& tc, const place& buffer,
+    auto compile_arguments(compile_toc& tc, const place& buffer,
                            const std::span<const operand> args) const -> void {
 
         // the descriptor, or the sector of a sector function
@@ -403,7 +404,7 @@ class stmt_builtin_io final : public statement {
 
     // without a count the whole array is transferred, a sector function
     // transfers the elements of one sector, see 'constant_count'
-    auto compile_count(toc& tc, const operand& count,
+    auto compile_count(compile_toc& tc, const operand& count,
                        const std::optional<int64_t> known_count) const -> void {
 
         if (const expr_any* const count_arg{count_argument()}) {
@@ -472,7 +473,7 @@ class stmt_builtin_io final : public statement {
     // a constant start in an array of known length is checked at compile
     // time and moves the address by a constant, a run-time count is then
     // checked against the elements after it
-    auto move_to_constant_start(toc& tc, const operand& buffer_reg,
+    auto move_to_constant_start(compile_toc& tc, const operand& buffer_reg,
                                 const operand& count,
                                 const std::optional<int64_t> known_count,
                                 const ident_info& buffer_info,
@@ -516,7 +517,7 @@ class stmt_builtin_io final : public statement {
 
     // a run-time start is checked with the count, against the last start a
     // constant count leaves, e.g. 'write(1, a, 2, s)'
-    auto move_to_run_time_start(toc& tc, const operand& buffer_reg,
+    auto move_to_run_time_start(compile_toc& tc, const operand& buffer_reg,
                                 const operand& count,
                                 const std::optional<int64_t> known_count,
                                 const ident_info& buffer_info) const -> void {
@@ -580,7 +581,8 @@ class stmt_builtin_io final : public statement {
 
     // the arguments after the checks of the call itself, made first as for a
     // call of a function, e.g. 'write' in the initializer of a global
-    [[nodiscard]] static auto read_arguments(toc& tc, const io_function& io,
+    [[nodiscard]] static auto read_arguments(parse_toc& tc,
+                                             const io_function& io,
                                              const token& tk, tokenizer& tz)
         -> builtin_arguments {
 

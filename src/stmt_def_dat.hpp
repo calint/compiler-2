@@ -80,7 +80,7 @@ class stmt_def_dat final : public statement {
     elem root_elem_{};
 
   public:
-    stmt_def_dat(toc& tc, const token& src_loc_tk, tokenizer& tz)
+    stmt_def_dat(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk},
           name_tk_{initializer_declaration::read_name(tc, tz)},
           equals_tk_{initializer_declaration::read_equals(tz, "dat", name_tk_)},
@@ -114,7 +114,7 @@ class stmt_def_dat final : public statement {
         initializer_.source_to(os);
     }
 
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         comment_source(tc);
@@ -132,7 +132,7 @@ class stmt_def_dat final : public statement {
     //
 
     // the initial values, in the data section
-    auto compile_data(toc& tc) const -> void {
+    auto compile_data(compile_toc& tc) const -> void {
         machine& x{tc.machine()};
 
         x.comment({name_tk_, 0}, name_tk_.text());

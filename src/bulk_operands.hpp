@@ -63,7 +63,7 @@ class bulk_operands final {
         };
 
         const bulk_operands& operands_;
-        toc& tc_;
+        compile_toc& tc_;
         const token& src_loc_tk_;
         // none for a run-time count
         std::optional<int64_t> constant_count_;
@@ -72,7 +72,7 @@ class bulk_operands final {
         bool are_ranges_checked_{};
 
       public:
-        argument_emitters(const bulk_operands& operands, toc& tc,
+        argument_emitters(const bulk_operands& operands, compile_toc& tc,
                           const token& src_loc_tk)
             : operands_{operands}, tc_{tc}, src_loc_tk_{src_loc_tk},
               constant_count_{operands.count().constant_value(tc)} {}
@@ -347,7 +347,7 @@ class bulk_operands final {
     };
 
     // 'name_tk' is the name of the built-in, e.g. 'array_copy'
-    bulk_operands(toc& tc, tokenizer& tz, const token& name_tk,
+    bulk_operands(parse_toc& tc, tokenizer& tz, const token& name_tk,
                   const std::string_view first_role,
                   const std::string_view second_role, const second_use use)
         : args_{tc,

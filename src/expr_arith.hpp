@@ -419,11 +419,11 @@ class expr_arith final : public statement {
         }
     };
 
-    expr_arith(toc& tc, tokenizer& tz)
+    expr_arith(parse_toc& tc, tokenizer& tz)
         : expr_arith{tc, tz, options::plain(nullptr)} {}
 
     // the list is located where its first element starts
-    expr_arith(toc& tc, tokenizer& tz, options opts)
+    expr_arith(parse_toc& tc, tokenizer& tz, options opts)
         : statement{opts.first_expression
                         ? opts.first_expression->tok().start_position()
                         : tz.peek_token_position(),
@@ -433,7 +433,7 @@ class expr_arith final : public statement {
               .close_tk{},
           } {
 
-        const toc::parse_nesting_scope nesting{tc, tz};
+        const parse_toc::parse_nesting_scope nesting{tc, tz};
 
         add_first_element(tc, tz, std::move(opts.first_expression),
                           opts.destination_type);
@@ -524,7 +524,8 @@ class expr_arith final : public statement {
         token::source_to(os, parens_.close_tk);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
 
         // a list that folds is one copy of its value
         const std::optional<folded_value> folded{
@@ -710,7 +711,8 @@ class expr_arith final : public statement {
     // the register is no storage that an element could read, and an index
     // has no unary ops of its own
     [[nodiscard]] auto
-    compile_without_trailing_addend(toc& tc, const destination& dst) const
+    compile_without_trailing_addend(compile_toc& tc,
+                                    const destination& dst) const
         -> std::optional<int64_t> {
 
         assert(get_unary_ops().is_empty());
@@ -782,7 +784,7 @@ class expr_arith final : public statement {
     // the caller might have parsed the first element: the element before a
     // higher-precedence operator or a zero value
     // e.g. the 'b' of 'b * c' in 'a + b * c'
-    auto add_first_element(toc& tc, tokenizer& tz,
+    auto add_first_element(parse_toc& tc, tokenizer& tz,
                            std::unique_ptr<statement> first_expression,
                            const type* const destination_type) -> void {
 
@@ -798,7 +800,8 @@ class expr_arith final : public statement {
     }
 
     // the operator 'op' at 'tz' and the element after it
-    auto append_element(toc& tc, tokenizer& tz, const arithmetic_operator op,
+    auto append_element(parse_toc& tc, tokenizer& tz,
+                        const arithmetic_operator op,
                         const type* const destination_type) -> void {
 
         const token op_tk{tz.seen_operator()};
@@ -827,7 +830,7 @@ class expr_arith final : public statement {
                                         trimmed_source(*exprs_.front()));
     }
 
-    auto compile_first_step(toc& tc, const destination& dst,
+    auto compile_first_step(compile_toc& tc, const destination& dst,
                             const step& first) const -> void {
 
         // a list copies a constant itself, an element never emits one, e.g.
@@ -870,8 +873,8 @@ class expr_arith final : public statement {
         }
     }
 
-    auto compile_step(toc& tc, const destination& dst, const step& s) const
-        -> void {
+    auto compile_step(compile_toc& tc, const destination& dst,
+                      const step& s) const -> void {
 
         if (s.value) {
             emit_constant_step(tc, dst, s);
@@ -900,7 +903,7 @@ class expr_arith final : public statement {
     // the steps that 'plan_steps' made for 'dst'; a nested list is folded
     // when it is compiled as an element:
     //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
-    auto compile_steps(toc& tc, const destination& dst,
+    auto compile_steps(compile_toc& tc, const destination& dst,
                        const std::span<const step> steps) const -> void {
 
         compile_first_step(tc, dst, steps.front());
@@ -918,7 +921,7 @@ class expr_arith final : public statement {
 
     // the destination keeps its value until the whole expression is computed;
     // the steps planned for 'dst' are those of a register of its type
-    auto compile_steps_in_scratch(toc& tc, const destination& dst,
+    auto compile_steps_in_scratch(compile_toc& tc, const destination& dst,
                                   const std::span<const step> steps) const
         -> void {
 
@@ -932,7 +935,7 @@ class expr_arith final : public statement {
     // a step with a value: a constant element, its value folded by
     // 'make_steps', or constants the passes merged, e.g. the '+ 8' of
     // 'a + 3 + 5'; a constant that changes nothing does not reach the backend
-    auto emit_constant_step(toc& tc, const destination& dst,
+    auto emit_constant_step(compile_toc& tc, const destination& dst,
                             const step& s) const -> void {
 
         // note: 'compile_step' sends a step with a value
@@ -1033,7 +1036,8 @@ class expr_arith final : public statement {
 
     // pass 0: one step per element with the constant value of the element
     //   'a * 3 * 2 / 3 / 2 * 4'  =>  '* a' '* 3' '* 2' '/ 3' '/ 2' '* 4'
-    [[nodiscard]] auto make_steps(const toc& tc, const destination& dst) const
+    [[nodiscard]] auto make_steps(const compile_toc& tc,
+                                  const destination& dst) const
         -> std::vector<step> {
 
         std::vector<step> steps;
@@ -1067,7 +1071,7 @@ class expr_arith final : public statement {
     // moves the last element to the front of a sub-expression that takes the
     // operator with the higher precedence
     //   a + b * c  ->  [a] + [b * c]
-    auto open_implied_subexpression(toc& tc, tokenizer& tz,
+    auto open_implied_subexpression(parse_toc& tc, tokenizer& tz,
                                     const uint8_t next_precedence,
                                     const type* const destination_type)
         -> void {
@@ -1087,7 +1091,8 @@ class expr_arith final : public statement {
     }
 
     // the passes in order, the steps are ready to compile
-    [[nodiscard]] auto plan_steps(const toc& tc, const destination& dst) const
+    [[nodiscard]] auto plan_steps(const compile_toc& tc,
+                                  const destination& dst) const
         -> std::vector<step> {
 
         // moving or combining constants changes which partial results
@@ -1213,7 +1218,8 @@ class expr_arith final : public statement {
     }
 
     // the operand in a scratch register that the operation may overwrite
-    static auto compile_computed_operand(toc& tc, const arithmetic_operator op,
+    static auto compile_computed_operand(compile_toc& tc,
+                                         const arithmetic_operator op,
                                          const destination& dst,
                                          const statement& src) -> void {
 
@@ -1236,7 +1242,7 @@ class expr_arith final : public statement {
         x.free_scratch_register({src.tok(), tc.indent()}, reg);
     }
 
-    static auto compile_constant(toc& tc, const token& src_loc_tk,
+    static auto compile_constant(compile_toc& tc, const token& src_loc_tk,
                                  const destination& dst, const int64_t value,
                                  const std::string_view folded_source) -> void {
 
@@ -1254,7 +1260,7 @@ class expr_arith final : public statement {
     // a name or a literal read in place, a register that holds the result
     // of unary ops may be overwritten; 'a + -b' is 'a - b' and 'a - -b' is
     // 'a + b'
-    static auto compile_stored_operand(toc& tc, const destination& dst,
+    static auto compile_stored_operand(compile_toc& tc, const destination& dst,
                                        const step& s) -> void {
 
         const arithmetic_operator op{s.op};
@@ -1352,7 +1358,7 @@ class expr_arith final : public statement {
     // the machine operation of 'op' with its run-time check: overflow for
     // add, subtract and multiply, the division check for divide and
     // remainder, the shift check for shifts, none for the bitwise operators
-    static auto emit_operation(toc& tc, const token& src_loc_tk,
+    static auto emit_operation(compile_toc& tc, const token& src_loc_tk,
                                const arithmetic_operator op,
                                const destination& dst, const operand& value,
                                const machine::factor_use use) -> void {
@@ -1455,7 +1461,7 @@ class expr_arith final : public statement {
     }
 
     // an element or a parenthesized sub-expression: '-a' vs '-(a + b)'
-    [[nodiscard]] static auto parse_element(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_element(parse_toc& tc, tokenizer& tz,
                                             const type* const destination_type)
         -> parsed_element {
 

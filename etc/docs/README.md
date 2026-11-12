@@ -34,8 +34,9 @@ program.hpp      parse: every file, an included one before its includer,
   |              report after the code
   v
 nodes            statement.hpp, stmt_*.hpp, expr_*.hpp: a node parses
-  |              itself, then compiles through 'toc' (toc.hpp, the names
-  |              and the checks) into 'machine'
+  |              itself through 'parse_toc', then compiles through
+  |              'compile_toc' (toc.hpp, the names and the checks) into
+  |              'machine'
   v
 machine.hpp      one virtual method per operation the front end needs,
   |              e.g. 'add_subtract', 'copy_block', 'shift'; allocates
@@ -75,8 +76,8 @@ the layers with a lower number ('qa/lint/check-layers.py' checks it):
 The backend, layer 3, reaches the layers with a higher number only through
 callbacks: the versions of 'machine::emit_most_efficient' and the code of
 'machine::emit_discarded' compile statements, as do the count and address
-emitters of the bulk operations; 'store_bytes' asks 'toc' for a read-only
-label.
+emitters of the bulk operations; 'store_bytes' asks 'compile_toc' for a
+read-only label.
 
 Reading order, each step builds on the ones before it, except that the nodes
 of steps 7 and 8 hold the values of step 9, read by their comments there. The
@@ -95,7 +96,8 @@ read by its header comments and class maps first.
                                'ident_info', 'folded_value', 'value_use', and
                                the walks every node takes part in (3.1)
    toc.hpp, its file map       read the map at the top, not the file: what
-                               every node asks 'toc' for (the file is step 12)
+                               every node asks its context for, 'parse_toc'
+                               or 'compile_toc' (the file is step 12)
    machine.hpp, its class map  read the map, not the file: the operations
                                every compile calls (the file is step 13)
 3. statement.hpp, unary_ops.hpp
@@ -156,14 +158,15 @@ a class does not read top to bottom in the order its steps run; the class and
 file maps at the top give that order, e.g. those of 'toc', 'machine' and
 'stmt_call'.
 
-The names most methods share: 'tc' the 'toc', 'tz' the tokenizer of the
-parse, 'x' the 'machine', 'dst' the 'destination' of a value, 'src_loc_tk' the
-token that an error, a listing comment and a label point at (line 0 has no
+The names most methods share: 'tc' the context of the phase, a 'parse_toc',
+a 'compile_toc' or, for what both phases run, a 'toc'; 'tz' the tokenizer of
+the parse, 'x' the 'machine', 'dst' the 'destination' of a value, 'src_loc_tk'
+the token that an error, a listing comment and a label point at (line 0 has no
 place), and 'indent' the depth of the listing lines emitted
 ('assembler::indentation'), one more for each nested block. The front end
-reads it from 'toc::indent', which the code that nests sets for what it
-compiles ('toc::indent_scope'), e.g. a block for its statements; the backend
-takes it in an 'emit_site'.
+reads it from 'compile_toc::indent', which the code that nests sets for what
+it compiles ('compile_toc::indent_scope'), e.g. a block for its statements;
+the backend takes it in an 'emit_site'.
 
 Invariants the code relies on:
 
@@ -186,9 +189,9 @@ Invariants the code relies on:
 ### 1.2 Passes
 
 1. parse ('program' constructor): every statement parses itself in its
-   constructor and emits nothing, 'toc::begin_compile' ends the parse. The
-   grammar needs to know the names (7.2), so the parse declares types,
-   functions, constants and variables in 'toc' as it goes. Where a type or a
+   constructor through a 'parse_toc' and emits nothing. The grammar needs to
+   know the names (7.2), so the parse declares types, functions, constants and
+   variables in the tables ('toc_tables') as it goes. Where a type or a
    size is learned from the initializer, the initializer is parsed, the
    tokenizer rewound and parsed again
    ('initializer_declaration::trial_parse'). A generic definition is kept as
@@ -202,19 +205,19 @@ Invariants the code relies on:
    system makes per process is named by its target, e.g. an include of
    '/proc/self/fd/0' is '/proc/714319/fd/0' in a message.
 
-2. compile ('program::build'): the statements are walked again with a fresh
-   scope stack in 'toc'. Global variables and data are declared again, then
-   'main' is compiled where the program starts. An inlined call compiles the
-   body of the callee in place (1.3). A noinline call adds a body to compile for
-   the array lengths of its arguments; the bodies are compiled after 'main', and
-   compiling one can add more. Then each function but 'main' and an emitted
-   noinline body without array parameters is checked once without its calls
-   and emits nothing (1.5), then the noinline bodies that
-   skipped code and those checks asked for ('program::check_noinline_bodies').
-   Then the failure handlers that the code branches to
-   ('machine::emit_used_failure_handlers'), the routines and helpers the code
-   and the handlers marked used ('machine::emit_used_routines'), the read-only
-   strings, the data and the variables.
+2. compile ('program::build'): the statements are walked again through a
+   'compile_toc' over the same tables, with a fresh scope stack. Global
+   variables and data are declared again, then 'main' is compiled where the
+   program starts. An inlined call compiles the body of the callee in place
+   (1.3). A noinline call adds a body to compile for the array lengths of its
+   arguments; the bodies are compiled after 'main', and compiling one can add
+   more. Then each function but 'main' and an emitted noinline body without
+   array parameters is checked once without its calls and emits nothing (1.5),
+   then the noinline bodies that skipped code and those checks asked for
+   ('program::check_noinline_bodies'). Then the failure handlers that the code
+   branches to ('machine::emit_used_failure_handlers'), the routines and helpers
+   the code and the handlers marked used ('machine::emit_used_routines'), the
+   read-only strings, the data and the variables.
 
 3. output ('machine::finish', then 'report_renderer', then 'write_assembly'):
    the buffered lines get their jumps optimized (not with '--nopt'), a load
@@ -287,29 +290,29 @@ Seven types answer "where is this value", each at its own step:
 
 | type | what it holds | made by | read by |
 |---|---|---|---|
-| 'var_info', 'var_placement' ('ident_info.hpp') | a declared variable and where it lives: storage, an address register or a value register | the declarations, placed by 'toc::add_var' | the resolver |
+| 'var_info', 'var_placement' ('ident_info.hpp') | a declared variable and where it lives: storage, an address register or a value register | the declarations, placed by 'compile_toc::add_var' | the resolver |
 | 'ident_info' | what a name resolves to: a constant, a register or a variable with its operand | the resolver ('ident_resolver') | every node |
 | 'param_binding' ('toc.hpp') | a parameter of an inlined call bound to the 'ident_info' of its argument | the inlined call | the resolver, in the body |
 | 'destination' | where 'compile' writes: nowhere, a register or storage | the caller of 'compile' | 'compile' |
 | 'place' ('stmt_identifier.hpp') | storage a node reads or passes in place, its path and its 'ident_info' | 'as_place' | calls, io and bulk built-ins |
 | 'storage_path' ('access_path.hpp') | the identity of the bytes a path names, for aliasing and order (3.3) | 'stmt_identifier::storage' | the no-UB checks |
-| 'value_use' | the width a value is computed at and whether it is checked for overflow | 'toc::use_of', 'toc::use_at' | the arithmetic |
+| 'value_use' | the width a value is computed at and whether it is checked for overflow | 'compile_toc::use_of', 'toc::use_at' | the arithmetic |
 
 ### 1.4 Dry runs
 
 Some code is compiled and then dropped: a dry run only to be checked, and
 the longer of two versions after both are measured:
 
-1. 'toc::dry_run' and 'machine::emit_discarded': the body of each function
-   but 'main' and an emitted noinline body without array parameters, without
-   its calls (1.5), an inlined recursion there, and code that a compile skips
-   ('toc::check_skipped', 1.5.1): the code after a statement that leaves on
-   every path, a branch whose condition folds to false, the branches and the
-   'else' after one that always runs, the operands of 'and' and 'or' after the
-   one that decides and the body of a 'foo' whose count folds to 0; and the
-   noinline bodies that only such code asks for (1.5 item 4)
-2. 'toc::emit_most_efficient' over 'machine::emit_most_efficient': two versions
-   are compiled, each from the state before it, and the one with fewer
+1. 'compile_toc::dry_run' and 'machine::emit_discarded': the body of each
+   function but 'main' and an emitted noinline body without array parameters,
+   without its calls (1.5), an inlined recursion there, and code that a compile
+   skips ('compile_toc::check_skipped', 1.5.1): the code after a statement that
+   leaves on every path, a branch whose condition folds to false, the branches
+   and the 'else' after one that always runs, the operands of 'and' and 'or'
+   after the one that decides and the body of a 'foo' whose count folds to 0;
+   and the noinline bodies that only such code asks for (1.5 item 4)
+2. 'compile_toc::emit_most_efficient' over 'machine::emit_most_efficient': two
+   versions are compiled, each from the state before it, and the one with fewer
    instructions is kept with the state it ended in, e.g. with and without a
    scratch register, see 5.3
 
@@ -320,15 +323,15 @@ source it would quote; a version writes them, its lines may be kept.
 What dropped code changed is put back by its owner, also when an error
 unwinds it:
 
-1. 'toc::dry_run_scope', for a dry run: the 'toc::compile_state' (the
-   deepest scope count, the storage peak and the frame peak
+1. 'compile_toc::dry_run_scope', for a dry run: the 'compile_toc::compile_state'
+   (the deepest scope count, the storage peak and the frame peak
    ('storage_layout::peaks'), and whether the code after is reached,
    'scope_stack::reach_state'), the read-only constants added and the mode
-   ('toc::is_dry_run'): a noinline call reached inside a dry run adds a body
-   to check only, not to emit ('toc::add_noinline_body')
-2. 'toc::emit_most_efficient', for a version: the same peaks and reach state,
-   each version starts from those before it and the kept one's remain, e.g.
-   the frame size of a noinline body that '--checks=frame' checks; a
+   ('compile_toc::is_dry_run'): a noinline call reached inside a dry run adds a
+   body to check only, not to emit ('compile_toc::add_noinline_body')
+2. 'compile_toc::emit_most_efficient', for a version: the same peaks and reach
+   state, each version starts from those before it and the kept one's remain,
+   e.g. the frame size of a noinline body that '--checks=frame' checks; a
    read-only constant that the dropped version added stays, unused, so the
    labels stay unique
 3. 'machine::version_scope', for a version and for the code of
@@ -336,9 +339,9 @@ unwinds it:
    the registers held and the routines marked used ('machine::mark_used')
 
 So a statement can be compiled more than once, and what its compile adds to
-'toc' is the same each time or put back by its owner; the class comment of
-'toc' lists each write of a compile and how it keeps the rule, and
-'statement::compile' points there.
+'compile_toc' is the same each time or put back by its owner; the class
+comment of 'compile_toc' lists each write of a compile and how it keeps the
+rule, and 'statement::compile' points there.
 
 ### 1.5 Checks
 
@@ -368,7 +371,7 @@ program does not depend on inlining.
 
 1. Every function is checked once without its calls, also one that nothing
    calls: after the noinline bodies, 'program::check_function_bodies' compiles
-   each function but 'main' like a noinline body under 'toc::dry_run'
+   each function but 'main' like a noinline body under 'compile_toc::dry_run'
    ('stmt_def_func::check_body'); an emitted noinline body without array
    parameters takes nothing from a call, it was checked as it was emitted. So
    a rule that needs no argument holds also in code that the constant
@@ -442,22 +445,23 @@ after the 'return' of 'if n > 5 return' in an inlined 'count(6)', which ends the
 expansion of a recursion with constant arguments, or after a 'loop' whose
 'break' folds away. The compile says it in the words of the parse walk
 ('assignment_flow'): the function scope keeps whether the current statement is
-reached ('toc::is_reachable'), 'toc::end_path' and 'toc::record_break' end a
-path, 'toc::path_merge' joins the branches of an 'if' with the same chain rule
-as the parse, 'toc::join_loop' ends a loop by its 'loop_end'
-('loop_reach'; a 'foo' whose count folds above 0 runs out only
-where its body or a 'continue' reaches the counter step,
-'loop_end::when_stepped'), an inlined call whose body reaches neither its end
-nor a 'return' leaves the code after the call unreached ('toc::pop_scope'), and
-the end of 'main' is emitted when the compile reaches it.
+reached ('compile_toc::is_reachable'), 'compile_toc::end_path' and
+'compile_toc::record_break' end a path, 'compile_toc::path_merge' joins the
+branches of an 'if' with the same chain rule as the parse,
+'compile_toc::join_loop' ends a loop by its 'loop_end' ('loop_reach'; a 'foo'
+whose count folds above 0 runs out only where its body or a 'continue' reaches
+the counter step, 'loop_end::when_stepped'), an inlined call whose body reaches
+neither its end nor a 'return' leaves the code after the call unreached
+('compile_toc::pop_scope'), and the end of 'main' is emitted when the compile
+reaches it.
 
 The compile decides, the parse is only the first validation, so every rule of
 the compile holds in all code. Code that a compile skips is compiled for its
-checks in a dry run ('toc::check_skipped') where what it folds is no constant of
-a call: in 'main', in a noinline body without array parameters, in the
-initializer of a global and in the check of a body without its calls. That is
-a branch whose condition folds to false, the branches and the 'else' after one
-that always runs, the operands of 'and' and 'or' after the one that decides,
+checks in a dry run ('compile_toc::check_skipped') where what it folds is no
+constant of a call: in 'main', in a noinline body without array parameters, in
+the initializer of a global and in the check of a body without its calls. That
+is a branch whose condition folds to false, the branches and the 'else' after
+one that always runs, the operands of 'and' and 'or' after the one that decides,
 the body of a 'foo' whose count folds to 0, and the code after a
 statement that leaves on every path, e.g. 'if 1 == 2 { n = a }' with 'a' an
 array is rejected. Such code is judged as if it ran, with the
@@ -502,7 +506,7 @@ instructions                   the machine instructions of the code
 
 Each construct emits a comment with its source and location, then its code
 under labels named by where it is written and by the inlined calls around
-it ('toc::call_path_at'), so a label is unique per call path:
+it ('compile_toc::call_path_at'), so a label is unique per call path:
 
 ```text
 if.L.C         an 'if' at line L, column C; '.N' its branch N, '.code',
@@ -568,9 +572,10 @@ A constant follows the rules of a variable; only the code differs, an
 immediate instead of a load. One virtual, 'statement::fold', evaluates a value
 known at compile time, also an array size ('stmt_array_size' folds at 'i64',
 e.g. 'i8[n * 2]'). The one exception is read at the parse from a literal or a
-constant name: the constant arguments of a generic ('toc::constant_value_of').
-The result of 'fold', 'folded_value', is stored as it is wherever a constant is
-kept ('ident_info', the alias of an inlined argument, the constant of a 'let'):
+constant name: the constant arguments of a generic
+('parse_toc::constant_value_of'). The result of 'fold', 'folded_value', is
+stored as it is wherever a constant is kept ('ident_info', the alias of an
+inlined argument, the constant of a 'let'):
 
 - typed: it has the rules of a variable of its 'own_type': a conversion
   ('i8(300)', 'i16(k)'), a constant argument of an inlined call,
@@ -593,9 +598,9 @@ does not: the narrowing rules compare it as 64 bits wide on every target
 parameter without a type are rejected on rv32i as on x86_64.
 
 Where it is used is a 'value_use': the width the value is computed at and
-whether its arithmetic is checked for overflow, made by 'toc::use_of' from a
-destination or by 'toc::use_at' for a value without one (a comparison side,
-an initializer, an argument). A destination carries the overflow policy
+whether its arithmetic is checked for overflow, made by 'compile_toc::use_of'
+from a destination or by 'toc::use_at' for a value without one (a comparison
+side, an initializer, an argument). A destination carries the overflow policy
 ('destination::as_wrapping' for the argument of a conversion). The value is
 wrapped to the width of its use; the unary ops apply by
 'unary_ops::evaluate_at', which rejects a negation of the minimum under the
@@ -1072,8 +1077,8 @@ generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
 func_instantiator::instantiate_func,  the instance of a generic function, the
   instantiate_methods                 methods of a type instance
   (stmt_def_func.hpp)
-generic_reparse, toc::generic_scope   the text parsed again with each
-  (toc.hpp)                           parameter naming its argument
+generic_reparse,                      the text parsed again with each
+  parse_toc::generic_scope (toc.hpp)  parameter naming its argument
 generic_trace (generics.hpp)          the instances that led to an error
 ```
 
@@ -1264,7 +1269,8 @@ statements that are not reached (1.5.1); a function without a result has no
 bytes to assign. A variable is set
 where it is declared, so the one local that can be read unset is the variable
 its own initializer names, e.g. 'var x = x + 1' ('stmt_def_var'). The compile
-tells which code is reached with the same join rules ('toc::path_merge').
+tells which code is reached with the same join rules
+('compile_toc::path_merge').
 
 Unlike the aliasing check, these checks need bytes, because they ask whether
 a read is inside what has been assigned:
@@ -1301,13 +1307,13 @@ the element is not known.
 ### 4.1 The call and its frame
 
 A noinline function has one body per set of array lengths of its array
-arguments, emitted after 'main' ('toc::add_noinline_body'), and its callers
-pass addresses, not values ('noinline_call' in 'stmt_call.hpp'):
+arguments, emitted after 'main' ('compile_toc::add_noinline_body'), and its
+callers pass addresses, not values ('noinline_call' in 'stmt_call.hpp'):
 
 ```text
 frame base +------------------------+
            | caller's storage       |
-frame      +------------------------+ <- 'toc::next_frame_address',
+frame      +------------------------+ <- 'compile_toc::next_frame_address',
 address    | result address         |    the callee's frame base
            | argument address       |    one slot per parameter
            +------------------------+
@@ -1399,7 +1405,7 @@ displacement.
 The versions are measured in machine instructions, a pseudo instruction
 counts as the ones it expands to. The shorter is kept, on ties the first; a
 caller passes first the version without an extra register where one of them
-has it ('toc::emit_most_efficient').
+has it ('compile_toc::emit_most_efficient').
 
 ### 5.2 Nested choices take the first
 
@@ -1436,8 +1442,8 @@ or the index in a 'let' avoids it.
 ### 5.3 State: each version starts from the same machine
 
 A version changes more than the lines it emits. 'machine::version_scope' and
-'toc::emit_most_efficient' save what it changes and put it back when the version
-ends, also when an error unwinds it; 1.4 lists it by owner. The routines
+'compile_toc::emit_most_efficient' save what it changes and put it back when the
+version ends, also when an error unwinds it; 1.4 lists it by owner. The routines
 marked used ('machine::mark_used') are a set of values like the registers held,
 so those of a dropped version or of discarded code are dropped.
 
@@ -1456,17 +1462,17 @@ registers in one version only. The error carries a kind other than 'source'
 second version holds the registers of the first and more, so only the second
 runs out alone; when the first runs out, its error is reported and the second
 is not compiled. Any other error is an error of the program and ends the
-compile. An error of discarded code is a 'source' error ('toc::dry_run'), so a
-version never drops it; the check of a body starts from the registers of a
-noinline body, which do not depend on the code around it, and skipped code
-from the registers held where it stands, as if it ran
-('machine::discarded_code').
+compile. An error of discarded code is a 'source' error
+('compile_toc::dry_run'), so a version never drops it; the check of a body
+starts from the registers of a noinline body, which do not depend on the code
+around it, and skipped code from the registers held where it stands, as if it
+ran ('machine::discarded_code').
 
 What a failed version entered must be left when its error unwinds:
 
 1. 'assembler::capture' drops the lines it captured
-2. the 'toc::scope_entry' of each scope an inlined body entered pops it and
-   its storage, back to the scopes of the caller
+2. the 'compile_toc::scope_entry' of each scope an inlined body entered pops it
+   and its storage, back to the scopes of the caller
 3. the rv32i state of an array copy or comparison is a local of the call
    ('machine_rv32i::bulk_operation'), which the unwinding drops
 
@@ -1629,12 +1635,12 @@ address folded into one register, whichever is shorter (5.1).
 
 ### 6.6 The bases
 
-A 'dat' is placed by the parse: 'toc::add_dat' gives it the next offset in
+A 'dat' is placed by the parse: 'parse_toc::add_dat' gives it the next offset in
 'data_table' and declares its name, so the dats are all placed when the
 parse ends and the variables start at a fixed point after them
 ('storage_layout::vars_start_bytes'), whatever the order of dats and
 variables in the source. The compile declares it again like a global
-('toc::add_var'), and 'program::emit_data_section' writes its bytes
+('compile_toc::add_var'), and 'program::emit_data_section' writes its bytes
 ('stmt_def_dat::compile_data').
 
 x86_64 addresses variables from 'rbp', which points at the data: the variables
@@ -1709,10 +1715,10 @@ of a generic call are deduced from its arguments, and an argument of a 'mut'
 parameter must be writable. The grammar uses the names too: 'point{' is an
 instance literal only when 'point' is a type, 'f<' a generic call only when 'f'
 is a generic function, 'T.at' a constructor only when 'T' names a type (1.2).
-So a statement parses in its constructor and declares names in 'toc' as it
-goes. It keeps every token with its whitespace and comments: the source is
-reproduced exactly ('--reproduce-source' checks it in every test) and quoted
-in the comments of the output.
+So a statement parses in its constructor and declares names through
+'parse_toc' as it goes. It keeps every token with its whitespace and comments:
+the source is reproduced exactly ('--reproduce-source' checks it in every test)
+and quoted in the comments of the output.
 
 Rejected: a tree built before the names are known, the checks of a call would
 move to a second walk over the tree; generic bodies are already kept as text
@@ -1780,35 +1786,44 @@ Cost:
 3. every function is checked without its calls like a noinline body, and an
    error that needs the arguments of a call ends that check (1.5)
 4. a statement compiles once per inlined call and per version, so its compile
-   must add the same to 'toc' each time (1.4), and a choice inside a version
-   takes the first (5.2)
+   must add the same to 'compile_toc' each time (1.4), and a choice inside a
+   version takes the first (5.2)
 5. an inlined body holds the registers of its caller (1.8), and the limits of
    inlined calls ('inline_call', e.g. 64 levels of an inlined recursion) depend
    on the caller
 
-### 7.6 'toc' is one facade over the tables
+### 7.6 'toc' is one facade over the tables, typed by phase
 
-Every statement receives 'toc', which owns the scopes, the types, the
-functions, the generics, the data and the storage layout. A method of 'toc'
-changes state or combines tables, a question to one table goes through its
-const accessor, e.g. 'tc.scopes().lookup(name)'. A table without an accessor
-is asked through 'toc': 'where' and 'source_of' (the source locations),
-'current_definition' (the definition order), and the two answers of
-'ident_resolver', 'resolve_declared' and 'storage_of'.
+Every statement receives a context over 'toc_tables', which owns the scopes,
+the types, the functions, the generics, the data and the storage layout. A
+method of a context changes state or combines tables, a question to one table
+goes through its const accessor, e.g. 'tc.scopes().lookup(name)'. A table
+without an accessor is asked through the context: 'where' and 'source_of'
+(the source locations), 'current_definition' (the definition order), and the
+two answers of 'ident_resolver', 'resolve_declared' and 'storage_of'.
 
-'toc' is also the compile context: it carries the machine and whether the
-program is being parsed or compiled, and whether a dry run is active. A
-statement compiles with the names and the machine together, e.g. a variable
-resolves to an operand that the machine then uses, and the mode decides what a
-declaration does, e.g. the parse declares names without storage; one parameter
-keeps them consistent.
+The phase is the type of the context: the parse-time constructors take a
+'parse_toc', which declares names without storage, adds definitions and
+parses generic instances; 'statement::compile' takes a 'compile_toc', which
+carries the indent of the listing, the reachability, the dry runs, the
+versions and the noinline bodies, places the declarations and comments them;
+what both phases run, e.g. 'fold' or the declarations of a function body,
+takes their base 'toc', whose 'add_var' and 'add_const' each context
+implements. 'program' makes the 'parse_toc' for the parse and the
+'compile_toc' after it, so a compile-only method called by the parse, or the
+other way around, does not build. A statement compiles with the names and the
+machine together, e.g. a variable resolves to an operand that the machine then
+uses; one parameter keeps them consistent.
 
 Rejected: passing the tables one by one, every signature would carry the
-ones its callees need.
+ones its callees need; one context with a run-time phase, each method of one
+phase asserted it at run time and a declaration branched on it.
 
-Cost: 'toc.hpp' holds about 4k lines and 'toc' about 66 public methods,
-grouped by the map above the class; a node can reach every table through
-it.
+Cost: 'toc.hpp' holds about 4k lines; 'toc' has 19 public methods,
+'parse_toc' and 'compile_toc' 26 each, grouped by the maps above the
+classes; a node can reach every table through its context. A function
+that both phases run takes the base, so it cannot ask for what only one phase
+has, e.g. the listing indent.
 
 ### 7.7 One translation unit
 

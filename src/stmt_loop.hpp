@@ -14,7 +14,7 @@ class stmt_loop final : public statement {
     stmt_block code_;
 
   public:
-    stmt_loop(toc& tc, const token& src_loc_tk, tokenizer& tz)
+    stmt_loop(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk}, code_{parse_code(tc, tz)} {}
 
     //
@@ -26,7 +26,7 @@ class stmt_loop final : public statement {
         code_.source_to(os);
     }
 
-    auto compile(toc& tc, [[maybe_unused]] const destination& dst) const
+    auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
         machine& x{tc.machine()};
@@ -36,7 +36,7 @@ class stmt_loop final : public statement {
         const std::string label{tc.create_unique_label(tok(), "loop")};
         x.label(tc.indent(), label);
 
-        const toc::scope_entry loop{
+        const compile_toc::scope_entry loop{
             tc,
             scope::loop(label, loop_end::at_break, label),
         };
@@ -44,7 +44,7 @@ class stmt_loop final : public statement {
         code_.compile(tc, destination{});
 
         x.branch(tc.indent(), label);
-        x.label(tc.indent(), toc::end_label(label));
+        x.label(tc.indent(), compile_toc::end_label(label));
 
         // the end is reached only by a 'break' that is compiled, the parse
         // rejects code after a loop without one
@@ -62,8 +62,10 @@ class stmt_loop final : public statement {
 
     // the block parses in the scope of the loop, where 'break' and
     // 'continue' find it; the labels are made at the compile
-    [[nodiscard]] static auto parse_code(toc& tc, tokenizer& tz) -> stmt_block {
-        const toc::scope_entry loop{
+    [[nodiscard]] static auto parse_code(parse_toc& tc, tokenizer& tz)
+        -> stmt_block {
+
+        const parse_toc::scope_entry loop{
             tc,
             scope::loop({}, loop_end::at_break, {}),
         };

@@ -1699,8 +1699,8 @@ class assembler_rv32i final : public assembler {
         case 4:
             return ".word";
 
-            // note: 'toc::get_type_or_throw' rejects a type wider than the
-            //       default type
+            // note: 'parse_toc::get_type_or_throw' rejects a type wider
+            //       than the default type
 
         default:
             std::unreachable();

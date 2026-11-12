@@ -46,7 +46,7 @@ class stmt_array_size final : public statement {
 
   public:
     // 'open_bracket_tk' is the '[' read before
-    stmt_array_size(toc& tc, tokenizer& tz, const token& open_bracket_tk);
+    stmt_array_size(parse_toc& tc, tokenizer& tz, const token& open_bracket_tk);
 
     stmt_array_size(stmt_array_size&&) noexcept;
 
@@ -90,7 +90,7 @@ class stmt_array_size final : public statement {
     [[nodiscard]] auto fold_size(const toc& tc) const -> std::optional<int64_t>;
 
     // the size between the brackets, e.g. the '4' of 'i8[4]'
-    auto parse_value(toc& tc, tokenizer& tz) -> void;
+    auto parse_value(parse_toc& tc, tokenizer& tz) -> void;
 
     //
     // statics
@@ -98,7 +98,7 @@ class stmt_array_size final : public statement {
 
     // a type alone is no size, e.g. the 'int' of 'i8[int]' or of
     // 'i8[int{2}]', not of the conversion 'i8[int(2)]'
-    static auto assert_size_not_type(const toc& tc, const tokenizer& tz)
+    static auto assert_size_not_type(const parse_toc& tc, const tokenizer& tz)
         -> void;
 };
 
@@ -169,7 +169,7 @@ class expr_any final : public statement {
     // a single value, or an array when 'destination' is one; where 'typing' is
     // 'written' a type or array may be written without '{}', e.g. 'var p =
     // point' and 'var a = i8[4]'
-    expr_any(toc& tc, tokenizer& tz, const type& tp,
+    expr_any(parse_toc& tc, tokenizer& tz, const type& tp,
              const literal_typing typing, const array_shape destination = {})
         : statement{tz.next_whitespace_token()}, destination_{destination},
           form_{parse_form(tc, tz, tp, typing)} {
@@ -222,7 +222,8 @@ class expr_any final : public statement {
         token::source_to(os, list->close_brace_tk);
     }
 
-    auto compile(toc& tc, const destination& dst) const -> void override {
+    auto compile(compile_toc& tc, const destination& dst) const
+        -> void override {
 
         // note: an array literal is written by its assignment or definition
         //       ('plan_writes'), the parse rejects one as an argument
@@ -337,7 +338,7 @@ class expr_any final : public statement {
     // elements after it are checked like skipped code, e.g. the 'a / 0 == 1'
     // of 'true or a / 0 == 1'; every condition of the value is, also in the
     // elements of a list and in the fields of an instance literal
-    auto check_folded_conditions(toc& tc) const -> void {
+    auto check_folded_conditions(compile_toc& tc) const -> void {
         for (size_t i{}; i < element_count(); ++i) {
             check_folded_conditions_of(tc, value_at(i));
         }
@@ -347,7 +348,8 @@ class expr_any final : public statement {
     // expression and returns the constant, e.g. 'ix + 1' compiles 'ix' and
     // returns 1, empty when nothing was compiled
     [[nodiscard]] auto
-    compile_without_trailing_addend(toc& tc, const destination& dst) const
+    compile_without_trailing_addend(compile_toc& tc,
+                                    const destination& dst) const
         -> std::optional<int64_t> {
 
         // note: only an index expression asks, it is never an array and has
@@ -517,7 +519,8 @@ class expr_any final : public statement {
 
     // the form of an array destination: a string, an element list or a whole
     // array copied, e.g. '"hi"', 'i8[]{1, 2}' or the 'a' of 'var b = a'
-    [[nodiscard]] auto parse_array_form(toc& tc, tokenizer& tz, const type& tp,
+    [[nodiscard]] auto parse_array_form(parse_toc& tc, tokenizer& tz,
+                                        const type& tp,
                                         const literal_typing typing)
         -> form_variant {
 
@@ -586,7 +589,7 @@ class expr_any final : public statement {
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
     // the default type; none when the destination gives both
-    [[nodiscard]] auto parse_array_prefix(toc& tc, tokenizer& tz,
+    [[nodiscard]] auto parse_array_prefix(parse_toc& tc, tokenizer& tz,
                                           const type& tp,
                                           const literal_typing typing)
         -> std::optional<array_prefix> {
@@ -652,7 +655,7 @@ class expr_any final : public statement {
 
     // the form 'destination_' calls for
     // note: called by the constructor after 'destination_' is made
-    [[nodiscard]] auto parse_form(toc& tc, tokenizer& tz, const type& tp,
+    [[nodiscard]] auto parse_form(parse_toc& tc, tokenizer& tz, const type& tp,
                                   const literal_typing typing) -> form_variant {
 
         // the basic case, e.g. 'x + 1' or 'point{1, 2}'
@@ -839,7 +842,7 @@ class expr_any final : public statement {
 
     // a record or array literal where the built-in 'tp' is expected, also
     // one reached into, e.g. 'pt{1, 2}.x'
-    static auto assert_not_aggregate(const toc& tc, const tokenizer& tz,
+    static auto assert_not_aggregate(const parse_toc& tc, const tokenizer& tz,
                                      const type& tp, const token& tk) -> void {
 
         // a user type or an instance literal, e.g. 'x = point' or
@@ -934,7 +937,7 @@ class expr_any final : public statement {
 
     // a built-in value whose only element is parsed, e.g. the zero value of
     // 'i8', 'bool' or '{}'
-    [[nodiscard]] static auto builtin_value(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto builtin_value(parse_toc& tc, tokenizer& tz,
                                             std::unique_ptr<statement> first)
         -> expr_variant {
 
@@ -945,8 +948,8 @@ class expr_any final : public statement {
     }
 
     // compiled as a branch condition, which needs no register for its value
-    static auto check_folded_condition(toc& tc, const expr_bool& condition)
-        -> void {
+    static auto check_folded_condition(compile_toc& tc,
+                                       const expr_bool& condition) -> void {
 
         tc.check_skipped([&] -> void {
             // note: two targets as an 'if', the same one for both would store
@@ -956,7 +959,7 @@ class expr_any final : public statement {
                 tc.create_unique_label(condition.tok(), "bool"),
             };
 
-            const std::string false_label{toc::end_label(true_label)};
+            const std::string false_label{compile_toc::end_label(true_label)};
 
             std::ignore = condition.compile_branches(tc,
                                                      {
@@ -972,8 +975,8 @@ class expr_any final : public statement {
         });
     }
 
-    static auto check_folded_conditions_of(toc& tc, const expr_variant& value)
-        -> void {
+    static auto check_folded_conditions_of(compile_toc& tc,
+                                           const expr_variant& value) -> void {
 
         if (const expr_bool* const condition{std::get_if<expr_bool>(&value)}) {
             check_folded_condition(tc, *condition);
@@ -1038,7 +1041,7 @@ class expr_any final : public statement {
 
     // a number, or a generic call that takes the type of a 'bool'
     // destination
-    [[nodiscard]] static auto parse_arith_value(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_arith_value(parse_toc& tc, tokenizer& tz,
                                                 const type& tp,
                                                 const literal_typing typing)
         -> expr_arith {
@@ -1061,7 +1064,8 @@ class expr_any final : public statement {
 
     // the elements between the braces, e.g. '1, 2, 3' of '{1, 2, 3}'; a list
     // of a known length ends when it is full
-    static auto parse_braced_elements(toc& tc, tokenizer& tz, const type& tp,
+    static auto parse_braced_elements(parse_toc& tc, tokenizer& tz,
+                                      const type& tp,
                                       const std::optional<size_t> length,
                                       element_list& list) -> void {
 
@@ -1101,7 +1105,7 @@ class expr_any final : public statement {
     }
 
     // a condition, e.g. 'a < b and c'; one 'bool' operand alone is a value
-    [[nodiscard]] static auto parse_condition(toc& tc, tokenizer& tz)
+    [[nodiscard]] static auto parse_condition(parse_toc& tc, tokenizer& tz)
         -> expr_variant {
 
         expr_bool value{tc, tz.next_whitespace_token(), tz};
@@ -1121,20 +1125,20 @@ class expr_any final : public statement {
     // an instance of the user type 'tp': a literal, the type name alone as
     // its zero value, a copy of a path or the result of a call; defined in
     // 'expr_type_impl.hpp', which includes 'stmt_call.hpp'
-    [[nodiscard]] static auto parse_instance(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_instance(parse_toc& tc, tokenizer& tz,
                                              const type& tp,
                                              const literal_typing typing)
         -> expr_variant;
 
     // the copy or the call at 'tk', a term of kind 'tm' that is no literal
     [[nodiscard]] static auto
-    parse_instance_source(toc& tc, tokenizer& tz, const token& tk,
+    parse_instance_source(parse_toc& tc, tokenizer& tz, const token& tk,
                           const term_kind tm, const type& tp) -> expr_variant;
 
     // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is
     // 'var b = false'
     [[nodiscard]] static auto
-    parse_type_as_zero(toc& tc, tokenizer& tz, const type& tp,
+    parse_type_as_zero(parse_toc& tc, tokenizer& tz, const type& tp,
                        const literal_typing typing, const token& tk)
         -> expr_variant {
 
@@ -1159,7 +1163,7 @@ class expr_any final : public statement {
 
     // the value of one element at the type 'tp': an instance, a zero value,
     // a number, or a condition where 'tp' is a 'bool'
-    [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_variant(parse_toc& tc, tokenizer& tz,
                                             const type& tp,
                                             const literal_typing typing)
         -> expr_variant {
@@ -1198,7 +1202,7 @@ class expr_any final : public statement {
     }
 
     // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'
-    [[nodiscard]] static auto parse_zero_braces(toc& tc, tokenizer& tz,
+    [[nodiscard]] static auto parse_zero_braces(parse_toc& tc, tokenizer& tz,
                                                 const type& tp,
                                                 const token& open_brace_tk)
         -> expr_variant {
@@ -1254,7 +1258,7 @@ class expr_any final : public statement {
     }
 };
 
-inline stmt_array_size::stmt_array_size(toc& tc, tokenizer& tz,
+inline stmt_array_size::stmt_array_size(parse_toc& tc, tokenizer& tz,
                                         const token& open_bracket_tk)
     : statement{tz.next_whitespace_token()}, open_bracket_tk_{open_bracket_tk} {
 
@@ -1313,7 +1317,7 @@ inline auto stmt_array_size::fold_size(const toc& tc) const
 // the size is a constant; it is parsed like an index, but it counts storage
 // and is no value of the program, so it folds at 'i64' on every target, e.g.
 // 'dat d = i8[3000000000]' on rv32i, which the address range limits
-inline auto stmt_array_size::parse_value(toc& tc, tokenizer& tz) -> void {
+inline auto stmt_array_size::parse_value(parse_toc& tc, tokenizer& tz) -> void {
     assert_size_not_type(tc, tz);
 
     value_ = std::make_unique<expr_any>(tc, tz, tc.builtins().default_type(),
@@ -1335,7 +1339,7 @@ inline auto stmt_array_size::parse_value(toc& tc, tokenizer& tz) -> void {
     folded_ = *folded;
 }
 
-inline auto stmt_array_size::assert_size_not_type(const toc& tc,
+inline auto stmt_array_size::assert_size_not_type(const parse_toc& tc,
                                                   const tokenizer& tz) -> void {
 
     tokenizer probe{tz};
