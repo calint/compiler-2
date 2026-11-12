@@ -14,6 +14,9 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        'site.indent'), and the versions of 'emit_most_efficient' and the
        noinline bodies (indent 0) would need indent scopes in the backend:
        mutable backend state across versions; measure before deciding
+[ ] easy: (round 350) 'get_lea_operand' (5 files) returns the storage
+    operand itself when no address is computed, so no 'lea' happens; rename
+    it as one consistency topic, e.g. 'operand_of'
 [ ] easy: rv32i writes a zero 'dat' at full size into its image: 'dat
     values = i8[2147483648]' makes a 2 GiB '.bin' (round 347
     'fuzz-mutate.py' hit the 1 GiB file limit of 'fuzzlib'; it now writes
@@ -71,7 +74,7 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     result register before the named registers it then needs, so it blocks
     itself one live value before the real limit (the division of round 256
     WF is one case): x86_64 'if p == q' of records or 'arrays_equal' as a
-    condition ('resolve_memory_cmp' allocates the result before
+    condition ('compile_memory_comparison' allocates the result before
     'memory_equal' names 'rsi'/'rdi'; a branch needs no result register),
     the count of 'read'/'write' or a sector call used as an operand on both
     targets ('stmt_builtin_io::compile' gets 'dst' before 'call_target'

@@ -461,14 +461,14 @@ class stmt_identifier final : public statement {
     }
 
     auto compile(toc& tc, const destination& dst) const -> void override {
-        machine& x{tc.machine()};
-
         comment_source(tc);
 
         const ident_info src_info{make_scalar_ident_info(tc, *this)};
 
         // note: a list copies a constant itself
         assert(not src_info.is_const());
+
+        machine& x{tc.machine()};
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 

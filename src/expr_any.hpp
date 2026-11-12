@@ -514,6 +514,74 @@ class expr_any final : public statement {
                                *array_count, *src_len)};
     }
 
+    // the form of an array destination: a string, an element list or a whole
+    // array copied, e.g. '"hi"', 'i8[]{1, 2}' or the 'a' of 'var b = a'
+    [[nodiscard]] auto parse_array_form(toc& tc, tokenizer& tz, const type& tp,
+                                        const literal_typing typing)
+        -> form_variant {
+
+        // e.g. '"hello"' fills the start of an 'i8' array
+        if (tz.peek_char_after_whitespace() == '"') {
+            const token string_tk{tz.next_token()};
+
+            assert_string_fits(tc.builtins().i8(), string_tk, tp,
+                               destination_.length());
+
+            return string_array{
+                .string_tk{string_tk},
+            };
+        }
+
+        // an array is initialized by a '{ ... }' or by the name of an array,
+        // e.g. 'str.data'
+
+        std::optional<array_prefix> prefix{
+            parse_array_prefix(tc, tz, tp, typing),
+        };
+
+        const std::optional<token> open_brace_tk{tz.accept_char_token('{')};
+
+        // e.g. 'var a = i8[]', which lists nothing and gives no size
+        if (not open_brace_tk and prefix and not prefix->size.has_value()) {
+            throw compile_error{
+                prefix->size.close_bracket_tk(),
+                std::format("an array needs a constant size, e.g. '{}[4]'",
+                            prefix->element_type_tk
+                                ? prefix->element_type_tk->text()
+                                : "")};
+        }
+
+        if (not open_brace_tk and not prefix) {
+            // 'expr_path' copies the whole array as bytes, 'expr_arith' would
+            // read a single scalar
+            // e.g. 'var b = a' copies the array 'a'
+            return single_value{
+                .value{expr_path::parse_whole_array(tc, tz, tp)},
+            };
+        }
+
+        // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}', or none of 'var a =
+        // i8[4]'
+        element_list list{
+            .prefix{std::move(prefix)},
+            .open_brace_tk{open_brace_tk},
+            .elements{},
+            .delims_tk{},
+            .close_brace_tk{},
+        };
+
+        if (open_brace_tk) {
+            const std::optional<size_t> length{
+                destination_.length() ? destination_.length()
+                                      : written_size(list),
+            };
+
+            parse_braced_elements(tc, tz, tp, length, list);
+        }
+
+        return list;
+    }
+
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
     // the default type; none when the destination gives both
@@ -593,68 +661,7 @@ class expr_any final : public statement {
             };
         }
 
-        // array, e.g. 'i8[]{1, 2}' or 'a' of 'var b = a'
-
-        // e.g. '"hello"' fills the start of an 'i8' array
-        if (tz.peek_char_after_whitespace() == '"') {
-            const token string_tk{tz.next_token()};
-
-            assert_string_fits(tc.builtins().i8(), string_tk, tp,
-                               destination_.length());
-
-            return string_array{
-                .string_tk{string_tk},
-            };
-        }
-
-        // an array is initialized by a '{ ... }' or by the name of an array,
-        // e.g. 'str.data'
-
-        std::optional<array_prefix> prefix{
-            parse_array_prefix(tc, tz, tp, typing),
-        };
-
-        const std::optional<token> open_brace_tk{tz.accept_char_token('{')};
-
-        // e.g. 'var a = i8[]', which lists nothing and gives no size
-        if (not open_brace_tk and prefix and not prefix->size.has_value()) {
-            throw compile_error{
-                prefix->size.close_bracket_tk(),
-                std::format("an array needs a constant size, e.g. '{}[4]'",
-                            prefix->element_type_tk
-                                ? prefix->element_type_tk->text()
-                                : "")};
-        }
-
-        if (not open_brace_tk and not prefix) {
-            // 'expr_path' copies the whole array as bytes, 'expr_arith' would
-            // read a single scalar
-            // e.g. 'var b = a' copies the array 'a'
-            return single_value{
-                .value{expr_path::parse_whole_array(tc, tz, tp)},
-            };
-        }
-
-        // e.g. the '{1, 2, 3}' of 'var a = i8[]{1, 2, 3}', or none of 'var a =
-        // i8[4]'
-        element_list list{
-            .prefix{std::move(prefix)},
-            .open_brace_tk{open_brace_tk},
-            .elements{},
-            .delims_tk{},
-            .close_brace_tk{},
-        };
-
-        if (open_brace_tk) {
-            const std::optional<size_t> length{
-                destination_.length() ? destination_.length()
-                                      : written_size(list),
-            };
-
-            parse_braced_elements(tc, tz, tp, length, list);
-        }
-
-        return list;
+        return parse_array_form(tc, tz, tp, typing);
     }
 
     // an instance literal is written field by field, any other value at once
@@ -1097,6 +1104,24 @@ class expr_any final : public statement {
             });
     }
 
+    // a condition, e.g. 'a < b and c'; one 'bool' operand alone is a value
+    [[nodiscard]] static auto parse_condition(toc& tc, tokenizer& tz)
+        -> expr_variant {
+
+        expr_bool value{tc, tz.next_whitespace_token(), tz};
+
+        value.assert_boolean_operands();
+
+        // one operand is compiled like a value of another type, a name is
+        // passed where it is stored, e.g. the 'x' of 'f(x)' that a 'mut bool'
+        // parameter writes, a call binds its result to the destination
+        if (std::optional<expr_arith> operand{value.release_operand()}) {
+            return std::move(*operand);
+        }
+
+        return value;
+    }
+
     // e.g. 'var x = i8' is 'var x = i8(0)' and 'var b = bool' is
     // 'var b = false'
     [[nodiscard]] static auto
@@ -1123,6 +1148,8 @@ class expr_any final : public statement {
                              std::make_unique<expr_zero>(zero_type, tk));
     }
 
+    // the value of one element at the type 'tp': an instance, a zero value,
+    // a number, or a condition where 'tp' is a 'bool'
     [[nodiscard]] static auto parse_variant(toc& tc, tokenizer& tz,
                                             const type& tp,
                                             const literal_typing typing)
@@ -1158,18 +1185,7 @@ class expr_any final : public statement {
             return parse_arith_value(tc, tz, tp, typing);
         }
 
-        expr_bool value{tc, tz.next_whitespace_token(), tz};
-
-        value.assert_boolean_operands();
-
-        // one operand is compiled like a value of another type, a name is
-        // passed where it is stored, e.g. the 'x' of 'f(x)' that a 'mut bool'
-        // parameter writes, a call binds its result to the destination
-        if (std::optional<expr_arith> operand{value.release_operand()}) {
-            return std::move(*operand);
-        }
-
-        return value;
+        return parse_condition(tc, tz);
     }
 
     // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'

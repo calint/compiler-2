@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 350 (2026-11-12, readability walk of a newcomer:
+    'expr_bool', 'expr_arith', 'stmt_identifier', 'expr_any',
+    'stmt_def_func')
+    => done (2026-11-12): 'expr_bool::compile_rec' -> 'compile_list' with
+       a comment; 'expr_bool_op::resolve_cmp' -> 'compile_value_comparison',
+       'resolve_memory_cmp' -> 'compile_memory_comparison'; 'comment_label'
+       -> 'comment_prefix', its local 'label' -> 'prefix' (it sat next to
+       'x.label'); the false comment of 'left_operand' (a variable is
+       compared where it is stored, not in a register) reworded;
+       'expr_any::parse_form' split ('parse_array_form'), 'parse_variant'
+       commented and its condition tail named ('parse_condition');
+       'stmt_identifier::compile' takes the backend just before its use;
+       listings unchanged; left: the 6 parameters of 'compile_branch',
+       'func_result::read' (error order), 'classify_operands'
 [x] easy: round 349 (2026-11-12, open todo items that need no decision)
     => done (2026-11-12): the six items below; not attempted: 291 YD,
        285 XR, 265 WT, 253 VY, 241 VE, the nasm label of 4000 characters,

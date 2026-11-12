@@ -34,7 +34,7 @@
 //                            comparisons or parenthesized lists
 //
 // the compile of a list: 'compile' stores the value, 'compile_branches'
-// branches; both run 'compile_rec', which compiles the elements from the
+// branches; both run 'compile_list', which compiles the elements from the
 // first ('compile_elements_from'), each through 'compile_inner_element' or
 // 'compile_last_element', a comparison through 'expr_bool_op::compile_branch'
 // and a nested list through 'compile_with_label'
@@ -236,11 +236,11 @@ class expr_bool_op final : public statement {
             .branch_on_true{branch_on_true},
         };
 
-        const std::string label{comment_label(joined_by, inverted)};
+        const std::string prefix{comment_prefix(joined_by, inverted)};
 
         machine& x{tc.machine()};
 
-        x.comment({tok(), tc.indent()}, trimmed_source(*this, "?", label));
+        x.comment({tok(), tc.indent()}, trimmed_source(*this, "?", prefix));
 
         x.label(tc.indent(), tc.create_unique_label(tok(), "cmp"));
 
@@ -356,9 +356,11 @@ class expr_bool_op final : public statement {
         return true;
     }
 
-    // a shorthand is named since its source shows no comparison with 0
-    [[nodiscard]] auto comment_label(const connective joined_by,
-                                     const bool inverted) const -> std::string {
+    // the text before the source in the listing comment of the element; a
+    // shorthand is named since its source shows no comparison with 0
+    [[nodiscard]] auto comment_prefix(const connective joined_by,
+                                      const bool inverted) const
+        -> std::string {
 
         const std::string_view list_op{
             joined_by == connective::logical_or ? "or" : "and",
@@ -389,7 +391,7 @@ class expr_bool_op final : public statement {
         assert_not_written_later(tc, *this, "operand");
 
         if (cmp.is_memory) {
-            resolve_memory_cmp(tc, cmp, action);
+            compile_memory_comparison(tc, cmp, action);
             return;
         }
 
@@ -408,7 +410,7 @@ class expr_bool_op final : public statement {
         };
 
         if (not is_mirrored) {
-            resolve_cmp(tc, lhs, rhs, action);
+            compile_value_comparison(tc, lhs, rhs, action);
             return;
         }
 
@@ -418,7 +420,8 @@ class expr_bool_op final : public statement {
         const comparison_side& mirrored_lhs{rhs};
         const comparison_side& mirrored_rhs{lhs};
 
-        resolve_cmp(tc, mirrored_lhs, mirrored_rhs, mirrored_action);
+        compile_value_comparison(tc, mirrored_lhs, mirrored_rhs,
+                                 mirrored_action);
     }
 
     // a constant emits no comparison, only the short-circuit branch
@@ -443,97 +446,11 @@ class expr_bool_op final : public statement {
         return value;
     }
 
-    // the operand alone, compared with 0, when it does not fold
-    auto compile_shorthand(toc& tc,
-                           const machine::comparison_action& action) const
-        -> void {
-
-        // note: the parse rejected an operand that is not a 'bool'
-        //       ('assert_boolean_operands')
-
-        assert(lhs_.get_type().is_bool());
-
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, {tok(), tc.indent()}};
-
-        const comparison_side condition{side_of(tc, lhs_)};
-
-        const operand value{
-            truth_test_operand(tc, condition, action, held),
-        };
-
-        // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
-        // shorthand as '!= 0'
-        if (is_bool_copy(action)) {
-            x.copy_value({tok(), tc.indent()}, action.destination, value);
-            return;
-        }
-
-        x.compare_and_branch({tok(), tc.indent()}, value,
-                             operand::imm(0, tc.builtins().default_type()),
-                             action);
-    }
-
-    [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }
-
-    // a shorthand is a comparison with 0 by '!='
-    [[nodiscard]] auto operation() const -> comparison_operator {
-        return comparison_ ? comparison_->op : comparison_operator::not_equal;
-    }
-
-    // the operator and the right side after 'lhs_', none for a shorthand
-    // note: called by the constructor after 'lhs_' is made
-    [[nodiscard]] auto parse_comparison(toc& tc, tokenizer& tz) const
-        -> std::optional<comparison> {
-
-        const std::optional<comparison_operator> op{
-            comparison_of(tz.peek_operator()),
-        };
-
-        // without an operator the operand is the condition, e.g. 'if a {...}'
-        if (not op) {
-            assert_no_lone_operator_char(tz);
-            return std::nullopt;
-        }
-
-        const token op_tk{tz.seen_operator()};
-
-        comparison cmp{
-            .op_tk{op_tk},
-            .op{*op},
-            .rhs{tc, tz},
-            .is_memory{},
-        };
-
-        cmp.is_memory = classify_operands(tc, cmp);
-
-        // e.g. the first '<' of 'x < 1 < 2', comparisons do not chain
-        if (comparison_of(tz.peek_operator())) {
-            throw_condition_not_operand(op_tk, "a comparison");
-        }
-
-        return cmp;
-    }
-
-    auto resolve_cmp(toc& tc, const comparison_side& lhs,
-                     const comparison_side& rhs,
-                     const machine::comparison_action& action) const -> void {
-
-        machine& x{tc.machine()};
-
-        machine::held_registers held{x, {tok(), tc.indent()}};
-
-        const operand dst{left_operand(tc, lhs, held)};
-        const operand src{right_operand(tc, rhs, held)};
-
-        x.compare_and_branch({tok(), tc.indent()}, dst, src, action);
-    }
-
     // the bytes are compared and the result is branched on as for a shorthand
     // condition
-    auto resolve_memory_cmp(toc& tc, const comparison& cmp,
-                            const machine::comparison_action& action) const
+    auto
+    compile_memory_comparison(toc& tc, const comparison& cmp,
+                              const machine::comparison_action& action) const
         -> void {
 
         // note: both sides are places ('is_memory_operand'), so both have a
@@ -580,6 +497,94 @@ class expr_bool_op final : public statement {
         if (not is_stored) {
             x.free_scratch_register({tok(), tc.indent()}, result);
         }
+    }
+
+    // the operand alone, compared with 0, when it does not fold
+    auto compile_shorthand(toc& tc,
+                           const machine::comparison_action& action) const
+        -> void {
+
+        // note: the parse rejected an operand that is not a 'bool'
+        //       ('assert_boolean_operands')
+
+        assert(lhs_.get_type().is_bool());
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, {tok(), tc.indent()}};
+
+        const comparison_side condition{side_of(tc, lhs_)};
+
+        const operand value{
+            truth_test_operand(tc, condition, action, held),
+        };
+
+        // a 'bool' already holds 0 or 1, a copy is shorter than evaluating the
+        // shorthand as '!= 0'
+        if (is_bool_copy(action)) {
+            x.copy_value({tok(), tc.indent()}, action.destination, value);
+            return;
+        }
+
+        x.compare_and_branch({tok(), tc.indent()}, value,
+                             operand::imm(0, tc.builtins().default_type()),
+                             action);
+    }
+
+    // the sides compared as numbers, an immediate only as 'rhs'
+    auto compile_value_comparison(
+        toc& tc, const comparison_side& lhs, const comparison_side& rhs,
+        const machine::comparison_action& action) const -> void {
+
+        machine& x{tc.machine()};
+
+        machine::held_registers held{x, {tok(), tc.indent()}};
+
+        const operand dst{left_operand(tc, lhs, held)};
+        const operand src{right_operand(tc, rhs, held)};
+
+        x.compare_and_branch({tok(), tc.indent()}, dst, src, action);
+    }
+
+    [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }
+
+    // a shorthand is a comparison with 0 by '!='
+    [[nodiscard]] auto operation() const -> comparison_operator {
+        return comparison_ ? comparison_->op : comparison_operator::not_equal;
+    }
+
+    // the operator and the right side after 'lhs_', none for a shorthand
+    // note: called by the constructor after 'lhs_' is made
+    [[nodiscard]] auto parse_comparison(toc& tc, tokenizer& tz) const
+        -> std::optional<comparison> {
+
+        const std::optional<comparison_operator> op{
+            comparison_of(tz.peek_operator()),
+        };
+
+        // without an operator the operand is the condition, e.g. 'if a {...}'
+        if (not op) {
+            assert_no_lone_operator_char(tz);
+            return std::nullopt;
+        }
+
+        const token op_tk{tz.seen_operator()};
+
+        comparison cmp{
+            .op_tk{op_tk},
+            .op{*op},
+            .rhs{tc, tz},
+            .is_memory{},
+        };
+
+        cmp.is_memory = classify_operands(tc, cmp);
+
+        // e.g. the first '<' of 'x < 1 < 2', comparisons do not chain
+        if (comparison_of(tz.peek_operator())) {
+            throw_condition_not_operand(op_tk, "a comparison");
+        }
+
+        return cmp;
     }
 
     //
@@ -863,8 +868,9 @@ class expr_bool_op final : public statement {
                            not stored->info.type_ref().is_builtin());
     }
 
-    // the comparison needs its left operand in a register; a constant left
-    // side was mirrored onto the right unless it is typed and does not fit it
+    // the left operand is no immediate: a variable where it is stored, else a
+    // scratch register; a constant left side was mirrored onto the right
+    // unless it is typed and does not fit it
     [[nodiscard]] static auto left_operand(toc& tc, const comparison_side& side,
                                            machine::held_registers& held)
         -> operand {
@@ -1125,7 +1131,7 @@ class expr_bool final : public statement {
                                         const operand& dst) const
         -> std::optional<bool> {
 
-        return compile_rec(tc, targets, false, dst);
+        return compile_list(tc, targets, false, dst);
     }
 
     // the value the parse can tell, the part of what 'compile' finds that
@@ -1359,9 +1365,11 @@ class expr_bool final : public statement {
         return std::nullopt;
     }
 
-    [[nodiscard]] auto compile_rec(toc& tc, const branch_targets& targets,
-                                   const bool outer_inverted,
-                                   const operand& dst) const
+    // the source comment, then the elements, inverted by the enclosing lists
+    // ('outer_inverted') and by the list's own 'not's
+    [[nodiscard]] auto compile_list(toc& tc, const branch_targets& targets,
+                                    const bool outer_inverted,
+                                    const operand& dst) const
         -> std::optional<bool> {
 
         // the element of a list that is only that element comments the same
@@ -1417,7 +1425,7 @@ class expr_bool final : public statement {
 
         x.label(tc.indent(), tc.create_unique_label(tok(), "cmp"));
 
-        return compile_rec(tc, targets, outer_inverted, dst);
+        return compile_list(tc, targets, outer_inverted, dst);
     }
 
     // true when a 'not' leads the list
