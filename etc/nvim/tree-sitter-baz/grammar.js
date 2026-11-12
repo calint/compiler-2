@@ -372,9 +372,9 @@ module.exports = grammar({
       field('right', $._expression),
     )),
 
-    and_expression: $ => prec.left(7, seq(
+    comparison_expression: $ => prec.left(9, seq(
       field('left', $._expression),
-      field('operator', $.and_keyword),
+      field('operator', $.comparison_operator),
       field('right', $._expression),
     )),
 
@@ -383,15 +383,15 @@ module.exports = grammar({
       field('operand', $._expression),
     )),
 
-    or_expression: $ => prec.left(6, seq(
+    and_expression: $ => prec.left(7, seq(
       field('left', $._expression),
-      field('operator', $.or_keyword),
+      field('operator', $.and_keyword),
       field('right', $._expression),
     )),
 
-    comparison_expression: $ => prec.left(9, seq(
+    or_expression: $ => prec.left(6, seq(
       field('left', $._expression),
-      field('operator', $.comparison_operator),
+      field('operator', $.or_keyword),
       field('right', $._expression),
     )),
 
@@ -469,7 +469,6 @@ module.exports = grammar({
     // List of expressions used for positional initialization
     initializer_list: $ => seq(sep1($._expression, ','), optional(',')),
 
-
     // -------------------------------------------------------------------------
     // 7. TOKENS & KEYWORDS
     // -------------------------------------------------------------------------
@@ -485,8 +484,8 @@ module.exports = grammar({
 
     // Literal definitions
     boolean_literal: $ => choice(
-        'true',
-        'false',
+      'true',
+      'false',
     ),
 
     // immediate tokens keep '#' and whitespace inside the string instead of
@@ -500,10 +499,11 @@ module.exports = grammar({
       token.immediate('"'),
     ),
 
-    // a backslash at the end of a line continues the string
+    // a backslash at the end of a line continues the string, also before a
+    // crlf line end
     escape_sequence: $ => token.immediate(seq(
       '\\',
-      choice(/x[0-9a-fA-F]{2}/, /[^x]/),
+      choice(/x[0-9a-fA-F]{2}/, /\r\n/, /[^x]/),
     )),
 
     number_literal: $ => choice(

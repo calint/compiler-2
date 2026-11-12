@@ -102,6 +102,21 @@
 (generic_alias generic_type: (identifier) @type)
 
 (function_call function: (identifier) @function.call)
+
+; the built-in functions of 'reserved_names::builtin_functions' in
+; src/token.hpp, a method of the same name is not one
+(function_call
+  !receiver
+  function: (identifier) @function.builtin
+  (#any-of? @function.builtin
+    "array_copy" "array_length" "arrays_equal" "read" "write" "sector_read"
+    "sector_write" "exit"))
+
+; a conversion to a built-in type, e.g. 'i8(x)' or 'int(x)'
+(function_call
+  !receiver
+  function: (identifier) @type
+  (#any-of? @type "bool" "i8" "i16" "i32" "i64" "int"))
 (foo_statement array: (identifier) @variable)
 
 ; references to file level 'dat', 'var' and 'let', predicate in
@@ -145,4 +160,5 @@
 (additive_expression operator: ["+" "-"] @operator)
 (shift_expression operator: ["<<" ">>"] @operator)
 (bitwise_and_expression operator: ["&"] @operator)
+(bitwise_xor_expression operator: ["^"] @operator)
 (bitwise_or_expression operator: ["|"] @operator)

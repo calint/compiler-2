@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 386 (2026-11-12, the tree-sitter grammar against the
+    language: every accepted source parsed, the highlight queries against
+    'src/token.hpp')
+    => done (2026-11-12): 'escape_sequence' accepts a backslash before a
+       crlf line end as 'token::escape_at' does (2410.baz had an ERROR);
+       highlights: built-in functions are '@function.builtin' (calls
+       without a receiver), conversions like 'i8(x)' and 'int(x)' are
+       '@type', '^' is an operator; 'parse-sources.sh' no longer skips
+       0840.baz, which parses; 'grammar.js' lists the boolean operators
+       from tightest to loosest binding; 917 accepted sources parse, only
+       1575.baz (a raw NUL) has an ERROR on purpose; the installed parser
+       is updated by 'etc/nvim/tree-sitter-baz/make.sh'
 [x] easy: round 385 (2026-11-12, readability: the example application
     'roome' for a new user after the tutorial)
     => done (2026-11-12): in good shape (Baz code rules kept, lib, model,
