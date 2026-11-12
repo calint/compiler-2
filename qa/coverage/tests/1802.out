@@ -1,4 +1,4 @@
 
-1802.baz:4:5: data and variables of 9223372036854775790 B reach the 140737488355328 B that the target addresses
+1802.baz:4:5: data and variables use 9223372036854775790 B, which reaches the 140737488355328 B that the target addresses
 dat a = i8[9223372036854775790]
     ^

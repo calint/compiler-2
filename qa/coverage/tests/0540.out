@@ -1,5 +1,5 @@
 
-0540.baz:4:11: string size 3 overflows array size 2
+0540.baz:4:11: string of 3 bytes is too long for array of size 2
     dst = "abc"
           ^~~~~
 0540.baz:9:5: called from

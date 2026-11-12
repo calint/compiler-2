@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 376 (2026-11-12, readability: error message wording, one
+    message per rule and the house style: problem first, then the fix
+    after a comma, no ':' or ';', clashes say "is also the name of ...,
+    use another name")
+    => done (2026-11-12): a negative constant index always says "index -1
+       is negative" (it said "out of bounds for array 'a' of size 4" when
+       the size was known); "data and variables use N B, which reaches ..."
+       as rv32i says it; "register X holds a value computed at L and is
+       needed here too, ..." (was "cannot allocate register X because it
+       holds a scratch value allocated at L"); "string of N bytes is too
+       long for array of size M"; "result 'x' is also the name of a
+       parameter, use another name"; 'foo' names the element 'e', the
+       index 'i' and the length 'n'; "'buf[1]' is not an array, pass the
+       array and the start as the 4th argument"; "swap the operands, write
+       ..."; "the size of array 's' is not known"; "the zero value of a
+       built-in type"; 9 messages, 40 expected files, 3 'test-cli.sh'
+       lines, the fuzz out-of-registers patterns; left: the terse
+       "expected ..." form (about 60 uses, a style of its own), "scratch
+       register" (documented to the user)
 [x] easy: round 375 (2026-11-12, bug hunt: noinline frames and the stack:
     '--checks=frame' and '--checks=stack' at their exact limits, frames near
     2 KiB, 4 KiB and 2 GiB, '--vars', '--stack' and '--memory' at their

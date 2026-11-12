@@ -265,7 +265,7 @@ def first_diagnostic(text):
 # a target limit or a difference of the default integer type is not a finding,
 # e.g. an index past the longest array of an unsized parameter ('of any size')
 EXPECTED_DIFFERENCE = re.compile(
-    r"overflows the type|scratch registers|cannot allocate register|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|a sector of [0-9]* elements|"
+    r"overflows the type|scratch registers|holds a value computed at|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|a sector of [0-9]* elements|"
     r"exceeds|capacity|memory|beyond|of any size")
 
 

@@ -401,8 +401,9 @@ class stmt_builtin_foo final : public statement {
 
         if (is_element_named) {
             throw compile_error{first_tk,
-                                "'foo' takes an array, e.g. 'foo arr {...}'; "
-                                "'e', 'i' and 'n' are given"};
+                                "'foo' takes an array, e.g. 'foo arr {...}', "
+                                "and names the element 'e', the index 'i' and "
+                                "the length 'n'"};
         }
 
         return stmt_identifier::parse_whole_array(tc, tz);

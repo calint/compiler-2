@@ -90,6 +90,11 @@ is_constant_index_in_bounds(const ident_info& array_info, const int64_t index,
     const ident_info& array_info, const token& index_tk,
     const std::string_view array_name, const int64_t index) -> void {
 
+    if (index < 0) {
+        throw compile_error{index_tk,
+                            std::format("index {} is negative", index)};
+    }
+
     const std::optional<size_t> array_len{array_info.array_len()};
 
     if (array_len) {
@@ -97,11 +102,6 @@ is_constant_index_in_bounds(const ident_info& array_info, const int64_t index,
             index_tk,
             std::format("index {} is out of bounds for array {} of size {}",
                         index, in_quotes(array_name), *array_len)};
-    }
-
-    if (index < 0) {
-        throw compile_error{index_tk,
-                            std::format("index {} is negative", index)};
     }
 
     throw compile_error{index_tk,

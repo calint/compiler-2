@@ -285,8 +285,9 @@ class initializer_declaration final {
 
         // e.g. an unsized array parameter
         if (info.is_length_unknown()) {
-            throw compile_error{tk, std::format("size of array {} is not known",
-                                                in_quotes(ident.path_text()))};
+            throw compile_error{tk,
+                                std::format("the size of array {} is not known",
+                                            in_quotes(ident.path_text()))};
         }
 
         shape_ = info.shape();

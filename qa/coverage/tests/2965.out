@@ -1,4 +1,4 @@
 
-2965.baz:7:13: 'k' of type 'i64' is wider than 'x' of type 'i32', swap the operands: 'k == x'
+2965.baz:7:13: 'k' of type 'i64' is wider than 'x' of type 'i32', swap the operands, write 'k == x'
     if x == k exit(1)
             ^

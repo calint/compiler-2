@@ -477,7 +477,7 @@ def test_sources():
 # the messages of running out of registers, a limit of the language and not a
 # defect ('compile_error::error_kind::out_of_registers')
 OUT_OF_REGISTERS = re.compile(
-    r"simplify the expression|holds a scratch value|runs out of registers")
+    r"simplify the expression|holds a value computed at|runs out of registers")
 
 
 def out_of_registers(text):

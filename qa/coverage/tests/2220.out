@@ -1,4 +1,4 @@
 
-2220.baz:5:9: 'foo' takes an array, e.g. 'foo arr {...}'; 'e', 'i' and 'n' are given
+2220.baz:5:9: 'foo' takes an array, e.g. 'foo arr {...}', and names the element 'e', the index 'i' and the length 'n'
     foo e in arr {
         ^

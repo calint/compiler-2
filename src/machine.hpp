@@ -2649,9 +2649,9 @@ class machine {
 
             return register_error(
                 src_loc_tk,
-                std::format("cannot allocate register {} because it holds a "
-                            "scratch value allocated at {}, compute a part of "
-                            "the expression with 'let' before it",
+                std::format("register {} holds a value computed at {} and is "
+                            "needed here too, compute a part of the "
+                            "expression with 'let' before it",
                             name, holder_location),
                 compile_error::error_kind::out_of_registers);
         }

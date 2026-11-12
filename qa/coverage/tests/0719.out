@@ -1,5 +1,5 @@
 
-0719.baz:17:49: cannot allocate register a1 because it holds a scratch value allocated at 16:45, compute a part of the expression with 'let' before it
+0719.baz:17:49: register a1 holds a value computed at 16:45 and is needed here too, compute a part of the expression with 'let' before it
                                                 write(1, a, 2)
                                                 ^~~~~
 

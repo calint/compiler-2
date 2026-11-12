@@ -1206,7 +1206,7 @@ class expr_any final : public statement {
 
         const token close_brace_tk{
             tz.expect_char_token(
-                '}', "expected '}', the zero value of a built-in is '{}'"),
+                '}', "expected '}', the zero value of a built-in type is '{}'"),
         };
 
         assert_zero_not_reached_into(tz);
@@ -1228,8 +1228,8 @@ class expr_any final : public statement {
                                                const size_t array_count)
         -> std::string {
 
-        return std::format("string size {} overflows array size {}", size_bytes,
-                           array_count);
+        return std::format("string of {} is too long for array of size {}",
+                           counted(size_bytes, "byte"), array_count);
     }
 
     // the parse checks a list of a known length when it is full

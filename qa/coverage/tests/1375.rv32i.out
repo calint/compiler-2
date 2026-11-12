@@ -1,4 +1,4 @@
 
-1375.baz:7:12: 'array_length(a)' of type 'int' is wider than 'e' of type 'i8', swap the operands: 'array_length(a) > e'
+1375.baz:7:12: 'array_length(a)' of type 'int' is wider than 'e' of type 'i8', swap the operands, write 'array_length(a) > e'
     if e < array_length(a) {
            ^

@@ -961,7 +961,7 @@ class expr_bool_op final : public statement {
         throw compile_error{
             rhs.tok(),
             std::format("{} of type {} is wider than {} of type {}, "
-                        "swap the operands: '{} {} {}'",
+                        "swap the operands, write '{} {} {}'",
                         in_quotes(trimmed_source(rhs)),
                         in_quotes(rhs_type.name()),
                         in_quotes(trimmed_source(lhs)),

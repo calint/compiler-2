@@ -1,4 +1,4 @@
 
-1920.baz:2:21: result 'a' is named like a parameter
+1920.baz:2:21: result 'a' is also the name of a parameter, use another name
 func f<T type>(a T) a { }
                     ^

@@ -123,7 +123,8 @@ class stmt_def_func_param final : public statement {
 
             throw compile_error{
                 result_name_tk,
-                std::format("result {} is named like a parameter",
+                std::format("result {} is also the name of a parameter, use "
+                            "another name",
                             in_quotes(result_name_tk.text())),
             };
         }

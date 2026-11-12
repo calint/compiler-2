@@ -1,4 +1,4 @@
 
-1241.baz:2:11: result 'x' is named like a parameter
+1241.baz:2:11: result 'x' is also the name of a parameter, use another name
 func f(x) x {
           ^

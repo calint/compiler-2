@@ -1,4 +1,4 @@
 
-0605.baz:4:13: size of array 's' is not known
+0605.baz:4:13: the size of array 's' is not known
     var c = s
             ^

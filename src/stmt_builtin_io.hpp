@@ -239,8 +239,9 @@ class stmt_builtin_io final : public statement {
         if (buffer.is_array_element()) {
             throw compile_error{
                 args_.at(buffer_index_).tok(),
-                std::format("pass the array and the start as {} argument, "
-                            "e.g. {}",
+                std::format("{} is not an array, pass the array and the "
+                            "start as the {} argument, e.g. {}",
+                            in_quotes(trimmed_source(buffer)),
                             io_.is_sector ? "3rd" : "4th",
                             in_quotes(usage_text()))};
         }

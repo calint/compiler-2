@@ -1,4 +1,4 @@
 
-0537.baz:5:11: string size 5 overflows array size 4
+0537.baz:5:11: string of 5 bytes is too long for array of size 4
     buf = "abcde"
           ^~~~~~~

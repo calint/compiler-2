@@ -642,17 +642,17 @@ CLI_ADDRESS_RANGE() {
         printf 'dat d = i8[0x100000000]\nfunc main() {\n    d[1] = 1\n}\n' \
             >gen-range.baz
         expect_exit_1 baz_at "$target" gen-range.baz >gen.s 2>err
-        grep -Fq "data and variables of 4294967296 B reach the 4294967296 B" err
+        grep -Fq "data and variables use 4294967296 B, which reaches the 4294967296 B" err
         # the variables take the whole '--vars' capacity after the dats
         printf 'dat big = i8[4294967000]\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
         expect_exit_1 baz_at "$target" gen-range.baz >gen.s 2>err
-        grep -Fq "gen-range.baz:1:5: data and variables of 4295032544 B reach" err
+        grep -Fq "gen-range.baz:1:5: data and variables use 4295032544 B, which reaches" err
     done
     # x86_64 too: each is below 2^47, their sum is not
     printf 'dat d = i8[0x7fff00000000]\nfunc main() {\n    exit(0)\n}\n' \
         >gen-range.baz
     expect_exit_1 "$BIN" --vars=0x7ffffffffff0 gen-range.baz >gen.s 2>err
-    grep -Fq "gen-range.baz:1:5: data and variables of 281470681743344 B reach" err
+    grep -Fq "gen-range.baz:1:5: data and variables use 281470681743344 B, which reaches" err
     rm -f gen-range.baz gen-rv32i.bin
     echo ok
 }

@@ -1587,8 +1587,8 @@ class storage_layout final {
 
         throw compile_error{
             src_loc_tk,
-            std::format("data and variables of {} B reach the {} B that the "
-                        "target addresses",
+            std::format("data and variables use {} B, which reaches the {} B "
+                        "that the target addresses",
                         total_bytes, max_bytes)};
     }
 

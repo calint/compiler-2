@@ -1,4 +1,4 @@
 
-0622.baz:5:18: expected '}', the zero value of a built-in is '{}'
+0622.baz:5:18: expected '}', the zero value of a built-in type is '{}'
 dat p = point{ { 1 }, 2 }
                  ^
