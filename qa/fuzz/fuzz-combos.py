@@ -1759,39 +1759,10 @@ def build(work, source, target, options, stdin):
     card = os.path.join(work, "sdcard.img")
     with open(card, "wb") as f:
         f.write(card_image())
-    options = list(options)
-    if target == "x86_64":
-        assembly = os.path.join(work, "f.s")
-        c = fl.compile_source(fl.COMPILER_ASAN, path,
-                              ["--target=x86_64"] + options, assembly)
-        if not (c.returncode or c.timed_out):
-            exe, problem = fl.assemble_x86(assembly, work)
-            if problem:
-                return problem[0], problem[1][:300]
-            o = fl.outcome_x86(fl.run([exe], fl.RUN_TIMEOUT, cwd=work,
-                                      stdin_bytes=stdin))
-    elif target == "rv32i":
-        assembly = os.path.join(work, "f.s")
-        image = os.path.join(work, "f-rv32i.bin")
-        c = fl.compile_source(fl.COMPILER_ASAN, path,
-                              ["--target=rv32i", "--bin=" + image] + options,
-                              assembly)
-        if not (c.returncode or c.timed_out):
-            exe, problem = fl.assemble_rv32i(assembly, image, work, "f")
-            if problem:
-                return problem[0], problem[1][:300]
-            o = fl.outcome_x86(fl.run([fl.QEMU_USER, exe], fl.RUN_TIMEOUT,
-                                      cwd=work, stdin_bytes=stdin))
-    else:
-        image = os.path.join(work, f"f-{target}.bin")
-        c = fl.compile_source(fl.COMPILER_ASAN, path,
-                              ["--target=" + target, "--bin=" + image] +
-                              options, os.devnull)
-        if not (c.returncode or c.timed_out):
-            command = fl.QEMU_SYSTEM + [image] if target == "rv32i-qemu" \
-                else [fl.EMULATOR, image, card]
-            o = fl.outcome_fpga(fl.run(command, fl.RUN_TIMEOUT, cwd=work,
-                                       stdin_bytes=stdin + b"\x04" * 64))
+    c, o, problem = fl.run_target(fl.COMPILER_ASAN, path, list(options), work,
+                                  target, stdin=stdin, cwd=work, sdcard=card)
+    if problem:
+        return problem[0], problem[1][:300]
     if c.timed_out:
         return ("compiler-hang", "")
     if c.returncode:

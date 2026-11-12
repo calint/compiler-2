@@ -25,6 +25,14 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     frames at every call frame), e.g. 'b.m' calling 'self.k(x)' with 'type
     b = buf<200>'; skipping a receiver frame equal to one already added
     would keep the different ones
+[p] easy: need approval: a new sourced file 'qa/coverage/targets.sh' with the
+    assemble, link and run steps of each target and the default case
+    options: the llvm-mc command is written 7 times across
+    'test-coverage.sh', 'test-far-jumps.sh', 'test-far-jumps-no-scratch.sh',
+    'test-cli.sh' and 'fuzzlib.py', the default options also in
+    'compare-listings.sh'; about 20 duplicated lines fewer (round 364)
+[ ] easy: (round 364) 'test-coverage.sh' has no way to run one case (about
+    30 s on x86_64 for all); e.g. 'ONLY=NNNN'
 [ ] easy: rv32i writes a zero 'dat' at full size into its image: 'dat
     values = i8[2147483648]' makes a 2 GiB '.bin' (round 347
     'fuzz-mutate.py' hit the 1 GiB file limit of 'fuzzlib'; it now writes

@@ -22,6 +22,7 @@ cd "$SCRIPT_DIR"
 
 BIN="$SCRIPT_DIR/../../baz"
 MACHINE=x86_64
+# the options of a case without its own, also in 'compare-listings.sh'
 OPTS="--vars=0x40000 --checks=upper,lower,line"
 # also with the options of a case: every source is reproduced exactly
 REPRODUCE="--reproduce-source"
@@ -78,7 +79,8 @@ fi
 QEMU_SYSTEM=(qemu-system-riscv32 -machine virt -bios none -display none
     -serial stdio -monitor none -kernel gen-rv32i.bin)
 
-# the image of the sector functions, see 'make_sdcard'
+# the emulator runs the image with the sd card image of the case, see
+# 'make_sdcard'
 FPGA_EMULATOR_DIR="$SCRIPT_DIR/../../fpga-emulator"
 FPGA_EMULATOR=("$FPGA_EMULATOR_DIR/osqa" gen-rv32i.bin sdcard.img)
 
@@ -92,7 +94,7 @@ clean)
     find tests -maxdepth 1 -regextype posix-extended -regex 'tests/[0-9]{4}(\.o|\.s)?' -delete
     rm -f -- baz.profdata baz-*.profdata profiles.txt
     rm -f -- tests/gen tests/gen.o tests/gen.s tests/gen-nopt.s tests/diff.baz tests/out tests/err
-    rm -f -- tests/gen-image.o tests/gen-image.elf tests/gen-image.bin tests/sdcard.img
+    rm -f -- tests/gen-image.elf tests/gen-image.bin tests/sdcard.img
     rm -rf -- report/
     echo removed reports
     echo $SEP
@@ -168,10 +170,11 @@ export ASAN_OPTIONS="fast_unwind_on_fatal=0:print_stacktrace=1:detect_stack_use_
 export ASAN_SYMBOLIZER_PATH="$(which llvm-symbolizer)"
 export ASAN_SYMBOLIZE=1
 
-# the built-in assembler must produce the bytes llvm assembles from 'gen.s'
-verify-rv32i-image() {
-    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen-image.o
-    ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o gen-image.elf gen-image.o
+# the built-in assembler must produce the bytes llvm assembles from 'gen.s',
+# the object 'gen.o'
+verify_rv32i_image() {
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
+    ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o gen-image.elf gen.o
     llvm-objcopy -O binary gen-image.elf gen-image.bin
     if ! cmp gen-image.bin gen-rv32i.bin; then
         echo "FAILED. image differs from assembled 'tests/gen.s'. see: llvm-objdump -d tests/gen-image.elf"
@@ -188,12 +191,11 @@ assemble_and_link() {
         ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
         ;;
     rv32i)
-        llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
+        verify_rv32i_image
         ld.lld -m elf32lriscv -e _start -o gen gen.o
-        verify-rv32i-image
         ;;
     # the compiler writes the image 'gen-rv32i.bin'
-    rv32i-qemu | rv32i-fpga) verify-rv32i-image ;;
+    rv32i-qemu | rv32i-fpga) verify_rv32i_image ;;
     esac
 }
 
@@ -240,31 +242,40 @@ execute_program_errors_to_out() {
     esac
 }
 
-# also makes the sd card image of the case, see 'make_sdcard'
-compile_and_build() {
-    if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE $VERSION_OPTS 2>err >gen.s; then
-        echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
+# compiles the case for the target '$2' with the other arguments to the listing
+# '$1', the messages to 'err'; a failed compile fails the case
+compile_case() {
+    local listing=$1
+    local target=$2
+    shift 2
+    if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$target" "${IMAGE_OPTS[@]}" "$@" 2>err >"$listing"; then
+        echo "compiler failed. see 'tests/err' and 'tests/$listing'" >&2
         exit 1
     fi
+}
+
+# also makes the sd card image of the case, see 'make_sdcard'
+compile_and_build() {
+    # shellcheck disable=SC2086 # the options are words
+    compile_case gen.s "$MACHINE" $OPTS $REPRODUCE $VERSION_OPTS
     assemble_and_link
     make_sdcard
 }
 
 # the compile fails with exit code 1, its message is in 'out'
 compile_expect_error() {
-    set +e
-    "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE >gen.s 2>out
-    local exit_code=$?
-    set -e
+    local exit_code=0
+    # shellcheck disable=SC2086 # the options are words
+    "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE >gen.s 2>out || exit_code=$?
     if [[ $exit_code -ne 1 ]]; then
         echo "FAILED. expected compiler exit 1 got $exit_code"
         exit 1
     fi
 }
 
+# 'UPDATE=1' writes the output as the expected output '$1', review the diff
 check_output() {
     local expected="$1"
-    # 'UPDATE=1' writes the output as the expected output, review the diff
     if [[ -n "${UPDATE:-}" ]]; then
         cp out "$expected"
         echo updated
@@ -276,26 +287,48 @@ check_output() {
     fi
 }
 
+# prints the first of the files that exists, else the last
+first_existing() {
+    local file
+    for file in "$@"; do
+        if [[ -e "$file" ]]; then
+            echo "$file"
+            return
+        fi
+    done
+    echo "$file"
+}
+
 # the expected output of a run: 'NNN.TARGET.out' for the target of the run,
 # else for the target of the compiler, e.g. 'NNN.rv32i.out' for rv32i-fpga,
 # else 'NNN.out'
-expected_output_file() {
-    if [[ -e "$SRC.$MACHINE.out" ]]; then
-        echo "$SRC.$MACHINE.out"
-    elif [[ -e "$SRC.$COMPILER_MACHINE.out" ]]; then
-        echo "$SRC.$COMPILER_MACHINE.out"
-    else
-        echo "$SRC.out"
+expected_run_output() {
+    first_existing "$SRC.$MACHINE.out" "$SRC.$COMPILER_MACHINE.out" "$SRC.out"
+}
+
+# the expected output of a compile: 'NNN.TARGET.out' for the target of the
+# compiler, else 'NNN.out'
+expected_compile_output() {
+    first_existing "$SRC.$COMPILER_MACHINE.out" "$SRC.out"
+}
+
+# fails the case when the exit code '$2' is not the expected '$1'
+expect_exit() {
+    local expected=$1
+    local exit_code=$2
+    if [[ $exit_code -ne $expected ]]; then
+        echo "FAILED. expected $expected got $exit_code"
+        exit 1
     fi
 }
 
-# a program judged by its output must exit 0
-expect_exit_zero() {
-    local exit_code=$1
-    if [[ $exit_code -ne 0 ]]; then
-        echo "FAILED. expected 0 got $exit_code"
-        exit 1
+# true after printing 'skipped' when a version other than the default is
+# compiled ('VERSIONS'), for a case that expects what the default compiles
+skipped_with_versions() {
+    if [[ -z "$VERSION_OPTS" ]]; then
+        return 1
     fi
+    echo skipped
 }
 
 # the sd card image 'sdcard.img' of the case, a sparse file of the size of the
@@ -306,38 +339,25 @@ make_sdcard() {
     truncate -s "${SDCARD:-0}" sdcard.img
 }
 
+# the helpers of the cases, see 'cases.sh'; a program judged by its output
+# must exit 0
+
 RUN() {
     echo -n "$SRC: "
     compile_and_build
-
-    set +e
-    execute_program 2>err
-    local exit_code=$?
-    set -e
-
-    if [ $exit_code -eq $EXP ]; then
-        echo ok
-    else
-        echo "FAILED. expected $EXP got $exit_code"
-        exit 1
-    fi
+    local exit_code=0
+    execute_program 2>err || exit_code=$?
+    expect_exit "$EXP" $exit_code
+    echo ok
 }
 
 RUN_ERR() {
     echo -n "$SRC: "
     compile_and_build
-
-    set +e
-    execute_program_errors_to_out
-    local exit_code=$?
-    set -e
-
-    if [ $exit_code -ne $EXP ]; then
-        echo "FAILED. expected $EXP got $exit_code"
-        exit 1
-    fi
-
-    check_output "$(expected_output_file)"
+    local exit_code=0
+    execute_program_errors_to_out || exit_code=$?
+    expect_exit "$EXP" $exit_code
+    check_output "$(expected_run_output)"
 }
 
 DIFF() {
@@ -345,8 +365,8 @@ DIFF() {
     compile_and_build
     local exit_code=0
     execute_program >out || exit_code=$?
-    expect_exit_zero $exit_code
-    check_output "$(expected_output_file)"
+    expect_exit 0 $exit_code
+    check_output "$(expected_run_output)"
 }
 
 DIFFINP() {
@@ -354,19 +374,18 @@ DIFFINP() {
     compile_and_build
     local exit_code=0
     execute_program <"$SRC.in" >out || exit_code=$?
-    expect_exit_zero $exit_code
-    check_output "$(expected_output_file)"
+    expect_exit 0 $exit_code
+    check_output "$(expected_run_output)"
 }
 
 DIFFINP2() {
     echo -n "$SRC: "
     compile_and_build
-
     program_command
     local exit_code=0
     "$SCRIPT_DIR/input-lines.py" "$SRC.in" "${PROGRAM_COMMAND[@]}" >out 2>err || exit_code=$?
-    expect_exit_zero $exit_code
-    check_output "$(expected_output_file)"
+    expect_exit 0 $exit_code
+    check_output "$(expected_run_output)"
 }
 
 # the script of the case runs the program with the command in
@@ -378,34 +397,23 @@ DIFFPY() {
     local exit_code=0
     MACHINE="$MACHINE" PROGRAM_COMMAND_LINES="$(printf '%s\n' "${PROGRAM_COMMAND[@]}")" \
         "./$SRC.py" >out || exit_code=$?
-    expect_exit_zero $exit_code
-    check_output "$(expected_output_file)"
+    expect_exit 0 $exit_code
+    check_output "$(expected_run_output)"
 }
 
 DIFFNOPT() {
     echo -n "$SRC: "
-    # the expected difference is that of the default version
-    if [[ -n "$VERSION_OPTS" ]]; then
-        echo skipped
+    if skipped_with_versions; then
         return
     fi
-    if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS --nopt 2>err >gen-nopt.s; then
-        echo "compiler failed. see 'tests/err' and 'tests/gen-nopt.s'" >&2
-        exit 1
-    fi
+    # shellcheck disable=SC2086 # the options are words
+    compile_case gen-nopt.s "$MACHINE" $OPTS --nopt
     compile_and_build
-
-    set +e
-    execute_program 2>err
-    local exit_code=$?
-    diff gen-nopt.s gen.s >out
-    set -e
-
-    if [ $exit_code -ne $EXP ]; then
-        echo "FAILED. expected $EXP got $exit_code"
-        exit 1
-    fi
-
+    local exit_code=0
+    execute_program 2>err || exit_code=$?
+    # 'diff' exits 1 when the listings differ, the expected case
+    diff gen-nopt.s gen.s >out || true
+    expect_exit "$EXP" $exit_code
     check_output "$SRC.$MACHINE.diff"
 }
 
@@ -415,9 +423,7 @@ DIFFNOPT() {
 LISTING() {
     echo -n "$SRC: "
     local expected="$SRC.$COMPILER_MACHINE.$1"
-    # the expected listing is that of the default version
-    if [[ -n "$VERSION_OPTS" ]]; then
-        echo skipped
+    if skipped_with_versions; then
         return
     fi
     # 'UPDATE=1' writes the first one
@@ -425,10 +431,7 @@ LISTING() {
         echo "FAILED. no expected listing 'tests/$expected'"
         exit 1
     fi
-    if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" "${IMAGE_OPTS[@]}" 2>err >gen.s; then
-        echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
-        exit 1
-    fi
+    compile_case gen.s "$COMPILER_MACHINE"
     if ! "$SCRIPT_DIR/listing.py" "$1" "$SRC.baz" "$COMPILER_MACHINE" <gen.s >out; then
         echo "FAILED. see: tests/out"
         exit 1
@@ -436,24 +439,19 @@ LISTING() {
     check_output "$expected"
 }
 
+# the program is not run, so the versions do not matter
 COMPERR() {
     echo -n "$SRC: "
-    # the program is not run
-    if [[ -n "$VERSION_OPTS" ]]; then
-        echo skipped
+    if skipped_with_versions; then
         return
     fi
     compile_expect_error
-    local expected="$SRC.$COMPILER_MACHINE.out"
-    if [[ ! -f "$expected" ]]; then
-        expected="$SRC.out"
-    fi
-    check_output "$expected"
+    check_output "$(expected_compile_output)"
 }
 
 source "$SCRIPT_DIR/cases.sh"
 
 rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err sdcard.img
-rm -f gen-image.o gen-image.elf gen-image.bin
+rm -f gen-image.elf gen-image.bin
 
 echo $SEP

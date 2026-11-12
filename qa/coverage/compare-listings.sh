@@ -30,6 +30,7 @@ done
 cd "$(dirname "$0")"
 
 TESTS=$(realpath tests)
+# the options of a case without its own, as in 'test-coverage.sh'
 DEFAULT_OPTIONS="--vars=0x40000 --checks=upper,lower,line"
 
 WORK=$(mktemp -d)

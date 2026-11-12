@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 364 (2026-11-12, design and readability of the test and
+    fuzz infrastructure)
+    => done (2026-11-12): 'test-coverage.sh' cases compile through
+       'compile_case', check exit codes with 'expect_exit', skip under
+       VERSIONS with 'skipped_with_versions' and pick expected files with
+       'first_existing' ('expected_run_output', 'expected_compile_output');
+       rv32i assembles 'gen.s' once for the program and the image check;
+       'fuzzlib.compile_source' is the one compile ('run_compiler' and
+       '_compile_source' removed, 'run' takes 'stdout_path'),
+       'outcome_limit' shared by 'outcome_x86' and 'outcome_fpga',
+       'run_target' takes 'cwd' and 'sdcard' and 'fuzz-combos.build' uses
+       it; 'make.sh' header and comment style; run logs of all four
+       targets identical, broken expected files still fail
 [x] easy: round 363 (2026-11-12, design: 'toc' split by phase)
     => done (2026-11-12): 'toc' was two objects selected by
        'is_compiling_' (25 parse-only and 18 compile-only asserts, 6

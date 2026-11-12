@@ -354,8 +354,8 @@ def fuzz_one(args):
                         findings.append(("diff-line", f"{bucket(x86)} vs {bucket(other)}",
                                          f"noub {x86}\nline {other}"))
 
-        r = fl.run_compiler(asan, ["--reproduce-source"] + options, path,
-                            cwd=work)
+        r = fl.compile_source(asan, path, ["--reproduce-source"] + options,
+                              cwd=work)
         if r.timed_out or r.signal in (signal.SIGKILL, signal.SIGXCPU):
             pass
         # the compiler compares the reproduced source itself

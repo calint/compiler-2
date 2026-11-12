@@ -137,10 +137,13 @@ def _limits(seconds, file_size=OUTPUT_LIMIT):
 
 
 def run(command, timeout, cwd=None, env=None,
-        file_size=OUTPUT_LIMIT, stdin_bytes=None):
+        file_size=OUTPUT_LIMIT, stdin_bytes=None, stdout_path=None):
     # output goes to files so that a program that prints without end cannot
-    # fill the memory, the size of a file is limited
-    with tempfile.TemporaryFile() as out, tempfile.TemporaryFile() as err, \
+    # fill the memory, the size of a file is limited; the standard output to
+    # 'stdout_path' when given, then the result has none
+    with (open(stdout_path, "wb") if stdout_path is not None
+          else tempfile.TemporaryFile()) as out, \
+            tempfile.TemporaryFile() as err, \
             tempfile.TemporaryFile() as given:
         if stdin_bytes is not None:
             given.write(stdin_bytes)
@@ -157,10 +160,13 @@ def run(command, timeout, cwd=None, env=None,
             process.kill()
             process.wait()
             timed_out = True
-        out.seek(0)
+        stdout = b""
+        if stdout_path is None:
+            out.seek(0)
+            stdout = out.read(OUTPUT_LIMIT)
         err.seek(0)
         return Result(process.returncode,
-                      out.read(OUTPUT_LIMIT),
+                      stdout,
                       err.read(OUTPUT_LIMIT).decode("utf-8", "replace"),
                       timed_out)
 
@@ -187,10 +193,13 @@ def assert_fresh(compiler):
 
 
 def compile_source(compiler, path, options, assembly_path=None, cwd=None):
-    # the assembler listing is written to 'assembly_path' when given
+    # runs the compiler on 'path' with the limits of a compile and notes a
+    # slow one; the listing is written to 'assembly_path' when given, else it
+    # is the standard output of the result
     assert_fresh(compiler)
     begin = time.time()
-    result = _compile_source(compiler, path, options, assembly_path, cwd)
+    result = run([compiler] + options + [path], COMPILE_TIMEOUT, cwd=cwd,
+                 file_size=1 << 30, stdout_path=assembly_path)
     if not result.timed_out:
         note_if_slow(begin, compiler, options, path)
     return result
@@ -200,18 +209,6 @@ def note_if_slow(begin, compiler, options, path):
     seconds = time.time() - begin
     if seconds > SLOW_COMPILE:
         note_slow(compiler, path, options, seconds)
-
-
-def run_compiler(compiler, options, path, cwd=None):
-    # runs the compiler on 'path' with all the limits for a compile and notes
-    # a slow one
-    assert_fresh(compiler)
-    begin = time.time()
-    result = run([compiler] + options + [path], COMPILE_TIMEOUT, cwd=cwd,
-                 file_size=1 << 30)
-    if not result.timed_out:
-        note_if_slow(begin, compiler, options, path)
-    return result
 
 
 def note_slow(compiler, path, options, seconds):
@@ -227,29 +224,6 @@ def note_slow(compiler, path, options, seconds):
         f"{seconds:.0f}s"
     if Findings().add("compiler-slow", key, source, detail):
         print(f"NEW compiler-slow: {detail}", flush=True)
-
-
-def _compile_source(compiler, path, options, assembly_path, cwd):
-    command = [compiler] + options + [path]
-    if assembly_path is None:
-        return run(command, COMPILE_TIMEOUT, cwd=cwd)
-    with open(assembly_path, "wb") as out:
-        with tempfile.TemporaryFile() as err:
-            process = subprocess.Popen(
-                command, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
-                cwd=cwd, env=ENVIRONMENT,
-                preexec_fn=_limits(COMPILE_TIMEOUT + 5, 1 << 30))
-            timed_out = False
-            try:
-                process.wait(timeout=COMPILE_TIMEOUT)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait()
-                timed_out = True
-            err.seek(0)
-            return Result(process.returncode, b"",
-                          err.read(OUTPUT_LIMIT).decode("utf-8", "replace"),
-                          timed_out)
 
 
 def assemble_x86(assembly, work, name="f"):
@@ -299,13 +273,19 @@ class Outcome:
         return f"{self.kind} {self.code} {len(self.stdout)}B {self.detail}"
 
 
-def outcome_x86(result):
-    if result.timed_out:
+def outcome_limit(result):
+    # the outcome of a program that a limit stopped, else None
+    if result.timed_out or result.signal in (signal.SIGKILL, signal.SIGXCPU):
         return Outcome("timeout", None, b"")
     if result.signal == signal.SIGXFSZ:
         return Outcome("output-limit", None, b"")
-    if result.signal in (signal.SIGKILL, signal.SIGXCPU):
-        return Outcome("timeout", None, b"")
+    return None
+
+
+def outcome_x86(result):
+    limit = outcome_limit(result)
+    if limit:
+        return limit
     if result.signal:
         return Outcome("signal", result.signal, result.stdout,
                        signal.Signals(result.signal).name)
@@ -318,12 +298,9 @@ def outcome_x86(result):
 
 
 def outcome_fpga(result):
-    if result.timed_out:
-        return Outcome("timeout", None, b"")
-    if result.signal == signal.SIGXFSZ:
-        return Outcome("output-limit", None, b"")
-    if result.signal in (signal.SIGKILL, signal.SIGXCPU):
-        return Outcome("timeout", None, b"")
+    limit = outcome_limit(result)
+    if limit:
+        return limit
     if result.signal:
         return Outcome("emulator-signal", result.signal, result.stdout,
                        signal.Signals(result.signal).name)
@@ -377,7 +354,7 @@ def assemble_rv32i(assembly, image, work, name):
     return exe, None
 
 
-def run_rv32i(compiler, path, options, work, name="f", stdin=b""):
+def run_rv32i(compiler, path, options, work, name="f", stdin=b"", cwd=None):
     # compile for rv32i and run under qemu user mode, which ends like x86_64:
     # a panic on standard error, a crash as a signal
     assembly = os.path.join(work, name + ".s")
@@ -390,23 +367,27 @@ def run_rv32i(compiler, path, options, work, name="f", stdin=b""):
     exe, problem = assemble_rv32i(assembly, image, work, name)
     if problem:
         return c, None, problem
-    r = run([QEMU_USER, exe], RUN_TIMEOUT, stdin_bytes=stdin)
+    r = run([QEMU_USER, exe], RUN_TIMEOUT, cwd=cwd, stdin_bytes=stdin)
     return c, outcome_x86(r), None
 
 
-def run_target(compiler, path, options, work, target, name="f", stdin=b""):
-    # compile for 'target' and run: (compile result, outcome, problem), the
+def run_target(compiler, path, options, work, target, name="f", stdin=b"",
+               cwd=None, sdcard=os.devnull):
+    # compile for 'target' and run in the directory 'cwd' with the sd card
+    # image 'sdcard' of rv32i-fpga: (compile result, outcome, problem), the
     # outcome None when the compile failed, the problem of the assembler or
     # linker of x86_64 and rv32i else None
     if target == "x86_64":
-        return run_x86(compiler, path, options, work, name, stdin)
+        return run_x86(compiler, path, options, work, name, stdin, cwd)
     if target == "rv32i":
-        return run_rv32i(compiler, path, options, work, name, stdin)
-    c, o = run_uart(compiler, path, options, work, target, name, stdin)
+        return run_rv32i(compiler, path, options, work, name, stdin, cwd)
+    c, o = run_uart(compiler, path, options, work, target, name, stdin, cwd,
+                    sdcard)
     return c, o, None
 
 
-def run_uart(compiler, path, options, work, target, name, stdin):
+def run_uart(compiler, path, options, work, target, name, stdin, cwd=None,
+             sdcard=os.devnull):
     # compile for rv32i-qemu or rv32i-fpga and run the image in a qemu system
     # or the emulator, a panic ends on the uart: (compile result, outcome)
     # the uart takes the input followed by end of transmission bytes, each
@@ -421,12 +402,12 @@ def run_uart(compiler, path, options, work, target, name, stdin):
     if target == "rv32i-qemu":
         command = QEMU_SYSTEM + [image]
     else:
-        command = [EMULATOR, image, os.devnull]
-    r = run(command, RUN_TIMEOUT, stdin_bytes=stdin + b"\x04" * 64)
+        command = [EMULATOR, image, sdcard]
+    r = run(command, RUN_TIMEOUT, cwd=cwd, stdin_bytes=stdin + b"\x04" * 64)
     return c, outcome_fpga(r)
 
 
-def run_x86(compiler, path, options, work, name="f", stdin=b""):
+def run_x86(compiler, path, options, work, name="f", stdin=b"", cwd=None):
     assembly = os.path.join(work, name + ".s")
     c = compile_source(compiler, path, ["--target=x86_64"] + options,
                        assembly)
@@ -435,7 +416,7 @@ def run_x86(compiler, path, options, work, name="f", stdin=b""):
     exe, problem = assemble_x86(assembly, work, name)
     if problem:
         return c, None, problem
-    r = run([exe], RUN_TIMEOUT, stdin_bytes=stdin)
+    r = run([exe], RUN_TIMEOUT, cwd=cwd, stdin_bytes=stdin)
     return c, outcome_x86(r), None
 
 

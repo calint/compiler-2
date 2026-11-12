@@ -1,9 +1,11 @@
 #!/bin/sh
-
+# builds the compiler 'baz' from 'src/main.cpp' and writes the flags for
+# clangd to 'compile_commands.json'; without 'build' it then compiles and runs
+# 'prog.baz' with 'run.sh'
+# usage: make.sh [asan|msan|tsan] [prof] [-O3] [build], see 'usage'
 set -eu
 cd "$(dirname "$0")"
 
-# set environment
 CC="clang++ -std=c++26"
 CW="-Weverything \
     -Wno-c++98-compat \
@@ -20,9 +22,8 @@ CF="-Wfatal-errors -Werror"
 DBG=-g
 OPT=-O0
 
-#
-# AddressSanitizer + UndefinedBehaviorSanitizer (can be combined)
-# Best for catching string_view lifetime issues and memory bugs
+# address and undefined behavior sanitizers, e.g. for the lifetime of a
+# 'string_view'
 ASAN_FLAGS="-fsanitize=address,undefined,leak,nullability,bounds,local-bounds,float-divide-by-zero \
   -fsanitize-address-use-after-scope \
   -fsanitize-address-use-after-return=always \
@@ -30,13 +31,12 @@ ASAN_FLAGS="-fsanitize=address,undefined,leak,nullability,bounds,local-bounds,fl
   -D_GLIBCXX_DEBUG -D_GLIBCXX_DEBUG_PEDANTIC -D_LIBCPP_ENABLE_ASSERTIONS=1"
 # note: -fsanitize=integer gives error on common while(i--) type of use
 
-# MemorySanitizer (cannot be combined with ASAN - use separately)
-# Detects uninitialized memory reads - requires rebuilding stdlib
+# reads of uninitialized memory, not with asan, needs a libc++ built with it
 MSAN_FLAGS="-fsanitize=memory \
   -fsanitize-memory-track-origins=2 \
   -fno-omit-frame-pointer -fno-optimize-sibling-calls"
 
-# ThreadSanitizer (for multi-threading bugs - cannot combine with ASAN/MSAN)
+# data races, not with asan or msan
 TSAN_FLAGS="-fsanitize=thread \
   -fno-omit-frame-pointer"
 
@@ -57,7 +57,6 @@ usage() {
     echo "  build - build only, don't run"
 }
 
-# Parse parameters
 ASAN=
 MSAN=
 TSAN=
@@ -99,7 +98,7 @@ for arg in "$@"; do
     esac
 done
 
-# Check for incompatible sanitizer combinations
+# at most one sanitizer
 SANITIZER_COUNT=0
 [ -n "$ASAN" ] && SANITIZER_COUNT=$((SANITIZER_COUNT + 1))
 [ -n "$MSAN" ] && SANITIZER_COUNT=$((SANITIZER_COUNT + 1))
