@@ -203,9 +203,8 @@ inline expr_type::expr_type(parse_toc& tc, tokenizer& tz, const token& first_tk,
 
             // the value is parsed as the type of the field, so a nested
             // '{...}' is another 'expr_type'
-            exprs_.emplace_back(std::make_unique<expr_any>(
-                tc, tz, tf.type_ref(), literal_typing::from_destination,
-                tf.shape));
+            exprs_.emplace_back(tc, tz, tf.type_ref(),
+                                literal_typing::from_destination, tf.shape);
         });
 }
 
@@ -213,17 +212,16 @@ inline expr_type::expr_type(parse_toc& tc, tokenizer& tz, const token& first_tk,
 inline expr_type::expr_type(expr_type&&) noexcept = default;
 inline expr_type::~expr_type() = default;
 
+inline auto expr_type::field_values() const -> std::span<const expr_any> {
+    return exprs_;
+}
+
 inline auto expr_type::source_to(std::ostream& os) const -> void {
     statement::source_to(os);
 
     open_brace_tk_.source_to(os);
 
-    const auto exprs{
-        exprs_ | std::views::transform([](const std::unique_ptr<expr_any>& e)
-                                           -> const expr_any& { return *e; }),
-    };
-
-    source_delimited_to(os, exprs, delims_tk_);
+    source_delimited_to(os, exprs_, delims_tk_);
 
     close_brace_tk_.source_to(os);
 }
@@ -248,7 +246,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
             .at{at},
             .action{
                 write_comment{
-                    .src_loc_tk{expr->tok()},
+                    .src_loc_tk{expr.tok()},
                     .text{std::format("copy field {}", in_quotes(field.name))},
                 },
             },
@@ -258,7 +256,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
         // like any value: an instance by its fields, an array element by
         // element and the rest zeroed, a copy or a call at once; an array
         // copy is checked against the field
-        expr->plan_writes(tc, at.field(field), std::nullopt, plan);
+        expr.plan_writes(tc, at.field(field), std::nullopt, plan);
     }
 
     std::vector<access_path> unlisted;
@@ -276,7 +274,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
 inline auto expr_type::visit_operands(const operand_visitor visitor) const
     -> void {
 
-    for (const std::unique_ptr<expr_any>& e : exprs_) {
-        visitor(node_operand::read(*e));
+    for (const expr_any& e : exprs_) {
+        visitor(node_operand::read(e));
     }
 }

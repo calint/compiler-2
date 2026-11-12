@@ -554,7 +554,8 @@ class expr_call_result final : public statement {
 class expr_type final : public statement {
     // none for the type name alone
     token open_brace_tk_;
-    std::vector<std::unique_ptr<expr_any>> exprs_;
+    // each a single value or an array at the type of its field
+    std::vector<expr_any> exprs_;
     std::vector<token> delims_tk_;
     token close_brace_tk_;
 
@@ -567,8 +568,8 @@ class expr_type final : public statement {
     expr_type(parse_toc& tc, tokenizer& tz, const token& first_tk,
               const type& tp);
 
-    // a 'unique_ptr' of a class that is incomplete here needs the
-    // constructors and the special members where 'expr_any' is complete
+    // a vector of a class that is incomplete here needs the constructors
+    // and the special members where 'expr_any' is complete
 
     expr_type(expr_type&&) noexcept;
 
@@ -591,11 +592,7 @@ class expr_type final : public statement {
     //
 
     // the values of the listed fields, e.g. '1' and '2' of 'point{1, 2}'
-    [[nodiscard]] auto field_values() const
-        -> std::span<const std::unique_ptr<expr_any>> {
-
-        return exprs_;
-    }
+    [[nodiscard]] auto field_values() const -> std::span<const expr_any>;
 
     // appends the steps that write the value at 'at'
     auto plan_writes(const toc& tc, const part_location& at,

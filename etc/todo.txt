@@ -45,6 +45,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'scripts/fpga-config-*.sh' name a generator of another repository; the
     emulator namespace 'osqa' is not explained; 'source_files::contains'
     is the subject of three items here
+[p] medium: need approval (round 395): a 'dat' laid out by the
+    'write_plan' of its value instead of its own tree: 'stmt_def_dat' has
+    'elem' with four forms, 'fold_data*' and six 'compile_data_*' beside
+    'plan_writes' and 'emit_write_plan'; discarded on 2026-10-25 because
+    the plan is made at compile time and packed bytes lose their typed
+    lines; 'plan_writes' takes a 'toc', so a 'dat' can plan at the parse,
+    and a packed step can hold typed values; about -275 +90 lines; the
+    bytes stay, the comments of the data section change, with two errors in
+    one program the first reported can differ
+[p] medium: need approval (round 395): deduce a generic type argument by
+    the trial parse 'var' uses instead of the lookahead of
+    'generic_call::argument_type' (about -150 lines in 'stmt_call.hpp');
+    changes the language: 'f(a + 1)' would deduce where it is rejected
+    today (README 2.10.2); see also "generic deduction by a trial parse"
+    below
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end

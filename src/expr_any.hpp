@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <string>
 #include <utility>
 #include <variant>
@@ -104,7 +105,9 @@ class stmt_array_size final : public statement {
 
 // the value of an initializer, an argument or a field, parsed at the type of
 // its destination; one of the forms below, an array form only where the
-// destination is an array
+// destination is an array; a value in parts holds a value for each part: an
+// array literal for each element listed, an instance literal ('expr_type') for
+// each field listed
 class expr_any final : public statement {
     using expr_variant = std::variant<expr_arith, expr_bool, expr_type,
                                       expr_path, expr_call_result>;
@@ -134,26 +137,14 @@ class expr_any final : public statement {
         token string_tk;
     };
 
-    // an element of an 'element_list' after the whitespace before it, read
-    // apart like that of a single value, a 'bool' operand the element unwraps
-    // would drop it
-    struct listed_element {
-        token ws_tk;
-        expr_variant value;
-
-        auto source_to(std::ostream& os) const -> void {
-            ws_tk.source_to(os);
-            as_statement(value).source_to(os);
-        }
-    };
-
     // e.g. 'i8[]{1, 2}', '{{1, 2}, {3, 4}}' or 'i8[4]', which is 'i8[4]{}'
     struct element_list {
         // none when the destination gives the type and the size
         std::optional<array_prefix> prefix;
         // none without braces, then 'prefix' gives the size
         std::optional<token> open_brace_tk;
-        std::vector<listed_element> elements;
+        // each a single value at the element type
+        std::vector<expr_any> elements;
         std::vector<token> delims_tk;
         std::optional<token> close_brace_tk;
     };
@@ -189,7 +180,7 @@ class expr_any final : public statement {
                                  .value{std::move(path)},
                              }} {
 
-        set_type(element(0).get_type());
+        set_type(single().get_type());
     }
 
     //
@@ -207,7 +198,7 @@ class expr_any final : public statement {
         const element_list* const list{std::get_if<element_list>(&form_)};
 
         if (list == nullptr) {
-            element(0).source_to(os);
+            single().source_to(os);
             return;
         }
 
@@ -243,7 +234,7 @@ class expr_any final : public statement {
 
         assert(not is_array());
 
-        element(0).assert_not_narrowed(tc, dst_type);
+        single().assert_not_narrowed(tc, dst_type);
     }
 
     // a scalar folds as its value
@@ -252,7 +243,7 @@ class expr_any final : public statement {
 
         assert(not is_array());
 
-        return element(0).fold(tc, use);
+        return single().fold(tc, use);
     }
 
     // a single value or the copy of an array, e.g. the 'a' of 'var b = a'
@@ -262,7 +253,7 @@ class expr_any final : public statement {
 
         assert(std::holds_alternative<single_value>(form_));
 
-        return element(0).operand_path();
+        return single().operand_path();
     }
 
     [[nodiscard]] auto tok() const -> const token& override {
@@ -270,16 +261,28 @@ class expr_any final : public statement {
             return str->string_tk;
         }
 
-        if (element_count() == 0) {
+        if (std::holds_alternative<single_value>(form_)) {
+            return single().tok();
+        }
+
+        const std::span<const expr_any> listed{elements()};
+
+        // e.g. 'i8[4]' or '{}', which list nothing
+        if (listed.empty()) {
             return statement::tok();
         }
 
-        return element(0).tok();
+        return listed.front().tok();
     }
 
     auto visit_operands(const operand_visitor visitor) const -> void override {
-        for (size_t i{}; i < element_count(); ++i) {
-            visitor(node_operand::read(element(i)));
+        if (std::holds_alternative<single_value>(form_)) {
+            visitor(node_operand::read(single()));
+            return;
+        }
+
+        for (const expr_any& e : elements()) {
+            visitor(node_operand::read(e));
         }
     }
 
@@ -336,8 +339,16 @@ class expr_any final : public statement {
     // of 'true or a / 0 == 1'; every condition of the value is, also in the
     // elements of a list and in the fields of an instance literal
     auto check_folded_conditions(compile_toc& tc) const -> void {
-        for (size_t i{}; i < element_count(); ++i) {
-            check_folded_conditions_of(tc, value_at(i));
+        if (const single_value* const single{
+                std::get_if<single_value>(&form_),
+            }) {
+
+            check_folded_conditions_of(tc, single->value);
+            return;
+        }
+
+        for (const expr_any& e : elements()) {
+            e.check_folded_conditions(tc);
         }
     }
 
@@ -352,7 +363,7 @@ class expr_any final : public statement {
         // note: only an index expression asks, it is never an array and has
         //       the default type
 
-        const expr_arith& arith{std::get<expr_arith>(value_at(0))};
+        const expr_arith& arith{std::get<expr_arith>(value_variant())};
 
         arith.assert_not_narrowed(tc, dst.type_ref());
 
@@ -371,31 +382,20 @@ class expr_any final : public statement {
         return folded_value::value_of(folded);
     }
 
-    // the value of a single value, an element of a list or the source of a
-    // copy
-    [[nodiscard]] auto element(const size_t index) const -> const statement& {
-        return as_statement(value_at(index));
-    }
-
-    // none for a string
-    [[nodiscard]] auto element_count() const -> size_t {
+    // the listed elements of an array literal, each a single value; none for
+    // a string, a single value or the copy of an array
+    [[nodiscard]] auto elements() const -> std::span<const expr_any> {
         if (const element_list* const list{std::get_if<element_list>(&form_)}) {
-            return list->elements.size();
+            return list->elements;
         }
 
-        if (std::holds_alternative<string_array>(form_)) {
-            return 0;
-        }
-
-        return 1;
+        return {};
     }
 
-    // the element at 'index' when it is an instance literal, null for a copy
-    // or the result of a call
-    [[nodiscard]] auto instance_literal(const size_t index) const
-        -> const expr_type* {
-
-        return std::get_if<expr_type>(&value_at(index));
+    // the single value when it is an instance literal, null for a copy or
+    // the result of a call
+    [[nodiscard]] auto instance_literal() const -> const expr_type* {
+        return std::get_if<expr_type>(&value_variant());
     }
 
     [[nodiscard]] auto is_array() const -> bool {
@@ -409,7 +409,9 @@ class expr_any final : public statement {
             return false;
         }
 
-        const expr_arith* const arith{std::get_if<expr_arith>(&value_at(0))};
+        const expr_arith* const arith{
+            std::get_if<expr_arith>(&value_variant()),
+        };
 
         return arith != nullptr and arith->is_single_operand();
     }
@@ -437,7 +439,7 @@ class expr_any final : public statement {
         // the parse checked that the source of an array copy is an array,
         // its length is checked here
         if (std::holds_alternative<single_value>(form_)) {
-            plan_element(tc, 0, at, plan);
+            plan_value(tc, at, plan);
 
             if (is_array()) {
                 assert_whole_array_copy_fits(tc, dst_count);
@@ -455,21 +457,29 @@ class expr_any final : public statement {
             prefix->size.check_where_written(tc);
         }
 
-        const size_t count{element_count()};
+        const element_list& list{std::get<element_list>(form_)};
+
+        const size_t count{list.elements.size()};
 
         // the parser could not check the size of an unsized destination
         if (dst_count and count > *dst_count) {
-            throw compile_error{element(*dst_count).tok(),
+            throw compile_error{list.elements.at(*dst_count).tok(),
                                 too_many_elements(*dst_count)};
         }
 
-        plan_elements(tc, std::get<element_list>(form_), at, plan);
+        plan_elements(tc, list, at, plan);
 
         if (not dst_count) {
             return;
         }
 
         plan_remaining_elements(at, count, *dst_count, plan);
+    }
+
+    // the single value or the source of the copy of an array, not asked of
+    // a string or a list
+    [[nodiscard]] auto single() const -> const statement& {
+        return as_statement(value_variant());
     }
 
     // where a literal written without a size gives one, e.g. the '[' of
@@ -677,29 +687,6 @@ class expr_any final : public statement {
         return parse_array_form(tc, tz, tp, typing);
     }
 
-    // an instance literal is written field by field, any other value at once
-    auto plan_element(const toc& tc, const size_t index,
-                      const part_location& at, write_plan& plan) const -> void {
-
-        if (const expr_type* const record{
-                std::get_if<expr_type>(&value_at(index)),
-            }) {
-
-            record->plan_writes(tc, at, plan);
-            return;
-        }
-
-        plan.push_back({
-            .at{at},
-            .action{
-                value_write{
-                    .item{&element(index)},
-                },
-            },
-            .covered{at.path()},
-        });
-    }
-
     // constant elements are stored like a string so the backend can pack them
     // into wider immediates or copy them from read-only data
     auto plan_elements(const toc& tc, const element_list& list,
@@ -731,11 +718,13 @@ class expr_any final : public statement {
         }
 
         for (size_t i{}; i < list.elements.size(); ++i) {
+            const expr_any& listed{list.elements.at(i)};
+
             plan.push_back({
                 .at{at},
                 .action{
                     write_comment{
-                        .src_loc_tk{element(i).tok()},
+                        .src_loc_tk{listed.tok()},
                         .text{std::format("[{}]", i)},
                     },
                 },
@@ -744,7 +733,7 @@ class expr_any final : public statement {
 
             // a call element writes at the element, not at the array start
             // the identifier names, and an element is not an array
-            plan_element(tc, i, at.element(i), plan);
+            listed.plan_writes(tc, at.element(i), std::nullopt, plan);
         }
     }
 
@@ -829,20 +818,30 @@ class expr_any final : public statement {
         plan_remaining_elements(at, size_bytes, *array_count, plan);
     }
 
-    // the value of a single value or of an element of a list
-    [[nodiscard]] auto value_at(const size_t index) const
-        -> const expr_variant& {
+    // a single value: an instance literal is written field by field, any
+    // other value at once
+    auto plan_value(const toc& tc, const part_location& at,
+                    write_plan& plan) const -> void {
 
-        if (const single_value* const single{
-                std::get_if<single_value>(&form_),
-            }) {
-
-            assert(index == 0);
-
-            return single->value;
+        if (const expr_type* const record{instance_literal()}) {
+            record->plan_writes(tc, at, plan);
+            return;
         }
 
-        return std::get<element_list>(form_).elements.at(index).value;
+        plan.push_back({
+            .at{at},
+            .action{
+                value_write{
+                    .item{&single()},
+                },
+            },
+            .covered{at.path()},
+        });
+    }
+
+    // the value of a single value or the source of the copy of an array
+    [[nodiscard]] auto value_variant() const -> const expr_variant& {
+        return std::get<single_value>(form_).value;
     }
 
     //
@@ -998,10 +997,8 @@ class expr_any final : public statement {
             return;
         }
 
-        for (const std::unique_ptr<expr_any>& field :
-             instance->field_values()) {
-
-            field->check_folded_conditions(tc);
+        for (const expr_any& field : instance->field_values()) {
+            field.check_folded_conditions(tc);
         }
     }
 
@@ -1017,19 +1014,17 @@ class expr_any final : public statement {
         }
 
         std::string bytes;
-        for (const listed_element& item : list.elements) {
+        for (const expr_any& item : list.elements) {
             // a condition is compiled, not packed, so the elements after the
             // one that decides it are checked, e.g. the 'a / 0 == 1' of
             // 'true or a / 0 == 1'
-            if (std::holds_alternative<expr_bool>(item.value)) {
+            if (std::holds_alternative<expr_bool>(item.value_variant())) {
                 return std::nullopt;
             }
 
-            const statement& element{as_statement(item.value)};
-
             // e.g. '{300}' for 'i8' is rejected as when stored alone
             const std::optional<folded_value> folded{
-                element.fold_checked(tc, tc.use_at(element_type)),
+                item.fold_checked(tc, tc.use_at(element_type)),
             };
 
             const std::optional<int64_t> value{folded_value::value_of(folded)};
@@ -1099,17 +1094,9 @@ class expr_any final : public statement {
                     in_quotes(tp.name()));
             },
             [&]([[maybe_unused]] const size_t index) -> void {
-                // note: the whitespace is read first, the initializers run in
-                //       order
-
                 // the array gives the type of its elements
-                list.elements.push_back({
-                    .ws_tk{tz.next_whitespace_token()},
-                    .value{
-                        parse_variant(tc, tz, tp,
-                                      literal_typing::from_destination),
-                    },
-                });
+                list.elements.emplace_back(tc, tz, tp,
+                                           literal_typing::from_destination);
             });
     }
 

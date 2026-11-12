@@ -161,7 +161,9 @@
 - Done means: built, focused tests run, clang-tidy and `qa/lint/check-all.sh`
   clean, formatter applied.
 - After each round's checks pass, commit with message `.` and tag it
-  `DATE--HH-MM--MODEL--round-N` with the next N; the next round's agents may
+  `DATE--HH-MM--MODEL--round-N` (MODEL like `fable-5-2`; N counts per model
+  from 1; the entries of `etc/todo-resolved.txt` keep one running round
+  number); the next round's agents may
   run meanwhile, their patches are applied after the commit.
 - Remove a round's agent worktrees and branches when done (check they hold no
   commits).

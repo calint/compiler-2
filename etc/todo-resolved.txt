@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 395 (2026-11-13, design: the front end, statements and
+    expressions)
+    => done (2026-11-13): a value at a part of a literal has one
+       representation: an element of an array literal and a field of an
+       instance literal are both an 'expr_any' in a vector
+       ('element_list::elements', 'expr_type::exprs_');
+       'expr_any::listed_element', the index interface ('element(i)',
+       'element_count()', 'instance_literal(i)', 'value_at(i)',
+       'plan_element(tc, i)') and the boxed fields are gone: 'single()',
+       'elements()', 'instance_literal()', a list plans each element by
+       'plan_writes'; 'stmt_def_dat::fold_data' walks 'elements()' as it
+       does 'field_values()'; listings unchanged (2495 cases); a literal of
+       222000 elements compiles in the same time with 8% more memory
+       (330 -> 356 MiB)
 [x] easy: round 394 (2026-11-13, design: the middle and back end, the
     interface of 'machine')
     => done (2026-11-13): the front end holds a register in one way,

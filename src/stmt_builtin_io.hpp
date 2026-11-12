@@ -360,8 +360,7 @@ class stmt_builtin_io final : public statement {
         // an argument of 32 bits or less is computed at 'i32', the type its
         // first element decides, e.g. 'i32(-2)' is the sector 2^32 - 2
         const operand first_reg{
-            first_arg.element(0).get_type().check_width_bytes() <=
-                    sizeof(int32_t)
+            first_arg.single().get_type().check_width_bytes() <= sizeof(int32_t)
                 ? x.register_view(descriptor, tc.builtins().i32())
                 : descriptor,
         };

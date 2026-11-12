@@ -296,7 +296,7 @@ class stmt_def_dat final : public statement {
                                         const expr_any& value) -> elem {
 
         if (not value.is_array()) {
-            return fold_data_element(tc, tp, value, 0);
+            return fold_data_value(tc, tp, value);
         }
 
         // e.g. 'dat b = a', a copy of the array 'a', which only the run time
@@ -332,8 +332,8 @@ class stmt_def_dat final : public statement {
             .items{},
         };
 
-        for (size_t i{}; i < value.element_count(); ++i) {
-            list.items.emplace_back(fold_data_element(tc, tp, value, i));
+        for (const expr_any& listed : value.elements()) {
+            list.items.emplace_back(fold_data(tc, tp, listed));
         }
 
         return {
@@ -341,11 +341,11 @@ class stmt_def_dat final : public statement {
         };
     }
 
-    [[nodiscard]] static auto fold_data_element(const toc& tc, const type& tp,
-                                                const expr_any& value,
-                                                const size_t index) -> elem {
+    // the constants of the single value 'value' at the type 'tp'
+    [[nodiscard]] static auto fold_data_value(const toc& tc, const type& tp,
+                                              const expr_any& value) -> elem {
 
-        const statement& element{value.element(index)};
+        const statement& element{value.single()};
 
         if (tp.is_builtin()) {
             const std::optional<folded_value> folded{
@@ -372,7 +372,7 @@ class stmt_def_dat final : public statement {
 
         // e.g. 'dat p = q', a copy of the instance 'q', which only the run time
         // makes
-        const expr_type* const record{value.instance_literal(index)};
+        const expr_type* const record{value.instance_literal()};
 
         if (record == nullptr) {
             throw_not_constant(element);
@@ -389,7 +389,7 @@ class stmt_def_dat final : public statement {
              std::views::zip(flds, record->field_values())) {
 
             fields.values.emplace_back(
-                fold_data(tc, f.type_ref(), *field_value));
+                fold_data(tc, f.type_ref(), field_value));
         }
 
         return {
