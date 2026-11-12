@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 375 (2026-11-12, bug hunt: noinline frames and the stack:
+    '--checks=frame' and '--checks=stack' at their exact limits, frames near
+    2 KiB, 4 KiB and 2 GiB, '--vars', '--stack' and '--memory' at their
+    limits, results of user types and unsized 'mut' arrays through frames,
+    calls in 'foo' and conditions, per-length bodies, error frames, with
+    '--versions' and '--nopt')
+    => done (2026-11-12): nothing found; a layout model of the frame check
+       matched every target (310 programs on 4 targets), the frame accesses
+       of every test's listing stay within 'size.func.*', 'frame overflow'
+       and 'stack overflow' panics agree across the rv32i targets at tight
+       '--vars' and '--stack' (300 programs), every RUN case with all
+       functions noinline, stock fuzzers with FUZZ_TARGETS=all; the nested
+       "called from" chain is the open item of round 251 VT2
 [x] easy: round 374 (2026-11-12, design: patterns across files)
     => done (2026-11-12): 'node_operand::read' names the operand that is
        read, replacing 12 hand-built 'node_operand's of 'visit_operands' in
