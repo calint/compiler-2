@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 357 (2026-11-12, design of the backend interface)
+    => done (2026-11-12): 'machine::check_stack_capacity' has the shape of
+       'check_frame_capacity' (begin and end comments, operation scope)
+       around the target hook 'emit_stack_capacity_check';
+       'machine::with_saved_registers' (one user, a callback, an index
+       lookup) gives way to 'machine::live_registers', which x86_64
+       ('call_saving_live') and rv32i ('live_clobbered') share;
+       'equality_request' and 'copy_request', parameters of public
+       virtuals, are public; listings unchanged; kept: the count of
+       'failure_tests' (a lazy last test would move its branch past
+       instructions that change its registers), 'emit_call' (no shared
+       'call' in 'assembler'), the parallel checks and routines (they
+       differ by instruction)
 [x] easy: round 356 (2026-11-12, design: where the safety checks are
     decided; which checks are on is one record)
     => done (2026-11-12): 'check_options' moved to 'machine.hpp' and is

@@ -983,15 +983,13 @@ class machine_x86_64 final : public machine {
 
         mark_used(label);
 
-        const auto call{[&] -> void { assembler_.call(site.indent, label); }};
-
         if (function == target_call::read or function == target_call::write) {
-            with_saved_registers(site.indent, io_clobbered, call);
+            call_saving_live(site.indent, label, io_clobbered);
             return;
         }
 
         comment(site, "sector of the sd card");
-        with_saved_registers(site.indent, sector_clobbered, call);
+        call_saving_live(site.indent, label, sector_clobbered);
     }
 
     auto emit_variables_base_load() -> void override {
@@ -1112,6 +1110,19 @@ class machine_x86_64 final : public machine {
         default:
             std::unreachable();
         }
+    }
+
+    // a call of the routine 'label', which changes the registers 'clobbered';
+    // the live ones among them are saved around it
+    auto call_saving_live(const size_t indent, const std::string_view label,
+                          const std::span<const std::string_view> clobbered)
+        -> void {
+
+        const std::vector<std::string_view> saved{live_registers(clobbered)};
+
+        save_call_registers(indent, saved);
+        assembler_.call(indent, label);
+        restore_call_registers(indent, saved);
     }
 
     // 'left' holds the product of two bytes in a register of the default

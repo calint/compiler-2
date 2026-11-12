@@ -1248,18 +1248,12 @@ class machine_rv32i : public machine {
     // included, so the bound is not below what the call pushes; the callee
     // pushes 'leaf_stack_bytes' more without a check of its own
     auto emit_stack_capacity_check(const emit_site site) -> void override {
-        assert(is_stack_bounded());
-
         const size_t saved_count{registers_saved_by_call().size()};
 
         const size_t call_bytes{
             saved_registers_size_bytes(saved_count) + frame_save_bytes_ +
                 leaf_stack_bytes(),
         };
-
-        comment(site, "stack capacity check begin");
-
-        const operation_scope scope{*this};
 
         const operand limit{
             alloc_scratch_register(site, default_type()),
@@ -1279,8 +1273,6 @@ class machine_rv32i : public machine {
 
         branch_to_failure(site, op::bltu, lowest.register_name(),
                           limit.register_name(), stack_overflow_failure_);
-
-        comment(site, "stack capacity check end");
     }
 
     // the functions are routines, see 'emit_io_routines'; the sector functions
@@ -1632,10 +1624,6 @@ class machine_rv32i : public machine {
         const helper_spec& spec{helper_spec_of(routine)};
 
         mark_used(spec.label);
-
-        // note: not 'machine::with_saved_registers': the live registers
-        //       include the operands the scope protects, and the saved ones
-        //       are restored before the result reaches a memory destination
 
         const std::vector<std::string_view> saved{
             live_clobbered(spec.clobbers, dst),
@@ -2849,26 +2837,16 @@ class machine_rv32i : public machine {
     }
 
     // the clobbered registers that hold a live value, an allocated or a
-    // protected one
+    // protected one, the operands of the helper included
     [[nodiscard]] auto
     live_clobbered(const std::span<const std::string_view> clobbered,
                    const operand& dst) const -> std::vector<std::string_view> {
 
-        std::vector<std::string_view> saved;
+        std::vector<std::string_view> saved{live_registers(clobbered)};
 
-        for (const std::string_view name : clobbered) {
-            // restoring a register destination would discard the result
-            const bool is_destination{
-                dst.is_register() and dst.register_name() == name,
-            };
-
-            const bool is_live{
-                is_register_unavailable(name),
-            };
-
-            if (is_live and not is_destination) {
-                saved.push_back(name);
-            }
+        // restoring a register destination would discard the result
+        if (dst.is_register()) {
+            std::erase(saved, dst.register_name());
         }
 
         return saved;

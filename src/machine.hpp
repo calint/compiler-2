@@ -1150,13 +1150,25 @@ class machine {
     }
 
     // jumps to the stack overflow handler when a noinline call, made with the
-    // registers allocated now, does not fit in the stack
+    // registers allocated now, does not fit in the stack; nothing when the
+    // check is off, which it is on a target that is not 'is_stack_bounded'
     auto check_stack_capacity(const emit_site site) -> void {
         if (not options_.checks.stack) {
             return;
         }
 
+        assert(is_stack_bounded());
+
+        comment(site, "stack capacity check begin");
+
+        // note: the scratch registers of the check are freed after the end
+        //       comment
+
+        const operation_scope scope{*this};
+
         emit_stack_capacity_check(site);
+
+        comment(site, "stack capacity check end");
     }
 
     // what '--checks' turns on, of it the checks the target honors
@@ -1734,8 +1746,8 @@ class machine {
     virtual auto emit_sector_routines(const bool read_used,
                                       const bool write_used) -> void = 0;
 
-    // the check of 'check_stack_capacity'; only a target that
-    // 'is_stack_bounded' is asked
+    // the compare and branch of 'check_stack_capacity', between its begin and
+    // end comments; only a target that 'is_stack_bounded' has a stack limit
     virtual auto
     emit_stack_capacity_check([[maybe_unused]] const emit_site site) -> void {
 
@@ -1943,6 +1955,23 @@ class machine {
         return state_.used_routines.contains(routine);
     }
 
+    // the registers of 'named' that may hold a live value, allocated or
+    // protected, in the order of 'named'; a call that changes them saves these
+    [[nodiscard]] auto
+    live_registers(const std::span<const std::string_view> named) const
+        -> std::vector<std::string_view> {
+
+        std::vector<std::string_view> live;
+
+        for (const std::string_view name : named) {
+            if (is_register_unavailable(name)) {
+                live.push_back(name);
+            }
+        }
+
+        return live;
+    }
+
     // the routine is emitted after the code; the use is version state, so a
     // version that is not kept and discarded code use nothing
     auto mark_used(const std::string_view routine) -> void {
@@ -2041,33 +2070,6 @@ class machine {
         assert(target_.stack_limit_address);
 
         return *target_.stack_limit_address;
-    }
-
-    // 'emit' changes the registers 'clobbered', the allocated ones among them
-    // are saved before and restored after, in the order of 'clobbered', e.g.
-    // around a system call
-    auto with_saved_registers(const size_t indent,
-                              const std::span<const std::string_view> clobbered,
-                              const std::function_ref<void()> emit) -> void {
-
-        std::vector<std::string_view> saved;
-
-        for (const std::string_view name : clobbered) {
-            const std::optional<size_t> index{register_index_of(name)};
-
-            // note: the callers name registers of the target, e.g. 'rcx'
-            assert(index);
-
-            if (std::ranges::contains(state_.registers.allocations(), *index,
-                                      &register_pool::allocation::index)) {
-
-                saved.push_back(register_display_name(*index));
-            }
-        }
-
-        save_call_registers(indent, saved);
-        emit();
-        restore_call_registers(indent, saved);
     }
 
     //
