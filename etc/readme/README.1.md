@@ -11,21 +11,23 @@ the binary image itself.
 * gain experience writing compilers
 * generate handwritten-like assembler
 * super-loop program with non-reentrant inlined functions
-* support for reentrant non-inlined functions
+* support for reentrant noinline functions
 * ub-free with `--checks=noub`
 * basic support for generics
 
 ## Supports
 
-* built-in integer types (64, 32, 16, 8 bit, 64 bit only on x86_64) and boolean,
-  a boolean is not an integer, `int(b)` converts it to 1 or 0
+* built-in integer types `i64`, `i32`, `i16` and `i8` (`i64` only on x86_64)
+  and `bool`; a type left out is the default type `int`, `i64` on x86_64 and
+  `i32` on rv32i; a `bool` is not an integer, `int(b)` converts it to 1 or 0
 * user defined types with methods and constructors
 * data, constants, arrays and array iteration
 * variables with the type deduced from the initializer
 * string, character, user type and array initializers
 * numbers in decimal, `0x` hex and `0b` binary; a leading zero is decimal,
   `010` is 10, not octal as in C
-* inlined and non-inlined functions
+* functions inlined at every call (the default) and `noinline` functions,
+  emitted once and called, which allows recursion of any depth
 * checks against undefined behavior, selected with `--checks=LIST`
   * `noub` turns on all of them, `line` adds the line number to the report of
     a failed bounds, division, shift, overlap or overflow check, `-NAME` turns
@@ -34,7 +36,7 @@ the binary image itself.
     array or a constant count that is negative or passes the end of the array
     is a compile error also without the checks, on an unsized array parameter
     when it is negative or passes the longest array the target addresses
-  * `frame`: non-inlined function frame capacity at runtime
+  * `frame`: noinline function frame capacity at runtime
   * `division`: division by zero and `MIN / -1`, also of `%`, at runtime; a
     constant `MIN / -1` is a compile error, of `i64` also without the check; a
     constant zero divisor is a compile error also without the check
@@ -52,13 +54,6 @@ the binary image itself.
     at runtime, a constant expression that overflows is rejected at compile
     time, the arithmetic of an explicit conversion such as `i8(a + b)` still
     wraps
-  * always on: compile time rejection of calls and assignments where the
-    value may read the destination under another name (aliasing), of
-    arguments that may share storage when a parameter is `mut`, and of an
-    argument or a side of a comparison that a call in a later one may write,
-    e.g. `f(a[i], h(i))` or `i == h(i)` with `h` writing `i`; evaluation is
-    left to right, an arithmetic operand is read at its place: `i + h(i)`
-    adds the `i` from before the call
   * a failed check prints `panic: NAME` on a line of its own on standard error
     (the uart on the bare-metal targets), with `line` `panic: NAME at FILE:LINE`
     where FILE is the path of the file relative to the directory of the main
@@ -68,6 +63,26 @@ the binary image itself.
     `sector_write` prints `panic: sd card` and exits with 248; a constant
     `exit` code outside 0 to 255 is rejected, a run-time one is taken modulo
     256, so `exit(-1)` of a variable ends with 255 as a `bounds` panic does
+* rejected at compile time with or without `--checks`, since each would give
+  undefined behavior or a result that depends on the target or on the order
+  of evaluation (all cases: chapter 8 of
+  [`etc/docs/README.md`](etc/docs/README.md))
+  * a read of a variable or of a result before it is set, e.g. a result
+    that is not set on every path
+  * an assignment that narrows without a conversion, e.g. `b = w` with `b`
+    an `i8` and `w` an `i16`, or a constant that does not fit its
+    destination; `b = i8(w)` wraps on purpose
+  * a `bool` used as an integer or an integer used as a condition
+  * a constant index or count outside the array, a constant zero divisor, a
+    constant shift count outside the type width and a constant `exit` code
+    outside 0 to 255
+  * calls and assignments where the value may read the destination under
+    another name (aliasing), arguments that may share storage when a
+    parameter is `mut`, and an argument or a side of a comparison that a
+    call in a later one may write, e.g. `f(a[i], h(i))` or `i == h(i)` with
+    `h` writing `i`; evaluation is left to right, an arithmetic operand is
+    read at its place: `i + h(i)` adds the `i` from before the call
+  * a statement that is never reached, e.g. one after `break`
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
   `not`, `true`, `false`, `include`
@@ -85,9 +100,10 @@ the binary image itself.
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`, the file
-  (`--sdcard`) must exist and hold the sector; a sector is its value modulo
-  2^32 on every target, e.g. -2 is 2^32 - 2, and x86_64 panics on one
-  outside -2^31 to 2^32 - 1, which a 32 bit register cannot hold
+  (`--sdcard`) must exist and hold the sector, e.g. made with
+  `truncate -s 8M sdcard.img`; a sector is its value modulo 2^32 on every
+  target, e.g. -2 is 2^32 - 2, and x86_64 panics on one outside -2^31 to
+  2^32 - 1, which a 32 bit register cannot hold
 * read and write sectors from and to sd card on fpga hardware using `rv32i-fpga`
 
 ## Howto
@@ -115,6 +131,18 @@ the binary image itself.
       assembled or linked), runs on the fpga soft core emulator
   * `./run.sh myprogram.baz --checks=upper,line`
   * `./run.sh myprogram.baz --target=rv32i-qemu --stack=0x20000`
+* a first program: `hello.baz` in the repository root with
+
+  ```text
+  dat hello = "hello\n"
+
+  func main() {
+      write(1, hello)
+  }
+  ```
+
+  runs with `./run.sh hello.baz`, `./run.sh hello.baz --target=rv32i` and so
+  on for each target; the program ends with exit code 0 at the end of `main`
 * `baz` exits with 0 on success and 1 on an error
 * [`etc/tutorial.baz`](etc/tutorial.baz) is a tour of the language from the
   easiest to the most difficult concepts
@@ -126,7 +154,9 @@ the binary image itself.
 * neovim (lazyvim, see [`etc/nvim/tree-sitter-baz/`](etc/nvim/tree-sitter-baz/))
   with syntax highlighting and lsp (symbols, go to definition, rename,
   references)
-* example application [`roome/src/main.baz`](roome/src/main.baz)
+* example application [`roome/src/main.baz`](roome/src/main.baz), a text
+  adventure that `roome/run.sh` runs on the fpga soft core emulator; type
+  `help` for the commands and `go home` to end it
 * how the compiler works in [`etc/docs/README.md`](etc/docs/README.md)
 * todo list of planned fixes and features in [`etc/todo.txt`](etc/todo.txt)
 

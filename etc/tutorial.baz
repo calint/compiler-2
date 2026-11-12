@@ -276,7 +276,7 @@ func arrays() {
     var zeros = i32[size]
     assert(zeros[3] == 0)
     # an array names the element type and size, elements start zeroed
-    # 'i32[4]{}' is the same
+    # 'i32[4]{}' is the same, '[4]' is an array of 4 of the default type
 
     var primes = []{2, 3, 5, 7}
     assert(array_length(primes) == 4)
@@ -501,6 +501,7 @@ type pixel {
 func user_types() {
     var p = point{1, 2}
     assert(p.x == 1 and p.y == 2)
+    # a value of a user type is an instance of it
     # an instance literal names the type and lists the fields in order, a
     # ',' may end the list before '}' as in a type, not in a call
 
@@ -717,10 +718,10 @@ func non_inlined() {
     var f = factorial(n)
     assert(f == 120)
 
-    var arr = []{ 1, 2, 3 }
+    var arr = []{1, 2, 3}
     assert(add_all(arr) == 6)
     assert(factorial(n - 2) == 6)
-    assert(sum({ 3, 4 }) == 7)
+    assert(sum({3, 4}) == 7)
     # an argument can be an expression, a constant or an instance literal, it
     # is evaluated into a temporary of the parameter's type before the call
     # a function that nothing calls is not emitted
@@ -742,8 +743,10 @@ type buffer<capacity> {
 
 type small = buffer<4>
 type large = buffer<16>
-# an alias names an instance and is a type of its own, two aliases with the
-# same arguments are two types; aliases are top level
+# the type a generic type makes for its arguments is an instance of it too,
+# here 'buffer<4>' and 'buffer<16>'
+# an alias names such an instance and is a type of its own, two aliases with
+# the same arguments are two types; aliases are top level
 
 func mut buffer.add(v) {
     self.items[self.count] = i8(v)
@@ -824,7 +827,8 @@ func generics() {
     p.a.add(1)
     p.b.add(2)
     assert(p.a.count == 1 and p.b.items[0] == 2)
-    # fields of different instances, a generic type is used through an alias
+    # the fields are of two instances of 'buffer', a generic type is used
+    # through an alias
 
     var d = small_deck
     d.add(5)
@@ -887,8 +891,8 @@ func checks() {
     assert(y == 5)
 
 #   x = add_to_zero(x)
-#   gives 0 because the result 'res' and the argument 'v' refer to the same
-#   variable 'x', so 'res = 0' also clears 'v'
+#   compile error because the result 'res' and the argument 'v' would refer
+#   to the same variable 'x', so 'res = 0' would also clear 'v' and give 0
 #   calls where the result and the arguments may share storage with each
 #   other are rejected, unless two arguments are both read-only; a global
 #   that the function uses counts as an argument

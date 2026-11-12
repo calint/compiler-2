@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 382 (2026-11-12, readability: the language documentation
+    for a new user)
+    => done (2026-11-12): README: the default type 'int' named with the
+       built-in types, 'noinline' named (also in the usage text of '--checks'
+       instead of "non-inlined"), a list of what is rejected at compile time
+       and why (the "always on" item moved into it), how to make
+       'sdcard.img', a first program run on each target, how to run and end
+       roome; tutorial: '[4]' introduced, both meanings of "instance"
+       defined, the 'add_to_zero' comment says compile error (now checked by
+       check-doc-examples), literal spacing; docs 1.9: the escaped
+       characters as in 'is_escaped_code_point'; README.md regenerated;
+       about 30 tutorial claims and the chapter 8 target claims checked by
+       hand, all right; left: prog.baz comments (listings change), roome
+       help without "go home" (expected output)
 [x] easy: round 381 (2026-11-12, bug hunt: compile-time folding against
     run time)
     => done (2026-11-12): no defect; twin programs (one expression folded

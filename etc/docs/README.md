@@ -707,9 +707,10 @@ the register use at the failure that 'machine::register_error' adds.
    when it is loaded ('tokenizer::assert_source_well_formed').
 4. A message stays on its line and is valid UTF-8: a control byte, a byte
    outside a whole UTF-8 character or a character that looks like a space or
-   like nothing (no-break space, soft hyphen, zero width and bidi characters)
-   of the message, the quoted source line, a file name, also in a run-time
-   panic, is shown as '\xNN' ('printable', 'is_escaped_code_point').
+   like nothing (the spaces other than ' ', soft hyphen, zero width, filler,
+   tag and bidi characters) of the message, the quoted source line, a file
+   name, also in a run-time panic, is shown as '\xNN' ('printable',
+   'is_escaped_code_point').
 
 ## 2. Generic types: how 'type' with parameters becomes real types
 
