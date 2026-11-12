@@ -472,13 +472,11 @@ class stmt_def_var final : public statement {
         // e.g. 'let m = n' in a 'foo' over an unsized array parameter at a
         // call that gives the length
         if (const std::optional<folded_value> constant{fold_let(tc)}) {
-            // note: the compile of a 'var' checks the elements of a condition
-            //       after the one that decides it, so does this
-
-            assign_var_.value().check_folded_conditions(tc);
+            // note: the elements of a condition after the one that decides it
+            //       are not checked as in a 'var': only constants of a call
+            //       fold here, where 'toc::check_skipped' checks nothing
 
             tc.add_const(declared_.src_loc_tk, declared_.name, *constant);
-
             return;
         }
 

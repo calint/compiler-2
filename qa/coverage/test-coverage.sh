@@ -208,6 +208,11 @@ run_uart() {
 # note: 10 s is about 30 times the slowest case, 0.3 s under qemu user mode
 PROGRAM_TIMEOUT=(timeout --foreground 10)
 
+# a compile that runs longer, e.g. of a compiler that loops, is stopped the
+# same way and fails its case
+# note: 60 s is about 500 times the slowest compile of an optimized build
+COMPILE_TIMEOUT=(timeout --foreground 60)
+
 # sets 'PROGRAM_COMMAND' to the command that runs the program of the target
 program_command() {
     case "$MACHINE" in
@@ -237,7 +242,7 @@ execute_program_errors_to_out() {
 
 # also makes the sd card image of the case, see 'make_sdcard'
 compile_and_build() {
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE $VERSION_OPTS 2>err >gen.s; then
+    if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE $VERSION_OPTS 2>err >gen.s; then
         echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
         exit 1
     fi
@@ -248,7 +253,7 @@ compile_and_build() {
 # the compile fails with exit code 1, its message is in 'out'
 compile_expect_error() {
     set +e
-    "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE >gen.s 2>out
+    "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE >gen.s 2>out
     local exit_code=$?
     set -e
     if [[ $exit_code -ne 1 ]]; then
@@ -384,7 +389,7 @@ DIFFNOPT() {
         echo skipped
         return
     fi
-    if ! "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS --nopt 2>err >gen-nopt.s; then
+    if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS --nopt 2>err >gen-nopt.s; then
         echo "compiler failed. see 'tests/err' and 'tests/gen-nopt.s'" >&2
         exit 1
     fi
@@ -420,7 +425,7 @@ LISTING() {
         echo "FAILED. no expected listing 'tests/$expected'"
         exit 1
     fi
-    if ! "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" "${IMAGE_OPTS[@]}" 2>err >gen.s; then
+    if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$COMPILER_MACHINE" "${IMAGE_OPTS[@]}" 2>err >gen.s; then
         echo "compiler failed. see 'tests/err' and 'tests/gen.s'" >&2
         exit 1
     fi

@@ -20,14 +20,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     to '/dev/null'; 'fuzz-compiler.py' writes the image to a file and can
     report the same false 'compiler-crash')
     => decide whether a zero 'dat' at the end belongs in the image
-[ ] easy: 'fuzz-combos.py' generates a divisor that an inlined recursion
-    ended by a constant folds to zero, 't.sum(i32(n) / 7)' with 'n' below
-    7 in 'depth', so the inlined variant is rejected ('divisor must not be
-    zero', chapter 8: acceptance depends on inlining) and reported as
-    'combos-reject' (round 337, seed 1794409898 index 106; HEAD rejects it
-    the same way)
-    => make the generated divisors of that call nonzero for every 'n',
-       e.g. '(i32(n) / 7) | 1'
 [ ] easy: x86_64: nasm truncates a label at 4000 characters, so two
     noinline functions whose 4100-character names share a prefix give a
     listing nasm rejects (round 323 BH demo t5); generic type arguments
@@ -48,9 +40,8 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     minutes although the compiler accepts it in milliseconds; a zero 'dat'
     could be reserved ('resb' in '.bss') if its place before the variables
     allows it, or chapter 8 item 4 names the limit
-[ ] easy: (round 315 AM) error output: 'var x = 1;;;' reports the last ';'
-    of the run ('throw_if_ends_with_semicolon'), not the first; an error on
-    a 1 MB literal prints the constant, its line and the caret line (3 MB)
+[ ] easy: (round 315 AM) error output: an error on a 1 MB literal prints
+    the constant, its line and the caret line (3 MB)
 [ ] medium: user decision (round 307 ZY): in a function nothing calls, a
     noinline recursion that swaps its array arguments is checked per
     lengths ('len.4.u') and rejects an error at the swapped level, where
@@ -72,9 +63,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     is accepted, the same program with a call of 'f' is rejected (the
     result is reached through an address in the check, which test 2802
     relies on)
-[ ] easy: (round 294 XW) 'test-coverage.sh' runs the compiler without a
-    timeout, so a compiler that loops (a mutant of 'assembler::remove')
-    hangs the run instead of failing the case
 [ ] easy: (round 294 XW) running 'remove_copies' before 'remove_reloads'
     removes more reloads (87 compiles of the tests are smaller): folding a
     copy renames the source of a store to the register the next load
@@ -96,22 +84,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     is held, while 'store_bytes' falls back to immediate stores at any
     size: 'p = {"<200 bytes>"}' is accepted and 'p = {"abc"}' is not; rv32i
     accepts all three
-[ ] easy: (round 293 YC) the 'check_folded_conditions' call of the
-    compile-time 'let' fold in 'stmt_def_var' has no effect: a 'let' folds
-    only in a body compiled with constants from a call, where
-    'toc::check_skipped' returns at once; mutation removing it is
-    equivalent; remove the call if no other path folds there
 [ ] easy: (round 291 YD) x86_64 'memory_equal' reserves 'rcx', which
     only 'shift' names alone and which is held only when 'rsi' and 'rdi'
     are; without the reservation a record '==' whose displacement is past
     2 GiB under 11 live values compiles (the lowering borrows 'rcx' before
     the count is loaded) instead of "out of scratch registers"; check that
     no path holds 'rcx' alone, then drop the reservation
-[ ] easy: (round 290 XS) the 'is_left' normalize flag that rv32i passes
-    to the last 'store_operation_result' of a constant shift has no effect:
-    a left shift into a narrow register takes the 'slli'/'srai' branch
-    before it, any other is 32-bit or a store; mutation 'is_left' -> 'false'
-    is equivalent; dropping the flag would simplify the shift
 [ ] easy: user decision (round 288 ZC): 'foo g[k].it, bump()' with 'bump'
     writing 'k' is accepted (the address of 'g[k].it' is taken before the
     count, the same on every target), while 'array_copy(g[k].it, b,
@@ -124,8 +102,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
     every reader of a dword value reads the 32-bit view or uses 'movsx'
     (7 tests would lose a reload: 0419, 0513, 0596, 0926, 2091, 2176, 2177);
     measure and check that no reader takes the 64-bit view
-[ ] easy: (round 284 XP) 'grep ... && exit 1' lines in 'test-cli.sh' fail
-    the script without printing "FAILED", so a log scan misses them
 [ ] medium: user decision (round 251 VT2): an error found in a noinline
     body names only the first call that asked for the body ("called from
     'get(a)'"), not the calls down to 'main': with 'mid' calling a noinline

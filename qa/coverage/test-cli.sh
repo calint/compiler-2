@@ -38,6 +38,13 @@ expect_exit_1() {
     [[ $exit_code -eq 1 ]] || return 1
 }
 
+# fails the case where a command must not succeed, naming the line of the
+# caller as the trap does, e.g. 'grep -Fq text out && fail'
+fail() {
+    echo "FAILED. line ${BASH_LINENO[0]}" >&2
+    exit 1
+}
+
 CLI() {
     echo -n "cli $1: "
     set +e
@@ -310,7 +317,7 @@ CLI_FILE_ERRORS() {
 
 CLI_REGISTER_REPORT() {
     echo -n "cli --report=registers: "
-    "$BIN" 0829.baz >/dev/null 2>err && exit 1
+    "$BIN" 0829.baz >/dev/null 2>err && fail
     grep -Fq "register use at the failure" err
     "$BIN" 0825.baz >gen.s 2>err
     "$BIN" --report=registers 0825.baz >out 2>err
@@ -319,7 +326,7 @@ CLI_REGISTER_REPORT() {
     cmp -s -n "$(stat -c %s gen.s)" gen.s out
     grep -Fq "register use at the peak" out
     grep -Fq "per callee, the most registers one call holds itself" out
-    grep -Fq "register use at the peak" gen.s && exit 1
+    grep -Fq "register use at the peak" gen.s && fail
     # 0753.baz: the peak is in a function with a body of its own
     "$BIN" --report=registers 0753.baz >out 2>err
     grep -Fq "calls of functions with a body of their own save the registers" out
@@ -336,7 +343,7 @@ CLI_REGISTER_REPORT() {
     "$BIN" --report=registers 0136.baz >out 2>err
     grep -Fq "register use at the peak: 0 of" out
     grep -Eq '^; +0  main$' out
-    grep -Fq "global initializers" out && exit 1
+    grep -Fq "global initializers" out && fail
     # the total leaves out the registers the backend holds itself, 13 of the
     # 14 scratch registers on x86_64 and 29 of 30 on rv32i here
     "$BIN" --report=registers 0402.baz >out 2>err
@@ -354,18 +361,18 @@ CLI_SOURCE_LINE_ENDS() {
     [[ ! -s err ]]
     # the source line of an error does not show the carriage return
     sed 's/$/\r/' 0830.baz >gen-crlf.baz
-    "$BIN" gen-crlf.baz >gen.s 2>err && exit 1
+    "$BIN" gen-crlf.baz >gen.s 2>err && fail
     grep -Fq "is not a number" err
-    grep -q $'\r' err && exit 1
+    grep -q $'\r' err && fail
     # a tab stays a tab in front of the mark
     sed 's/^    /\t/' 0830.baz >gen-tab.baz
-    "$BIN" gen-tab.baz >gen.s 2>err && exit 1
+    "$BIN" gen-tab.baz >gen.s 2>err && fail
     grep -q $'^\t   ^$' err
     # a carriage return without a line feed is rejected, also in a
     # character literal, and shown escaped
     printf "func main() {\r\n    var c = '\r'\r\n    exit(c)\r\n}\r\n" \
         >gen-crlf.baz
-    "$BIN" gen-crlf.baz >gen.s 2>err && exit 1
+    "$BIN" gen-crlf.baz >gen.s 2>err && fail
     grep -Fq "a carriage return is not followed by a line feed" err
     grep -Fq "var c = '\\x0d'" err
     rm -f gen-crlf.baz gen-tab.baz
@@ -379,13 +386,13 @@ CLI_ERROR_LINE_BYTES() {
     echo -n "cli error line with invalid UTF-8 and DEL: "
     printf 'func main() {\n    var s = "\xc3A\xc3\xc3\xf8\x7f\xc3\xa9" + y\n}\n' \
         >gen-bytes.baz
-    "$BIN" gen-bytes.baz >gen.s 2>err && exit 1
+    "$BIN" gen-bytes.baz >gen.s 2>err && fail
     grep -Fq '\x7f' err
     grep -Fq '"\xc3A\xc3\xc3\xf8\x7f' err
     grep -Fxq '            ^~~~~~~~~~~~~~~~~~~~~~~~' err
     # a DEL in a name is neither a letter nor a digit
     printf 'func main() {\n    var a\x7f = 1\n}\n' >gen-bytes.baz
-    "$BIN" gen-bytes.baz >gen.s 2>err && exit 1
+    "$BIN" gen-bytes.baz >gen.s 2>err && fail
     grep -Fq "'a\\x7f' is not a valid name" err
     rm -f gen-bytes.baz
     echo ok
@@ -482,7 +489,7 @@ CLI_COMMENT_LOCATIONS() {
     printf 'func three() res {\n    res = nope\n}\n' >gen-abs-lib.baz
     printf 'include "%s/include/../gen-abs-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
         "$PWD" >gen-abs-main.baz
-    "$BIN" gen-abs-main.baz >gen.s 2>err && exit 1
+    "$BIN" gen-abs-main.baz >gen.s 2>err && fail
     grep -Fq "$PWD/gen-abs-lib.baz:2:11:" err
     rm -f gen-abs-lib.baz gen-abs-main.baz gen-abs-panic.baz
     echo ok
@@ -493,9 +500,7 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     local name=$'gen\nname.baz'
     # a message escapes the line end of the name
     cp 1517.baz "$name"
-    if "$BIN" "$name" >gen.s 2>err; then
-        exit 1
-    fi
+    "$BIN" "$name" >gen.s 2>err && fail
     grep -Fq 'gen\x0aname.baz:4:15:' err
     # the comments and the panic message of the listing stay on their lines
     printf 'func main() {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n}\n' >"$name"
@@ -513,7 +518,7 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     printf '    exit(g(a) + g(a + 1) * (a + 2))\n}\n' >>"$name"
     "$BIN" --report=registers "$name" >gen.s 2>err
     grep -Fq 'gen\x0aname.baz:' gen.s
-    grep -q '^; name.baz' gen.s && exit 1
+    grep -q '^; name.baz' gen.s && fail
     rm -f "$name" gen-lib.baz gen.o gen
     echo ok
 }
@@ -547,7 +552,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     printf 'func f() res {\n    res = nope\n}\n' >gen-link-dir/gen-c.baz
     printf 'include "gen-link-dir/gen-a.baz"\n\nfunc main() {\n    exit(f())\n}\n' \
         >gen-main.baz
-    "$BIN" gen-main.baz >gen.s 2>err && exit 1
+    "$BIN" gen-main.baz >gen.s 2>err && fail
     grep -Fq 'gen-link-dir/gen-c.baz:2:11:' err
     # also after a link: the error names 'gen-link-dir/sub/gen-d.baz', not
     # 'gen-link/../sub/gen-d.baz'
@@ -555,7 +560,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     printf 'func f() res {\n    res = nope\n}\n' >gen-link-dir/sub/gen-d.baz
     printf 'include "gen-link/gen-b.baz"\n\nfunc main() {\n    exit(f())\n}\n' \
         >gen-main.baz
-    "$BIN" gen-main.baz >gen.s 2>err && exit 1
+    "$BIN" gen-main.baz >gen.s 2>err && fail
     grep -Fq 'gen-link-dir/sub/gen-d.baz:2:11:' err
     # the includes of a file reached by a '..' after a link are relative to
     # the directory it was opened from, also where a file of that name next
@@ -586,7 +591,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     "$BIN" gen-main.baz >gen.s 2>err
     # a path through a file names no file, as the file system says
     printf 'include "gen-lib.baz/../gen-lib.baz"\n' >gen-main.baz
-    "$BIN" gen-main.baz >gen.s 2>err && exit 1
+    "$BIN" gen-main.baz >gen.s 2>err && fail
     grep -Fq "cannot open file 'gen-lib.baz/../gen-lib.baz'" err
     # the file system resolves the link also where a directory above the
     # working directory cannot be searched
@@ -690,7 +695,7 @@ CLI_LONG_ARRAY_UPPER_BOUND() {
     "$BIN" "${fpga[@]}" 2202.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -c 'upper bound: a 32-bit index is below the count$' gen.s) -eq 4 ]]
-    grep -Eq '^ +li t[0-9], 2147483664$' gen.s && exit 1
+    grep -Eq '^ +li t[0-9], 2147483664$' gen.s && fail
     "$BIN" "${fpga[@]}" 2203.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -Ec '^ +blt t[0-9], zero, 2f$' gen.s) -eq 3 ]]
@@ -708,7 +713,7 @@ CLI_NO_EXIT_ROUTINE() {
     for target in x86_64 rv32i; do
         baz_at "$target" gen-loop.baz >gen.s 2>err
         [[ ! -s err ]]
-        grep -Fq baz_exit gen.s && exit 1
+        grep -Fq baz_exit gen.s && fail
     done
     rm -f gen-loop.baz
     echo ok
@@ -747,7 +752,7 @@ CLI_FPGA_MEMORY() {
     # does not hide a stack below what 'main' may use
     expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=16 0212.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 16 B is smaller than the 48 B" err
-    grep -Fq "'nope' not found" err && exit 1
+    grep -Fq "'nope' not found" err && fail
     # a size beyond the range of a number is out of range, not a non-number
     expect_exit_1 "$BIN" --target=rv32i-fpga --stack=99999999999999999999999 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: '99999999999999999999999' is out of range" err
@@ -800,7 +805,7 @@ CLI_STACK_HANDLER() {
     for target in x86_64 rv32i; do
         baz_at "$target" --checks=stack 0981.baz >gen.s 2>err
         [[ ! -s err ]]
-        grep -Fq "stack overflow handler" gen.s && exit 1
+        grep -Fq "stack overflow handler" gen.s && fail
     done
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack 0981.baz >gen.s 2>err
     [[ ! -s err ]]
@@ -877,7 +882,7 @@ CLI_VERSIONS() {
     grep -Fq "kept the first of two versions, inside a version" gen.s
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=nested 0106.baz >gen.s 2>err
     [[ ! -s err ]]
-    grep -Fq "inside a version" gen.s && exit 1
+    grep -Fq "inside a version" gen.s && fail
     echo ok
 }
 
@@ -1078,7 +1083,7 @@ CLI_REGISTER_REPORT_COUNTS() {
     # 2475.baz: the peak of 0 registers is in 'main' alone
     "$BIN" --report=registers 2475.baz >out 2>err
     grep -Eq '^; +0  main$' out
-    grep -Fq "h called at" out && exit 1
+    grep -Fq "h called at" out && fail
     # 0753.baz: the callees and the saved registers in descending order, equal
     # counts by name
     "$BIN" --report=registers 0753.baz >out 2>err

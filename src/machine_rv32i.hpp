@@ -3163,7 +3163,8 @@ class machine_rv32i : public machine {
         address_of(site, end, past_end);
     }
 
-    // a narrow register shifts to the top and back, extending in one pair
+    // a narrow register shifts to the top and back, extending in one pair;
+    // the result needs no extension after it
     auto shift_by_constant(const size_t indent,
                            const arithmetic_operator operation,
                            const operand& dst, const loaded_destination& loaded,
@@ -3173,7 +3174,6 @@ class machine_rv32i : public machine {
         const bool is_left{operation == arithmetic_operator::shift_left};
 
         if (is_left and bits < register_bits_ and dst.is_register()) {
-
             assembler_.slli(indent, loaded.value.register_name(),
                             loaded.value.register_name(),
                             register_bits_ - bits + shift_count);
@@ -3181,19 +3181,17 @@ class machine_rv32i : public machine {
             assembler_.srai(indent, loaded.value.register_name(),
                             loaded.value.register_name(),
                             register_bits_ - bits);
+        } else {
+            // note: a right shift keeps an extended value extended, a left
+            //       one here is 32-bit or stored to memory
 
-            store_operation_result(indent, dst, loaded.address, loaded.value,
-                                   false);
-
-            return;
+            assembler_.immediate_op(indent, is_left ? op::slli : op::srai,
+                                    loaded.value.register_name(),
+                                    loaded.value.register_name(), shift_count);
         }
 
-        assembler_.immediate_op(indent, is_left ? op::slli : op::srai,
-                                loaded.value.register_name(),
-                                loaded.value.register_name(), shift_count);
-
         store_operation_result(indent, dst, loaded.address, loaded.value,
-                               is_left);
+                               false);
     }
 
     auto shift_by_register(const emit_site site,

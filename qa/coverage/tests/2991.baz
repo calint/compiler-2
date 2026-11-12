@@ -1,0 +1,5 @@
+# a run of semicolons after a statement is reported at its first one
+
+func main() {
+    var x = 3;;;
+}

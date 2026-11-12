@@ -1822,14 +1822,20 @@ class builtin_roles final {
 };
 
 // e.g. the ';' of 'var x = 3;', which the tokenizer reads as part of the word
-// before it
+// before it; the error points at the first ';' of 'var x = 3;;;'
 inline auto throw_if_ends_with_semicolon(const token& src_loc_tk) -> void {
-    if (not src_loc_tk.text().ends_with(';')) {
+    const std::string_view word{src_loc_tk.text()};
+
+    if (not word.ends_with(';')) {
         return;
     }
 
+    // note: 'npos + 1' is 0 when the word is only ';'
+    const size_t run_start{word.find_last_not_of(';') + 1};
+
     const token semicolon_tk{
-        token::position(src_loc_tk.file_index(), src_loc_tk.end_index() - 1,
+        token::position(src_loc_tk.file_index(),
+                        src_loc_tk.start_index() + run_start,
                         src_loc_tk.at_line()),
     };
 

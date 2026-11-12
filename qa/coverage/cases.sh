@@ -7906,3 +7906,6 @@ SRC=2970 && COMPERR
 
 # a hex escape ends before the escape after it, which is not quoted
 SRC=2990 && COMPERR
+
+# a run of semicolons after a statement is reported at its first one
+SRC=2991 && COMPERR

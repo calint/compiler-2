@@ -1,6 +1,55 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 349 (2026-11-12, open todo items that need no decision)
+    => done (2026-11-12): the six items below; not attempted: 291 YD,
+       285 XR, 265 WT, 253 VY, 241 VE, the nasm label of 4000 characters,
+       294 XW 'remove_copies' order
+[x] easy: 'fuzz-combos.py' generates a divisor that an inlined recursion
+    ended by a constant folds to zero, 't.sum(i32(n) / 7)' with 'n' below
+    7 in 'depth', so the inlined variant is rejected ('divisor must not be
+    zero', chapter 8: acceptance depends on inlining) and reported as
+    'combos-reject' (round 337, seed 1794409898 index 106; HEAD rejects it
+    the same way)
+    => make the generated divisors of that call nonzero for every 'n',
+       e.g. '(i32(n) / 7) | 1'
+    => done (2026-11-12): round 349: in the context of 'depth', whose 'n'
+       is a constant in each inlined level ('Ctx.constant_ints'), every
+       value argument of a call is '(a) | 1', odd for any 'n'; seed
+       1794409898, 150 programs, no findings
+[x] easy: (round 294 XW) 'test-coverage.sh' runs the compiler without a
+    timeout, so a compiler that loops (a mutant of 'assembler::remove')
+    hangs the run instead of failing the case
+    => done (2026-11-12): round 349: every compile of a case runs under
+       'COMPILE_TIMEOUT' (60 s, about 500 times the slowest optimized
+       compile), so a looping compiler fails its case
+[x] easy: (round 293 YC) the 'check_folded_conditions' call of the
+    compile-time 'let' fold in 'stmt_def_var' has no effect: a 'let' folds
+    only in a body compiled with constants from a call, where
+    'toc::check_skipped' returns at once; mutation removing it is
+    equivalent; remove the call if no other path folds there
+    => done (2026-11-12): round 349: removed; a probe showed no test,
+       roome, combos program or hand case reaching it past 'check_skipped'
+       (main and generic instances fold at the parse, the body check does
+       not fold); a note says why; listings unchanged
+[x] easy: (round 290 XS) the 'is_left' normalize flag that rv32i passes
+    to the last 'store_operation_result' of a constant shift has no effect:
+    a left shift into a narrow register takes the 'slli'/'srai' branch
+    before it, any other is 32-bit or a store; mutation 'is_left' -> 'false'
+    is equivalent; dropping the flag would simplify the shift
+    => done (2026-11-12): round 349: 'shift_by_constant' is one if/else
+       and a single store without normalizing (a left shift there is
+       32-bit or into memory, a right shift keeps the extension); listings
+       unchanged
+[x] easy: (round 284 XP) 'grep ... && exit 1' lines in 'test-cli.sh' fail
+    the script without printing "FAILED", so a log scan misses them
+    => done (2026-11-12): round 349: a helper 'fail' prints "FAILED. line
+       N" with the caller's line like the ERR trap; all 21 silent exits use
+       it
+[x] easy: (round 315 AM) error output: 'var x = 1;;;' reports the last ';'
+    of the run ('throw_if_ends_with_semicolon'), not the first
+    => done (2026-11-12): round 349: 'throw_if_ends_with_semicolon' points
+       at the first ';' of the trailing run; test 2991
 [x] easy: round 348 (2026-11-12, design simplification of 'toc.hpp' and
     'stmt_call.hpp': state duplicated or derivable, bool parameters,
     parallel structures)

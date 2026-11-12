@@ -831,6 +831,9 @@ class Ctx:
         self.in_loop = False
         self.calls = []
         self.allow_globals = True
+        # the 'ints' are constants in each inlined level, so an argument
+        # made of them alone folds and can be a zero divisor in the callee
+        self.constant_ints = False
 
     def copy(self):
         c = Ctx(self.gen, self.fn)
@@ -844,6 +847,7 @@ class Ctx:
         c.in_loop = self.in_loop
         c.calls = self.calls
         c.allow_globals = self.allow_globals
+        c.constant_ints = self.constant_ints
         return c
 
 
@@ -1036,7 +1040,8 @@ class Gen:
                     break
             else:
                 return None
-            args.append(a)
+            # note: an odd argument is not a zero divisor for any constant
+            args.append(Bin("|", a, Lit(t, 1)) if ctx.constant_ints else a)
         return args
 
     def value_call(self, ctx, t):
@@ -1498,6 +1503,7 @@ class Gen:
         dctx.allow_globals = False
         dctx.recs = [tp]
         dctx.ints = ["n"]
+        dctx.constant_ints = True
         dctx.calls = [mix, stepf, sumf]
         pre = self.block(dctx, rnd.randint(1, 2), 1)
         post = self.block(dctx, rnd.randint(0, 2), 1)
