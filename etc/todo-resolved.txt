@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 390 (2026-11-12, design: the path of a no-UB check from
+    its rule to the emitted code; readability: one statement followed from
+    'main.cpp' to the assembly)
+    => done (2026-11-12): each check is decided once in the front end and
+       passed as 'runtime_check'; 'machine::check_bounds' returns nothing:
+       its result was always 'checks().bounds_lower', 'check_ranges' tells
+       the second range that the first tested the sign of a run-time count
+       ('bulk_operands.hpp'); two comments a newcomer misread
+       ('term_kind::literal' example is a character literal,
+       'compile_computed_operand' says why 'dst' is not the destination);
+       listings unchanged
 [x] easy: user decision (round 381): on rv32i an untyped 'let' must fit
     'int' where it is defined: 'let U = 0x80000000' is rejected ("does not
     fit 'int'", 'fold_let' in 'stmt_def_var.hpp' folds it at the default

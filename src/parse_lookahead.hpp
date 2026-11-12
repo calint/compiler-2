@@ -159,7 +159,7 @@ enum class term_kind : uint8_t {
     none,
     // e.g. '"abc"'
     string,
-    // e.g. '12', 'a', 'true'
+    // e.g. '12', ''a'', 'true'
     literal,
     // e.g. 'array_length' or 'read'
     builtin_function,

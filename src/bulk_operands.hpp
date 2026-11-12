@@ -163,16 +163,14 @@ class bulk_operands final {
 
         // the range from the start of 'array': 'start' holds a run-time
         // start, which the walk of the address checked up to the length,
-        // 'count_register' a run-time count, none for a constant one; true
-        // when it checked the lower bound of the count
-        [[nodiscard]] auto
-        check_range(const stmt_identifier& array,
-                    const std::optional<operand>& start,
-                    const std::optional<operand>& count_register,
-                    const bool count_lower_checked) const -> bool {
+        // 'count_register' a run-time count, none for a constant one
+        auto check_range(const stmt_identifier& array,
+                         const std::optional<operand>& start,
+                         const std::optional<operand>& count_register,
+                         const bool count_lower_checked) const -> void {
 
             if (not tc_.checks().is_bounds()) {
-                return false;
+                return;
             }
 
             const array_shape shape{array.resolve_path(tc_).shape()};
@@ -181,7 +179,7 @@ class bulk_operands final {
             //       calls or a body it checks, its code is discarded
 
             if (shape.is_length_unknown()) {
-                return false;
+                return;
             }
 
             const std::optional<machine::bounds_range> range{
@@ -190,7 +188,7 @@ class bulk_operands final {
             };
 
             if (not range) {
-                return false;
+                return;
             }
 
             // a range past the end names the count, as the check of a
@@ -199,11 +197,7 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            const bool is_lower_checked{
-                x.check_bounds({count_tk, tc_.indent()}, *range),
-            };
-
-            return count_register.has_value() and is_lower_checked;
+            x.check_bounds({count_tk, tc_.indent()}, *range);
         }
 
         // the ranges of both arrays after the later arguments,
@@ -211,13 +205,14 @@ class bulk_operands final {
         auto check_ranges(const std::optional<operand>& count_register)
             -> void {
 
-            const bool count_lower_checked{
-                check_range(operands_.first(), starts_.at(0).start,
-                            count_register, false),
-            };
+            check_range(operands_.first(), starts_.at(0).start, count_register,
+                        false);
 
-            std::ignore = check_range(operands_.second(), starts_.at(1).start,
-                                      count_register, count_lower_checked);
+            // note: the check of the first range tested the sign of a
+            //       run-time count where '--checks=lower' asks for it
+
+            check_range(operands_.second(), starts_.at(1).start, count_register,
+                        true);
 
             are_ranges_checked_ = true;
         }

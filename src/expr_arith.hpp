@@ -1229,7 +1229,7 @@ class expr_arith final : public statement {
             x.alloc_scratch_register({src.tok(), tc.indent()}, dst.type_ref()),
         };
 
-        // note: the callers are the operators after the first element
+        // note: a step after the first, 'dst' holds the value so far
         src.compile(tc, dst.in_register(reg));
 
         emit_operation(tc, src.tok(), op, dst, reg,
