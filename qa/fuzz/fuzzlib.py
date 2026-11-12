@@ -446,6 +446,53 @@ SANITIZER_TEXT = ("AddressSanitizer", "runtime error:", "LeakSanitizer",
                   "SUMMARY:", "libc++abi", "std::bad_alloc")
 
 
+# the rejections that have no place in the source: the whole program, e.g.
+# 'function 'main' not found', and the errors of the files and of the memory
+# of the target, which start with 'error: '
+NO_LOCATION = re.compile(r"function 'main' not found|^error: ", re.M)
+
+
+def classify_compile(c):
+    # a finding (category, key) from the result of the compiler, or None
+    if c.timed_out:
+        return ("compiler-hang", "timeout")
+    text = c.stderr
+    sanitizer = any(t in text for t in SANITIZER_TEXT)
+    if c.returncode in SANITIZER_EXIT or c.returncode < 0 or sanitizer:
+        return ("compiler-crash", signature(text) if sanitizer
+                else f"exit {c.returncode} {text[:80]}")
+    # note: a defect of the compiler that it caught, it exits with 1
+    if "internal error: " in text:
+        return ("compiler-crash", re.sub(r"\d+", "N", text.strip()[:100]))
+    if c.returncode == 1:
+        if not DIAGNOSTIC.search(text) and not NO_LOCATION.search(text):
+            return ("bad-diagnostic", re.sub(r"\d+", "N", text[:100]))
+        return None
+    if c.returncode != 0:
+        return ("compiler-crash", f"exit code {c.returncode}")
+    return None
+
+
+def test_sources():
+    # (name, text) of the sources of 'qa/coverage/tests' that compile in a
+    # moment, the seeds of the mutation fuzzers
+    sources = []
+    for name in sorted(os.listdir(TESTS)):
+        if not name.endswith(".baz"):
+            continue
+        path = os.path.join(TESTS, name)
+        # the huge tests only slow the fuzzing down
+        if os.path.getsize(path) > 25000:
+            continue
+        with open(path, "rb") as f:
+            text = f.read().decode("latin-1")
+        # the tests of far jumps take half a minute to compile
+        if "MiB" in text or "GiB" in text or "step4096" in text:
+            continue
+        sources.append((name, text))
+    return sources
+
+
 # the messages of running out of registers, a limit of the language and not a
 # defect ('compile_error::error_kind::out_of_registers')
 OUT_OF_REGISTERS = re.compile(

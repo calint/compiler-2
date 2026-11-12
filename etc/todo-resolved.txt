@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: need approval: two fuzzers as new files in 'qa/fuzz', called from
+    'fuzz-all.sh'
+    => 'fuzz-mutate.py' (round 319 BD 'smf.py'): mutates the accepted tests
+       by structure (types and widths, array sizes and constants at the
+       edges, 'mut', 'noinline', statements moved, wrapped or spliced,
+       definitions swapped) and compiles each on four targets with random
+       options under asan; 500000 mutants, about 1 million compiles, found
+       no assert or crash, one hang that is the open item on the size of an
+       inline expansion
+    => 'fuzz-model.py' (round 317 BC 'gen3.py'): builds a program as a
+       tree, writes it inline, noinline and mixed, runs each on x86_64 and
+       rv32i-qemu with every '--versions' value and '--nopt', and compares
+       exit code, output and panic with a python model of 'noub'; 21000
+       programs, 362000 builds, no defect
+    => sources kept in /tmp/r319-bd-work and /tmp/r317-bc-work until then
+    => done (2026-11-12): round 347: 'fuzz-mutate.py' ('smf.py' on
+       'fuzzlib': accepted tests are those with a case in 'cases.sh' that
+       is not 'COMPERR'; 'classify_compile' and 'test_sources' moved from
+       'fuzz-compiler.py' to 'fuzzlib.py', an 'internal error' is now a
+       'compiler-crash' and an 'error: ' line without a position is
+       accepted) and 'fuzz-versions.py' ('gen3.py', named for what only it
+       does: every program inlined, 'noinline' and mixed, with '--nopt'
+       and every '--versions' value; its generator no longer emits calls
+       the shared-storage rules reject, rejections are judged); both in
+       'fuzz-all.sh' at about 45 s each, no findings
 [x] easy: round 346 (2026-11-12, confirming round with a strict bar: the
     end of the loop of 2026-11-11)
     => done (2026-11-12): CW: 'machine_rv32i_qemu.hpp' included

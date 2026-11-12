@@ -7,7 +7,8 @@
 # ('build-asan.sh'). findings, the first example of each is kept in
 # 'findings/':
 #
-#   compiler-crash    sanitizer report, abort, signal or an unexpected exit code
+#   compiler-crash    sanitizer report, abort, signal, internal error or an
+#                     unexpected exit code
 #   compiler-hang     no result in time
 #   bad-diagnostic    a rejected source without a 'file:line:column: message'
 #   empty-output      an accepted source without code
@@ -67,19 +68,10 @@ STRESS = ["deep-parens", "deep-brackets", "deep-unary", "long-chain",
 
 
 def load_seeds():
-    for name in sorted(os.listdir(fl.TESTS)):
-        if not name.endswith(".baz"):
-            continue
-        path = os.path.join(fl.TESTS, name)
-        # the huge tests only slow the fuzzing down
-        if os.path.getsize(path) > 25000:
-            continue
-        with open(path, "rb") as f:
-            text = f.read().decode("latin-1")
-        # the tests of far jumps take half a minute to compile
-        if "MiB" in text or "GiB" in text or "step4096" in text:
-            continue
-        SEEDS.append(text)
+    # also the initializer of the processes, which may start without them
+    if SEEDS:
+        return
+    SEEDS.extend(text for _, text in fl.test_sources())
     words = set()
     for text in SEEDS:
         words.update(re.findall(r"[A-Za-z_][A-Za-z_0-9]*", text))
@@ -251,24 +243,6 @@ def write_source(path, text):
         f.write(text.encode("latin-1", "replace"))
 
 
-def classify_compile(c, source):
-    # a finding from the result of the compiler, or None
-    if c.timed_out:
-        return ("compiler-hang", "timeout")
-    text = c.stderr
-    sanitizer = any(t in text for t in fl.SANITIZER_TEXT)
-    if c.returncode in fl.SANITIZER_EXIT or c.returncode < 0 or sanitizer:
-        return ("compiler-crash", fl.signature(text) if sanitizer
-                else f"exit {c.returncode} {text[:80]}")
-    if c.returncode == 1:
-        if not fl.DIAGNOSTIC.search(text) and not NO_LOCATION.search(text):
-            return ("bad-diagnostic", re.sub(r"\d+", "N", text[:100]))
-        return None
-    if c.returncode != 0:
-        return ("compiler-crash", f"exit code {c.returncode}")
-    return None
-
-
 def seed_differs(seed_text, options, work, rv32i_target):
     # the seed alone is accepted on one target and rejected on the other, e.g.
     # a test of a documented difference, so its mutants are not findings
@@ -293,8 +267,6 @@ def first_diagnostic(text):
 EXPECTED_DIFFERENCE = re.compile(
     r"overflows the type|scratch registers|cannot allocate register|always used by the operation|simplify the expression|runs out of registers|does not end at compile time|RV32I|shift count must be|'i64'|i64|out of range|too large|too many|does not fit|a sector of [0-9]* elements|"
     r"exceeds|capacity|memory|beyond|of any size")
-# the diagnostics that have no place in the source
-NO_LOCATION = re.compile(r"function 'main' not found")
 
 
 def checks_options(rnd):
@@ -320,7 +292,7 @@ def fuzz_one(args):
         asan = fl.COMPILER_ASAN
 
         c, x86, problem = fl.run_x86(asan, path, options, work)
-        finding = classify_compile(c, text)
+        finding = fl.classify_compile(c)
         if finding:
             findings.append(finding + (c.stderr[-3000:],))
             return text, findings, stats
@@ -330,7 +302,7 @@ def fuzz_one(args):
             c2 = fl.compile_source(asan, path,
                                    ["--target=rv32i-fpga"] + options,
                                    os.devnull)
-            finding = classify_compile(c2, text)
+            finding = fl.classify_compile(c2)
             if finding:
                 findings.append(finding + (c2.stderr[-3000:],))
             elif not c2.returncode:
@@ -411,7 +383,7 @@ def compare_rv32i(run, target, x86, findings, stats):
     # outcome 'x86' of x86_64
     c, rv, problem = fl.run_target(fl.COMPILER_ASAN, run.path, run.options,
                                    run.work, target, "r")
-    finding = classify_compile(c, run.text)
+    finding = fl.classify_compile(c)
     if finding:
         findings.append(finding + (c.stderr[-3000:],))
         return

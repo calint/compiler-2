@@ -14,6 +14,12 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
        'site.indent'), and the versions of 'emit_most_efficient' and the
        noinline bodies (indent 0) would need indent scopes in the backend:
        mutable backend state across versions; measure before deciding
+[ ] easy: rv32i writes a zero 'dat' at full size into its image: 'dat
+    values = i8[2147483648]' makes a 2 GiB '.bin' (round 347
+    'fuzz-mutate.py' hit the 1 GiB file limit of 'fuzzlib'; it now writes
+    to '/dev/null'; 'fuzz-compiler.py' writes the image to a file and can
+    report the same false 'compiler-crash')
+    => decide whether a zero 'dat' at the end belongs in the image
 [ ] easy: 'fuzz-combos.py' generates a divisor that an inlined recursion
     ended by a constant folds to zero, 't.sum(i32(n) / 7)' with 'n' below
     7 in 'depth', so the inlined variant is rejected ('divisor must not be
@@ -613,21 +619,6 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 --------------------------------------------------------------------------------
 3. new features
 --------------------------------------------------------------------------------
-[p] easy: need approval: two fuzzers as new files in 'qa/fuzz', called from
-    'fuzz-all.sh'
-    => 'fuzz-mutate.py' (round 319 BD 'smf.py'): mutates the accepted tests
-       by structure (types and widths, array sizes and constants at the
-       edges, 'mut', 'noinline', statements moved, wrapped or spliced,
-       definitions swapped) and compiles each on four targets with random
-       options under asan; 500000 mutants, about 1 million compiles, found
-       no assert or crash, one hang that is the open item on the size of an
-       inline expansion
-    => 'fuzz-model.py' (round 317 BC 'gen3.py'): builds a program as a
-       tree, writes it inline, noinline and mixed, runs each on x86_64 and
-       rv32i-qemu with every '--versions' value and '--nopt', and compares
-       exit code, output and panic with a python model of 'noub'; 21000
-       programs, 362000 builds, no defect
-    => sources kept in /tmp/r319-bd-work and /tmp/r317-bc-work until then
 [p] easy: need approval: one rule for the names of a method of a generic
     type: a parameter or the result named like a constant parameter of the
     receiver ('type buf<n>', 'func buf.get(n)') is accepted and hides the
