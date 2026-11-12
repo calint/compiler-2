@@ -56,8 +56,6 @@ class stmt_assign_var final : public statement {
     auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
         comment_source(tc);
 
         const std::optional<storage_path> dst_storage{
@@ -75,6 +73,8 @@ class stmt_assign_var final : public statement {
 
         // note: the parse rejected a constant destination
         assert(not dst_info.is_const());
+
+        machine& x{tc.machine()};
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 

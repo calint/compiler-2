@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 403 (2026-11-13, design by measured control flow: the
+    2307 functions of 'src' ranked by length, nesting, branches,
+    parameters and bool parameters; readability: every function of
+    'stmt_call', 'stmt_def_func', 'expr_arith', 'expr_bool',
+    'stmt_def_var' and 'stmt_assign_var', about 150 examples of their
+    comments compiled; bug hunt: the compile-time no-UB rules)
+    => done (2026-11-13): 'assembler_x86_64::shorten_symbols' has the
+       named step 'short_name' (47 lines, nesting 3 -> 35 and 19 lines,
+       nesting 2 and 1); the largest of the tree: 132 lines (an emitted
+       routine), nesting 3 (14 functions, loops in loops), 23 branches
+       ('classify_term', one rule per 'if'), 7 parameters; no bool
+       parameter selects between two bodies; the rest is inherent
+    => 'machine& x' declared just before its use in
+       'stmt_assign_var::compile', 'expr_arith::compile_step' and
+       'noinline_call::write_frame_slots'; a comment of
+       'stmt_call::parse_arguments' is on the statement it describes; the
+       file map of 'stmt_call.hpp' says 'constructor_call_tag' selects the
+       'stmt_call' constructor; every example of a comment behaves as it
+       says, every note holds; listings unchanged (2495 cases)
+    => bug hunt (34000 programs generated, 15555 accepted and run, all
+       inlined and all noinline, x86_64 and rv32i-fpga: reach and
+       assignment with a dirtied stack, the order of operands against a
+       model at 'int', 'i32' and 'i16', aliasing under four semantics of
+       passing; about 130 probes): no accepted program with undefined
+       behavior; the safe programs the rules reject are an item of
+       'todo.txt'
 [x] easy: round 402 (2026-11-13, design by the data: every struct, enum,
     variant and table of 'src'; readability: the bodies of the two backends
     against listings; bug hunt: generic types and constants)

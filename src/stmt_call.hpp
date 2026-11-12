@@ -49,7 +49,7 @@
 //   'inline_call'     compiles the body of the function in place
 //   'noinline_call'   passes addresses to the body that is emitted once
 //   'constructor_call_tag'
-//                     selects the constructor of 'point.at(1, 2)'
+//                     selects the 'stmt_call' constructor for 'point.at(1, 2)'
 //   free functions    'assert_call_in_func', 'path_argument'
 //   'builtin_arguments'
 //                     the arguments of a built-in that parses like a call,
@@ -1600,10 +1600,10 @@ class noinline_call final {
                       const std::span<const noinline_arg> arguments) const
         -> std::optional<operand> {
 
-        machine& x{tc.machine()};
-
         operand slot_address{frame_address};
         std::optional<operand> receiver_address;
+
+        machine& x{tc.machine()};
 
         for (const frame_slot& slot : call_.func->frame_slots()) {
             // the callee finds it in a register, it has no slot
@@ -2595,10 +2595,10 @@ class stmt_call final : public statement {
                          const std::string_view what,
                          const std::span<const size_t> deducing_args) -> void {
 
-        // the type is the result type of the callee, resolved before, so an
-        // unknown callee is reported before a missing '('
         assert_callee_body_parsed(tc);
 
+        // the type is the result type of the callee, resolved before, so an
+        // unknown callee is reported before a missing '('
         set_type(callee().result_type());
 
         read_open_paren(tz, what);

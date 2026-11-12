@@ -879,9 +879,9 @@ class expr_arith final : public statement {
 
         const statement& src{*s.element};
 
-        machine& x{tc.machine()};
-
         const std::string_view op_text{source_text(s.op)};
+
+        machine& x{tc.machine()};
 
         x.comment({src.tok(), tc.indent()},
                   trimmed_source(src, dst.text(), op_text));

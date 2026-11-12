@@ -99,6 +99,20 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'check_upper_bound', "note: 3" in 'check_divisor'); without the count
     about -25 lines and one more 'j' per check with several tests, growth
     not measured
+[ ] medium: user decision (round 402 bug hunt of the no-UB rules): safe
+    programs a user would write that the aliasing and assignment rules
+    reject: 'x = inc(x)', 'x = max(x, y)', 'total = add(total, e)',
+    'a[i] = inc(a[i])' ("argument 1 'x' may share storage with the result
+    destination 'x'": the callee reads the argument before it writes
+    'res', the record of a body has no order); 'v.len = v.room()' with a
+    method that only reads; 'count = next()' with 'next' returning the
+    global it increments; 'swap(a[i], a[j])' with run-time indexes (only a
+    run-time check could accept it); 'foo res.items { e = i8(i) }' needs
+    'res.items = {}' first; 'x + 1 == w()' with 'w' writing 'x' although
+    the left side is a value by then
+    => the workaround is a temporary; decide whether the first form (the
+       argument read whole before the first write of the result) is worth
+       an order in the record of a body
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end

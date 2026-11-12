@@ -827,6 +827,27 @@ class assembler_x86_64 final : public assembler {
         return std::nullopt;
     }
 
+    // 'symbol' as 'shorten_symbols' writes it, numbered at its first use
+    [[nodiscard]] static auto
+    short_name(const std::string_view symbol,
+               std::unordered_map<std::string_view, std::string>& short_names)
+        -> std::string_view {
+
+        if (symbol.size() <= max_symbol_size_) {
+            return symbol;
+        }
+
+        const auto [found, is_new]{short_names.try_emplace(symbol)};
+
+        if (is_new) {
+            found->second =
+                std::format("{}${}", symbol.substr(0, max_symbol_size_),
+                            short_names.size());
+        }
+
+        return found->second;
+    }
+
     // 'text' with each symbol over 'max_symbol_size_' characters in its code
     // written as its first 'max_symbol_size_' characters, '$' and a number,
     // the same for each use; no other symbol has a '$'; the code ends at a
@@ -852,19 +873,7 @@ class assembler_x86_64 final : public assembler {
 
             const std::string_view symbol{code.substr(begin, end - begin)};
 
-            if (symbol.size() > max_symbol_size_) {
-                const auto [found, is_new]{short_names.try_emplace(symbol)};
-
-                if (is_new) {
-                    found->second =
-                        std::format("{}${}", symbol.substr(0, max_symbol_size_),
-                                    short_names.size());
-                }
-
-                shortened += found->second;
-            } else {
-                shortened += symbol;
-            }
+            shortened += short_name(symbol, short_names);
 
             // the character after the symbol, if any
             if (end < code.size()) {
