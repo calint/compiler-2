@@ -557,7 +557,7 @@ class expr_arith final : public statement {
         // inlined function
         // e.g. 'r = a + r * 2' would copy 'a' into 'r' before 'r * 2' reads it
         if (destination_is_clobbered_before_read(tc, dst, steps)) {
-            compile_through_scratch(tc, dst, steps);
+            compile_steps_in_scratch(tc, dst, steps);
             return;
         }
 
@@ -571,7 +571,7 @@ class expr_arith final : public statement {
         // or costs a copy, which depends on the elements, so both are measured
         tc.emit_most_efficient(
             tok(), [&] -> void { compile_steps(tc, dst, steps); },
-            [&] -> void { compile_through_scratch(tc, dst, steps); });
+            [&] -> void { compile_steps_in_scratch(tc, dst, steps); });
     }
 
     // each element is computed at the width of the destination
@@ -918,23 +918,15 @@ class expr_arith final : public statement {
 
     // the destination keeps its value until the whole expression is computed;
     // the steps planned for 'dst' are those of a register of its type
-    auto compile_through_scratch(toc& tc, const destination& dst,
-                                 const std::span<const step> steps) const
+    auto compile_steps_in_scratch(toc& tc, const destination& dst,
+                                  const std::span<const step> steps) const
         -> void {
 
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register({tok(), tc.indent()}, dst.type_ref()),
-        };
-
-        const destination reg_dst{dst.in_register(reg)};
-
-        compile_steps(tc, reg_dst, steps);
-
-        x.copy_value({tok(), tc.indent()}, dst.operand(), reg);
-
-        x.free_scratch_register({tok(), tc.indent()}, reg);
+        compile_through_scratch(tc, tok(), dst.operand(), dst.type_ref(),
+                                [&](const operand& reg) -> void {
+                                    compile_steps(tc, dst.in_register(reg),
+                                                  steps);
+                                });
     }
 
     // a step with a value: a constant element, its value folded by

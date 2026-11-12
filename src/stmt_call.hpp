@@ -1076,17 +1076,11 @@ class inline_call final {
     // the result is made at its type in a register that the body names, the
     // copy into the operand widens it
     auto compile_widened(toc& tc, const destination& dst) const -> void {
-        machine& x{tc.machine()};
-
-        const operand result{
-            x.alloc_scratch_register({call_.tk, tc.indent()},
-                                     call_.func->result_type()),
-        };
-
-        compile_in_block(tc, destination::of_register(result));
-
-        x.copy_value({call_.tk, tc.indent()}, dst.operand(), result);
-        x.free_scratch_register({call_.tk, tc.indent()}, result);
+        statement::compile_through_scratch(
+            tc, call_.tk, dst.operand(), call_.func->result_type(),
+            [&](const operand& result) -> void {
+                compile_in_block(tc, destination::of_register(result));
+            });
     }
 
     auto compile_with_bindings(toc& tc, const destination& dst) const -> void {

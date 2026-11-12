@@ -219,7 +219,7 @@ class initializer_declaration final {
         const expr_bool condition{tc, tz.next_whitespace_token(), tz};
 
         // a comparison, 'not', 'and' or 'or'
-        const expr_arith* const arith{condition.arithmetic()};
+        const expr_arith* const arith{condition.lone_operand()};
 
         if (arith == nullptr) {
             set_type(tc.builtins().boolean());

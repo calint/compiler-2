@@ -1115,7 +1115,7 @@ class expr_any final : public statement {
         // one operand is compiled like a value of another type, a name is
         // passed where it is stored, e.g. the 'x' of 'f(x)' that a 'mut bool'
         // parameter writes, a call binds its result to the destination
-        if (std::optional<expr_arith> operand{value.release_operand()}) {
+        if (std::optional<expr_arith> operand{value.release_lone_operand()}) {
             return std::move(*operand);
         }
 

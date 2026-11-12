@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 355 (2026-11-12, design of the front end expressions)
+    => done (2026-11-12): 'statement::compile_through_scratch' replaces
+       the alloc, compute, copy and free sequences of 'expr_arith' (now
+       'compile_steps_in_scratch'), 'expr_bool::compile' and
+       'inline_call::compile_widened'; 'arithmetic', 'release_arithmetic'
+       and 'release_operand' of 'expr_bool_op' and 'expr_bool' renamed
+       'lone_operand' and 'release_lone_operand'; pure refactor; left for
+       rounds of their own: a condition parse that unwraps a shorthand
+       ('expr_any::parse_condition', 'stmt_def_var::deduce_from_initializer'),
+       'expr_type' mixing a literal with a copy or call wrapper, 'expr_any'
+       mixing scalar and array forms
 [x] medium: x86_64: a bool computed by 'setcc' and branched on at once is
     tested again: 'sete r15b; test r15b, r15b; jne' (a bool argument of an
     inline function, e.g. 'assert(k == 3)') and 'setg byte [m]; cmp byte

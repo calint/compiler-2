@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <format>
+#include <functional>
 #include <iterator>
 #include <optional>
 #include <ostream>
@@ -409,6 +410,26 @@ class statement {
                 std::format("expected a type name, got the constant {}",
                             in_quotes(type_tk.text()))};
         }
+    }
+
+    // 'compile_value' computes a value into a scratch register of
+    // 'scratch_type', which is then copied into 'dst', so 'dst' keeps its
+    // value until the whole value is computed, or the copy widens it
+    static auto compile_through_scratch(
+        toc& tc, const token& src_loc_tk, const operand& dst,
+        const type& scratch_type,
+        const std::function_ref<void(const operand&)> compile_value) -> void {
+
+        machine& x{tc.machine()};
+
+        const operand reg{
+            x.alloc_scratch_register({src_loc_tk, tc.indent()}, scratch_type),
+        };
+
+        compile_value(reg);
+
+        x.copy_value({src_loc_tk, tc.indent()}, dst, reg);
+        x.free_scratch_register({src_loc_tk, tc.indent()}, reg);
     }
 
     // the type after the name of a field or a parameter, none for the default

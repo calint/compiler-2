@@ -170,15 +170,6 @@ class expr_bool_op final : public statement {
     // class methods
     //
 
-    // e.g. 'a + 1', null when negated or compared
-    [[nodiscard]] auto arithmetic() const -> const expr_arith* {
-        if (comparison_ or not nots_.is_empty()) {
-            return nullptr;
-        }
-
-        return &lhs_;
-    }
-
     // a stored 'bool' is 0 or 1 and a condition is a 'bool', an integer is
     // compared first, e.g. 'n != 0', and not with a 'bool'
     auto assert_boolean_operands() const -> void {
@@ -284,9 +275,18 @@ class expr_bool_op final : public statement {
         return *constant != is_negated();
     }
 
-    // takes the operand that 'arithmetic' points to
-    [[nodiscard]] auto release_arithmetic() -> expr_arith {
-        assert(arithmetic() != nullptr);
+    // e.g. 'a + 1', null when negated or compared
+    [[nodiscard]] auto lone_operand() const -> const expr_arith* {
+        if (comparison_ or not nots_.is_empty()) {
+            return nullptr;
+        }
+
+        return &lhs_;
+    }
+
+    // takes the operand that 'lone_operand' points to
+    [[nodiscard]] auto release_lone_operand() -> expr_arith {
+        assert(lone_operand() != nullptr);
 
         return std::move(lhs_);
     }
@@ -1062,15 +1062,9 @@ class expr_bool final : public statement {
             return;
         }
 
-        machine& x{tc.machine()};
-
-        const operand reg{
-            x.alloc_scratch_register({tok(), tc.indent()}, dst.type_ref()),
-        };
-
-        compile_value(tc, reg);
-        x.copy_value({tok(), tc.indent()}, dst.operand(), reg);
-        x.free_scratch_register({tok(), tc.indent()}, reg);
+        compile_through_scratch(
+            tc, tok(), dst.operand(), dst.type_ref(),
+            [&](const operand& reg) -> void { compile_value(tc, reg); });
     }
 
     // a condition known at compile time is 1 or 0
@@ -1102,17 +1096,6 @@ class expr_bool final : public statement {
     //
     // class methods
     //
-
-    // e.g. 'a + 1' or '(a + 1)', null when the list negates, compares, or
-    // combines with 'and' or 'or'
-    [[nodiscard]] auto arithmetic() const -> const expr_arith* {
-        if (bools_.size() != 1 or has_not()) {
-            return nullptr;
-        }
-
-        return bools_.front().visit(
-            [](const auto& e) -> const expr_arith* { return e.arithmetic(); });
-    }
 
     // the operands of a condition or of a stored 'bool', see the elements
     auto assert_boolean_operands() const -> void {
@@ -1165,9 +1148,21 @@ class expr_bool final : public statement {
         return (not is_or_list()) != inverted;
     }
 
+    // e.g. 'a + 1' or '(a + 1)', null when the list negates, compares, or
+    // combines with 'and' or 'or'
+    [[nodiscard]] auto lone_operand() const -> const expr_arith* {
+        if (bools_.size() != 1 or has_not()) {
+            return nullptr;
+        }
+
+        return bools_.front().visit([](const auto& e) -> const expr_arith* {
+            return e.lone_operand();
+        });
+    }
+
     // the operand when the whole expression is one 'bool' operand, e.g. 'x'
     // or 'f(x)' but not 'not x', else none and the expression is unchanged
-    [[nodiscard]] auto release_operand() -> std::optional<expr_arith> {
+    [[nodiscard]] auto release_lone_operand() -> std::optional<expr_arith> {
         // note: only a group in parentheses has 'not's of its own
         assert(not has_not());
 
@@ -1177,11 +1172,11 @@ class expr_bool final : public statement {
 
         expr_bool_op* const op{std::get_if<expr_bool_op>(&bools_.front())};
 
-        if (op == nullptr or op->arithmetic() == nullptr) {
+        if (op == nullptr or op->lone_operand() == nullptr) {
             return std::nullopt;
         }
 
-        return op->release_arithmetic();
+        return op->release_lone_operand();
     }
 
   private:
@@ -1196,7 +1191,7 @@ class expr_bool final : public statement {
         const element& only{bools_.front()};
 
         if (const expr_bool_op* const op{std::get_if<expr_bool_op>(&only)}) {
-            const expr_arith* const arith{op->arithmetic()};
+            const expr_arith* const arith{op->lone_operand()};
 
             if (arith == nullptr or not arith->is_one_plain_element()) {
                 return;
