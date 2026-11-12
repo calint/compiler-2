@@ -7909,3 +7909,10 @@ SRC=2990 && COMPERR
 
 # a run of semicolons after a statement is reported at its first one
 SRC=2991 && COMPERR
+
+# a generic body without its '}' ends at the next definition, as a plain
+# body does
+SRC=2993 && COMPERR
+
+# a generic type without its '}' ends at the next definition
+SRC=2994 && COMPERR

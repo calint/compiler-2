@@ -1,0 +1,4 @@
+
+2993.baz:7:1: 'func' can only be in global scope
+func main() {
+^~~~

@@ -213,11 +213,8 @@ inline auto parse_keyword_statement(toc& tc, tokenizer& tz, const token& tk)
 
     // rejected before its initializer or body, whose errors would hide this
     // one
-    if (tk.is_text("dat") or tk.is_text("func") or tk.is_text("type") or
-        tk.is_text("include")) {
-
-        throw compile_error{tk, std::format("{} can only be in global scope",
-                                            in_quotes(tk.text()))};
+    if (std::ranges::contains(reserved_names::definition_keywords, tk.text())) {
+        throw_not_global(tk);
     }
 
     // e.g. a second 'else', or an 'else' after a statement that is not 'if'

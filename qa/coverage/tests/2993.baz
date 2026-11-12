@@ -1,0 +1,9 @@
+# a generic body without its '}' ends at the next definition, as a plain
+# body does
+
+func f<T type>(a T) res {
+    res = a
+
+func main() {
+    exit(f(1))
+}

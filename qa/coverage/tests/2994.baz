@@ -1,0 +1,8 @@
+# a generic type without its '}' ends at the next definition
+
+type box<T type> {
+    v T,
+
+type small = box<i8>
+
+func main() {}

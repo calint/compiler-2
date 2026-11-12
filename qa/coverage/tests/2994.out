@@ -1,0 +1,4 @@
+
+2994.baz:6:1: 'type' can only be in global scope
+type small = box<i8>
+^~~~

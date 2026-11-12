@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 351 (2026-11-12, bug hunt: generics, '--reproduce-source',
+    'include')
+    => done (2026-11-12): a generic function body or generic type block
+       without its '}' was reported at the end of the source ("expected
+       '}' to close block" at the last '}' of the file), a plain body at
+       the next definition: 'skip_to_unnested' ('tokenizer.hpp') ends
+       before a keyword of 'reserved_names::definition_keywords', which no
+       skipped text has, and 'skip_braced_block_after' rejects it with
+       'throw_not_global' ('compile_error.hpp', shared with
+       'parse_keyword_statement'): "'func' can only be in global scope"
+       (2993, 2994; README 2.3); every other test compiles to the same
+       output; no other defect in about 150 generic, 40 include and 20
+       reproduce probes on x86_64 and rv32i-fpga, whitespace and comment
+       insertion at every token boundary of the accepted tests (about
+       304000 compiles), 45000 random ones and 4800 on roome
 [x] easy: round 350 (2026-11-12, readability walk of a newcomer:
     'expr_bool', 'expr_arith', 'stmt_identifier', 'expr_any',
     'stmt_def_func')

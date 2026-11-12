@@ -54,6 +54,14 @@ inline constexpr std::array<std::string_view, 21> keywords{
     "self", "and",      "or",  "not",  "true",     "false", "include",
 };
 
+// the keywords that start a definition, which only the global scope has
+inline constexpr std::array<std::string_view, 4> definition_keywords{
+    "dat",
+    "func",
+    "type",
+    "include",
+};
+
 // the value a built-in function call has: none for a statement, a count at
 // the default type, or a 'bool'
 enum class builtin_value : uint8_t { none, count, boolean };

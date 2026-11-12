@@ -276,9 +276,18 @@ class tokenizer final {
     }
 
     // skips the next braced block and returns the source text from the end of
-    // 'tk' to the end of the block
+    // 'tk' to the end of the block; a keyword that starts a definition is
+    // rejected as in a block that is parsed, e.g. the 'func' after a generic
+    // body without its '}'
     auto skip_braced_block_after(const token& tk) -> std::string_view {
         if (not skip_braced_block()) {
+            if (const std::optional<token> keyword_tk{
+                    definition_keyword_next(),
+                }) {
+
+                throw_not_global(*keyword_tk);
+            }
+
             // e.g. the ')' of '{ x ) }', as in a block that is parsed
             assert_not_at_delimiter();
 
@@ -377,6 +386,21 @@ class tokenizer final {
         skip_char();
 
         return true;
+    }
+
+    // the keyword that starts a definition when it is next, e.g. 'func'
+    [[nodiscard]] auto definition_keyword_next() const -> std::optional<token> {
+        tokenizer probe{*this};
+
+        const token tk{probe.next_token()};
+
+        if (not std::ranges::contains(reserved_names::definition_keywords,
+                                      tk.text())) {
+
+            return std::nullopt;
+        }
+
+        return tk;
     }
 
     // the opening quote has been read, the text keeps both quotes; a
@@ -593,8 +617,9 @@ class tokenizer final {
 
     // skips tokens up to a character of 'stops' that is outside of brackets
     // opened by the skipped tokens, the character is not read; false when
-    // the source ends or a closer that does not close the last open bracket
-    // ends the skip, e.g. the '}' of 'a[1 }'
+    // the source ends, a closer that does not close the last open bracket
+    // ends the skip, e.g. the '}' of 'a[1 }', or a keyword that starts a
+    // definition is next, which no skipped text has
     [[nodiscard]] auto skip_to_unnested(const std::string_view stops) -> bool {
         constexpr std::string_view openers{"([{"};
         constexpr std::string_view closers{")]}"};
@@ -603,6 +628,10 @@ class tokenizer final {
         std::string expected_closers;
 
         while (not is_eos()) {
+            if (definition_keyword_next()) {
+                return false;
+            }
+
             const char next{peek_char_after_whitespace()};
 
             if (expected_closers.empty() and stops.contains(next)) {

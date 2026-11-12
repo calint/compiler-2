@@ -17,6 +17,11 @@ sections: 1 clean up, 2 machine operations, 3 new features, 4 deep future
 [ ] easy: (round 350) 'get_lea_operand' (5 files) returns the storage
     operand itself when no address is computed, so no 'lea' happens; rename
     it as one consistency topic, e.g. 'operand_of'
+[ ] easy: low priority (round 351) error wording: 'type a<x> = b<K, x>'
+    with 'let K = 3' defined after it says "generic parameter 'p' of 'b'
+    needs a constant, got 'K'" where a type in that place says "type 'pt'
+    not found"; a generic body 'res = (a.x' then '}' says "unexpected '}'"
+    where a plain body says "expected ')' to close expression"
 [ ] easy: rv32i writes a zero 'dat' at full size into its image: 'dat
     values = i8[2147483648]' makes a 2 GiB '.bin' (round 347
     'fuzz-mutate.py' hit the 1 GiB file limit of 'fuzzlib'; it now writes

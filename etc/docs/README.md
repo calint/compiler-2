@@ -741,7 +741,10 @@ that inside the recipe a name has one meaning.
 
 The braced block is skipped without reading the fields. An error in the fields
 is therefore found only when an alias reads them: until then there are no
-values to check them with. The text is kept so the source can be printed back.
+values to check them with. Only a keyword that starts a definition, e.g.
+'func', ends the skip early, as it ends a block that is parsed, so a block
+without its '}' is reported at the next definition, not at the end of the
+file. The text is kept so the source can be printed back.
 
 ### 2.4 Generic type based on another generic type
 

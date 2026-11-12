@@ -477,6 +477,14 @@ throw_already_defined(const token& src_loc_tk, const std::string_view kind,
     throw compile_error{next_tk, "expected ')' to close expression"};
 }
 
+// a keyword of 'reserved_names::definition_keywords' outside the global
+// scope, e.g. the 'func' after a body without its '}'
+[[noreturn]] inline auto throw_not_global(const token& keyword_tk) -> void {
+    throw compile_error{keyword_tk,
+                        std::format("{} can only be in global scope",
+                                    in_quotes(keyword_tk.text()))};
+}
+
 // a keyword where a value or an array is expected, e.g. the 'else' of 'x =
 // else'
 [[noreturn]] inline auto throw_unexpected_keyword(const token& keyword_tk)
