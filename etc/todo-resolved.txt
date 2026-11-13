@@ -30,7 +30,7 @@
     a coverage build over the four targets; readability: a newcomer
     follows a 'noinline' call and its return on both backends, every line
     of four listings to its writer, and 60 functions at random; bug hunt:
-    names and scopes, reported with round 415)
+    names and scopes)
     => done (2026-11-13): 'storage_layout::allocate_var' does not check
        again that the data and variables end below what the target
        addresses: the capacity check before it and the check at each 'dat'
@@ -47,6 +47,13 @@
        helper per pair adds code; every line that throws is run by a test
     => readability: slot names, the order of the saves, who restores and
        the frame checks agree between listings, code and docs
+    => bug hunt (57000 programs that reuse ten names as every kind of
+       definition in every nesting, with a model of what each use refers
+       to, built 12 ways each; 13151 directed pairs of a value and a
+       definition of one name; 245 probes; four mutants of the lookup
+       caught): no wrong resolution; one rejection of a safe form, a value
+       that hides a type before the '{' of a block, is a 'need approval'
+       item with its proposed change
     => the fuzzers: only test 1698 with '--versions=nested' again
 [x] easy: round 413 (2026-11-13, bug hunt: the bare-metal rv32i targets
     as whole images; design: who owns what and for how long, 385 members

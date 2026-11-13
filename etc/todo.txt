@@ -10,6 +10,25 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[p] easy: need approval (round 414, a hunt of names and scopes, 57000
+    programs with a model of every name, no wrong resolution): a value
+    that hides a type is rejected before '{' also where the braces are a
+    block, 'type n {x}' 'var n = 2' 'if 2 == n {' says "'n' names a value
+    here, which hides the type 'n'"; the same after the count of a 'foo',
+    in 'else if', and for a parameter named like its type ('func
+    same(point point, q point)' with 'if q == point {'); the same class as
+    a block after 'var a = i8[4]' (round 9 W2-1, left by the user)
+    => proposed, not applied: 'parse_toc::block_head_scope' marks the
+       tokenizer that reads the condition of an 'if' or the count of a
+       'foo', there 'is_block_next' looks past the braces and takes them
+       as the block when nothing continues a value or a list; +67 lines of
+       source in 5 files, tests 3230 to 3233, docs 1.3; all suites, the
+       linters and 'fuzz-all.sh' pass with it; it adds a parser state and
+       a lookahead where the rule is one line now, 'if p == point{1, 2} {'
+       then says "expected a statement", and a bare block after a
+       statement that ends in such a value stays rejected; the change is
+       uncommitted in the worktree
+       '.claude/worktrees/agent-a1b3de085ab7016c0' (base 67f731e6)
 [p] easy: need approval (round 393, preparation for a human review):
     files nothing refers to, the owner's notes: 'etc/clipboard.txt' (stale
     paths), 'etc/from/*.html', 'etc/notes/*.html' and
