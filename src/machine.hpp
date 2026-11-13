@@ -935,7 +935,7 @@ class machine {
 
     virtual auto unary(const emit_site site,
                        const arithmetic_operator operation, const operand& dst,
-                       const runtime_check& check = {}) -> void = 0;
+                       const runtime_check& check) -> void = 0;
 
     // writes the lines buffered from 'start'
     virtual auto write_assembly(std::ostream& os) -> void = 0;
@@ -1387,8 +1387,8 @@ class machine {
     }
 
     // releases the variables base and asserts that the registers are
-    // balanced, optimizes the jumps, removes the reloads, then the target's
-    // last steps; called once at the end of the compile pass
+    // balanced, runs the passes of 'assembler::optimize' over the output,
+    // then the target's last steps; called once at the end of the compile pass
     auto finish() -> void {
         release_named_register({token{}, 0}, variables_base_register());
 

@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 411 (2026-11-13, bug hunt: the run-time checks and their
+    reports on the four targets; design: the signatures, 2443 functions and
+    10552 call sites listed with libclang; readability: a newcomer finds
+    the writer of every kind of line of the listing, and 60 functions at
+    random)
+    => done (2026-11-13): 'machine::unary' has no default for its check,
+       the three callers pass it; the comment of 'machine::finish' names
+       the passes of 'assembler::optimize' (it listed two of four);
+       listings unchanged (2505 cases)
+    => design: no parameter that should be held, no flag that is two
+       functions, no result every caller ignores, no pair of bodies to
+       merge; readability: every line of the listing is found with one
+       grep; two items in 'todo.txt'
+    => bug hunt (27500 programs with a model of the first failing
+       operation, its panic, file and line, built inlined, 'noinline' and
+       mixed on four targets and with '--nopt' and '--versions'; 49000
+       directed programs at the edges of every width, the bounds, two
+       failures in one statement, overlaps; the line routine of rv32i
+       changed in round 409 on 330 line numbers of 1 to 9 digits; four
+       mutants caught): no defect
 [x] easy: round 410 (2026-11-13, bug hunt: the fix of round 409, the kind
     of an error through a dry run inside a version; design: the state that
     is put back, 13 scope guards and 15 try blocks; readability: a newcomer
