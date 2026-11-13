@@ -1025,19 +1025,13 @@ class inline_call final {
             return;
         }
 
-        const auto compile_first_level{
-            [&] -> void {
-                try {
-                    compile_level();
-                } catch (const compile_error& e) {
-                    if (not ends_recursion(e, nests_alike)) {
-                        throw;
-                    }
-                }
-            },
-        };
-
-        tc.dry_run(compile_first_level);
+        try {
+            tc.dry_run(compile_level);
+        } catch (const compile_error& e) {
+            if (not ends_recursion(e, nests_alike)) {
+                throw;
+            }
+        }
     }
 
     // the arguments bound as for the body, which is not compiled, nor is the
@@ -1177,7 +1171,7 @@ class inline_call final {
 
     // the call within the nesting limits, 'nesting' inlined bodies of the
     // callee around it, a recursion when not 0; a recursion that does not end
-    // at compile time runs out of registers before it reaches the nesting
+    // at compile time may run out of registers before it reaches the nesting
     // limit, the advice is the same
     auto compile_within_limits(compile_toc& tc, const destination& dst,
                                const size_t nesting) const -> void {

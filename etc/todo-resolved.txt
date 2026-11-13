@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 410 (2026-11-13, bug hunt: the fix of round 409, the kind
+    of an error through a dry run inside a version; design: the state that
+    is put back, 13 scope guards and 15 try blocks; readability: a newcomer
+    follows what happens when the compiler runs out of something, from the
+    detection to the message and the docs, and 60 functions at random)
+    => done (2026-11-13): the catch of 'inline_call::check_recursion'
+       stands around the dry run, not in a lambda inside it (it was inside
+       only because 'compile_toc::dry_run' changed the kind until round
+       409; 13 lines are 7); the comment of
+       'inline_call::compile_within_limits' says a recursion that does not
+       end at compile time "may run out of registers", 'r()' calling 'r()'
+       reaches the nesting limit instead; listings unchanged
+    => design, not done: the guards of 'compile_toc' and 'machine' cannot
+       be one, the six sites that add frames to an error add different
+       ones; three items in 'todo.txt' (one a user decision)
+    => bug hunt (3370 skeletons at the register and storage limits, 141000
+       program checks of four '--versions' values on x86_64 and rv32i-fpga,
+       3174 accepted programs run; 840 programs at the scope limit; 1500
+       programs of 'fuzz-versions.py'; a build without the fix is caught at
+       once): no defect
 [x] medium: round 409 (2026-11-13, bug hunt: the versions and the dry
     runs; design: the parts earlier opinions did not read, line by line
     ('noinline_call', the compile half of 'expr_arith', the members of the

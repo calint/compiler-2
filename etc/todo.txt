@@ -97,6 +97,26 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'check_upper_bound', "note: 3" in 'check_divisor'); without the count
     about -25 lines and one more 'j' per check with several tests, growth
     not measured
+[ ] easy: user decision (round 410, a hunt of the fix of round 409): a
+    register limit in skipped code in an argument of an inlined recursive
+    call, e.g. 'res = f(k - 1, hb(1 == 1 or h(NEST) == 3)) + q' in 'f', is
+    dropped by the check of the body as a limit that ends the recursion
+    (docs 1.5 item 2) and nothing else checks it; before round 409 it was
+    rejected, with 'noinline f' it is; the code never runs, so the
+    guarantee holds. rejecting it needs the check of the recursion to tell
+    a limit of skipped code from one of the recursion
+[ ] easy: (round 410, the same hunt) a recursion entered from skipped code
+    of an inlined function is accepted where the same function with
+    'noinline' is rejected ("recursion of inlined function 'rec' runs out
+    of registers"): the check of the body leaves the deeper levels to a
+    call and a call checks no skipped code; next to the array length gap
+    of docs 1.5.1
+[ ] easy: (round 410, the scope guards) the note of
+    'machine::held_registers' on an error that unwinds does not name the
+    case that needs it, the start register of a bulk operation
+    ('held_start::holder' of 'bulk_operands.hpp' outlives the
+    'operation_scope' that already freed it), and no test reaches an error
+    in a bulk operation after the start register is held
 [ ] medium: user decision (round 402 bug hunt of the no-UB rules): safe
     programs a user would write that the aliasing and assignment rules
     reject: 'x = inc(x)', 'x = max(x, y)', 'total = add(total, e)',
