@@ -1,0 +1,10 @@
+# an argument that is not there is reported before the ',' after it, as in a
+# call without type parameters, not as a trailing ','
+func second<T type>(a, b T) res T {
+    res = b + T(a)
+}
+
+func main() {
+    var r = second(,)
+    exit(r)
+}

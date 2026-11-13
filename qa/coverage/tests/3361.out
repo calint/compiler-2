@@ -1,0 +1,4 @@
+
+3361.baz:8:20: expected a constant, a name or a call
+    var r = second(,)
+                   ^

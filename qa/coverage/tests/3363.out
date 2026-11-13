@@ -1,0 +1,4 @@
+
+3363.baz:9:24: 'i8' takes 1 argument
+    var r = second(i8(1, z)
+                       ^

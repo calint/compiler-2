@@ -1,0 +1,11 @@
+# an argument that tells its type is parsed before a missing ',' after it is
+# reported: the conversion lacks its ')'
+func second<T type>(a, b T) res T {
+    res = b + T(a)
+}
+
+func main() {
+    var z = i16(7)
+    var r = second(i8(1, z)
+    exit(r)
+}

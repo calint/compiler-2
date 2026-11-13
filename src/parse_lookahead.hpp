@@ -394,25 +394,6 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
     return &value_type;
 }
 
-// a call of a generic function without type arguments is the whole value,
-// e.g. 'make()' of 'b = make()', its result type is that of the destination
-[[nodiscard]] inline auto is_whole_generic_call(const parse_toc& tc,
-                                                const tokenizer& tz) -> bool {
-
-    tokenizer probe{tz};
-    const token tk{probe.next_token()};
-
-    if (classify_term(tc, tk, probe) != term_kind::generic_call or
-        not probe.accept_char_token('(')) {
-
-        return false;
-    }
-
-    probe.skip_to_close_paren();
-
-    return not continues_expression(probe);
-}
-
 // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
 // 'i8 + 1' or 'bool and true' continue an expression
 [[nodiscard]] inline auto is_bare_builtin_type(const parse_toc& tc,

@@ -1041,6 +1041,54 @@ class expr_any final : public statement {
         return bytes;
     }
 
+    // a call of a generic function or method without type arguments is the
+    // whole value, e.g. 'make()' of 'b = make()' or 't.to()' of 'b = t.to()',
+    // its result type is that of the destination
+    [[nodiscard]] static auto is_whole_generic_call(parse_toc& tc,
+                                                    const tokenizer& tz)
+        -> bool {
+
+        tokenizer probe{tz};
+        const token tk{probe.next_token()};
+        const term_kind tm{classify_term(tc, tk, probe)};
+
+        const bool is_generic{
+            tm == term_kind::generic_call or
+                (tm == term_kind::value and
+                 names_generic_method(tc, tk, probe)),
+        };
+
+        if (not is_generic or not probe.accept_char_token('(')) {
+            return false;
+        }
+
+        probe.skip_to_close_paren();
+
+        return not continues_expression(probe);
+    }
+
+    // the path at 'tk' ends at the name of a generic method, e.g. the 't.to'
+    // of 't.to()'; 'tz' is a copy after 'tk', it ends after the path
+    // note: read from the copy to find the method, the value parses the path
+    //       again
+    [[nodiscard]] static auto names_generic_method(parse_toc& tc,
+                                                   const token& tk,
+                                                   tokenizer& tz) -> bool {
+
+        const stmt_identifier path{tc, tk, tz};
+
+        if (not path.is_method_receiver()) {
+            return false;
+        }
+
+        const std::string name{
+            method_name_of(path.get_type().name(),
+                           path.method_name_token().text()),
+        };
+
+        return tc.generics().has_func(name);
+    }
+
     // a number, or a generic call that takes the type of a 'bool'
     // destination
     [[nodiscard]] static auto parse_arith_value(parse_toc& tc, tokenizer& tz,

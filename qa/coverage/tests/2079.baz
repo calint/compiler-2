@@ -1,6 +1,6 @@
-# an instance literal before a missing deducing argument parses at its
-# parameter type, the missing argument is reported
+# an instance literal before a missing deducing argument takes the type of
+# its parameter, the missing argument is reported
 
 type point { x i8, y i8 }
 func g<T type>(a point, b T) {}
-func main() { g(point{1, 2}) }
+func main() { g({1, 2}) }

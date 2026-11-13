@@ -6630,8 +6630,8 @@ SRC=2077 && COMPERR
 # registers, so an index may shift or divide on x86_64
 SRC=2078 && EXP=0 && RUN
 
-# an instance literal before a deducing argument parses at its parameter
-# type: a missing argument, a missing ','
+# an instance literal before a deducing argument takes the type of its
+# parameter: a missing argument, a missing ','
 SRC=2079 && COMPERR
 SRC=2080 && COMPERR
 
@@ -7962,3 +7962,32 @@ SRC=3331 && COMPERR
 
 # and the one argument of a call deduced from its result is not two
 SRC=3332 && COMPERR
+
+# the result of a generic method is deduced from a 'bool' destination like
+# that of a generic function
+SRC=3360 && EXP=36 && RUN
+
+# an argument of a deduced call that is not there is reported before the ','
+# after it, not as a trailing ','
+SRC=3361 && COMPERR
+
+# the arguments before a missing deducing argument are reported in order
+SRC=3362 && COMPERR
+
+# an argument that tells its type is parsed before a missing ',' after it
+SRC=3363 && COMPERR
+
+# an argument before a missing deducing argument is parsed at the type of
+# its parameter: an instance literal that names its type, a 'bool' for an
+# 'i8'
+SRC=3364 && COMPERR
+SRC=3365 && COMPERR
+
+# a generic call before a missing deducing argument takes its type from the
+# parameter
+SRC=3367 && COMPERR
+
+# a parameter declared with a parameter of the generic type of the method:
+# a type gives the type of the argument, a constant none
+SRC=3368 && COMPERR
+SRC=3369 && COMPERR

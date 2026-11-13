@@ -136,6 +136,20 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[ ] easy: (round 420, a hunt of the scans ahead and a walk of the
+    built-ins) a scan reads quoted tokens, so a bad character literal or
+    an unterminated string in the scanned region is reported before an
+    earlier error: 'b = mkn(zz, 'ab')' with a 'bool' 'b' reports 'ab',
+    with an 'i8' 'b' it reports 'zz' (about 20 lines in the tokenizer);
+    'choose(w < i32, y > w, w)' says "expected argument 3", written
+    "'i32' is a type, not a value" ('opens_type_arguments', the other
+    direction of the round 419 item); 'second(1 zz, arr)' with a whole
+    array at the deducing position says "array 'arr' must be indexed"; a
+    broken deducing argument has no type to parse at (the trial parse);
+    'assembler_rv32i::memory_end_address' is an offset from the image
+    start; the x86_64 listing of a 'foo' says "e: i64 (r15)" where 'r15'
+    holds the address of the element; rv32i "copy optional final byte"
+    stands after its 'andi', "copy optional 2-byte tail" before
 [ ] easy: (round 419, a walk of the backend interface and a hunt of
     generics) 'check_bounds' could open the 'operation_scope' itself as
     the two capacity checks do, both backends would drop theirs (moves

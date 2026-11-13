@@ -1,0 +1,17 @@
+# a parameter declared with a constant parameter of the generic type of the
+# method has no type: the missing deducing argument is reported
+type box<n> {
+    a i8[n],
+}
+
+type b4 = box<4>
+
+func box.f<T type>(v n, t T) res T {
+    res = t
+}
+
+func main() {
+    var x = b4
+    var r = x.f(1)
+    exit(r)
+}

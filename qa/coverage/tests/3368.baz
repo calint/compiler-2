@@ -1,0 +1,18 @@
+# an argument before a missing deducing argument is parsed at the type of its
+# parameter, also one declared with a type parameter of the generic type of
+# the method
+type cell<V type> {
+    v V,
+}
+
+type c16 = cell<i16>
+
+func cell.put<T type>(v V, t T) res T {
+    res = t + T(v)
+}
+
+func main() {
+    var c = c16{2}
+    var r = c.put(true)
+    exit(r)
+}

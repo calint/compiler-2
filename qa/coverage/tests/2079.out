@@ -1,4 +1,4 @@
 
-2079.baz:6:28: expected argument 2 ('b')
-func main() { g(point{1, 2}) }
-                           ^
+2079.baz:6:23: expected argument 2 ('b')
+func main() { g({1, 2}) }
+                      ^

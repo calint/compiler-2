@@ -1017,7 +1017,9 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    on its type (2192).
 
    A missing argument is rejected: 'same()' gives "expected argument 1
-   ('a')".
+   ('a')"; the arguments before it are checked first, in order, as in
+   item 3, e.g. "'zz' not found" for 'last(zz, z)' of 'func last<T type>(c
+   i8, b i16, a T)' (3362).
 
 2. The destination, when the result is declared with it (2.10.1, item 2):
    the type the call is assigned to, also when the call is an element of a
@@ -1034,9 +1036,16 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    'var m = make(2)' has no destination type: 'm' takes its type from the
    call, so there is nothing to take it from.
 
+   A 'bool' destination is a condition, whose operands have no destination;
+   a call of a generic function or method that is the whole value is looked
+   for ahead and takes the destination, e.g. 'b = make(2)' and 'b = t.to()'
+   (3360), not 'b = t.to() or c'.
+
 3. If neither tells the type, the arguments up to the one that told
    nothing, all of them and a surplus one for a result, are checked in
-   order as in a call without type parameters, so their own errors win,
+   order as in a call without type parameters, each at the type of its
+   parameter, or at the type it tells when the parameter is declared with a
+   type parameter (3363 to 3365, 3368), so their own errors win,
    e.g. "function 'exit' has no result" for 'show(exit(1))', "'zz' not
    found" for 'f(zz, 1)' of 'func f<A type>(b, a A)' and "'make' takes 1
    argument" for 'make(2, 3)' (2249); otherwise the call is rejected and asks
@@ -2226,9 +2235,12 @@ message, x86_64 stops with a signal.
   exit of a condition and every operand list to stop at the call (bug hunt
   round 14 B1-1, B1-2).
 - The operating system and the emulators keep the low 8 bits of an exit
-  code: a constant 'exit' code outside 0 to 255 is rejected, a run-time one
-  is taken modulo 256, so 'exit(k)' with 'k' -1 ends with 255, the code of
-  a 'bounds' panic.
+  code: an 'exit' code outside 0 to 255 that is a constant at the parse is
+  rejected ('stmt_builtin_exit::assert_constant_code_fits'), any other one is
+  taken modulo 256, so 'exit(k)' with 'k' -1 ends with 255, the code of a
+  'bounds' panic; also a code that is a constant only at a call: the
+  'exit(k)' of an 'f(k)' called as 'f(300)' ends with 44, inlined or
+  noinline.
 - The minimum of 'i64' has no literal: the '-' applies after the literal is
   read as an 'i64', so '-9223372036854775808' is rejected ("constant
   '9223372036854775808' is out of range"), as is '0x8000000000000000'; it is

@@ -1,0 +1,4 @@
+
+3369.baz:15:18: expected argument 2 ('t')
+    var r = x.f(1)
+                 ^

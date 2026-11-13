@@ -1,0 +1,4 @@
+
+3368.baz:16:19: expected type 'i16', got 'bool', use 'i16(...)'
+    var r = c.put(true)
+                  ^~~~

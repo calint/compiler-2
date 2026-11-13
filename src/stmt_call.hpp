@@ -285,56 +285,17 @@ struct generic_call {
         return named_argument_type(tc, ident);
     }
 
-    // the argument at 'index' parsed without a type, as the initializer of a
-    // 'var' is or an array argument of a call, so a mistake in it is reported
-    // as in a call without type parameters; a value parses and tells no type,
-    // nor does a literal that takes its type from the parameter, e.g.
-    // '{1, 2}'; a token after it that is not a delimiter is reported as there
-    // too. 'tz' is after the '(' and is a copy
-    // note: the parse records nothing that outlives the error that follows
-    static auto assert_argument_parses(
-        parse_toc& tc, tokenizer tz,
-        const std::span<const generic_signature_param> params,
-        const size_t index) -> void {
-
-        std::ignore = skip_to_argument(tc, tz, index);
-
-        if (params.at(index).is_array) {
-            std::ignore = parse_array_param_argument(
-                tc, tz, params.at(index).name_tk.text());
-
-            assert_delimiter_after(tz, params, index);
-
-            return;
-        }
-
-        const char next{tz.peek_char_after_whitespace()};
-
-        if (next == '{' or next == '[') {
-            return;
-        }
-
-        // a parameter of the default type is the destination of its
-        // argument, as in the call, e.g. the 'g(1)' of 'f(g(1), 1)' for 'func
-        // g<T type>(a) res T'
-        if (params.at(index).type_name.empty()) {
-            std::ignore = expr_any{tc, tz, tc.builtins().default_type(),
-                                   literal_typing::from_destination};
-        } else {
-            std::ignore = expr_bool{tc, tz.next_whitespace_token(), tz};
-        }
-
-        assert_delimiter_after(tz, params, index);
-    }
-
     // the arguments up to the one at 'index' are there, reported as in a
     // call without type parameters: the first missing one, e.g. 'b' of 'f(1)'
     // for 'func f<T type>(a, b, x T)', or a token after the argument where
     // the list ends. 'tz' is after the '('
-    static auto assert_argument_present(
-        parse_toc& tc, const tokenizer& tz,
-        const std::span<const generic_signature_param> params,
-        const size_t index) -> void {
+    static auto assert_argument_present(parse_toc& tc, const tokenizer& tz,
+                                        const generic_func_info& generic,
+                                        const size_t index) -> void {
+
+        const std::span<const generic_signature_param> params{
+            generic.signature.params,
+        };
 
         // e.g. 'f()'
         if (tz.peek_char_after_whitespace() == ')') {
@@ -350,7 +311,10 @@ struct generic_call {
             return;
         }
 
-        assert_argument_valid(tc, tz, params, last);
+        // the arguments that are there, in the order the call parses them
+        for (size_t i{}; i <= last; ++i) {
+            assert_argument_valid(tc, tz, generic, i);
+        }
 
         throw compile_error{
             scan, missing_argument_text(last + 2,
@@ -358,24 +322,74 @@ struct generic_call {
     }
 
     // the argument at 'index', which is there, is reported as in a call
-    // without type parameters. 'tz' is after the '('
-    static auto
-    assert_argument_valid(parse_toc& tc, const tokenizer& tz,
-                          const std::span<const generic_signature_param> params,
-                          const size_t index) -> void {
+    // without type parameters: parsed as the array of an array parameter, at
+    // the type of its parameter or, for a parameter declared with a type
+    // parameter, at the type it tells, else without a type like the
+    // initializer of a 'var'; a token after it that is not a delimiter is
+    // reported as there too. 'tz' is after the '('
+    // note: the parse records nothing that outlives the error that follows
+    static auto assert_argument_valid(parse_toc& tc, const tokenizer& tz,
+                                      const generic_func_info& generic,
+                                      const size_t index) -> void {
 
-        tokenizer after{tz};
+        const std::span<const generic_signature_param> params{
+            generic.signature.params,
+        };
+
+        const generic_signature_param& param{params.at(index)};
+
+        tokenizer at_argument{tz};
+
+        std::ignore = skip_to_argument(tc, at_argument, index);
+
+        if (param.is_array) {
+            std::ignore = parse_array_param_argument(tc, at_argument,
+                                                     param.name_tk.text());
+
+            assert_delimiter_after(at_argument, params, index);
+
+            return;
+        }
+
+        // the parameter is the destination of its argument, as in the call,
+        // e.g. the 'g(1)' of 'f(g(1), 1)' for 'func g<T type>(a) res T'
+        if (const type* const param_type{fixed_param_type(tc, generic, param)};
+            param_type != nullptr) {
+
+            std::ignore = expr_any{tc, at_argument, *param_type,
+                                   literal_typing::from_destination};
+
+            assert_delimiter_after(at_argument, params, index);
+
+            return;
+        }
+
+        tokenizer scan{tz};
 
         // e.g. 'point{1, 2}' of 'g(point{1, 2})', which parses only at a
-        // type, else parsed like a 'var' initializer or, for an array
-        // parameter, as in the call
-        if (not params.at(index).is_array and
-            argument_type(tc, after, index) != nullptr) {
+        // type, or the 'i8(x' that lacks its ')'
+        if (const type* const told_type{argument_type(tc, scan, index)};
+            told_type != nullptr) {
 
-            assert_delimiter_after(after, params, index);
-        } else {
-            assert_argument_parses(tc, tz, params, index);
+            std::ignore =
+                expr_any{tc, at_argument, *told_type, literal_typing::written};
+
+            assert_delimiter_after(at_argument, params, index);
+
+            return;
         }
+
+        const char next{at_argument.peek_char_after_whitespace()};
+
+        // a literal that takes its type from the parameter, e.g. '{1, 2}'
+        if (next == '{' or next == '[') {
+            return;
+        }
+
+        std::ignore =
+            expr_bool{tc, at_argument.next_whitespace_token(), at_argument};
+
+        assert_delimiter_after(at_argument, params, index);
     }
 
     // the arguments up to and including the one at 'param_index', or all and
@@ -383,16 +397,20 @@ struct generic_call {
     // parameters. 'tz' is after the '('
     static auto assert_arguments_valid_up_to(
         parse_toc& tc, const tokenizer& tz, const std::string_view generic_name,
-        const std::span<const generic_signature_param> params,
+        const generic_func_info& generic,
         const std::optional<size_t> param_index) -> void {
+
+        const std::span<const generic_signature_param> params{
+            generic.signature.params,
+        };
 
         const size_t checked_count{
             param_index ? *param_index + 1 : params.size(),
         };
 
         for (size_t i{}; i < checked_count; ++i) {
-            assert_argument_present(tc, tz, params, i);
-            assert_argument_valid(tc, tz, params, i);
+            assert_argument_present(tc, tz, generic, i);
+            assert_argument_valid(tc, tz, generic, i);
         }
 
         if (not param_index) {
@@ -513,8 +531,7 @@ struct generic_call {
             const type* arg_type{};
 
             if (source.param_index) {
-                assert_argument_present(tc, scan, generic.signature.params,
-                                        *source.param_index);
+                assert_argument_present(tc, scan, generic, *source.param_index);
 
                 tokenizer arg_tz{scan};
 
@@ -533,8 +550,7 @@ struct generic_call {
                 // e.g. the 'zz' of 'f(zz, 1)' for 'func f<A type>(b, a A)' or
                 // the 'point' of 'show(point)', reported as in a call without
                 // type parameters
-                assert_arguments_valid_up_to(tc, scan, generic_name,
-                                             generic.signature.params,
+                assert_arguments_valid_up_to(tc, scan, generic_name, generic,
                                              source.param_index);
 
                 throw compile_error{
@@ -552,6 +568,38 @@ struct generic_call {
         }
 
         return deduced;
+    }
+
+    // the type that 'param' has in every instance: the default type, a type
+    // defined before the call or an argument of the generic type of a method,
+    // e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)' called on a
+    // 'cell<i8>'; none when it is declared with a type parameter of the
+    // function, which a call gives
+    [[nodiscard]] static auto
+    fixed_param_type(const parse_toc& tc, const generic_func_info& generic,
+                     const generic_signature_param& param) -> const type* {
+
+        const std::string_view name{param.type_name};
+
+        if (name.empty()) {
+            return &tc.builtins().default_type();
+        }
+
+        if (std::ranges::contains(generic.signature.type_param_tks, name,
+                                  &token::text)) {
+
+            return nullptr;
+        }
+
+        if (generic.receiver) {
+            for (const generic_arg& arg : generic.receiver->args) {
+                if (arg.param_tk.is_text(name)) {
+                    return arg.is_type() ? &arg.type_ref() : nullptr;
+                }
+            }
+        }
+
+        return tc.types().has(name) ? &tc.types().get(name) : nullptr;
     }
 
     // a '<' before a type that a ',' or the '>' follows starts type
@@ -602,12 +650,19 @@ struct generic_call {
 
     // moves 'tz' from after the '(' to the argument at 'index' and returns
     // 'index'; when the list ends before it, 'tz' is after the argument where
-    // it ends and that argument's index is returned
+    // it ends and that argument's index is returned, at an argument that is
+    // not there 'tz' stays before its ','
     [[nodiscard]] static auto skip_to_argument(const parse_toc& tc,
                                                tokenizer& tz,
                                                const size_t index) -> size_t {
 
         for (size_t i{}; i < index; ++i) {
+            // e.g. the ',' of 'f(,)', the parse of the argument it lacks
+            // reports it, not a trailing ','
+            if (tz.peek_char_after_whitespace() == ',') {
+                return i;
+            }
+
             skip_argument(tc, tz);
 
             const std::optional<token> delimiter_tk{tz.accept_char_token(',')};

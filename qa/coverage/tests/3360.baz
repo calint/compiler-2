@@ -1,0 +1,72 @@
+# the result of a generic method is deduced from a 'bool' destination like
+# that of a generic function: the call is seen as the whole value where the
+# destination is assigned, passed, a field, an element or a result
+type tok {
+    n i8,
+}
+
+type flags {
+    a bool,
+    b bool,
+}
+
+type wrap {
+    ts tok[2],
+}
+
+type box<n> {
+    a i8[n],
+}
+
+type b4 = box<4>
+
+func tok.is<T type>() res T {
+    res = T(self.n)
+}
+
+func tok.pos<T type>() res T {
+    res = self.n > 0
+}
+
+func box.full<T type>() res T {
+    res = array_length(self.a) == 4
+}
+
+func bit(b bool) res {
+    res = 0
+    if b {
+        res = 1
+    }
+}
+
+func positive(t tok) res bool {
+    res = t.pos()
+}
+
+func main() {
+    var t = tok{3}
+    var u = tok{-3}
+    var w = wrap{{{1}, {-1}}}
+    var x = b4
+
+    # the destination is an 'i8', then a 'bool'
+    var k = i8(0)
+    k = t.is()
+    var b = false
+    b = t.pos()
+
+    var f = flags{t.pos(), u.pos()}
+    var bs = bool[2]
+    bs[1] = w.ts[0].pos()
+
+    # a call that an operator continues is an operand: written type arguments
+    var c = false
+    c = u.pos<bool>() or x.full<bool>()
+
+    var d = false
+    d = x.full()
+
+    # 3 + 1 + 1 + 0 + 2 + 1 + 4 + 8 + 16 + 0
+    exit(k + bit(b) + bit(f.a) + bit(f.b) + 2 * bit(bs[1]) + bit(positive(t)) +
+         4 * bit(c) + 8 * bit(d) + 16 * bit(w.ts[0].pos()) + bit(u.pos()))
+}

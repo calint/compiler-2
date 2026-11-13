@@ -1,0 +1,4 @@
+
+3365.baz:8:18: expected type 'i8', got 'bool', use 'i8(...)'
+    var r = last(true, 2)
+                 ^~~~

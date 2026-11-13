@@ -1,0 +1,15 @@
+# a generic call before a missing deducing argument takes its type from the
+# parameter, the missing argument is reported
+func make<T type>(n) res T {
+    res = T(n)
+}
+
+func last<T type>(c i8, b i16, a T) res T {
+    res = a + T(c) + T(b)
+}
+
+func main() {
+    var z = i16(7)
+    var r = last(make(1), z)
+    exit(r)
+}

@@ -1,0 +1,4 @@
+
+3362.baz:9:18: 'zz' not found
+    var r = last(zz, z)
+                 ^~

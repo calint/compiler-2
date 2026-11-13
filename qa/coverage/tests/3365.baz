@@ -1,0 +1,10 @@
+# an argument before a missing deducing argument is parsed at the type of its
+# parameter
+func last<T type>(c i8, b i16, a T) res T {
+    res = a + T(c) + T(b)
+}
+
+func main() {
+    var r = last(true, 2)
+    exit(r)
+}

@@ -1,6 +1,46 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 420 (2026-11-14, bug hunt: every place where the front
+    end reads ahead in the source text instead of parsing, each program
+    with deduced and with written type arguments; design: how errors are
+    made, the 239 sites that build a 'compile_error' by the rule each
+    enforces; readability: a newcomer follows each built-in in 113
+    programs from the parse to the listing, and 60 functions at random)
+    => defect (2026-11-14): the result of a generic method was not deduced
+       from a 'bool' destination: 'b = t.pos()' of 'func tok.pos<T type>()
+       res T' said "cannot deduce 'T'", 't.pos<bool>()' and the function
+       form 'b = mkz()' are accepted. fix: 'is_whole_generic_call' also
+       takes a path that ends at a generic method
+       ('names_generic_method'); both stand in 'expr_any', their only
+       user; test 3360
+    => defects, the first message of a broken deduced call, now that of
+       the call with written type arguments: 'second(,)' said "a trailing
+       ',' is not allowed" ('skip_to_argument' stops at an empty
+       argument); 'last(zz, z)' said "expected argument 3"
+       ('assert_argument_present' validates every argument that is there,
+       in order); 'second(i8(1, z)', 'last(true, 2)' and 'g(point{1, 2})'
+       said "expected ','" or "expected argument N" (one
+       'assert_argument_valid' parses the argument as the call does, at
+       'fixed_param_type', else at the type it tells, else untyped;
+       'assert_argument_parses' is gone); docs 2.10.2; tests 3361 to 3365,
+       3367 to 3369; 2079 and 2080 write '{1, 2}' to keep their intent
+    => done, text only: the comment in 'stmt_builtin_io::
+       compile_arguments' read as if 'i32' were the type the first element
+       decides; docs 8.3 said a constant 'exit' code outside 0 to 255 is
+       rejected, the check is at the parse, 'exit(k)' of 'f(300)' ends
+       with 44
+    => design: nothing to apply; a probe build that names the site in
+       every message shows each of the 239 sites reached by a test, 45 by
+       one test only; not done: three error functions with one caller
+       inlined (taste), the doubled 'assert_valid_name' of
+       'read_type_params' (changes a first message)
+    => checks: the four targets, far jumps, versions, roome, linear
+       growth, emulator, fuzzers; the listings differ from round 419 only
+       in the new tests and 2080
+    => bug hunt (6000 valid programs in both forms, 4000 mutated ones, 520
+       directed probes, 4500 programs on the asan build, 8 of 9 mutants
+       caught): no wrong accept, crash or hang
 [x] easy: round 419 (2026-11-14, bug hunt: generics, each program written
     with generics and expanded by hand; design: the output side, from the
     line records of the assemblers to the files and reports; readability:
