@@ -41,7 +41,7 @@
 //                     of the compilers (last in the file, it uses the others)
 //   'missing_argument_text', 'missing_delimiter_text',
 //   'throw_not_array_argument', 'named_argument_type',
-//   'parse_array_parameter_argument'
+//   'parse_array_param_argument'
 //                     free functions that 'generic_call' and 'stmt_call'
 //                     use
 //   'generic_call'    the instance of a generic function that the call names
@@ -128,9 +128,8 @@
 // kind, e.g. 'p' of a 'point' for 's i8[]'; an element would give the
 // parameter the whole array's length
 [[nodiscard]] inline auto
-parse_array_parameter_argument(parse_toc& tc, tokenizer& tz,
-                               const std::string_view param)
-    -> stmt_identifier {
+parse_array_param_argument(parse_toc& tc, tokenizer& tz,
+                           const std::string_view param) -> stmt_identifier {
 
     // e.g. the '{}' of 'f({})', which has no storage that the parameter
     // refers to
@@ -299,7 +298,7 @@ struct generic_call {
         std::ignore = skip_to_argument(tz, index);
 
         if (params.at(index).is_array) {
-            std::ignore = parse_array_parameter_argument(
+            std::ignore = parse_array_param_argument(
                 tc, tz, params.at(index).name_tk.text());
 
             assert_delimiter_after(tz, params, index);
@@ -594,7 +593,7 @@ struct generic_call {
 
         // e.g. 'point{1, 2}', a missing '}' is left to the parse of the
         // argument
-        if (tm == term_kind::record_literal) {
+        if (tm == term_kind::instance_literal) {
             std::ignore = tz.skip_braced_block();
             return &tc.get_type_or_throw(tk);
         }
@@ -807,12 +806,12 @@ struct call_site {
   private:
     // a variable in the current block, a root variable of its own
     [[nodiscard]] auto add_temporary(compile_toc& tc, const std::string& name,
-                                     const type& tpe) const -> destination {
+                                     const type& tp) const -> destination {
 
         tc.add_var(
             {
                 .name{name},
-                .type_ptr{&tpe},
+                .type_ptr{&tp},
                 .src_loc_tk{tk},
                 .shape{},
                 .read_only_why{},
@@ -1268,7 +1267,7 @@ class inline_call final {
 
         // note: 'stmt_call::assert_argument_type' checked the type, an array
         //       argument is a place
-        //       ('parse_array_parameter_argument')
+        //       ('parse_array_param_argument')
 
         assert(arg_place or not param.is_array());
 
@@ -1987,7 +1986,7 @@ class shared_storage_check final {
 // ('assert_method_receiver', 'constructor_func'), the callee
 // ('resolve_callee', a generic function through 'generic_call'), then from
 // the '(' the arguments ('parse_arguments', an array one read by
-// 'parse_array_parameter_argument'), each checked in its order by
+// 'parse_array_param_argument'), each checked in its order by
 // 'check_arguments' ('assert_argument_writable', 'assert_argument_type'), then
 // 'record_uses_of_call'
 //
@@ -2226,7 +2225,7 @@ class stmt_call final : public statement {
         const type* const arg_type{named_argument_type(tc, *ident)};
 
         if (arg_type != nullptr and not arg_type->is_same(param.get_type())) {
-            throw_parameter_type_mismatch(arg, param, *arg_type);
+            throw_param_type_mismatch(arg, param, *arg_type);
         }
     }
 
@@ -2442,7 +2441,7 @@ class stmt_call final : public statement {
             const std::optional<place>& arg_place{places.at(i)};
 
             // note: an array argument is the path of a whole array
-            //       ('parse_array_parameter_argument'), the parse of a value
+            //       ('parse_array_param_argument'), the parse of a value
             //       rejected one ('assert_not_whole_array')
 
             assert(callee().params().at(i).is_array() ==
@@ -2568,7 +2567,7 @@ class stmt_call final : public statement {
         // condition that rejects a whole array
         if (param.is_array()) {
             stmt_identifier array{
-                parse_array_parameter_argument(tc, tz, param.name()),
+                parse_array_param_argument(tc, tz, param.name()),
             };
 
             args_.push_back(path_argument(std::move(array)));
@@ -2896,9 +2895,9 @@ class stmt_call final : public statement {
     }
 
     [[noreturn]] static auto
-    throw_parameter_type_mismatch(const expr_any& arg,
-                                  const stmt_def_func_param& param,
-                                  const type& arg_type) -> void {
+    throw_param_type_mismatch(const expr_any& arg,
+                              const stmt_def_func_param& param,
+                              const type& arg_type) -> void {
 
         const type& param_type{param.get_type()};
 

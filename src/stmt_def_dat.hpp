@@ -161,11 +161,11 @@ class stmt_def_dat final : public statement {
             return;
         }
 
-        if (const elem::fields* const record{
+        if (const elem::fields* const instance{
                 std::get_if<elem::fields>(&el.form),
             }) {
 
-            compile_data_record(x, tp, *record);
+            compile_data_instance(x, tp, *instance);
             return;
         }
 
@@ -199,34 +199,15 @@ class stmt_def_dat final : public statement {
         }
     }
 
-    // the listed elements then zeros up to the length of the array
-    static auto compile_data_list(machine& x, const type& tp,
-                                  const elem::elements& list) -> void {
-
-        x.comment({list.src_loc_tk, 0}, "{}[{}]", tp.name(), list.array_count);
-
-        if (tp.is_builtin()) {
-            compile_data_elements(x, tp, list);
-        } else {
-            for (const auto [i, e] : std::views::enumerate(list.items)) {
-                x.comment({e.tok(), 0}, "[{}]", i);
-                compile_data_record(x, tp, std::get<elem::fields>(e.form));
-            }
-        }
-
-        compile_zero_elements(x, list.src_loc_tk, tp,
-                              list.array_count - list.items.size());
-    }
-
-    static auto compile_data_record(machine& x, const type& tp,
-                                    const elem::fields& record) -> void {
+    static auto compile_data_instance(machine& x, const type& tp,
+                                      const elem::fields& instance) -> void {
 
         // bytes of the instance emitted so far, fields in order then padding
         size_t written_bytes{};
 
         const std::span<const type_field> flds{tp.fields()};
 
-        for (const auto [e, f] : std::views::zip(record.values, flds)) {
+        for (const auto [e, f] : std::views::zip(instance.values, flds)) {
             const size_t padding_bytes{f.offset - written_bytes};
 
             if (padding_bytes != 0) {
@@ -247,14 +228,33 @@ class stmt_def_dat final : public statement {
         }
 
         const std::string_view what{
-            record.values.size() == flds.size() ? "padding"
-                                                : "remaining fields",
+            instance.values.size() == flds.size() ? "padding"
+                                                  : "remaining fields",
         };
 
-        x.comment({record.src_loc_tk, 0}, "zero {}: {} B", what,
+        x.comment({instance.src_loc_tk, 0}, "zero {}: {} B", what,
                   remaining_bytes);
 
         x.emit_zero_data(remaining_bytes);
+    }
+
+    // the listed elements then zeros up to the length of the array
+    static auto compile_data_list(machine& x, const type& tp,
+                                  const elem::elements& list) -> void {
+
+        x.comment({list.src_loc_tk, 0}, "{}[{}]", tp.name(), list.array_count);
+
+        if (tp.is_builtin()) {
+            compile_data_elements(x, tp, list);
+        } else {
+            for (const auto [i, e] : std::views::enumerate(list.items)) {
+                x.comment({e.tok(), 0}, "[{}]", i);
+                compile_data_instance(x, tp, std::get<elem::fields>(e.form));
+            }
+        }
+
+        compile_zero_elements(x, list.src_loc_tk, tp,
+                              list.array_count - list.items.size());
     }
 
     // the bytes of the string then zeros up to the length of the array
@@ -372,9 +372,9 @@ class stmt_def_dat final : public statement {
 
         // e.g. 'dat p = q', a copy of the instance 'q', which only the run time
         // makes
-        const expr_type* const record{value.instance_literal()};
+        const expr_type* const instance{value.instance_literal()};
 
-        if (record == nullptr) {
+        if (instance == nullptr) {
             throw_not_constant(single);
         }
 
@@ -386,7 +386,7 @@ class stmt_def_dat final : public statement {
         const std::span<const type_field> flds{tp.fields()};
 
         for (const auto [f, field_value] :
-             std::views::zip(flds, record->field_values())) {
+             std::views::zip(flds, instance->field_values())) {
 
             fields.values.emplace_back(
                 fold_data(tc, f.type_ref(), field_value));

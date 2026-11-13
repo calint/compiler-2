@@ -44,11 +44,11 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
     const parse_toc::parse_nesting_scope nesting{tc, tz};
 
     const term_kind tm{classify_term(tc, tk, tz)};
-    const bool is_bare{tm == term_kind::record_type};
+    const bool is_bare{tm == term_kind::user_type};
 
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
-    const bool is_typed_literal{tm == term_kind::record_literal or is_bare};
+    const bool is_typed_literal{tm == term_kind::instance_literal or is_bare};
 
     // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
     if (is_bare_builtin_type(tc, tk, tz)) {
@@ -199,12 +199,12 @@ inline expr_type::expr_type(parse_toc& tc, tokenizer& tz, const token& first_tk,
         [&](const size_t index) -> void {
             assert_field_unnamed(tz);
 
-            const type_field& tf{flds.at(index)};
+            const type_field& fld{flds.at(index)};
 
             // the value is parsed as the type of the field, so a nested
             // '{...}' is another 'expr_type'
-            exprs_.emplace_back(tc, tz, tf.type_ref(),
-                                literal_typing::from_destination, tf.shape);
+            exprs_.emplace_back(tc, tz, fld.type_ref(),
+                                literal_typing::from_destination, fld.shape);
         });
 }
 

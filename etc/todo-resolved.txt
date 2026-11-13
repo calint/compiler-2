@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 405 (2026-11-13, design by the vocabulary: the 10899
+    declarations of 'src' split into words, one concept one word;
+    readability: every function of the files not walked before
+    ('stmt_identifier', 'expr_any', 'expr_type', 'bulk_operands', the
+    built-ins, loops and conditions, 'stmt_def_dat', 'stmt_def_type',
+    the parse files, 'generics', 'program'), about 190 examples of their
+    comments compiled; bug hunt: aggregate values and how they are
+    written)
+    => done (2026-11-13), each the few uses of a word moved to the word
+       of the many: 'validate_*' -> 'assert_*' (4 against 129); "record"
+       for a value of a user type -> "instance" and "user type" as the
+       messages say ('term_kind::instance_literal', 'user_type',
+       'compile_data_instance', README chapter 8); 'parameter' -> 'param'
+       in four functions; 'tpe' -> 'tp'; 'source' -> 'src' beside 'dst'
+       in rv32i; 'create_unique_label' -> 'unique_label';
+       'path_merge::start_path' -> 'begin_path' as its twin;
+       'compile_error::msg' -> 'message'; one-off locals; the rules of
+       AGENTS.md "Names" hold by script; 14 pairs of words carry a real
+       distinction and stay
+    => readability: the example of "expected a statement" in
+       'parse_statement' was 'return 2', which another rule rejects, now
+       'x = 1 2'; 'parse_array_argument' said the caller parsed '{}', it
+       rejects it; 'assert_term_starts_path' says what it rejects;
+       'machine& x' just before its use in 'array_copy', 'arrays_equal'
+       and 'foo'; every file of 'src' has now been walked function by
+       function; listings unchanged (2495 cases)
+    => bug hunt (36000 programs against a model of the bytes with
+       dirtied storage, every size of constant list and copy at every
+       phase and around the displacement limits, 201 statements that read
+       their destination; five of six seeded defects caught at random,
+       the sixth by the systematic run): no defect
 [x] easy: round 404 (2026-11-13, design by the measured layering: every
     reference of 'src' resolved to the file of its declaration, against
     the layers and the reading order of README 1.1; readability: every

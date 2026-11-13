@@ -503,7 +503,7 @@ inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
 
     // e.g. the 'point{1, 2}' of 'p == point{1, 2}', an instance is compared
     // as memory, which only a variable has
-    if (tm == term_kind::record_literal) {
+    if (tm == term_kind::instance_literal) {
         throw_instance_literal_not_operand(tk, tk.text());
     }
 
@@ -547,7 +547,7 @@ inline auto parse_operand(parse_toc& tc, tokenizer& tz, unary_ops uops,
 inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
     -> std::unique_ptr<statement> {
 
-    // e.g. the '2' of 'return 2', which takes no value, or ''a' = 1'
+    // e.g. the '2' of 'x = 1 2' or ''a' = 1'
     if (tk.is_string() or constant_parser::is_literal(tk)) {
         throw compile_error{tk, "expected a statement"};
     }

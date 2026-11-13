@@ -33,7 +33,7 @@ class stmt_loop final : public statement {
 
         x.comment({tok(), tc.indent()}, "loop");
 
-        const std::string label{tc.create_unique_label(tok(), "loop")};
+        const std::string label{tc.unique_label(tok(), "loop")};
         x.label(tc.indent(), label);
 
         const compile_toc::scope_entry loop{

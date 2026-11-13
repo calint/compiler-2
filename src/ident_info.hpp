@@ -482,7 +482,7 @@ class destination final {
 
     // the field 'fld', as the comments name it
     [[nodiscard]] auto field(const type_field& fld) const -> destination {
-        // note: a record is in storage
+        // note: an instance is in storage
         stored_name name{stored()};
         const ::operand address{operand_at(fld.offset, fld.type_ref())};
         name.info = name.info.field(fld).at_address(address);

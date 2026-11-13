@@ -2,7 +2,7 @@
 
 // what the next tokens are, decided before they are parsed: 'classify_term'
 // tells what the first token of a value or a statement denotes; a name
-// followed by a character has one meaning only, e.g. 'point{' is a record
+// followed by a character has one meaning only, e.g. 'point{' is an instance
 // literal and 'show<' a generic call; 'builtin_value_type' gives the type of
 // the value of a built-in, 'builtin_function_type' that of a call of a
 // built-in function; the name after a '.' is decided by
@@ -171,11 +171,11 @@ enum class term_kind : uint8_t {
     // a type followed by '[', e.g. 'i8[]{1, 2}'
     array_literal,
     // a user type followed by '{', e.g. 'point{1, 2}'
-    record_literal,
+    instance_literal,
     // a type followed by '.', e.g. 'point.at(1, 2)'
     constructor_call,
     // a user type alone, e.g. the 'point' of 'var p = point'
-    record_type,
+    user_type,
     // a name followed by '(', e.g. 'f(x)' or 'point(3)' of a function 'point'
     call,
     // a user type followed by '(' with no function of its name, e.g.
@@ -198,9 +198,9 @@ enum class term_kind : uint8_t {
 // is not converted, called or made an instance of by a constructor, or the
 // start of an array or instance literal
 [[nodiscard]] inline auto names_type(const term_kind kind) -> bool {
-    return kind == term_kind::builtin_type or kind == term_kind::record_type or
+    return kind == term_kind::builtin_type or kind == term_kind::user_type or
            kind == term_kind::array_literal or
-           kind == term_kind::record_literal;
+           kind == term_kind::instance_literal;
 }
 
 // what a built-in type denotes, 'next' is the character after it
@@ -225,11 +225,11 @@ enum class term_kind : uint8_t {
 
 // what a user type that is not called denotes, 'next' is the character after
 // it
-[[nodiscard]] inline auto classify_record_type_term(const char next)
+[[nodiscard]] inline auto classify_user_type_term(const char next)
     -> term_kind {
 
     if (next == '{') {
-        return term_kind::record_literal;
+        return term_kind::instance_literal;
     }
 
     if (next == '[') {
@@ -240,7 +240,7 @@ enum class term_kind : uint8_t {
         return term_kind::constructor_call;
     }
 
-    return term_kind::record_type;
+    return term_kind::user_type;
 }
 
 // what 'tk', with 'tz' after it, denotes where a value or a statement starts;
@@ -317,7 +317,7 @@ enum class term_kind : uint8_t {
     }
 
     if (tc.types().has(text)) {
-        return classify_record_type_term(next);
+        return classify_user_type_term(next);
     }
 
     if (tc.is_func(text)) {
@@ -450,10 +450,10 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
 
 // a user type alone or an instance literal that is not an operand of a
 // condition, e.g. 'point' or 'point{1, 2} + 1', not 'point{1, 2} == p'
-[[nodiscard]] inline auto is_record_value(const term_kind tm,
-                                          const tokenizer& tz) -> bool {
+[[nodiscard]] inline auto is_instance_value(const term_kind tm,
+                                            const tokenizer& tz) -> bool {
 
-    return (tm == term_kind::record_type or tm == term_kind::record_literal) and
+    return (tm == term_kind::user_type or tm == term_kind::instance_literal) and
            is_literal_value(tz);
 }
 

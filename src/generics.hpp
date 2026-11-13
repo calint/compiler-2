@@ -66,8 +66,8 @@ struct generic_param {
         bool is_last{};
 
         while (not is_last) {
-            params.push_back(parse_parameter(tz, params));
-            is_last = ends_parameters(tz, params.back());
+            params.push_back(parse_param(tz, params));
+            is_last = ends_params(tz, params.back());
         }
 
         return params;
@@ -80,9 +80,8 @@ struct generic_param {
 
     // the '>' ends the parameters, a ',' goes on with the next, e.g. the ','
     // after 'T type' of '<T type, capacity>'
-    [[nodiscard]] static auto ends_parameters(tokenizer& tz,
-                                              const generic_param& param)
-        -> bool {
+    [[nodiscard]] static auto ends_params(tokenizer& tz,
+                                          const generic_param& param) -> bool {
 
         if (tz.accept_char_token('>')) {
             return true;
@@ -103,8 +102,7 @@ struct generic_param {
 
     // e.g. 'T type' or 'capacity', a name is declared once
     [[nodiscard]] static auto
-    parse_parameter(tokenizer& tz,
-                    const std::span<const generic_param> declared)
+    parse_param(tokenizer& tz, const std::span<const generic_param> declared)
         -> generic_param {
 
         const token name_tk{tz.next_token()};

@@ -110,9 +110,9 @@ class compile_error final : public std::exception {
     };
 
     // a token without a place gives an error without one like 'file_level'
-    compile_error(const token& src_loc_tk, std::string message,
+    compile_error(const token& src_loc_tk, std::string message_in,
                   const error_kind kind_in = error_kind::source)
-        : msg{std::move(message)}, kind{kind_in} {
+        : message{std::move(message_in)}, kind{kind_in} {
 
         if (src_loc_tk.at_line() != 0) {
             where = source_span::at(src_loc_tk);
@@ -122,9 +122,9 @@ class compile_error final : public std::exception {
     // defined in 'tokenizer.hpp', the error is at the start of the token that
     // was found instead of the expected one, past the whitespace and comments
     // after the last token read
-    compile_error(const tokenizer& tz, std::string message);
+    compile_error(const tokenizer& tz, std::string message_in);
 
-    std::string msg;
+    std::string message;
     // none for a problem of the whole file ('file_level')
     std::optional<source_span> where;
 

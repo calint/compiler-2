@@ -948,7 +948,7 @@ auto print_source_error(const source_files& files,
 auto print_compiler_error(const source_files& files, const compile_error& error)
     -> void {
 
-    print_source_error(files, error.where, error.msg);
+    print_source_error(files, error.where, error.message);
 
     print_call_frames(files, error.call_frames);
 

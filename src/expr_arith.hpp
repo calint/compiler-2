@@ -456,7 +456,7 @@ class expr_arith final : public statement {
             // e.g. '(a + b)'
             if (parens_.read_close(tz)) {
                 assert_parentheses_group();
-                validate_arithmetic_operands();
+                assert_arithmetic_operands();
                 return;
             }
 
@@ -812,6 +812,18 @@ class expr_arith final : public statement {
         exprs_.emplace_back(parse_element(tc, tz, destination_type).node);
     }
 
+    // the elements are operands of the operators of the list or of its unary
+    // ops, e.g. '-(a + b)'
+    auto assert_arithmetic_operands() const -> void {
+        if (ops_.empty() and get_unary_ops().is_empty()) {
+            return;
+        }
+
+        for (const std::unique_ptr<statement>& expr : exprs_) {
+            assert_number(*expr);
+        }
+    }
+
     // parentheses group an operation, around one plain element they mean
     // nothing, e.g. '(x)' is 'x' and '-(x)' is '-x'
     auto assert_parentheses_group() const -> void {
@@ -989,7 +1001,7 @@ class expr_arith final : public statement {
             throw_unclosed_list(tz.next_token());
         }
 
-        validate_arithmetic_operands();
+        assert_arithmetic_operands();
     }
 
     // the first element is added in an additive list and a factor in a list
@@ -1075,14 +1087,15 @@ class expr_arith final : public statement {
         // note: the operator is read by the sub-expression before its second
         //       element
 
-        std::unique_ptr<statement> last_elem_in_list{std::move(exprs_.back())};
+        std::unique_ptr<statement> last_element_in_list{
+            std::move(exprs_.back())};
 
         exprs_.pop_back();
 
         // the sub-expression continues with the precedence of the operator
         exprs_.emplace_back(std::make_unique<expr_arith>(
             tc, tz,
-            options::implied(next_precedence, std::move(last_elem_in_list),
+            options::implied(next_precedence, std::move(last_element_in_list),
                              destination_type)));
     }
 
@@ -1103,18 +1116,6 @@ class expr_arith final : public statement {
     // a merged constant has no element and is located at the list
     [[nodiscard]] auto step_token(const step& s) const -> const token& {
         return arith_steps::is_merged(s) ? tok() : s.element->tok();
-    }
-
-    // the elements are operands of the operators of the list or of its unary
-    // ops, e.g. '-(a + b)'
-    auto validate_arithmetic_operands() const -> void {
-        if (ops_.empty() and get_unary_ops().is_empty()) {
-            return;
-        }
-
-        for (const std::unique_ptr<statement>& expr : exprs_) {
-            assert_number(*expr);
-        }
     }
 
     //
@@ -1463,9 +1464,9 @@ class expr_arith final : public statement {
         -> parsed_element {
 
         // '-(a + b)' negates the list, so its unary ops come before the '('
-        unary_ops uo{tz};
+        unary_ops uops{tz};
 
-        const bool has_unary_ops{not uo.is_empty()};
+        const bool has_unary_ops{not uops.is_empty()};
 
         // the unary ops apply to the whole sub-expression
         if (const std::optional<token> open_paren_tk{
@@ -1475,7 +1476,7 @@ class expr_arith final : public statement {
             std::unique_ptr<statement> enclosed{
                 std::make_unique<expr_arith>(
                     tc, tz,
-                    options::enclosed(std::move(uo), *open_paren_tk,
+                    options::enclosed(std::move(uops), *open_paren_tk,
                                       destination_type)),
             };
 
@@ -1487,7 +1488,7 @@ class expr_arith final : public statement {
 
         // the element holds its own unary ops: '[-a] + b'
         std::unique_ptr<statement> element{
-            parse_operand(tc, tz, std::move(uo), destination_type),
+            parse_operand(tc, tz, std::move(uops), destination_type),
         };
 
         if (has_unary_ops) {

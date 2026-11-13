@@ -299,7 +299,7 @@ class assembler {
         -> bool {
 
         return std::ranges::any_of(
-            lines_, [&](const line& ln) -> bool { return ln.label == name; });
+            lines_, [&](const line& l) -> bool { return l.label == name; });
     }
 
     auto end_body() -> void {

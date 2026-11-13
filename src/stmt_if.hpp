@@ -142,7 +142,7 @@ class stmt_if final : public statement {
         -> void override {
 
         // the 'if' keyword locates the labels shared by all branches
-        const std::string if_label{tc.create_unique_label(tok(), "if")};
+        const std::string if_label{tc.unique_label(tok(), "if")};
         const std::string label_after_if{compile_toc::end_label(if_label)};
 
         compile_toc::path_merge paths{tc};

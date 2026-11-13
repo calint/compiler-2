@@ -113,6 +113,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => the workaround is a temporary; decide whether the first form (the
        argument read whole before the first write of the result) is worth
        an order in the record of a body
+[ ] easy: user decision (round 405, the vocabulary): two words for one
+    thing where neither is few: 'len' (21 declarations, 'array_len')
+    against 'length' (about 43, 'array_lengths'); 'ix' (38) against
+    'index' (183), e.g. 'file_ix' beside 'start_index' in 'source_span';
+    'destination_type' (11) against 'dst_type' (13); 'delim_tk' against
+    'delimiter_tk'; 'arg' in locals against 'argument' in functions;
+    rv32i 'width' (27) is a count of bytes beside 'width_bytes' and
+    'width_bits', and 'offset' beside 'offset_bytes': whether the rule
+    "bytes: role-prefixed" of AGENTS.md covers them; the messages say
+    "array size" where the built-in is 'array_length' (changing them
+    changes test output)
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end

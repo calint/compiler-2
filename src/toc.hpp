@@ -686,21 +686,21 @@ class type_table final {
   public:
     explicit type_table(const definition_order& order) : order_{order} {}
 
-    auto add(const token& src_loc_tk, const type& tpe) -> void {
-        entries_.put(std::string{tpe.name()},
+    auto add(const token& src_loc_tk, const type& tp) -> void {
+        entries_.put(std::string{tp.name()},
                      {
                          .src_loc_tk{src_loc_tk},
-                         .type_ptr{&tpe},
+                         .type_ptr{&tp},
                          .definition{order_.get().current()},
                          .is_receiver{},
                      });
     }
 
     // a built-in type under 'name', e.g. 'i8', or 'int' for the default type
-    auto add_builtin(const std::string_view name, const type& tpe) -> void {
+    auto add_builtin(const std::string_view name, const type& tp) -> void {
         entries_.put(std::string{name}, {
                                             .src_loc_tk{},
-                                            .type_ptr{&tpe},
+                                            .type_ptr{&tp},
                                             .definition{},
                                             .is_receiver{},
                                         });
@@ -708,14 +708,14 @@ class type_table final {
 
     // e.g. 'T' names 'i8' in an instance of 'func f<T type>()', 'name_tk'
     // is the parameter
-    auto add_param(const token& name_tk, const type& tpe) -> void {
-        put_param(name_tk, tpe, false);
+    auto add_param(const token& name_tk, const type& tp) -> void {
+        put_param(name_tk, tp, false);
     }
 
     // e.g. 'list' names 'str' in a method of 'str', 'type str = list<...>',
     // 'name_tk' is the name of the generic type
-    auto add_receiver(const token& name_tk, const type& tpe) -> void {
-        put_param(name_tk, tpe, true);
+    auto add_receiver(const token& name_tk, const type& tp) -> void {
+        put_param(name_tk, tp, true);
     }
 
     // the parameters of an enclosing instance are hidden until 'exit_params'
@@ -775,8 +775,8 @@ class type_table final {
         return not params_.empty() and params_.back().has(name);
     }
 
-    auto put_param(const token& name_tk, const type& tpe,
-                   const bool is_receiver) -> void {
+    auto put_param(const token& name_tk, const type& tp, const bool is_receiver)
+        -> void {
 
         // note: it hides a type of that name, see 'find'
 
@@ -785,7 +785,7 @@ class type_table final {
         params_.back().put(std::string{name_tk.text()},
                            {
                                .src_loc_tk{name_tk},
-                               .type_ptr{&tpe},
+                               .type_ptr{&tp},
                                .definition{},
                                .is_receiver{is_receiver},
                            });
@@ -2715,11 +2715,11 @@ class parse_toc final : public toc {
         tables().generics.add_type_instance(std::move(instance));
     }
 
-    auto add_type(const token& src_loc_tk, const type& tpe) -> void {
+    auto add_type(const token& src_loc_tk, const type& tp) -> void {
         // note: the name was checked by 'assert_type_not_defined'
-        assert_type_fits_target(src_loc_tk, tpe);
+        assert_type_fits_target(src_loc_tk, tp);
 
-        tables().types.add(src_loc_tk, tpe);
+        tables().types.add(src_loc_tk, tp);
     }
 
     // the names a 'foo' declares are no type parameter either, see
@@ -2962,14 +2962,14 @@ class parse_toc final : public toc {
     // a value of the type, e.g. a parameter, is addressed by the target even
     // when no storage of it is ever allocated; a value is smaller than the
     // address space, so its size and element counts fit an address
-    auto assert_type_fits_target(const token& src_loc_tk, const type& tpe) const
+    auto assert_type_fits_target(const token& src_loc_tk, const type& tp) const
         -> void {
 
         const ::machine& x{machine()};
 
         const size_t max_bytes{x.max_storage_bytes()};
 
-        if (tpe.size_bytes() < max_bytes) {
+        if (tp.size_bytes() < max_bytes) {
             return;
         }
 
@@ -2977,8 +2977,7 @@ class parse_toc final : public toc {
             src_loc_tk,
             std::format("type {} of {} B is too large, the target allows at "
                         "most {} B",
-                        in_quotes(tpe.name()), tpe.size_bytes(),
-                        max_bytes - 1)};
+                        in_quotes(tp.name()), tp.size_bytes(), max_bytes - 1)};
     }
 };
 
@@ -3050,7 +3049,7 @@ struct usage_statistics {
 //   scopes         'scope_entry', 'add_binding'
 //   code           'add_read_only_constant', 'add_noinline_body',
 //                  'dry_run', 'check_skipped',
-//                  'emit_most_efficient', 'create_unique_label',
+//                  'emit_most_efficient', 'unique_label',
 //                  'is_dry_run', 'call_path_at',
 //                  'use_of', 'overflow_check' of a destination, the machine
 //   listing        'indent', 'indent_scope', 'end_label', 'continue_label'
@@ -3314,7 +3313,7 @@ class compile_toc final : public toc {
                                               std::string bytes)
         -> std::string {
 
-        std::string label{create_unique_label(src_loc_tk, kind)};
+        std::string label{unique_label(src_loc_tk, kind)};
 
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
         return tables().data.add_constant(std::move(label), std::move(bytes));
@@ -3393,15 +3392,6 @@ class compile_toc final : public toc {
     // the bodies that only a dry run asked for, see 'add_noinline_body'
     [[nodiscard]] auto checked_bodies() const -> const noinline_body_list& {
         return checked_bodies_;
-    }
-
-    // 'prefix' and the call path of 'src_loc_tk', e.g. 'if.7.5' for the
-    // 'if' at 7:5, see 'call_path_at'
-    [[nodiscard]] auto create_unique_label(const token& src_loc_tk,
-                                           const std::string_view prefix) const
-        -> std::string {
-
-        return std::format("{}.{}", prefix, call_path_at(src_loc_tk));
     }
 
     [[nodiscard]] auto data() const -> const data_table& {
@@ -3561,6 +3551,15 @@ class compile_toc final : public toc {
     auto record_return() -> void {
         tables().scopes.record_return();
         end_path();
+    }
+
+    // 'prefix' and the call path of 'src_loc_tk', e.g. 'if.7.5' for the
+    // 'if' at 7:5, see 'call_path_at'
+    [[nodiscard]] auto unique_label(const token& src_loc_tk,
+                                    const std::string_view prefix) const
+        -> std::string {
+
+        return std::format("{}.{}", prefix, call_path_at(src_loc_tk));
     }
 
     [[nodiscard]] auto usage() const -> usage_statistics {

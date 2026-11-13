@@ -230,7 +230,7 @@ class initializer_declaration final {
         // an instance literal that a comparison or a connective continues is
         // an operand, e.g. 'var b = point{1, 2} == p'
         if (const term_kind tm{classify_term(tc, tk, tz)};
-            is_record_value(tm, tz)) {
+            is_instance_value(tm, tz)) {
 
             set_type(tc.get_type_or_throw(tk));
             return;

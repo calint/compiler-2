@@ -2056,9 +2056,9 @@ What depends on the target is listed here, nothing else does:
 4. the limits of a target: '--vars' and the memory it addresses, which a
    type stays below, e.g. a field 'i8[0x100000000]' is rejected on rv32i,
    and so does a constant index or count on an unsized array parameter,
-   e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB records (tests 2198, 2200, 2201),
-   the depth of noinline calls that fits in '--vars' before 'frame' stops
-   it, since a frame holds an address for each parameter and the result,
+   e.g. 'arrays_equal(a, b, 0x1000)' of 1 MiB instances (tests 2198, 2200,
+   2201), the depth of noinline calls that fits in '--vars' before 'frame'
+   stops it, since a frame holds an address for each parameter and the result,
    8 B on x86_64 and 4 B on rv32i (and '--versions': 'nested', 'first' and
    'last' keep other versions than the default, and the frame size follows
    the kept version, 1.4), and a deep noinline recursion, which 'stack'
@@ -2102,9 +2102,9 @@ assignment makes a result whole, and no conversion makes a 'bool'.
 
 The bytes that 'read' and 'sector_read' put into a buffer are assumed to be
 written from the same type, e.g. by 'write' or 'sector_write' of such a
-buffer: a 'bool' is 0 or 1 and the padding of a record is 0. Other bytes are
+buffer: a 'bool' is 0 or 1 and the padding of an instance is 0. Other bytes are
 not checked; a 'bool' read as 120 is then true as a condition and equal to
-neither 'true' nor 'false', and two records with equal fields compare
+neither 'true' nor 'false', and two instances with equal fields compare
 unequal, since '==' compares their bytes.
 
 The checks run in three phases: the parse rejects the reads of what is not

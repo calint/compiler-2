@@ -47,8 +47,6 @@ class stmt_builtin_arrays_equal final : public statement {
 
         assert(dst.type_ref().is_bool());
 
-        machine& x{tc.machine()};
-
         comment_source(tc);
 
         const type& element_type{operands_.check(tc)};
@@ -58,6 +56,8 @@ class stmt_builtin_arrays_equal final : public statement {
         };
 
         bulk_operands::argument_emitters emit{operands_, tc, tok()};
+
+        machine& x{tc.machine()};
 
         // a known size is compared like two instances; a count of 0 stays a
         // run-time walk, which compares nothing

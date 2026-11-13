@@ -46,8 +46,6 @@ class stmt_builtin_array_copy final : public statement {
     auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
         comment_source(tc);
 
         const type& element_type{operands_.check(tc)};
@@ -65,6 +63,8 @@ class stmt_builtin_array_copy final : public statement {
         };
 
         bulk_operands::argument_emitters emit{operands_, tc, tok()};
+
+        machine& x{tc.machine()};
 
         // the size is known so the copy is unrolled when small and the width
         // follows the alignment of both addresses

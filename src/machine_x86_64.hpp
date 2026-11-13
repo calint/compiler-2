@@ -313,14 +313,14 @@ class machine_x86_64 final : public machine {
 
         const operation_scope scope{*this};
 
-        const operand tmp{
+        const operand scratch{
             alloc_scratch_register(site, default_type()),
         };
 
         for_each_part(
             size_bytes,
             [&](const size_t part_size_bytes, const size_t offset) -> void {
-                const operand reg{sized_operand(tmp, part_size_bytes)};
+                const operand reg{sized_operand(scratch, part_size_bytes)};
 
                 mov(site, reg, memory_part(src, part_size_bytes, offset));
 
@@ -1238,7 +1238,7 @@ class machine_x86_64 final : public machine {
 
         const operation_scope scope{*this};
 
-        const operand reg_top_idx{
+        const operand top{
             alloc_scratch_register(site, default_type()),
         };
 
@@ -1253,20 +1253,20 @@ class machine_x86_64 final : public machine {
         // 0x7fffffffffffffff ends at 0x8000000000000000, signed it is below 4
         // and passes
         if (lower_checked) {
-            lea(site, reg_top_idx,
+            lea(site, top,
                 operand::mem(count.register_name(),
                              range.checked.register_name(), 1, 0,
                              builtins().i64));
         } else {
             // an end that does not fit 64 bits fails, a negative end is left
             // to the lower check
-            mov(site, reg_top_idx, range.checked);
-            emit_op(site, op::add, reg_top_idx, count);
+            mov(site, top, range.checked);
+            emit_op(site, op::add, top, count);
 
             branch_to_failure(site, condition::o, bounds_failure_);
         }
 
-        cmp(site, reg_top_idx, immediate(range.array_count));
+        cmp(site, top, immediate(range.array_count));
         branch_to_failure(site, out_of_bounds, bounds_failure_);
     }
 

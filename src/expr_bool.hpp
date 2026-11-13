@@ -228,7 +228,7 @@ class expr_bool_op final : public statement {
 
         x.comment({tok(), tc.indent()}, trimmed_source(*this, "?", prefix));
 
-        x.label(tc.indent(), tc.create_unique_label(tok(), "cmp"));
+        x.label(tc.indent(), tc.unique_label(tok(), "cmp"));
 
         // a constant has the element's 'not's applied, the list inversion is
         // left
@@ -1261,7 +1261,7 @@ class expr_bool final : public statement {
             const statement& next_expr{as_statement(bools_.at(expr_index + 1))};
 
             const std::string next_label{
-                tc.create_unique_label(next_expr.tok(), "cmp"),
+                tc.unique_label(next_expr.tok(), "cmp"),
             };
 
             // an 'or' continues when false and an 'and' continues when true
@@ -1368,7 +1368,7 @@ class expr_bool final : public statement {
     //       conditions of one initializer get distinct labels
     auto compile_value(compile_toc& tc, const operand& dst) const -> void {
         const std::string jmp_to_end{
-            compile_toc::end_label(tc.create_unique_label(tok(), "bool")),
+            compile_toc::end_label(tc.unique_label(tok(), "bool")),
         };
 
         // note: every element stores its value, a known result included
@@ -1392,7 +1392,7 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        x.label(tc.indent(), tc.create_unique_label(tok(), "cmp"));
+        x.label(tc.indent(), tc.unique_label(tok(), "cmp"));
 
         return compile_list(tc, targets, outer_inverted, dst);
     }

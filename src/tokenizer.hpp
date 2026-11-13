@@ -322,10 +322,10 @@ class tokenizer final {
 
     // the source text from the end of 'tk' to the current position
     [[nodiscard]] auto text_after(const token& tk) const -> std::string_view {
-        const size_t begin_ix{tk.source_end_index()};
+        const size_t bgn_ix{tk.source_end_index()};
         // note: the text starts after 'tk' because its statement prints 'tk'
 
-        return src_.substr(begin_ix, char_ix_ - begin_ix);
+        return src_.substr(bgn_ix, char_ix_ - bgn_ix);
     }
 
     // a block that the parse or a skip read up to here lacks its '}': a
@@ -696,5 +696,5 @@ class tokenizer final {
 };
 
 // declared in 'compile_error.hpp'
-inline compile_error::compile_error(const tokenizer& tz, std::string message)
-    : compile_error{tz.peek_token_position(), std::move(message)} {}
+inline compile_error::compile_error(const tokenizer& tz, std::string message_in)
+    : compile_error{tz.peek_token_position(), std::move(message_in)} {}

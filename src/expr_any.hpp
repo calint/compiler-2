@@ -821,8 +821,8 @@ class expr_any final : public statement {
     auto plan_value(const toc& tc, const part_location& at,
                     write_plan& plan) const -> void {
 
-        if (const expr_type* const record{instance_literal()}) {
-            record->plan_writes(tc, at, plan);
+        if (const expr_type* const instance{instance_literal()}) {
+            instance->plan_writes(tc, at, plan);
             return;
         }
 
@@ -846,7 +846,7 @@ class expr_any final : public statement {
     // statics
     //
 
-    // a record or array literal where the built-in 'tp' is expected, also
+    // an instance or array literal where the built-in 'tp' is expected, also
     // one reached into, e.g. 'pt{1, 2}.x'
     static auto assert_not_aggregate(const parse_toc& tc, const tokenizer& tz,
                                      const type& tp, const token& tk) -> void {
@@ -856,12 +856,12 @@ class expr_any final : public statement {
         // instance literal, which the comparison rejects
         const term_kind tm{classify_term(tc, tk, tz)};
 
-        if (tm == term_kind::record_literal and is_literal_reached_into(tz)) {
+        if (tm == term_kind::instance_literal and is_literal_reached_into(tz)) {
             throw_instance_literal_not_operand(tk, tk.text());
         }
 
-        if (is_record_value(tm, tz) or
-            (tm == term_kind::record_literal and not tp.is_bool())) {
+        if (is_instance_value(tm, tz) or
+            (tm == term_kind::instance_literal and not tp.is_bool())) {
 
             throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
         }
@@ -962,7 +962,7 @@ class expr_any final : public statement {
             //       the value
 
             const std::string true_label{
-                tc.create_unique_label(condition.tok(), "bool"),
+                tc.unique_label(condition.tok(), "bool"),
             };
 
             const std::string false_label{compile_toc::end_label(true_label)};

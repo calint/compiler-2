@@ -617,7 +617,7 @@ class machine_rv32i : public machine {
     auto copy_value(const emit_site site, const operand& dst,
                     const operand& src) -> void override {
 
-        validate_operands(dst, src);
+        assert_scalar_operands(dst, src);
 
         assert(not src.is_empty());
 
@@ -674,7 +674,7 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::divide or
                operation == arithmetic_operator::remainder);
 
-        validate_operands(dst, divisor);
+        assert_scalar_operands(dst, divisor);
 
         const operand result{
             operand::reg(operation == arithmetic_operator::remainder ? "a1"
@@ -775,7 +775,7 @@ class machine_rv32i : public machine {
         assert(operation == arithmetic_operator::shift_left or
                operation == arithmetic_operator::shift_right);
 
-        validate_operands(dst, count);
+        assert_scalar_operands(dst, count);
 
         const std::optional<int32_t> constant{immediate_value(count)};
 
@@ -1145,7 +1145,7 @@ class machine_rv32i : public machine {
                        [[maybe_unused]] const factor_use use,
                        const runtime_check& check) -> void override {
 
-        validate_operands(product, factor);
+        assert_scalar_operands(product, factor);
 
         const std::optional<uint64_t> bits{immediate_bits(factor)};
 
@@ -1543,7 +1543,7 @@ class machine_rv32i : public machine {
                           const operand& dst, const operand& src,
                           const runtime_check& check = {}) -> void {
 
-        validate_operands(dst, src);
+        assert_scalar_operands(dst, src);
 
         const std::optional<int32_t> constant{
             narrowed_immediate(src, dst.type_ref()),
@@ -1606,18 +1606,18 @@ class machine_rv32i : public machine {
     // 'result' is the register of 'routine' that 'dst' receives, 'check' the
     // overflow check of 'multiply_checked' or the division check of 'divide'
     auto call_arithmetic_helper(const emit_site site, const operand& dst,
-                                const operand& source,
+                                const operand& src,
                                 const helper_routine routine,
                                 const operand& result,
                                 const runtime_check& check) -> void {
 
         // the first argument would overwrite a source in 'a0', which is
         // allocated last, when every other register is taken
-        if (source.uses_register("a0")) {
+        if (src.uses_register("a0")) {
             throw out_of_registers_error(site.src_loc_tk);
         }
 
-        operation_scope scope{*this, dst, source};
+        operation_scope scope{*this, dst, src};
 
         const helper_spec& spec{helper_spec_of(routine)};
 
@@ -1637,12 +1637,12 @@ class machine_rv32i : public machine {
         //       area moves 'sp'
 
         assert(not dst.uses_register("sp"));
-        assert(not source.uses_register("sp"));
+        assert(not src.uses_register("sp"));
 
         // save caller values before argument setup overwrites 'a0' or 'a1'
         save_call_registers(site.indent, saved);
 
-        load_helper_arguments(site, dst, source);
+        load_helper_arguments(site, dst, src);
 
         if (check.enabled and routine == helper_routine::divide) {
             check_divisor(site, dst.type_ref().size_bytes());
@@ -1967,20 +1967,20 @@ class machine_rv32i : public machine {
         write_compare_result(site, result, registers, false);
     }
 
-    // 'source' in a register of the comparison width
-    auto comparison_operand(const emit_site site, const operand& source,
+    // 'src' in a register of the comparison width
+    auto comparison_operand(const emit_site site, const operand& src,
                             const operand& other, const type& width_type,
                             const operand& dst) -> operand {
 
         // matching register representations need no conversion
-        if (source.is_register() and
-            source.type_ref().has_same_representation(width_type)) {
+        if (src.is_register() and
+            src.type_ref().has_same_representation(width_type)) {
 
-            return source;
+            return src;
         }
 
         // zero has the same representation at every supported width
-        if (immediate_value(source) == 0) {
+        if (immediate_value(src) == 0) {
             return operand::reg("zero", width_type);
         }
 
@@ -1999,7 +1999,7 @@ class machine_rv32i : public machine {
                               : alloc_scratch_register(site, width_type),
         };
 
-        copy_value(site, value, source);
+        copy_value(site, value, src);
 
         return value;
     }
@@ -2819,7 +2819,7 @@ class machine_rv32i : public machine {
     auto load_at(const size_t indent, const op code, const std::string_view rd,
                  const operand& at) -> void {
 
-        validate_lowered(at);
+        assert_lowered(at);
 
         assembler_.load(indent, code, rd, at.displacement(),
                         at.base_register());
@@ -2875,22 +2875,22 @@ class machine_rv32i : public machine {
         };
     }
 
-    // writes 'first_value' to 'a0' and 'source' to 'a1'
+    // writes 'first_value' to 'a0' and 'src' to 'a1'
     auto load_helper_arguments(const emit_site site, const operand& first_value,
-                               const operand& source) -> void {
+                               const operand& src) -> void {
 
         const operand first_argument{operand::reg("a0", default_type())};
         const operand second_argument{operand::reg("a1", default_type())};
 
         // note: 'call_arithmetic_helper' rejects a source in 'a0'
-        assert(not source.uses_register("a0"));
+        assert(not src.uses_register("a0"));
 
         // note: a register 'first_value' is the destination of the helper,
         //       which receives the result after the call
 
         const bool consumed{
             first_value.is_register() and
-                not source.uses_register(first_value.register_name()),
+                not src.uses_register(first_value.register_name()),
         };
 
         if (consumed) {
@@ -2900,7 +2900,7 @@ class machine_rv32i : public machine {
             copy_value(site, first_argument, first_value);
         }
 
-        copy_value(site, second_argument, source);
+        copy_value(site, second_argument, src);
     }
 
     auto load_into(const emit_site site, const operand& value,
@@ -2958,7 +2958,7 @@ class machine_rv32i : public machine {
                                      const operand& address,
                                      const operand& dst = {}) -> operand {
 
-        validate_address(address);
+        assert_address(address);
 
         const std::string& base{address.base_register()};
         const std::string& index{address.index_register()};
@@ -3210,7 +3210,7 @@ class machine_rv32i : public machine {
     auto store_at(const size_t indent, const op code,
                   const std::string_view src, const operand& at) -> void {
 
-        validate_lowered(at);
+        assert_lowered(at);
 
         assembler_.store(indent, code, src, at.displacement(),
                          at.base_register());
@@ -3780,6 +3780,22 @@ class machine_rv32i : public machine {
         return immediates_size_bytes <= copy_size_bytes;
     }
 
+    static auto assert_address(const operand& address) -> void {
+        assert(address.is_memory());
+        assert(is_register(address.base_register()));
+
+        assert(address.index_register().empty() or
+               is_register(address.index_register()));
+
+        // note: an element size beyond the address range cannot be allocated
+        assert(address.index_register().empty() or
+               address.scale() <= std::numeric_limits<uint32_t>::max());
+
+        // note: any displacement is valid, addresses wrap at 32 bits and
+        //       'upper_part' and 'lower_part' keep its low 32 bits, e.g.
+        //       the addend of 'a[i + K]' may pass the address range
+    }
+
     // folding removes the operations that keep the destination, an operation
     // of a location with itself is a valid one that an aliased result reaches
     static auto
@@ -3793,6 +3809,15 @@ class machine_rv32i : public machine {
                not keeps_destination(instruction, *constant, width));
     }
 
+    // a base register and an offset that a load or store holds, e.g. the
+    // result of 'lower_address' or 'memory_at'
+    static auto assert_lowered(const operand& at) -> void {
+        assert_address(at);
+
+        assert(at.index_register().empty() and
+               assembler_rv32i::fits_immediate(at.displacement()));
+    }
+
     // note: the front end rejects 'i64' and an instance first, e.g. "'i64' is
     //       not available on this target"
 
@@ -3801,6 +3826,25 @@ class machine_rv32i : public machine {
                (value_type.size_bytes() == byte_size_bytes_ or
                 value_type.size_bytes() == half_size_bytes_ or
                 value_type.size_bytes() == word_size_bytes_));
+    }
+
+    // scalar operands in a register or an address of the target, the result
+    // is written in place
+    static auto assert_scalar_operands(const operand& dst, const operand& src)
+        -> void {
+
+        assert_scalar(dst.type_ref());
+        assert_scalar(src.type_ref());
+
+        assert(dst.is_register() or dst.is_memory());
+
+        if (dst.is_memory()) {
+            assert_address(dst);
+        }
+
+        if (src.is_memory()) {
+            assert_address(src);
+        }
     }
 
     // the branch taken when 'holds' does, of the comparisons that have one
@@ -4354,50 +4398,6 @@ class machine_rv32i : public machine {
         }
 
         return 1;
-    }
-
-    static auto validate_address(const operand& address) -> void {
-        assert(address.is_memory());
-        assert(is_register(address.base_register()));
-
-        assert(address.index_register().empty() or
-               is_register(address.index_register()));
-
-        // note: an element size beyond the address range cannot be allocated
-        assert(address.index_register().empty() or
-               address.scale() <= std::numeric_limits<uint32_t>::max());
-
-        // note: any displacement is valid, addresses wrap at 32 bits and
-        //       'upper_part' and 'lower_part' keep its low 32 bits, e.g.
-        //       the addend of 'a[i + K]' may pass the address range
-    }
-
-    // a base register and an offset that a load or store holds, e.g. the
-    // result of 'lower_address' or 'memory_at'
-    static auto validate_lowered(const operand& at) -> void {
-        validate_address(at);
-
-        assert(at.index_register().empty() and
-               assembler_rv32i::fits_immediate(at.displacement()));
-    }
-
-    // scalar operands in a register or an address of the target, the result
-    // is written in place
-    static auto validate_operands(const operand& dst, const operand& src)
-        -> void {
-
-        assert_scalar(dst.type_ref());
-        assert_scalar(src.type_ref());
-
-        assert(dst.is_register() or dst.is_memory());
-
-        if (dst.is_memory()) {
-            validate_address(dst);
-        }
-
-        if (src.is_memory()) {
-            validate_address(src);
-        }
     }
 
     // the accesses of 'size_bytes' past the operands 'at'

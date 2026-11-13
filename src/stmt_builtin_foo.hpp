@@ -58,16 +58,16 @@ class stmt_builtin_foo final : public statement {
     auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
         comment_header(tc);
 
-        const std::string loop_label{tc.create_unique_label(tok(), "foo")};
+        const std::string loop_label{tc.unique_label(tok(), "foo")};
         const std::string end_label{compile_toc::end_label(loop_label)};
 
         // the array and the count are resolved before 'e', 'i' and 'n' can
         // hide names they use
         const ident_info array_info{make_ident_info(tc, ident_)};
+
+        machine& x{tc.machine()};
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 

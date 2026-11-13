@@ -859,8 +859,9 @@ class stmt_identifier final : public statement {
 
         const token tk{tz.next_token()};
 
-        // e.g. '{1, 2}' or '[2]{1, 2}'; '{}' is the zero value of an array
-        // parameter, which the caller parsed
+        // e.g. '{1, 2}' or '[2]{1, 2}'; not '{}', the zero value: the caller
+        // rejected it for an array parameter, a built-in expects an array
+        // below
         if (tk.is_none() and (is_default_array_literal(tz) or
                               (tz.peek_char_after_whitespace() == '{' and
                                not is_zero_value(tz)))) {
@@ -1120,10 +1121,10 @@ class stmt_identifier final : public statement {
     }
 
     // the term 'tk', classified as 'tm' with 'tz' after it, starts a path
-    // where an array is expected: a name or a literal, which the path
-    // resolves; a literal without storage, a call, a type or a function is
-    // rejected at 'tk', e.g. the 'point' of 'point.at(1, 2)' or the 'f' of
-    // 'f(1).a'
+    // where an array is expected: a name or a constant, which the path
+    // resolves; an array or instance literal, a call, a type or a function
+    // is rejected at 'tk', e.g. the 'point' of 'point.at(1, 2)' or the 'f'
+    // of 'f(1).a'
     static auto assert_term_starts_path(const parse_toc& tc,
                                         const tokenizer& tz, const token& tk,
                                         const term_kind tm) -> void {
@@ -1143,7 +1144,7 @@ class stmt_identifier final : public statement {
         }
 
         // e.g. the 'pt{1, a}.a' of 'array_length(pt{1, a}.a)', not the type
-        if (tm == term_kind::record_literal and is_literal_reached_into(tz)) {
+        if (tm == term_kind::instance_literal and is_literal_reached_into(tz)) {
             throw_instance_literal_not_operand(tk, tk.text());
         }
 

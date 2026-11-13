@@ -191,7 +191,7 @@ class assignment_flow final {
 
         // 'path' has 'trace_assignment(assignment_flow&)'
         auto trace(const auto& path) -> void {
-            start_path();
+            begin_path();
             path.trace_assignment(flow_);
             merged_.intersect(flow_.assigned_);
             is_reachable_ = is_reachable_ or flow_.is_reachable_;
@@ -209,14 +209,14 @@ class assignment_flow final {
         auto trace_skipped(const auto& path) -> void {
             const std::optional<assigned_bytes> breaks{flow_.at_breaks_};
 
-            start_path();
+            begin_path();
             path.trace_assignment(flow_);
             flow_.at_breaks_ = breaks;
         }
 
       private:
         // every path starts at the 'if'
-        auto start_path() -> void {
+        auto begin_path() -> void {
             flow_.assigned_ = entry_;
             flow_.is_reachable_ = true;
         }
