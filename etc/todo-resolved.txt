@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 418 (2026-11-14, bug hunt: storage layout and the stack,
+    every variable a canary, the frames at the short displacements and
+    past 2 GiB, '--vars', '--stack' and '--memory' at their edges; design:
+    the options and mode flags, each followed from where it is set to
+    every reader; readability: a newcomer follows 75 wrong programs from
+    the place that detects each to the text printed, and 60 functions at
+    random)
+    => done (2026-11-14): the data alignment is one constant of 'machine'
+       ('machine::data_alignment()', beside 'sector_size_bytes()'): the
+       field of 'target_description' that both targets set to 16 from a
+       constant each and the copy in 'data_table' with its constructor are
+       gone; 'failure_location::routine' is 'handler_label' (a "routine"
+       is one of 'routine_labels'); docs 1.5 said 'check_bounds' returns
+       what is known not to be negative, the caller says it in the
+       'bounds_range'; docs 1.9 names the "included from" lines; the
+       comments of 'shown_char_size' and 'printable' name the escaped
+       whole characters, the one of x86_64 'emit_report_line_routine' says
+       the newline is stored first; listings unchanged (2505 cases)
+    => design: nothing else; not done: 'check_default_stack_fits' as a
+       neutral message of the bare-metal target (changes a message, in
+       'etc/todo.txt'), 'options' and 'target_options' as one (given
+       against defaults filled in), 'builtin_use' as a bool
+    => readability: every message pointed at the right token and said
+       something true
+    => bug hunt (1400 programs with a model of values, raw bytes, the
+       placement and the frame sizes, 26482 runs, 21536 frame-edge panics,
+       16572 '--vars' edge compiles, 46200 small-stack runs that never
+       store below the limit; 10 of 11 mutants caught, the eleventh needs
+       27 live values at a helper): no defect
 [x] easy: round 417 (2026-11-13, bug hunt: operations that need
     particular registers under register pressure, division, shifts,
     multiply helpers, 'write', 'read', the sector calls and the copies with

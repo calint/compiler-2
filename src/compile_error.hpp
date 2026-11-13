@@ -224,8 +224,9 @@ class compile_error final : public std::exception {
 }
 
 // the bytes of the whole UTF-8 character at 'index' of 'text', 0 for a
-// control character or a byte that starts no whole character, e.g. a lone
-// continuation byte, a truncated or an overlong character
+// control character, a character that is escaped ('is_escaped_code_point') or
+// a byte that starts no whole character, e.g. a lone continuation byte, a
+// truncated or an overlong character
 [[nodiscard]] inline auto shown_char_size(const std::string_view text,
                                           const size_t index) -> size_t {
 
@@ -277,8 +278,9 @@ class compile_error final : public std::exception {
     return 1 + continuation_count;
 }
 
-// a control byte or a byte outside a whole UTF-8 character as '\xNN', so a
-// message that quotes the source stays on its line and is valid UTF-8
+// a byte that 'shown_char_size' does not show is written as '\xNN', e.g. a
+// control byte or each byte of an em space, so a message that quotes the
+// source stays on its line and is valid UTF-8
 [[nodiscard]] inline auto printable(const std::string_view text)
     -> std::string {
 

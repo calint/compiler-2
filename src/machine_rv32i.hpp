@@ -83,8 +83,6 @@ class machine_rv32i : public machine {
     //       starts 2032 below 's0' so 4080 bytes of variables are in reach
     //       of a load or store, and 's0' stays aligned
 
-    static constexpr size_t data_alignment_{16};
-
     //
     // code-size thresholds, each measured, see its note
     //
@@ -1442,7 +1440,6 @@ class machine_rv32i : public machine {
     [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
         return {
             .address_size_bytes{word_size_bytes_},
-            .data_alignment{data_alignment_},
             .max_storage_bytes{assembler_rv32i::address_space_bytes},
             .has_indexed_addressing{false},
 

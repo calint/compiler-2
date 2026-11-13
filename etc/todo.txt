@@ -124,6 +124,24 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[p] easy: need approval (round 418, the options) 'check_default_stack_fits'
+    in 'src/main.cpp' (12 lines) is a special case for '--memory' below
+    the default stack; a neutral message in
+    'machine_rv32i_bare_metal::bare_metal_target' would cover it by the
+    general rule, but changes an error message and two cases of
+    'test-cli.sh'
+[ ] easy: (round 418, a hunt of the storage layout) the check of a body
+    without its calls gives the 'n' of a 'foo' over an unsized parameter
+    storage (8 B on x86_64) that no emitted body has: 'func noinline
+    outer(q i8[])' with 'pad i8[8]', 'w i8[40]' and 'x i8[24]' in 'foo q'
+    is rejected with '--vars=80' though its bodies need 80 B, or names a
+    variable 'n' the source does not have; the same 'foo' behind an
+    inlined 'inner(p i8[])' is accepted ('compile_limit' gives 0, the
+    body is skipped); no result changes. a mutant of the stack check
+    without 'leaf_stack_bytes' needs 27 live values at a helper to be
+    caught (test 3132 only). the register report of an inlined body
+    advises 'noinline' also where the body alone needs more than all
+    registers
 [ ] easy: (round 417, a hunt of fixed registers and a walk of the
     strings) rv32i: "out of scratch registers" can come with "28 of 29
     registers live" in the failure report: 'a0' is protected for the first

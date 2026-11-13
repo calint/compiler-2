@@ -853,14 +853,8 @@ class data_table final {
     std::vector<placed_dat> dats_;
     std::vector<machine::read_only_constant> constants_;
     size_t total_size_bytes_{};
-    // the alignment of the data section of the machine and of the variables
-    // after the dats
-    size_t data_alignment_{};
 
   public:
-    explicit data_table(const size_t data_alignment)
-        : data_alignment_{data_alignment} {}
-
     // the same bytes share the label of the first constant added, e.g. the
     // strings '"A"' and '"\x41"'
     [[nodiscard]] auto add_constant(std::string label, std::string bytes)
@@ -914,7 +908,8 @@ class data_table final {
 
     // the padding after the dats that aligns the variables
     [[nodiscard]] auto dat_var_padding_bytes() const -> size_t {
-        return alignment_padding_bytes(total_size_bytes_, data_alignment_);
+        return alignment_padding_bytes(total_size_bytes_,
+                                       machine::data_alignment());
     }
 
     [[nodiscard]] auto dats() const -> std::span<const placed_dat> {
@@ -2270,9 +2265,9 @@ struct toc_tables final {
     // 'builtin_types' are the types of the language, shared with the machine
     toc_tables(::machine& backend_in, const builtin_type_set& builtin_types,
                const source_files& files, const size_t vars_capacity_bytes)
-        : backend{backend_in}, locations{files}, scopes{order},
-          data{backend_in.data_alignment()}, funcs{order}, generics{order},
-          types{order}, definitions{scopes, funcs, types, generics, locations},
+        : backend{backend_in}, locations{files}, scopes{order}, funcs{order},
+          generics{order}, types{order},
+          definitions{scopes, funcs, types, generics, locations},
           builtins{backend_in, builtin_types},
           resolver{scopes, backend_in, funcs, generics, builtins},
           storage{backend_in, scopes, data, vars_capacity_bytes} {

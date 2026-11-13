@@ -106,7 +106,6 @@ struct routine_labels {
 // e.g. the stack limit of a bare-metal machine
 struct target_description {
     size_t address_size_bytes{};
-    size_t data_alignment{};
     // the most bytes of data and variables the target can address
     size_t max_storage_bytes{};
     // whether an access can add an index register to a base register, else
@@ -474,7 +473,8 @@ class machine {
   private:
     // a failure that reports its line, see 'failure_target'
     struct failure_location {
-        std::string_view routine;
+        // 'failure_handler::label' of the handler of the check
+        std::string_view handler_label;
         size_t file_ix{};
         size_t line{};
     };
@@ -754,6 +754,10 @@ class machine {
     // the sector size of the sd card of every target
     static constexpr size_t card_sector_size_bytes_{512};
 
+    // the alignment of the data section and of the variables after it, the
+    // same on every target
+    static constexpr size_t data_alignment_{16};
+
     // the labels of the sections of the program's data and variables
     static constexpr std::string_view data_label_{"dat"};
     static constexpr std::string_view data_end_label_{"dat.end"};
@@ -958,7 +962,7 @@ class machine {
 
         output.add_separator_newline();
         output.switch_section(section::data);
-        output.align(target_.data_alignment);
+        output.align(data_alignment_);
         output.label(0, data_label_);
     }
 
@@ -1219,10 +1223,6 @@ class machine {
         };
 
         comment(site, std::string_view{text});
-    }
-
-    [[nodiscard]] auto data_alignment() const -> size_t {
-        return target_.data_alignment;
     }
 
     // the integer of the width of an address, also the type of an address in
@@ -1501,7 +1501,7 @@ class machine {
         output.label(0, data_end_label_);
         output.add_separator_newline();
         output.switch_section(section::variables);
-        output.align(target_.data_alignment);
+        output.align(data_alignment_);
         output.label(0, variables_label_);
         output.reserve(size_bytes);
         output.label(0, variables_end_label_);
@@ -1620,6 +1620,10 @@ class machine {
     //
     // statics
     //
+
+    [[nodiscard]] static auto data_alignment() -> size_t {
+        return data_alignment_;
+    }
 
     [[nodiscard]] static auto sector_size_bytes() -> size_t {
         return card_sector_size_bytes_;
@@ -1807,7 +1811,7 @@ class machine {
         }
 
         failure_locations_.push_back({
-            .routine{handler.label},
+            .handler_label{handler.label},
             .file_ix{src_loc_tk.file_index()},
             .line{src_loc_tk.at_line()},
         });
@@ -2369,14 +2373,16 @@ class machine {
         }
     }
 
-    // the lines of the failures of 'routine' by the file they are in
-    [[nodiscard]] auto failure_lines_of(const std::string_view routine) const
+    // the lines of the failures of the handler 'handler_label' by the file
+    // they are in
+    [[nodiscard]] auto
+    failure_lines_of(const std::string_view handler_label) const
         -> failure_lines {
 
         failure_lines lines;
 
         for (const failure_location& failure : failure_locations_) {
-            if (failure.routine == routine) {
+            if (failure.handler_label == handler_label) {
                 lines[failure.file_ix].insert(failure.line);
             }
         }

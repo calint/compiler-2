@@ -370,9 +370,11 @@ constants out of range, shared storage) always hold, see 8.1. The options are
 one record, held by the machine with the checks its target cannot honor off
 ('machine::checks', e.g. 'stack' on x86_64): a check of its own,
 'check_bounds', 'check_frame_capacity' and 'check_stack_capacity', emits
-nothing when its option is off, so its callers do not ask ('check_bounds'
-returns whether the values of its range are then known not to be negative,
-e.g. the count of a bulk operation for the range of its second array); an
+nothing when its option is off, so a caller asks the option only for what it
+prepares for the check, e.g. the register of a run-time start (the caller of
+'check_bounds' says in the 'bounds_range' what is already known not to be
+negative, e.g. 'count_lower_checked' for the count of a bulk operation at the
+range of its second array, which the check of the first tested); an
 operation with a check, e.g. 'divide', takes a 'runtime_check' from its
 caller, which knows whether the operation can fail, e.g. not for a constant
 divisor other than -1 ('toc::overflow_check' for the arithmetic, off where
@@ -698,8 +700,9 @@ The front end holds registers, the backend names and picks them
 
 An error is a 'compile_error' ('compile_error.hpp') at the token that caused it,
 or where the next token starts when a token is missing. The first error ends the
-compile (7.8), 'main.cpp' prints it with its frames and then its 'detail', e.g.
-the register use at the failure that 'machine::register_error' adds.
+compile (7.8), 'main.cpp' prints it with its frames, then the includes that
+loaded its file ("included from", 'print_include_chain') and then its 'detail',
+e.g. the register use at the failure that 'machine::register_error' adds.
 
 1. Frames: the code that led to an error adds itself while the error unwinds
    through it: an inlined call adds "called from" with its source, preceded

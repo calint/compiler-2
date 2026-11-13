@@ -55,8 +55,6 @@ class machine_x86_64 final : public machine {
     static constexpr size_t size_dword_{assembler_x86_64::size_dword};
     static constexpr size_t size_byte_{assembler_x86_64::size_byte};
 
-    static constexpr size_t data_alignment_{16};
-
     // the user address space of x86_64 Linux, 128 TiB
     static constexpr size_t user_address_space_bytes_{0x800000000000};
 
@@ -768,8 +766,8 @@ class machine_x86_64 final : public machine {
     }
 
     // prints the line number in 'report_line_register_' and exits with the
-    // code in 'report_exit_code_register_'; the digits are written backwards
-    // below 'rsp', the newline last, and the routine never returns
+    // code in 'report_exit_code_register_'; the text ends below 'rsp': the
+    // newline is stored first, then the digits backwards; it never returns
     auto emit_report_line_routine() -> void override {
         constexpr int newline{'\n'};
         constexpr int decimal_base{10};
@@ -1943,7 +1941,6 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] static constexpr auto x86_64_target() -> target_description {
         return {
             .address_size_bytes{size_qword_},
-            .data_alignment{data_alignment_},
             .max_storage_bytes{user_address_space_bytes_},
             .has_indexed_addressing{true},
             .max_index_scale_bytes{size_qword_},
