@@ -11,8 +11,8 @@
 #   DIFFINP2     like 'DIFFINP' with the input given one line per read
 #   DIFFPY       compile, run the script 'NNN.py' and compare its output with
 #                'NNN.out'
-#   DIFFNOPT     run, and compare the difference of the output of '--nopt' and
-#                of the optimized compile with 'NNN.TARGET.diff'
+#   DIFFNOPT     like 'RUN', and compare the difference of the listings of
+#                '--nopt' and of the optimized compile with 'NNN.TARGET.diff'
 #   COMPERR      the compile fails with exit code 1 and its message is
 #                'NNN.out'
 #   LISTING KIND compile without the checks, and compare the part of the

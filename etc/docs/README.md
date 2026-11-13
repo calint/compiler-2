@@ -242,7 +242,9 @@ Invariants the code relies on:
    without a free scratch register borrows 't0', restored at a landing before
    the target, so '--nopt' decides no verdict), the report is added as
    comments, the assembly is written, the rv32i targets also write the binary
-   image.
+   image. An image or a listing that cannot be written whole, e.g. on a full
+   disk, leaves no image: the file is removed, also through a symbolic link,
+   but not a device or a pipe ('machine_rv32i::remove_image').
 
 ### 1.3 Names during compile: scopes and bindings
 
@@ -718,9 +720,10 @@ the register use at the failure that 'machine::register_error' adds.
    functions. An error that ends a dry run is a 'source' one, so none of them
    drops it.
 3. A file that cannot be read is an 'unlocated_error', which
-   'program::load_file' locates at its 'include'. A file that starts with a
-   byte order mark or has a carriage return without a line feed is rejected
-   when it is loaded ('tokenizer::assert_source_well_formed').
+   'program::load_file' locates at its 'include'; so is a relative name in a
+   working directory that was removed ('source_files::add'). A file that
+   starts with a byte order mark or has a carriage return without a line feed
+   is rejected when it is loaded ('tokenizer::assert_source_well_formed').
 4. A message stays on its line and is valid UTF-8: a control byte, a byte
    outside a whole UTF-8 character or a character that looks like a space or
    like nothing (the spaces other than ' ', soft hyphen, zero width, filler,

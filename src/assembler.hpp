@@ -92,9 +92,6 @@
 //     je if.4.5.end
 class assembler {
   public:
-    // 'optimized' applies the jump optimizations listed above the class
-    enum class jump_mode : uint8_t { as_emitted, optimized };
-
     // in the order of the rv32i image; the variables are zeroed when defined,
     // so a target need not store them in its image
     enum class section : uint8_t { text, rodata, data, variables };

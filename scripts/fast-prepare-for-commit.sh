@@ -24,8 +24,6 @@ echo test roome
 roome/qa/test.sh
 echo run tests
 qa/coverage/test-coverage.sh --target=x86 run
-#qa/coverage/test-coverage.sh --target=rv32i run
-#qa/coverage/test-coverage.sh --target=rv32i-qemu run
 qa/coverage/test-coverage.sh --target=rv32i-fpga run
 qa/coverage/test-cli.sh
 echo compile prog

@@ -29,7 +29,6 @@
 // note: the headers kept without a use here hold the definitions that close
 //       the include cycles (README 7.7)
 
-#include "assembler.hpp"
 #include "compile_error.hpp"
 #include "expr_type_impl.hpp" // IWYU pragma: keep
 #include "machine.hpp"
@@ -985,10 +984,7 @@ resolved_binary_file_name(const options& opts,
     -> machine::target_options {
 
     return {
-        .jumps{
-            opts.optimize_jumps ? assembler::jump_mode::optimized
-                                : assembler::jump_mode::as_emitted,
-        },
+        .optimize_jumps{opts.optimize_jumps},
         .kept{opts.kept_version},
         .register_report{opts.reports.registers},
         .sd_card_file_name{
@@ -1083,19 +1079,14 @@ auto check_output_files(const target_name& target, const source_files& files,
 
 // e.g. a full disk, the listing is incomplete; a failed compile leaves no
 // image
-auto check_listing_written(const target_name& target, const std::string& binary)
-    -> void {
-
+auto check_listing_written(const machine& backend) -> void {
     std::cout.flush();
 
     if (std::cout) {
         return;
     }
 
-    if (target.writes_image) {
-        std::error_code error;
-        std::filesystem::remove(binary, error);
-    }
+    backend.remove_image();
 
     throw unlocated_error{"cannot write the assembly to stdout"};
 }
@@ -1133,7 +1124,7 @@ auto compile_to_stdout(const options& opts, source_files& files,
 
     prg.build(std::cout);
 
-    check_listing_written(target, resolved.binary_file_name);
+    check_listing_written(*backend);
 }
 
 [[nodiscard]] auto compile_file(const options& opts) -> int {

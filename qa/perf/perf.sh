@@ -1,4 +1,9 @@
 #!/bin/sh
+# profiles the compiler with 'perf' over the test suite, or over a compile of
+# every test source, and writes the reports next to this script (ignored by
+# git): 'summary.txt' explains them; needs 'perf' and 'python3'
+# usage: perf.sh [nobuild|build|report] [full|compile-only]
+#                [--reproduce-source], see 'usage'
 set -e
 
 cd "$(dirname "$0")"

@@ -204,6 +204,10 @@ def nodiscard_addition(cursor):
     if any(t.spelling == "nodiscard" for t in tokens[: names[0]]):
         return None
 
+    # the tokens of a function start after an attribute written before it
+    if any(c.kind == K.WARN_UNUSED_RESULT_ATTR for c in cursor.get_children()):
+        return None
+
     if tidy_adds_nodiscard(cursor, tokens[: names[0]]):
         return None
 
@@ -358,13 +362,40 @@ def apply_additions(originals, additions):
     return texts
 
 
+def position(location):
+    return (location.line, location.column)
+
+
+def call_at(tu, location):
+    # the outermost call that starts at 'location', found through the
+    # cursors that hold it; the cursor at the location itself is the first
+    # name of the call, e.g. the object 'files' of 'files.add(...)'
+    pending = [tu.cursor]
+    while pending:
+        for child in pending.pop().get_children():
+            start = child.extent.start
+            if start.file is None or start.file.name != location.file.name:
+                continue
+
+            at = position(location)
+            if at < position(start) or position(child.extent.end) <= at:
+                continue
+
+            if child.kind == K.CALL_EXPR and position(start) == at:
+                return child
+
+            pending.append(child)
+
+    return None
+
+
 def discarded_function(tu, diagnostic):
     # the function whose value a call discards
-    cursor = ci.Cursor.from_location(tu, diagnostic.location)
-    if cursor is None or cursor.referenced is None:
+    call = call_at(tu, diagnostic.location)
+    if call is None or call.referenced is None:
         return None
 
-    return cursor.referenced.canonical.get_usr()
+    return call.referenced.canonical.get_usr()
 
 
 def broken_consts(group, consts):
@@ -413,7 +444,8 @@ def check_additions(originals, additions):
         for d in tu.diagnostics:
             if d.option == "-Wunused-result":
                 usr = discarded_function(tu, d)
-                discards.append((d, usr))
+                # note: the place is read now, the diagnostic ends with 'tu'
+                discards.append(f"{d.location.file.name}:{d.location.line}")
                 drop.add(usr)
 
         for group in error_groups(tu.diagnostics):
@@ -428,7 +460,15 @@ def check_additions(originals, additions):
         if not drop:
             return additions, discards
 
-        additions = [a for a in additions if a.usr not in drop]
+        kept = [a for a in additions if a.usr not in drop]
+        # note: a diagnostic that names no addition would repeat without end
+        if len(kept) == len(additions):
+            for d in tu.diagnostics:
+                if d.option == "-Wunused-result":
+                    print(f"no addition found for: {d}", file=sys.stderr)
+            sys.exit(1)
+
+        additions = kept
 
 
 def main():
@@ -446,12 +486,8 @@ def main():
     originals = {a.file: pathlib.Path(a.file).read_bytes() for a in found}
     additions, discards = check_additions(originals, list(unique.values()))
 
-    for d, _ in discards:
-        location = d.location
-        print(
-            f"{location.file.name}:{location.line}: discards the value, "
-            "no '[[nodiscard]]' added"
-        )
+    for place in discards:
+        print(f"{place}: discards the value, no '[[nodiscard]]' added")
 
     nodiscards = [a for a in additions if a.text == NODISCARD]
     consts = [a for a in additions if a.text == CONST]

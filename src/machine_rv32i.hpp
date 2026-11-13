@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <functional>
@@ -17,6 +18,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -70,7 +72,8 @@
 //                virtuals 'emit_exit_routine', 'emit_sector_routines',
 //                'emit_target_setup' and 'finish_target';
 //                the protected section is what the targets build on
-//   output       'write_assembly' writes the text and the image
+//   output       'write_assembly' writes the text and the image,
+//                'remove_image' removes the image of an output that failed
 class machine_rv32i : public machine {
     using op = assembler_rv32i::op;
 
@@ -762,6 +765,23 @@ class machine_rv32i : public machine {
         write_compare_result(site, result, registers, request.inverted);
     }
 
+    // the file itself, also when a symbolic link names it; a device or a
+    // pipe is not the compiler's to remove, e.g. '--bin=/dev/null'
+    auto remove_image() const -> void override {
+        const std::string& file_name{options().binary_file_name};
+        std::error_code error;
+
+        const std::filesystem::path file{
+            std::filesystem::canonical(file_name, error),
+        };
+
+        if (error or not std::filesystem::is_regular_file(file, error)) {
+            return;
+        }
+
+        std::filesystem::remove(file, error);
+    }
+
     auto return_function(const size_t indent) -> void override {
         assembler_.lw(indent, "ra", 0, "sp");
         assembler_.addi(indent, "sp", "sp", frame_save_bytes_);
@@ -909,17 +929,25 @@ class machine_rv32i : public machine {
         assert(not file_name.empty());
 
         std::ofstream binary{file_name, std::ios::binary};
+        const bool is_opened{binary.is_open()};
 
-        // the file did not open, or e.g. a full disk left the image incomplete
-        if (binary) {
+        if (is_opened) {
             assembler_.write_resolved(os, binary);
             binary.close();
         }
 
-        if (not binary) {
-            throw unlocated_error{
-                std::format("cannot write file {}", in_quotes(file_name))};
+        if (binary) {
+            return;
         }
+
+        // e.g. a full disk left the image incomplete; a file that did not
+        // open was not written and stays
+        if (is_opened) {
+            remove_image();
+        }
+
+        throw unlocated_error{
+            std::format("cannot write file {}", in_quotes(file_name))};
     }
 
     auto zero(const emit_site site, const operand& dst, const size_t size_bytes,

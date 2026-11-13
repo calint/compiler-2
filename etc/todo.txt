@@ -36,9 +36,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
        the lambda with '()' if cppcheck then gets through
 [ ] easy: (round 393) a reviewer stumbles on: '.gitignore' does not cover
     the outputs of the README's first program ('hello', 'hello.s',
-    'hello-without-comments.s'); commented-out lines in
-    'scripts/fast-prepare-for-commit.sh', 'qa/coverage/test-all.sh',
-    'fpga-emulator/make.sh', 'fpga-emulator/qa/test.sh'; 'scripts/perf.sh'
+    'hello-without-comments.s'); 'scripts/perf.sh'
     and 'qa/perf/perf.sh' are two profilers with one name;
     'etc/nvim/tree-sitter-baz/make.sh' needs a sibling checkout outside the
     repository and 'scripts/prepare-for-commit.sh' depends on it;
@@ -124,6 +122,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     "bytes: role-prefixed" of AGENTS.md covers them; the messages say
     "array size" where the built-in is 'array_length' (changing them
     changes test output)
+[ ] easy: (round 406, the test infrastructure) 'fix-source.py' would add
+    'const' to 'data' of 'lut::put' and 'structured' in 'assembler.hpp',
+    which are passed to 'std::move' (review before '--apply'), and prints
+    "added" on a dry run; a failed case leaves 'qa/coverage/tests/gen'
+    not ignored, 'run.sh' on a missing source leaves an empty 'NAME.s';
+    'fuzz-all.sh' rebuilds the asan compiler but not a stale './baz',
+    which stops 'fuzz-exprs.py' and shows as exit 1 at the end;
+    'test-far-jumps.sh' takes any argument but 'short' as the full run;
+    'README.md' and the docs say 'test-all.sh' "runs every test on every
+    target", its header names the far-jump runs it leaves out
+[ ] easy: user decision (round 406, the driver): a compile rejected before
+    the image is opened leaves the image of an earlier compile in place
+    (removing it deletes a file the compile did not touch); a default
+    'sdcard.img' that is also a source file is reported as "invalid
+    --sdcard" although the option was not given
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end

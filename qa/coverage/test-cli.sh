@@ -286,6 +286,41 @@ CLI_FILE_ERRORS() {
     rm -f gen-full.bin
     expect_exit_1 "$BIN" --target=rv32i --bin=gen-full.bin 0015.baz >/dev/full 2>err
     [[ ! -e gen-full.bin ]]
+    # through a symbolic link the file it names is removed, the link stays
+    : >gen-full.bin
+    ln -sf gen-full.bin gen-link.bin
+    expect_exit_1 "$BIN" --target=rv32i --bin=gen-link.bin 0015.baz >/dev/full 2>err
+    [[ -L gen-link.bin ]]
+    [[ ! -e gen-full.bin ]]
+    rm -f gen-link.bin
+    # a pipe is not removed, nor is a device, e.g. '/dev/null'; the pipe is
+    # open for reading too, so the compiler does not wait for a reader
+    rm -f gen-pipe.bin
+    mkfifo gen-pipe.bin
+    exec 3<>gen-pipe.bin
+    expect_exit_1 "$BIN" --target=rv32i --bin=gen-pipe.bin 0015.baz >/dev/full 2>err
+    exec 3<&-
+    [[ -p gen-pipe.bin ]]
+    rm -f gen-pipe.bin
+    # an image that cannot be written whole is removed too; the file size
+    # limit stands for the full disk, its signal ignored so the write fails,
+    # and the message is read from a pipe, which has no limit
+    rm -f gen-full.bin
+    local message
+    message=$(
+        trap '' XFSZ
+        ulimit -f 0
+        "$BIN" --target=rv32i --bin=gen-full.bin 0015.baz 2>&1 >/dev/null
+    ) && fail
+    [[ $message == *"error: cannot write file 'gen-full.bin'"* ]]
+    [[ ! -e gen-full.bin ]]
+    # an image that cannot be opened is not the compiler's to remove
+    : >gen-full.bin
+    chmod a-w gen-full.bin
+    expect_exit_1 "$BIN" --target=rv32i --bin=gen-full.bin 0015.baz >gen.s 2>err
+    grep -Fq "cannot write file 'gen-full.bin'" err
+    [[ -e gen-full.bin ]]
+    rm -f gen-full.bin
     expect_exit_1 "$BIN" --target=rv32i --bin=/dev/full 0015.baz >gen.s 2>err
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file '/dev/full'" err
@@ -312,6 +347,16 @@ CLI_FILE_ERRORS() {
         "$BIN" gen-pipe-include.baz >gen.s 2>err
     [[ ! -s err ]]
     rm -f gen-pipe-include.baz
+    # in a working directory that was removed '../0015.baz' still opens, but
+    # has no path: an error of the user, not an internal one
+    mkdir gen-removed
+    (
+        cd gen-removed
+        rmdir ../gen-removed
+        expect_exit_1 "$BIN" ../0015.baz >../gen.s 2>../err
+    )
+    [[ ! -s gen.s ]]
+    grep -Fxq "error: cannot resolve file '../0015.baz', the working directory is not found" err
     echo ok
 }
 

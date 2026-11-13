@@ -1,6 +1,40 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 406 (2026-11-13, bug hunt: the driver: options, source
+    files, error positions, '--reproduce-source', reports; design: a
+    second opinion with a free method; readability: how the project tests
+    itself, 'qa' and the scripts, with a seeded failure per check; bug
+    hunts of rounds 403 and 405: the call protocol, comparisons and
+    scalar edges)
+    => done (2026-11-13), two defects of the driver: an output of the
+       rv32i targets that failed left a partial image (a full disk, a size
+       limit) or removed the name given: a symbolic link was removed and
+       its file kept the image, a fifo was removed; the backend that
+       writes the image removes it ('machine::remove_image', only a
+       regular file, through 'canonical'), 'main.cpp' removes no file; a
+       working directory that was removed gave "internal error"
+       ('source_files::add' used the throwing 'absolute'), now "cannot
+       resolve file ..., the working directory is not found"; five cases
+       in 'test-cli.sh'; README 1.2, 1.9
+    => design: 'assembler::jump_mode' is gone: '--nopt' was a bool made
+       an enum for 'target_options' and compared back at its one reader;
+       'main.cpp' no longer includes 'assembler.hpp'; the defences of
+       chapter 7, the rv32i variants, the hooks and three features end to
+       end are in order, nothing kept only for a test or for history
+    => test infrastructure: 'qa/lint/fix-source.py' never ended (the
+       function of a discarded call looked up at the object, a freed unit
+       read after the loop, '[[nodiscard]]' found twice with clang 23), a
+       dry run ends in about 50 s; the header of 'test-all.sh' names the
+       far-jump runs it leaves out; 'DIFFNOPT' described as what it does;
+       commented-out code removed from four scripts; 'perf.sh' has a
+       header; every seeded failure is reported with exit 1
+    => bug hunts: the call protocol (11900 programs, '--vars' and
+       '--stack' at their exact limits behind a guard page and a patched
+       emulator) and comparisons with scalar edges after round 400 (15500
+       programs, 968000 checks, four mutants caught): no defect
+    => checks: four targets, cli, far jumps, versions, roome, linear
+       growth, emulator, asan build, fuzz-all clean
 [x] easy: round 405 (2026-11-13, design by the vocabulary: the 10899
     declarations of 'src' split into words, one concept one word;
     readability: every function of the files not walked before

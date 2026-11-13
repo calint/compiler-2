@@ -79,9 +79,20 @@ class source_files final {
     auto add(std::string name, std::string text,
              const std::optional<source_span> included_at) -> size_t {
 
+        std::error_code error;
+
         const std::filesystem::path given{
-            std::filesystem::absolute(std::filesystem::path{name}),
+            std::filesystem::absolute(std::filesystem::path{name}, error),
         };
+
+        // e.g. a working directory that was removed, where '../x.baz' still
+        // opens
+        if (error) {
+            throw unlocated_error{
+                std::format("cannot resolve file {}, the working directory "
+                            "is not found",
+                            in_quotes(name))};
+        }
 
         std::filesystem::path absolute{resolved_path(given)};
 

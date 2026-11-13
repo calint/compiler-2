@@ -158,7 +158,8 @@ struct target_description {
 //                  ('stmt_def_func'; 'begin_dry_run_body' for one that is
 //                  only checked), 'emit_runtime',
 //                  'emit_read_only_constants', 'begin_data',
-//                  'reserve_variables', 'finish', 'write_assembly'
+//                  'reserve_variables', 'finish', 'write_assembly', and
+//                  'remove_image' when the output fails after it
 //   data           'data_alignment', 'define_constant', 'emit_data_array',
 //                  'emit_string_data', 'emit_zero_data'
 //   registers      'held_registers' (the registers a front-end step
@@ -223,7 +224,8 @@ class machine {
     // what the command line chooses for the target, a target reads what it
     // has, e.g. only the bare-metal ones a stack
     struct target_options {
-        assembler::jump_mode jumps{assembler::jump_mode::as_emitted};
+        // the jump optimizations of 'assembler::optimize', off with '--nopt'
+        bool optimize_jumps{};
         kept_version kept{kept_version::smaller};
         // the use of registers is kept for 'register_peak_report'
         bool register_report{};
@@ -909,6 +911,10 @@ class machine {
                               const operand& lhs, const operand& rhs,
                               const equality_request& request) -> void = 0;
 
+    // removes the image that 'write_assembly' wrote, so a compile that fails
+    // after it leaves none; a backend without an image has nothing to remove
+    virtual auto remove_image() const -> void {}
+
     virtual auto return_function(const size_t indent) -> void = 0;
 
     // an enabled check makes a count below zero or not below the width of the
@@ -1392,7 +1398,7 @@ class machine {
 
         assembler& output{output_.get()};
 
-        output.optimize(options_.jumps == assembler::jump_mode::optimized);
+        output.optimize(options_.optimize_jumps);
 
         finish_target();
     }

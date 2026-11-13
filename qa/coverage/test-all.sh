@@ -1,8 +1,12 @@
 #!/bin/sh
-# runs every test of this directory and builds the coverage report: the
+# runs the tests of this directory and builds the coverage report: the
 # compiler cases on all four targets, then the other suites with their
-# coverage profiles added to the report
+# coverage profiles added to the report; of the far jumps only the short
+# bodies: 'test-far-jumps.sh' without 'short' and
+# 'test-far-jumps-no-scratch.sh' take unreasonable time with the sanitizers,
+# they are run with the plain build
 #
+# usage: test-all.sh
 # replaces './baz' with the coverage build; run './make.sh -O3 build' afterwards
 set -e
 
@@ -22,7 +26,4 @@ cd "$(dirname "$0")"
 ./test-cli.sh
 ./test-arena.py
 ./test-far-jumps.sh short
-# the commented out tests take unreasonable time with sanitizers turned on
-#./test-far-jumps.sh
-#./test-far-jumps-no-scratch.sh
 ./test-coverage.sh report

@@ -17,9 +17,6 @@ CXX="g++ -std=c++23 -O3 -fno-rtti -fno-exceptions -Wfatal-errors -Werror -Wall -
     -Wdouble-promotion -Wmisleading-indentation -Wformat=2"
 
 CMD="$CXX -o osqa-test main.cpp"
-#echo
-#echo $CMD
-#echo
 $CMD
 
 ls -l --color osqa-test
@@ -34,7 +31,6 @@ OBJDUMP=riscv64-elf-objdump
 SRC=ram.S
 BIN=${SRC%.*}
 
-# -mstrict-align \
 $CC -std=c++23 \
     -march=rv32i \
     -mabi=ilp32 \

@@ -192,7 +192,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                         label, value = line[1:].split(":", 1)
                         statistics[label.strip()] = value.strip()
                 assert statistics["max body vars size"] == f"{expected_size} B", (context, statistics)
-            print(f"arena {name} max body vars size: ok", flush=True)
+            print(f"arena {name} {case} max body vars size: ok", flush=True)
 
     for count in (16, 17):
         source = f"func main() {{ var buffer = i8[{count}] }}\n"
