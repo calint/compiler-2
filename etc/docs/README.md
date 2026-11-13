@@ -228,7 +228,7 @@ Invariants the code relies on:
    ('program::check_noinline_bodies'). Then the failure handlers that the code
    branches to ('machine::emit_used_failure_handlers'), the routines and helpers
    the code and the handlers marked used ('machine::emit_used_routines'), the
-   read-only strings, the data and the variables.
+   read-only constants, the data and the variables.
 
 3. output ('machine::finish', then 'report_renderer', then 'write_assembly'):
    the buffered lines get their jumps optimized (not with '--nopt'), a load

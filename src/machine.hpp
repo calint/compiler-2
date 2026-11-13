@@ -120,8 +120,8 @@ struct target_description {
     // the live scratch values from which the counter of an array loop is
     // kept in memory, none where it stays in a register
     std::optional<size_t> memory_counter_pressure_count;
-    // the alignment of a string constant, e.g. a word lets copies to aligned
-    // destinations use words
+    // the alignment of a read-only constant ('str.L.C', 'init.L.C'), e.g. a
+    // word lets copies to aligned destinations use words
     size_t string_alignment{};
     // the lowest address the stack may reach where no operating system stops
     // a program that overflows the stack: calls check that the stack has room

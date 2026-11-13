@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 417 (2026-11-13, bug hunt: operations that need
+    particular registers under register pressure, division, shifts,
+    multiply helpers, 'write', 'read', the sector calls and the copies with
+    0 to 33 live values; design: by history, what earlier rounds added and
+    later ones made needless; readability: a newcomer follows a string and
+    an initializer from the source to the read-only data on each target)
+    => done (2026-11-13), text only: the comment of
+       'target_description::string_alignment' said "a string constant", it
+       is the alignment of every read-only constant ('str.L.C',
+       'init.L.C'); docs 1.2 item 2 said "the read-only strings"; listings
+       unchanged (2505 cases)
+    => design: nothing to apply
+    => bug hunt (27000 random programs with an exact model, 942000
+       accepted builds run; a grid of 22304 programs, 34 kinds at each
+       pressure in four styles, 520000 builds run; verdicts compared over
+       '--nopt' and every '--versions' value; '--report=registers' against
+       a replay of 25000 listings; 46000 compiles of the asan build; eight
+       mutants caught): no defect
 [x] easy: round 416 (2026-11-13, bug hunt: conversions and mixed widths,
     a value of every type through every route; design: the small things
     the code builds for itself against the standard library, 194 free

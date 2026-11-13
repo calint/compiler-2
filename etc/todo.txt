@@ -124,6 +124,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[ ] easy: (round 417, a hunt of fixed registers and a walk of the
+    strings) rv32i: "out of scratch registers" can come with "28 of 29
+    registers live" in the failure report: 'a0' is protected for the first
+    argument of a helper without being allocated, so the report does not
+    list it; 'write(a / b, s, n)' is accepted on rv32i and rejected on
+    x86_64 (docs 7.11); the read-only constants of rv32i are told apart by
+    their laid-out bytes, so equal strings may keep two labels;
+    'string_alignment' and 'string_data' name what also holds
+    initializers; the begin of a source line is found in two ways
 [ ] easy: (round 415, a hunt of control flow) docs 1.5.1 does not say
     that a generic constant folds at the parse of each instance, so a
     method is rejected for one instance only: 'if N == 2 return' followed
