@@ -3808,7 +3808,6 @@ class machine_rv32i : public machine {
     }
 
     static auto assert_address(const operand& address) -> void {
-        assert(address.is_memory());
         assert(is_register(address.base_register()));
 
         assert(address.index_register().empty() or

@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 412 (2026-11-13, design: what the code says it relies on,
+    480 notes, 388 asserts and 17 'std::unreachable()' read in groups, 445
+    programs aimed at the asserts; readability: a newcomer reads chapters
+    1 and 7 of 'etc/docs/README.md' against the code, 147 scoped names, 60
+    programs for the claims, the header comments of the 65 files, and 60
+    functions at random; bug hunt: the front end on malformed programs,
+    not finished, reported with round 413)
+    => done (2026-11-13), asserts only: 'stmt_def_func::with_call_frame'
+       owns the three asserts on a requested noinline body that its two
+       callers repeated; 'machine::check_bounds' asserts the kind and the
+       type of the index and of the count as its note says, the x86_64
+       backend does not repeat it; three asserts that the accessor of the
+       next line repeats are removed ('machine::register_view',
+       'machine::free_held_registers', 'machine_rv32i::assert_address');
+       listings unchanged (2505 cases)
+    => design: no assert that input reaches, no false note, no invariant
+       that a type could hold with less code
+    => readability: nothing to fix; every name, number and claim of the
+       two chapters holds, no two descriptions of a class disagree
 [x] easy: round 411 (2026-11-13, bug hunt: the run-time checks and their
     reports on the four targets; design: the signatures, 2443 functions and
     10552 call sites listed with libclang; readability: a newcomer finds

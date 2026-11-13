@@ -1105,11 +1105,13 @@ class machine {
         // note: an index and a count are values of the default type in
         //       registers
 
-        assert(range.checked.type_ref().size_bytes() ==
-               default_type().size_bytes());
-
         assert(range.checked.is_register() and
-               (not range.count or range.count->is_register()));
+               range.checked.type_ref().size_bytes() ==
+                   default_type().size_bytes());
+
+        assert(not range.count or (range.count->is_register() and
+                                   range.count->type_ref().size_bytes() ==
+                                       default_type().size_bytes()));
 
         assert(not range.count_lower_checked or range.count);
 
@@ -1487,8 +1489,6 @@ class machine {
     // e.g. 'al' of 'rax' on x86_64
     [[nodiscard]] auto register_view(const operand& reg,
                                      const type& type_ref) const -> operand {
-
-        assert(reg.is_register());
 
         return make_register_operand(reg.register_name(), type_ref);
     }
@@ -2399,8 +2399,6 @@ class machine {
                              const std::span<const operand> registers) -> void {
 
         for (const operand& reg : registers | std::views::reverse) {
-            assert(reg.is_register());
-
             // note: the backend releases its own registers by name
             assert(state_.registers.top().holder !=
                    register_pool::holder_kind::backend);

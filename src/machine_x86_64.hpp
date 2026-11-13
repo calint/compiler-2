@@ -1241,10 +1241,6 @@ class machine_x86_64 final : public machine {
             alloc_scratch_register(site, default_type()),
         };
 
-        // note: index and count registers have the default type
-        assert(count.type_ref().size_bytes() == size_qword_ and
-               range.checked.type_ref().size_bytes() == size_qword_);
-
         // the end of a range is 'start + count'; after the lower checks
         // neither is negative, the sum can pass the signed maximum and then
         // looks negative to a signed compare, the unsigned compare sees it

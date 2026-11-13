@@ -553,10 +553,6 @@ class stmt_def_func final : public statement {
     auto check_noinline_body(compile_toc& tc,
                              const noinline_body& requested) const -> void {
 
-        assert(requested.func == this);
-        assert(not is_inlined());
-        assert(requested.array_lengths.size() == array_param_count());
-
         with_call_frame(requested, [&] -> void {
             dry_run_in_frame(tc, requested.array_lengths);
         });
@@ -661,10 +657,6 @@ class stmt_def_func final : public statement {
     // parameter; an error in it reports the call that asked for it
     auto emit_noinline_body(compile_toc& tc,
                             const noinline_body& requested) const -> void {
-
-        assert(requested.func == this);
-        assert(not is_inlined());
-        assert(requested.array_lengths.size() == array_param_count());
 
         with_call_frame(requested, [&] -> void {
             emit_in_frame(tc, requested.array_lengths);
@@ -1195,10 +1187,15 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // an error in the body reports the call that asked for it
+    // 'requested' is a body of this function, an error in it reports the
+    // call that asked for it
     auto with_call_frame(const noinline_body& requested,
                          const std::function_ref<void()> compile) const
         -> void {
+
+        assert(requested.func == this);
+        assert(not is_inlined());
+        assert(requested.array_lengths.size() == array_param_count());
 
         try {
             compile();
