@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 416 (2026-11-13, bug hunt: conversions and mixed widths,
+    a value of every type through every route; design: the small things
+    the code builds for itself against the standard library, 194 free
+    functions, 432 statics, 206 small classes and 323 loops, the numeric
+    helpers at their edges; readability: a newcomer follows a generic
+    type, method, function, alias and a deduced call step by step in 40
+    programs, and 60 functions at random)
+    => done (2026-11-13): 'source_line' and 'line_at' stand in 'main.cpp'
+       above their only users (they stayed in 'source_files.hpp' when
+       round 315 gave 'source_files::column' its table); the comment in
+       'print_call_frames' says the text of a frame is left out for a call
+       or an alias that is the whole line; listings unchanged (2505 cases)
+    => design: nothing else; no loop that a standard algorithm says
+       plainer, 'right_aligned' stays ('std::format' takes no 'unsigned
+       long' as a width here), the numeric helpers hold at 0, 1, the sign
+       bit and the ends of each width
+    => readability: the names of instances, the labels, the frames and
+       the messages of the docs match the compiler
+    => bug hunt (12000 programs with an exact model per target, 233000
+       runs, inlined, 'noinline', every option set; 28194 verdicts of
+       every pair of types in 13 spellings over every route; 11930 index,
+       start and count edges; 4000 nested paths with narrow stores beside
+       other fields; six mutants caught): no defect
 [x] easy: round 415 (2026-11-13, bug hunt: control flow, the reach, the
     result set on every path; design: stored against computed, 957 data
     members of 300 classes, the pairs of the parse and the compile, the

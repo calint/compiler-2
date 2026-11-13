@@ -23,34 +23,6 @@
 #include "compile_error.hpp"
 #include "token.hpp"
 
-// a line of the source, 'begin' is the index of its first character
-struct source_line {
-    size_t begin{};
-    std::string_view text;
-};
-
-// the line of the character at 'index' without its line end, the character can
-// be the line end itself
-[[nodiscard]] inline auto line_at(const std::string_view src,
-                                  const size_t index) -> source_line {
-
-    const size_t before_index{
-        index == 0 ? std::string_view::npos : src.rfind('\n', index - 1),
-    };
-
-    const size_t begin{
-        before_index == std::string_view::npos ? 0 : before_index + 1,
-    };
-    // note: +1 because the line starts after the line end
-
-    const size_t end{std::min(src.find('\n', index), src.size())};
-
-    return {
-        .begin{begin},
-        .text{src.substr(begin, end - begin)},
-    };
-}
-
 // the source files of a program, the first is the main file; the text stays
 // where it is when files are added, tokens refer to it
 class source_files final {

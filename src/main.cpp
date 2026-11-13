@@ -751,6 +751,34 @@ auto print_option_error(const std::string_view message) -> void {
     return std::nullopt;
 }
 
+// a line of the source, 'begin' is the index of its first character
+struct source_line {
+    size_t begin{};
+    std::string_view text;
+};
+
+// the line of the character at 'index' without its line end, the character can
+// be the line end itself
+[[nodiscard]] auto line_at(const std::string_view src, const size_t index)
+    -> source_line {
+
+    const size_t before_index{
+        index == 0 ? std::string_view::npos : src.rfind('\n', index - 1),
+    };
+
+    const size_t begin{
+        before_index == std::string_view::npos ? 0 : before_index + 1,
+    };
+    // note: +1 because the line starts after the line end
+
+    const size_t end{std::min(src.find('\n', index), src.size())};
+
+    return {
+        .begin{begin},
+        .text{src.substr(begin, end - begin)},
+    };
+}
+
 // the line of the character at 'index' without its surrounding whitespace
 [[nodiscard]] auto trimmed_line_at(const std::string_view src,
                                    const size_t index) -> std::string_view {
@@ -892,7 +920,7 @@ auto print_call_frames(const source_files& files,
         const source_span& where{frame.where};
         const std::string_view src{files.text(where.file_ix)};
 
-        // the source line shows a call that is the whole line
+        // the source line shows a call or an alias that is the whole line
         if (frame.text == trimmed_line_at(src, where.start_index)) {
             std::println(stderr, "{}: {}", locations.for_error(where),
                          frame.reason);
