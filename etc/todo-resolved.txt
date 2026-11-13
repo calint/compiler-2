@@ -6,8 +6,7 @@
     programs aimed at the asserts; readability: a newcomer reads chapters
     1 and 7 of 'etc/docs/README.md' against the code, 147 scoped names, 60
     programs for the claims, the header comments of the 65 files, and 60
-    functions at random; bug hunt: the front end on malformed programs,
-    not finished, reported with round 413)
+    functions at random; bug hunt: the front end on malformed programs)
     => done (2026-11-13), asserts only: 'stmt_def_func::with_call_frame'
        owns the three asserts on a requested noinline body that its two
        callers repeated; 'machine::check_bounds' asserts the kind and the
@@ -20,6 +19,15 @@
        that a type could hold with less code
     => readability: nothing to fix; every name, number and claim of the
        two chapters holds, no two descriptions of a class disagree
+    => bug hunt (213000 token mutants under asan, 240000 pairs that differ
+       in whitespace and must give the same message at the same token, 2470
+       tests in six respellings, 850 directed programs, 123 shapes for size,
+       nesting and growth): no defect; four observations in 'todo.txt'
+    => the fuzzers: one 'compiler-hang' of 'fuzz-compiler.py', not a hang:
+       test 1698 with '--versions=nested' (the inlined calls that double
+       per level, 11 s) takes 87 s in the sanitizer build alone and passes
+       the 120 s limit beside 13 other jobs; the run of round 409 reported
+       the same and was read as clean by mistake
 [x] easy: round 411 (2026-11-13, bug hunt: the run-time checks and their
     reports on the four targets; design: the signatures, 2443 functions and
     10552 call sites listed with libclang; readability: a newcomer finds

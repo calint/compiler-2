@@ -105,6 +105,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[ ] easy: (round 412, the fuzzers) 'fuzz-compiler.py' reports test 1698
+    with '--versions=nested' or 'last' as 'compiler-hang' when the machine
+    is loaded: 87 s in the sanitizer build against a limit of 120 s; the
+    doubling is the user decision of round 226 UF1
+[ ] easy: (round 412, a hunt of the front end on malformed programs)
+    messages: 'dat d = i16{}' is rejected with "unexpected '{'" where
+    'dat b = i8[4]{}' is accepted (the 'dat' case of round 205 HC);
+    'var a = i8[2][3]' says "an array literal is not an operand here", not
+    that arrays have one dimension; 'p{x = 1, y = 2}' says "'x' not found"
+    where 'p{x: 1}' says "fields are given in order, without names"; '0X1F'
+    and '0B11' are accepted, the tutorial names only '0x' and '0b'; the
+    caret after wide characters sits left of its token in a terminal
 [ ] easy: (round 411, a hunt of the run-time checks) the line a check
     reports is where the right operand of the failing operation starts, and
     with a unary operator on a line of its own the token differs by form:
