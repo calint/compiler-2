@@ -174,30 +174,7 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        assert_not_whole_array(lhs_);
-
-        const type& lhs_type{lhs_.get_type()};
-
-        if (lhs_type.is_bool()) {
-            return;
-        }
-
-        // a condition tests a number, an instance would be tested as its
-        // first field
-        if (not lhs_type.is_builtin()) {
-            throw compile_error{lhs_.tok(),
-                                std::format("an instance of {} is not a 'bool'",
-                                            in_quotes(lhs_type.name()))};
-        }
-
-        const std::string source{trimmed_source(lhs_)};
-        const std::string suggestion{std::format("{} != 0", source)};
-
-        throw compile_error{
-            lhs_.tok(),
-            std::format("{} of type {} is not a 'bool', compare it, e.g. {}",
-                        in_quotes(source), in_quotes(lhs_type.name()),
-                        in_quotes(suggestion))};
+        assert_boolean_value(lhs_);
     }
 
     // an element of a list: it branches to 'target' when its value is
@@ -287,6 +264,39 @@ class expr_bool_op final : public statement {
         }
 
         return std::move(lhs_);
+    }
+
+    //
+    // statics
+    //
+
+    // 'value' alone is a condition or is stored in a 'bool': it is a 'bool',
+    // e.g. not the 'n' of 'if n' or the 'rr(x)' of 'b = rr(x)' for an 'i8'
+    static auto assert_boolean_value(const expr_arith& value) -> void {
+        assert_not_whole_array(value);
+
+        const type& value_type{value.get_type()};
+
+        if (value_type.is_bool()) {
+            return;
+        }
+
+        // a condition tests a number, an instance would be tested as its
+        // first field
+        if (not value_type.is_builtin()) {
+            throw compile_error{value.tok(),
+                                std::format("an instance of {} is not a 'bool'",
+                                            in_quotes(value_type.name()))};
+        }
+
+        const std::string source{trimmed_source(value)};
+        const std::string suggestion{std::format("{} != 0", source)};
+
+        throw compile_error{
+            value.tok(),
+            std::format("{} of type {} is not a 'bool', compare it, e.g. {}",
+                        in_quotes(source), in_quotes(value_type.name()),
+                        in_quotes(suggestion))};
     }
 
   private:

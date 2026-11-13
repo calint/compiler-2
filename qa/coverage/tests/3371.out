@@ -1,0 +1,4 @@
+
+3371.baz:15:13: an instance of 'point' is not a 'bool'
+    bs[1] = p.or_else(p)
+            ^

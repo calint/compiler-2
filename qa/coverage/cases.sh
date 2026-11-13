@@ -7991,3 +7991,8 @@ SRC=3367 && COMPERR
 # a type gives the type of the argument, a constant none
 SRC=3368 && COMPERR
 SRC=3369 && COMPERR
+
+# a deduced generic call stored in a 'bool' whose argument tells another type
+# for its result is rejected like the call with written type arguments
+SRC=3370 && COMPERR
+SRC=3371 && COMPERR

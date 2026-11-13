@@ -136,6 +136,36 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[p] medium: need approval (round 421, measurements for "generic
+    deduction by a trial parse", the item of round 395): a prototype
+    parses the deciding argument without a type as 'var' does:
+    'value_type' and 'constructor_call_type' go, 'src/stmt_call.hpp' 117
+    lines removed, about 29 added; the text skip of the arguments before
+    the deciding one stays (about 77 lines, the round 419 item stays
+    open). changes: 0838 ('second(1, a + 1)'), 2077 ('show(p.sum())') and
+    2095 become accepted; of 6000 corpus programs 12 kinds go from
+    rejected to accepted (an expression, a method call, a comparison, a
+    deduced call as the deciding argument), 4 from accepted to rejected
+    (a nested deduced call that takes its type from the outer
+    destination, 'x = mid(rr(1), i8(1))', unless "a deduced generic call
+    tells nothing" is kept), 4 take another instance ('exit(mid(x + 1,
+    k))'), 870 rejections get another first message; a nested deduced
+    call is parsed twice per level (not measured). the larger
+    alternative: one walk left to right that parses each argument at
+    'fixed_param_type' and hands the parsed arguments to 'stmt_call',
+    removes the text skip and the error walk and closes the round 419
+    item, changes the order of errors and what is accepted
+[ ] easy: (round 421, a hunt of calls and a walk of the layout) the
+    later-argument rule also rejects names whose value is taken at their
+    place: 'f(la[l & 3], wm(l))', 'two(g0 + 0, wg())', 'ps[l &
+    3].bump(wm(l))', while 'la[l & 3] = wm(l)' is accepted (the class of
+    the round 402 item); 'max_storage_bytes' (27 uses) is an exclusive
+    bound beside the inclusive 'max_storage_size_bytes' of 'type.hpp',
+    'address_space_bytes' would say it; the listing says "zero remaining
+    fields: N B" also for 'var n = mix' and N includes padding; the
+    tutorial says a generic constant parameter "is a constant of the
+    default type", it is untyped (docs 1.7); the generator of the calls
+    hunt is not in 'qa/fuzz' (a new file needs approval)
 [ ] easy: (round 420, a hunt of the scans ahead and a walk of the
     built-ins) a scan reads quoted tokens, so a bad character literal or
     an unterminated string in the scanned region is reported before an

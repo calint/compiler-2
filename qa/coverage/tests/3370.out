@@ -1,0 +1,4 @@
+
+3370.baz:10:9: 'same(x)' of type 'i8' is not a 'bool', compare it, e.g. 'same(x) != 0'
+    b = same(x)
+        ^

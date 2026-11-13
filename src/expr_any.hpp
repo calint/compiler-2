@@ -36,8 +36,9 @@
 class expr_any;
 
 // the constant size of an array in its brackets, e.g. the '[4]' of 'i8[4]' or
-// the '[n * 2]' of a field 'i8[n * 2]': an expression at the default type,
-// folded by 'fold' when parsed and never compiled; no value for 'i8[]'
+// the '[n * 2]' of a field 'i8[n * 2]': an expression parsed at the default
+// type, folded at 'i64' when parsed ('parse_value') and never compiled; no
+// value for 'i8[]'
 // note: its members are defined after 'expr_any', which holds one, where a
 //       'unique_ptr' of 'expr_any' is complete
 class stmt_array_size final : public statement {
@@ -1102,7 +1103,11 @@ class expr_any final : public statement {
 
         expr_arith value{tc, tz, expr_arith::options::plain(destination_type)};
 
-        if (not tp.is_bool()) {
+        // e.g. 'b = rr(x)' for 'func rr<T type>(a T) res T', the argument
+        // tells the type of the result, not the destination
+        if (tp.is_bool()) {
+            expr_bool_op::assert_boolean_value(value);
+        } else {
             assert_number_kind(value, tp);
         }
 

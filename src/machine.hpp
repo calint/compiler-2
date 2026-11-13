@@ -106,7 +106,8 @@ struct routine_labels {
 // e.g. the stack limit of a bare-metal machine
 struct target_description {
     size_t address_size_bytes{};
-    // the most bytes of data and variables the target can address
+    // the size of the address space; the data and variables, a type and
+    // '--vars' stay below it
     size_t max_storage_bytes{};
     // whether an access can add an index register to a base register, else
     // an indexed address is computed into a register by separate instructions

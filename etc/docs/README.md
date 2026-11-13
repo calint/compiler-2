@@ -1039,7 +1039,9 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    A 'bool' destination is a condition, whose operands have no destination;
    a call of a generic function or method that is the whole value is looked
    for ahead and takes the destination, e.g. 'b = make(2)' and 'b = t.to()'
-   (3360), not 'b = t.to() or c'.
+   (3360), not 'b = t.to() or c'. A result of another type, which an
+   argument told, is rejected as a condition is: "'same(x)' of type 'i8' is
+   not a 'bool'" (3370, 3371).
 
 3. If neither tells the type, the arguments up to the one that told
    nothing, all of them and a surplus one for a result, are checked in

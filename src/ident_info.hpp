@@ -302,7 +302,7 @@ class ident_info final {
     }
 
     // the register that holds the value, or the storage operand, e.g.
-    // '[rbp - 8]'
+    // '[rbp + 8]'
     [[nodiscard]] auto operand() const -> const ::operand& {
         if (const register_part* const reg{
                 std::get_if<register_part>(&part_),

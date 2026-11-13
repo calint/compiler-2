@@ -1,0 +1,12 @@
+# a deduced generic call stored in a 'bool' whose argument tells the type of
+# its result is rejected like the call with written type arguments
+func same<T type>(a T) res T {
+    res = a
+}
+
+func main() {
+    var x = i8(1)
+    var b = false
+    b = same(x)
+    exit(0)
+}

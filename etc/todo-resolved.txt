@@ -1,6 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 421 (2026-11-14, bug hunt: calls, parameters and
+    aliasing, the shared-storage rules and the order left to right,
+    inlined against 'noinline'; design: the front end of generics as a
+    whole after the fixes of rounds 419 and 420; readability: a newcomer
+    follows types and their layout in 57 programs from a declaration to
+    the bytes, and 60 functions at random)
+    => defect (2026-11-14), found by the design review: 'b = rr(x)' with
+       a 'bool' 'b', an 'i8' 'x' and 'func rr<T type>(a T) res T' failed
+       the assert of 'stmt_call::assert_result_type' (also 'b = p.id(x)',
+       'c[0] = rr(x)', an instance result; since before round 416):
+       'expr_any::parse_arith_value' checked the kind of the value only
+       for a destination that is not a 'bool'. fix: the 'bool' branch
+       calls 'expr_bool_op::assert_boolean_value', the body of
+       'assert_boolean_operands' for a lone operand, so the message is
+       that of a condition ("'rr(x)' of type 'i8' is not a 'bool'"); docs
+       2.10.2; tests 3370, 3371
+    => done, design: the error path of a deduced call is one walk:
+       'assert_arguments_valid_up_to' walks the arguments once in the
+       order the call parses them and reports the missing argument, the
+       trailing ',' and the surplus one; 'assert_argument_present' and
+       'assert_no_surplus_argument_of' are gone, 'argument_type' and
+       'assert_argument_valid' take the tokenizer at the argument,
+       'skip_to_argument' has one caller; 67 lines added, 101 removed; no
+       verdict or message changed (2517 cases, 15000 corpus programs)
+    => done, text only: the comment of 'stmt_array_size' (folded at
+       'i64', not at the default type), of 'target_description::
+       max_storage_bytes' (the size of the address space, what is stored
+       stays below it), the example of 'ident_info::operand' ('[rbp + 8]')
+    => not done: the trial parse, measured with a prototype (in
+       'etc/todo.txt', the item of round 395)
+    => checks: the four targets, far jumps, versions, roome, linear
+       growth, emulator; the fuzz step reports the known "compiler-hang"
+       of 1698 with '--versions=nested' (no new finding); the listings
+       differ from round 420 only in 3370 and 3371
+    => bug hunt (47500 programs with an exact model, 570000 builds and
+       runs, 77000 direct calls classified by overlap, 50 ways a body
+       uses a parameter, eight mutants caught): no defect
 [x] easy: round 420 (2026-11-14, bug hunt: every place where the front
     end reads ahead in the source text instead of parsing, each program
     with deduced and with written type arguments; design: how errors are

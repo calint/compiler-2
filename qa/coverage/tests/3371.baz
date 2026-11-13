@@ -1,0 +1,17 @@
+# a deduced generic method call stored in a 'bool' element whose result is an
+# instance is rejected like the call with written type arguments
+type point {
+    x i8,
+    y i8,
+}
+
+func point.or_else<T type>(other T) res T {
+    res = other
+}
+
+func main() {
+    var p = point{1, 2}
+    var bs = bool[2]
+    bs[1] = p.or_else(p)
+    exit(0)
+}
