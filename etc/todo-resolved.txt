@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 414 (2026-11-13, design: the rules of the language, each
+    enforced once, 275 sites that reject a program in about 30 rules, with
+    a coverage build over the four targets; readability: a newcomer
+    follows a 'noinline' call and its return on both backends, every line
+    of four listings to its writer, and 60 functions at random; bug hunt:
+    names and scopes, reported with round 415)
+    => done (2026-11-13): 'storage_layout::allocate_var' does not check
+       again that the data and variables end below what the target
+       addresses: the capacity check before it and the check at each 'dat'
+       (the constructor without one) cover it, the second check never
+       fired first; it is an 'assert' with its note, the padding is summed
+       with 'sum_storage_size', and the rule has one owner, the 'dat'; the
+       comment of 'assembler::noinline_summaries' says the order is that
+       of the first emitted bodies, not of the definitions; listings and
+       errors unchanged (2505 cases)
+    => design, not done: the rethrow of a non-limit error in
+       'machine::compile_available_version' never ran in 44838 compiles,
+       no proof for the named-register clash of a backend, so no 'assert';
+       seven message texts are built in two places by different owners, a
+       helper per pair adds code; every line that throws is run by a test
+    => readability: slot names, the order of the saves, who restores and
+       the frame checks agree between listings, code and docs
+    => the fuzzers: only test 1698 with '--versions=nested' again
 [x] easy: round 413 (2026-11-13, bug hunt: the bare-metal rv32i targets
     as whole images; design: who owns what and for how long, 385 members
     and captures that do not own what they refer to; readability: a

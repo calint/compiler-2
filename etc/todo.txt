@@ -642,6 +642,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     never run); 'arrays_equal(a, c[1], y)' checks the count against 16
     then 15; rv32i loads 'li t0, 1' once per argument; a shift result goes
     through 'mv a1, t1' when a load stands between
+[ ] easy: (round 414, a walk of a noinline call) rv32i: a register
+    allocated for the result of a call is saved and restored around the
+    call, then overwritten by the load of the result ('lw t0, 0(sp)'
+    followed by 'lw t0, -1988(s0)')
 [ ] easy: (round 409, a design reading of the unread parts) a 'foo' over
     an array parameter of a noinline body loads the address then copies it
     through an address computation: x86_64 'mov r14, [rbx]' 'lea r15, [r14]'

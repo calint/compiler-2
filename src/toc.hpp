@@ -1420,18 +1420,24 @@ class storage_layout final {
             alignment_padding_bytes(next_offset_bytes, var_alignment),
         };
 
+        // note: a size is a multiple of its alignment within
+        //       'max_storage_size_bytes', which leaves room for the padding
+
         const size_t allocated_size_bytes{
-            add_storage_size(src_loc_tk, padding_bytes, var_size_bytes),
+            sum_storage_size(padding_bytes, var_size_bytes),
         };
 
         assert_vars_capacity(src_loc_tk, var, allocated_size_bytes);
 
-        const size_t total_bytes{
-            add_storage_size(src_loc_tk, dats_and_vars_size_bytes(),
-                             allocated_size_bytes),
-        };
+        const ::machine& x{machine_.get()};
 
-        assert_total_fits_target(src_loc_tk, total_bytes);
+        // note: the dats and the whole capacity end below what the target
+        //       addresses ('assert_dats_and_vars_fit_target' at each 'dat',
+        //       the constructor without one), so does a variable within the
+        //       capacity
+
+        assert(sum_storage_size(dats_and_vars_size_bytes(),
+                                allocated_size_bytes) < x.max_storage_bytes());
 
         in_storage& stored{std::get<in_storage>(var.placement)};
 
@@ -1439,9 +1445,6 @@ class storage_layout final {
 
         if (location.is_in_frame) {
             stored.offset = address_offset(offset_bytes);
-
-            const ::machine& x{machine_.get()};
-
             stored.base_register = x.frame_base_register();
 
             // note: the frame is within the data and variables checked above
@@ -1569,9 +1572,8 @@ class storage_layout final {
     }
 
   private:
-    // the declaration that makes the data and variables reach what the target
-    // addresses is the error, not the end of the build; checked before the
-    // scope holds the bytes
+    // the 'dat' that makes the data and variables reach what the target
+    // addresses is the error, not the end of the build
     auto assert_total_fits_target(const token& src_loc_tk,
                                   const size_t total_bytes) const -> void {
 

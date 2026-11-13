@@ -336,7 +336,7 @@ class assembler {
     }
 
     // the bodies of each noinline function with their calls and size, in
-    // the order of definition
+    // the order their first bodies are emitted
     [[nodiscard]] auto noinline_summaries() const
         -> std::vector<function_summary> {
 
