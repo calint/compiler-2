@@ -7952,3 +7952,13 @@ if [[ $MACHINE == rv32i* ]]; then SRC=3151 && EXP=8 && RUN; fi
 # compiles its second version only with 'nested' and 'last'
 if [[ $MACHINE == x86_64 ]]; then SRC=3152 && EXP=9 && OPTS="--versions=nested" RUN; fi
 if [[ $MACHINE == rv32i* ]]; then SRC=3153 && EXP=9 && OPTS="--versions=nested" RUN; fi
+
+# the ',' of written type arguments ends no argument where a deduced call
+# looks ahead for the argument that tells a type
+SRC=3330 && EXP=144 && RUN
+
+# so a literal after such an argument tells no type
+SRC=3331 && COMPERR
+
+# and the one argument of a call deduced from its result is not two
+SRC=3332 && COMPERR

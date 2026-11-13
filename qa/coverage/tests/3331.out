@@ -1,0 +1,4 @@
+
+3331.baz:14:13: cannot deduce 'T' of generic function 'last', write 'last<...>'
+    var r = last(conv<i32, i8>(y), z, 5)
+            ^~~~

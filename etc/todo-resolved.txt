@@ -1,6 +1,50 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 419 (2026-11-14, bug hunt: generics, each program written
+    with generics and expanded by hand; design: the output side, from the
+    line records of the assemblers to the files and reports; readability:
+    a newcomer asked to write a third backend reads the contract of every
+    field of 'target_description' and every virtual of 'machine', and 60
+    functions at random)
+    => defect (2026-11-14): the ',' of written type arguments ended an
+       argument in the lookahead of a deduced call, so the arguments after
+       it were read one off: 'last(conv<i32, i8>(y), z, w)' of 'func
+       last<T type>(c i8, b i16, a T)' was rejected ("expected type 'i16'
+       for parameter 'a'"), with a literal '5' as the last argument it was
+       accepted with 'T' from 'z', 'mk(conv<i32, i8>(y))' said "takes 1
+       argument". fix: 'generic_call::skip_argument' skips '<...>' where
+       'opens_type_arguments' holds (the token after '<' is a type
+       parameter or a type no value hides, followed by ',' or '>');
+       'tokenizer::skip_argument' is 'skip_argument_part', which also stops
+       at a '<' outside of brackets; docs 2.10.2; tests 3330 to 3332; not
+       done: a type argument that a local variable hides (in
+       'etc/todo.txt')
+    => done, design: a line keeps its section ('assembler::line::which',
+       set by 'add_line'): 'line::entry', the flag 'code_section_', the
+       rv32i record 'section_start' and 'line_position' (the sections
+       replayed in every 'layout_image') are gone, 'image_layout' keeps the
+       offsets; 30 lines added, 61 removed; listings and images unchanged
+    => done, readability: the interface of 'machine' says what both
+       backends rely on: 'copy_block' gets a size of 0, the destination of
+       a comparison is a 'bool' (asserted in x86_64 'store_condition'),
+       'emit_panic_message' keeps the line register, 'emit_target_call'
+       keeps the other live registers, 'emit_bounds_check' frees its own,
+       a register index is below 32 (asserted in 'register_mask'); docs
+       chapter 9 names what a backend supplies; the sides of a comparison
+       in 'compile_value_comparison' are 'left' and 'right'
+    => not done, design: the indentation as a field of a line (12 call
+       sites, neutral), references recorded instead of
+       'labels_named_outside_jumps' (changes the output), 'jump_info::
+       scratch' into an rv32i record (more code), one 'comment' formatter
+       (the targets differ by a space)
+    => checks: the four targets, far jumps, versions, roome, linear
+       growth, emulator, fuzzers; the listings differ from round 418 only
+       in the three new tests
+    => bug hunt (1500 programs in the last run, 5800 before, G and H on
+       x86_64 and rv32i-fpga with every option, labels compared, 21 kinds
+       of wrong use, 540 programs on the asan build, five mutants caught):
+       nothing else
 [x] easy: round 418 (2026-11-14, bug hunt: storage layout and the stack,
     every variable a canary, the frames at the short displacements and
     past 2 GiB, '--vars', '--stack' and '--memory' at their edges; design:

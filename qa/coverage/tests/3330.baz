@@ -1,0 +1,64 @@
+# the ',' of written type arguments ends no argument where a deduced call
+# looks ahead for the argument that tells a type
+type point {
+    x,
+    y,
+}
+
+type cell<V type> {
+    v V,
+}
+
+type c16 = cell<i16>
+
+func conv<A type, B type>(a A) res B {
+    res = B(a)
+}
+
+func cell.as<A type, B type>(a A) res B {
+    res = B(a) + B(self.v)
+}
+
+func last<T type>(c i8, b i16, a T) res T {
+    res = a + T(c) + T(b)
+}
+
+func choose<T type>(p bool, q bool, a T) res T {
+    res = a
+    if p and q {
+        res = a + 1
+    }
+}
+
+func inner<T type>(x T) res i32 {
+    var point = i32(4)
+    var q = i32(9)
+
+    # 'point' is the variable, which hides the type: a comparison
+    var t = choose(x < point, q > x, x)
+
+    # a type parameter as a type argument: 4 + 9 + 3 + 2
+    res = i32(t) + last(conv<T, i8>(x), 2, q)
+}
+
+func main() {
+    var y = i32(300)
+    var z = i16(7)
+    var w = i32(5)
+    var c = c16{2}
+
+    # 5 + 44 + 7
+    var r = last(conv<i32, i8>(y), z, w)
+
+    # 5 + 46 + 7, a method with type arguments
+    var s = last(c.as<i32, i8>(y), z, w)
+
+    # a '<' before a value or a conversion is a comparison
+    var t = choose(w < y, y > w, w)
+    var u = choose(w < i32(z), y > w, w)
+
+    var x = i32(3)
+
+    # 56 + 58 + 6 + 6 + 18
+    exit(r + s + t + u + inner(x))
+}

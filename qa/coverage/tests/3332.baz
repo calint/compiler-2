@@ -1,0 +1,15 @@
+# the one argument of a call deduced from its result may have written type
+# arguments, their ',' starts no surplus argument
+func conv<A type, B type>(a A) res B {
+    res = B(a)
+}
+
+func mk<T type>(a) res T {
+    res = T(a)
+}
+
+func main() {
+    var y = i32(300)
+    var r = mk(conv<i32, i8>(y))
+    exit(r)
+}

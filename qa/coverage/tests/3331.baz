@@ -1,0 +1,16 @@
+# a literal tells no type also after an argument with written type arguments,
+# whose ',' ends no argument: 'T' is not taken from 'z'
+func conv<A type, B type>(a A) res B {
+    res = B(a)
+}
+
+func last<T type>(c i8, b i16, a T) res T {
+    res = a + T(c) + T(b)
+}
+
+func main() {
+    var y = i32(300)
+    var z = i16(7)
+    var r = last(conv<i32, i8>(y), z, 5)
+    exit(r)
+}

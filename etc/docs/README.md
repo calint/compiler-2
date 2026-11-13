@@ -963,8 +963,12 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    The argument is not parsed yet: it is parsed with the type its parameter
    has in the instance, so the instance must be known first (2.10.4,
    item 2).
-   Instead the argument is read ahead as text, and only an argument whose
-   type shows in that text tells the type:
+   Instead the argument is read ahead as text, and the arguments before it
+   are skipped as text: a ',' inside brackets ends none, nor does one inside
+   written type arguments, e.g. that of 'conv<i32, i8>(y)' (3330); there a
+   '<' before a type that a ',' or the '>' follows starts type arguments, a
+   type being no operand of a comparison. Only an argument whose type shows
+   in its text tells the type:
 
    1. a variable, a field, an element or a typed constant that is the
       whole argument
@@ -2247,8 +2251,12 @@ outside 'src' included:
   memory start and size it is given and leaves the exit and sector routines
   and the uart hooks ('emit_receive_byte', 'emit_transmit_byte',
   'emit_uart_setup'); another instruction set is a 'machine' and an
-  'assembler' subclass as 'machine_x86_64' and 'assembler_x86_64', the class
-  comment of 'machine' lists what a backend supplies; in 'main.cpp' the
+  'assembler' subclass as 'machine_x86_64' and 'assembler_x86_64': a
+  'target_description' ('x86_64_target'), the virtual methods of 'machine',
+  public the operations and protected what the shared code calls (the entry,
+  the checks, the calls, the routines and the failure messages), and those
+  of 'assembler' (the directives and what the passes of 'optimize' ask); in
+  'main.cpp' the
   include of its header, its row in 'target_names' (name, backend, image,
   the options it reads) and its line in 'usage_format', which
   'etc/readme/make.sh' pastes into 'README.md'; chapter 8, what depends on

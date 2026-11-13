@@ -219,25 +219,17 @@ class assembler_rv32i final : public assembler {
         size_t size_bytes{};
     };
 
-    struct section_start {
-        section which{};
-    };
-
     struct constant {
         std::string name;
         int64_t value{};
     };
 
     using record = std::variant<instruction, branch_condition, data_values,
-                                zero_fill, alignment, section_start, constant>;
-
-    struct line_position {
-        section which{};
-        size_t offset{};
-    };
+                                zero_fill, alignment, constant>;
 
     struct image_layout {
-        std::vector<line_position> positions;
+        // of each line in its section
+        std::vector<size_t> offsets;
         std::array<size_t, section_count_> sizes{};
         std::array<size_t, section_count_> alignments{};
         std::array<size_t, section_count_> bases{};
@@ -947,10 +939,7 @@ class assembler_rv32i final : public assembler {
     //
 
     auto add_section_directive(const section which) -> void override {
-        add_record(std::string{section_directive(which)}, 0,
-                   section_start{
-                       .which{which},
-                   });
+        add_text(std::string{section_directive(which)});
     }
 
     // note: the reads of 'copied' up to the instruction that writes it take
@@ -1101,9 +1090,7 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            const size_t base{
-                image.bases.at(section_index(image.positions.at(index).which)),
-            };
+            const size_t base{image.bases.at(section_index(l.which))};
 
             const int64_t address{
                 static_cast<int64_t>(base + label_offset(image, index)),
@@ -1258,7 +1245,7 @@ class assembler_rv32i final : public assembler {
 
             const size_t target_offset{label_offset(image, target)};
 
-            if (reaches(l, image.positions.at(index).offset, target_offset)) {
+            if (reaches(l, image.offsets.at(index), target_offset)) {
                 continue;
             }
 
@@ -1288,36 +1275,27 @@ class assembler_rv32i final : public assembler {
                                     const size_t index) const -> size_t {
 
         // a landing comes before its label
-        return image.positions.at(index).offset + lines().at(index).code_size;
+        return image.offsets.at(index) + lines().at(index).code_size;
     }
 
     // sections follow each other in the order text, rodata, data, variables
     // from address zero, like a linker script listing them in that order
     [[nodiscard]] auto layout_image() const -> image_layout {
         image_layout image{};
-        image.positions.reserve(lines().size());
+        image.offsets.reserve(lines().size());
         image.alignments.fill(1);
 
-        section current{section::text};
         for (const line& l : lines()) {
             const record* const structured{records_.find(l)};
-
-            const section_start* const start{
-                std::get_if<section_start>(structured),
-            };
-
-            if (start != nullptr) {
-                current = start->which;
-            }
 
             // note: the variables are not part of the image, so they only
             //       reserve zero bytes
 
-            assert(current != section::variables or
+            assert(l.which != section::variables or
                    (l.code_size == 0 and
                     std::get_if<data_values>(structured) == nullptr));
 
-            const size_t index{section_index(current)};
+            const size_t index{section_index(l.which)};
             size_t& offset{image.sizes.at(index)};
 
             const alignment* const align{std::get_if<alignment>(structured)};
@@ -1326,7 +1304,7 @@ class assembler_rv32i final : public assembler {
                 // note: the image fills gaps with zeros, llvm fills them with
                 //       'nop's in code, which no backend aligns
 
-                assert(current != section::text);
+                assert(l.which != section::text);
 
                 offset = align_up(offset, align->size_bytes);
 
@@ -1334,10 +1312,7 @@ class assembler_rv32i final : public assembler {
                     std::max(image.alignments.at(index), align->size_bytes);
             }
 
-            image.positions.push_back({
-                .which{current},
-                .offset{offset},
-            });
+            image.offsets.push_back(offset);
 
             offset += image_size_bytes(l);
         }
@@ -1464,17 +1439,15 @@ class assembler_rv32i final : public assembler {
 
         const size_t base{image.bases.at(section_index(which))};
         for (size_t index{}; index < lines().size(); ++index) {
-            const line_position& position{image.positions.at(index)};
+            const line& l{lines().at(index)};
 
-            if (position.which != which) {
+            if (l.which != which) {
                 continue;
             }
 
             // alignment gaps and the gaps between sections are zero
-            const size_t address{base + position.offset};
+            const size_t address{base + image.offsets.at(index)};
             write_zeros(os, address - written);
-
-            const line& l{lines().at(index)};
 
             write_line_bytes(os, l, index, address, symbols);
 

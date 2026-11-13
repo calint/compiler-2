@@ -270,9 +270,11 @@ class tokenizer final {
         return token{file_ix_, ws_before, bgn_ix, text, "", at_line};
     }
 
-    // skips an argument of a call, up to the ',' or ')' that ends it
-    // e.g. 'a + f(b, c), d)' stops at the ',' before 'd'
-    auto skip_argument() -> void { std::ignore = skip_to_unnested(",)"); }
+    // skips in an argument of a call up to the ',' or ')' that ends it or to
+    // a '<' outside of brackets, which may start type arguments
+    // e.g. 'a + f(b, c), d)' stops at the ',' before 'd', 'f<a, b>(c), d)'
+    // at the '<'
+    auto skip_argument_part() -> void { std::ignore = skip_to_unnested(",)<"); }
 
     // skips the braced block that starts at the next '{', strings and
     // character literals may contain brackets; false when no '}' closes it

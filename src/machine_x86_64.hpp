@@ -1677,6 +1677,9 @@ class machine_x86_64 final : public machine {
     auto store_condition(const emit_site site, const condition cc,
                          const operand& dst) -> void {
 
+        // note: the front end stores a comparison in a 'bool', one byte
+        assert(dst.type_ref().size_bytes() == size_byte_);
+
         const operation_scope scope{*this, dst};
         const operand byte{sized_operand(dst, size_byte_)};
         const operand lowered{lower_address(site, byte)};

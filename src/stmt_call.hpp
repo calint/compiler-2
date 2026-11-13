@@ -238,7 +238,9 @@ struct generic_call {
     [[nodiscard]] static auto argument_type(parse_toc& tc, tokenizer& tz,
                                             const size_t index) -> const type* {
 
-        [[maybe_unused]] const size_t reached{skip_to_argument(tz, index)};
+        [[maybe_unused]] const size_t reached{
+            skip_to_argument(tc, tz, index),
+        };
 
         // note: the callers saw the argument ('assert_argument_present')
         assert(reached == index);
@@ -295,7 +297,7 @@ struct generic_call {
         const std::span<const generic_signature_param> params,
         const size_t index) -> void {
 
-        std::ignore = skip_to_argument(tz, index);
+        std::ignore = skip_to_argument(tc, tz, index);
 
         if (params.at(index).is_array) {
             std::ignore = parse_array_param_argument(
@@ -342,7 +344,7 @@ struct generic_call {
 
         tokenizer scan{tz};
 
-        const size_t last{skip_to_argument(scan, index)};
+        const size_t last{skip_to_argument(tc, scan, index)};
 
         if (last == index) {
             return;
@@ -394,7 +396,7 @@ struct generic_call {
         }
 
         if (not param_index) {
-            assert_no_surplus_argument_of(tz, generic_name, params);
+            assert_no_surplus_argument_of(tc, tz, generic_name, params);
         }
     }
 
@@ -426,14 +428,14 @@ struct generic_call {
     // as in a call without type parameters, e.g. the '2' of 'g(1, 2)' for
     // 'func g<T type>(b) res T'. 'tz' is after the '('
     static auto assert_no_surplus_argument_of(
-        const tokenizer& tz, const std::string_view name,
+        const parse_toc& tc, const tokenizer& tz, const std::string_view name,
         const std::span<const generic_signature_param> params) -> void {
 
         tokenizer after{tz};
 
         if (not params.empty()) {
-            std::ignore = skip_to_argument(after, params.size() - 1);
-            after.skip_argument();
+            std::ignore = skip_to_argument(tc, after, params.size() - 1);
+            skip_argument(tc, after);
         }
 
         assert_no_surplus_argument(after, name, params.size());
@@ -552,14 +554,61 @@ struct generic_call {
         return deduced;
     }
 
+    // a '<' before a type that a ',' or the '>' follows starts type
+    // arguments, e.g. the '<' of 'conv<i32, i8>(y)', not that of 'a < b' or
+    // of 'a < i8(b)'. 'tz' is at the '<'
+    // note: a type is no operand of a comparison; a name that a value hides
+    //       is the value, as in 'classify_term'
+    [[nodiscard]] static auto opens_type_arguments(const parse_toc& tc,
+                                                   const tokenizer& tz)
+        -> bool {
+
+        tokenizer after{tz};
+        std::ignore = after.seen_char_token('<');
+
+        const token arg_tk{after.next_token()};
+        const char next{after.peek_char_after_whitespace()};
+
+        if (next != ',' and next != '>') {
+            return false;
+        }
+
+        const std::string_view name{arg_tk.text()};
+
+        if (tc.type_param_named(name) != nullptr) {
+            return true;
+        }
+
+        return tc.types().has(name) and not tc.scopes().lookup(name).is_value();
+    }
+
+    // skips an argument up to the ',' or ')' that ends it; the ',' of written
+    // type arguments ends none, e.g. that of 'conv<i32, i8>(y)'
+    static auto skip_argument(const parse_toc& tc, tokenizer& tz) -> void {
+        while (true) {
+            tz.skip_argument_part();
+
+            if (tz.peek_char_after_whitespace() != '<') {
+                return;
+            }
+
+            if (tz.is_type_args_next() and opens_type_arguments(tc, tz)) {
+                std::ignore = tz.skip_enclosed('<', '>');
+            } else {
+                std::ignore = tz.seen_operator();
+            }
+        }
+    }
+
     // moves 'tz' from after the '(' to the argument at 'index' and returns
     // 'index'; when the list ends before it, 'tz' is after the argument where
     // it ends and that argument's index is returned
-    [[nodiscard]] static auto skip_to_argument(tokenizer& tz,
+    [[nodiscard]] static auto skip_to_argument(const parse_toc& tc,
+                                               tokenizer& tz,
                                                const size_t index) -> size_t {
 
         for (size_t i{}; i < index; ++i) {
-            tz.skip_argument();
+            skip_argument(tc, tz);
 
             const std::optional<token> delimiter_tk{tz.accept_char_token(',')};
 

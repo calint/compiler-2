@@ -536,10 +536,10 @@ class expr_bool_op final : public statement {
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand dst{left_operand(tc, lhs, held)};
-        const operand src{right_operand(tc, rhs, held)};
+        const operand left{left_operand(tc, lhs, held)};
+        const operand right{right_operand(tc, rhs, held)};
 
-        x.compare_and_branch({tok(), tc.indent()}, dst, src, action);
+        x.compare_and_branch({tok(), tc.indent()}, left, right, action);
     }
 
     [[nodiscard]] auto is_negated() const -> bool { return nots_.is_negated(); }

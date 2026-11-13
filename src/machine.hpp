@@ -252,7 +252,7 @@ class machine {
     struct comparison_action {
         comparison_operator operation{comparison_operator::equal};
 
-        // receives 0 or 1, empty skips storing
+        // a 'bool' that receives 0 or 1, empty skips storing
         operand destination;
 
         // branch label, empty skips branching
@@ -876,7 +876,8 @@ class machine {
                                     const comparison_action& action)
         -> void = 0;
 
-    // 'alignment' is the alignment known for both addresses
+    // 'alignment' is the alignment known for both addresses; a size of 0
+    // copies nothing, e.g. an 'array_copy' of 0 elements
     virtual auto copy_block(const emit_site site, const operand& dst,
                             const operand& src, const size_t size_bytes,
                             const size_t alignment) -> void = 0;
@@ -1637,7 +1638,8 @@ class machine {
     // the compares and branches of 'check_bounds' after its plan, between the
     // begin and end comments: the sign tests, then the upper compare; none
     // for an empty plan, e.g. a start that the walk of its address checked,
-    // under '--checks=lower' alone
+    // under '--checks=lower' alone; it frees the registers it allocates, the
+    // capacity checks leave theirs to the scope of their caller
     virtual auto emit_bounds_check(const emit_site site,
                                    const bounds_range& range,
                                    const bounds_plan& plan) -> void = 0;
@@ -1683,7 +1685,8 @@ class machine {
                                      const std::string_view target) -> void = 0;
 
     // writes 'message' at 'message_label' to stderr, for the failure handlers,
-    // which run after all allocations
+    // which run after all allocations; it keeps 'report_line_register', which
+    // the stub of a line loaded before it
     virtual auto emit_panic_message(const std::string_view message_label,
                                     const std::string_view message) -> void = 0;
 
@@ -1705,7 +1708,8 @@ class machine {
     }
 
     // the call of 'call_target', its arguments in their registers and the
-    // result register of 'read' and 'write' allocated
+    // result register of 'read' and 'write' allocated; it keeps every other
+    // register that holds a value, e.g. saves those the routine changes
     virtual auto emit_target_call(const emit_site site,
                                   const target_call function) -> void = 0;
 
@@ -1730,8 +1734,9 @@ class machine {
     make_register_operand(const std::string_view name,
                           const type& value_type) const -> operand = 0;
 
-    // the index of the register 'name' in any of its sizes, empty for text
-    // that names no register, e.g. a label
+    // the index of the register 'name' in any of its sizes, below the 32 bits
+    // of a mask of 'register_pool', empty for text that names no register,
+    // e.g. a label
     [[nodiscard]] virtual auto
     register_index_of(const std::string_view name) const
         -> std::optional<size_t> = 0;
@@ -2651,6 +2656,10 @@ class machine {
         -> uint32_t {
 
         const std::optional<size_t> index{register_index_of(name)};
+
+        // note: the pool keeps the registers in a mask of 32 bits
+        assert(not index or *index < std::numeric_limits<uint32_t>::digits);
+
         return index ? uint32_t{1} << *index : 0;
     }
 

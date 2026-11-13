@@ -77,6 +77,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
     changes the language: 'f(a + 1)' would deduce where it is rejected
     today (README 2.10.2); see also "generic deduction by a trial parse"
     below
+[ ] easy: low priority (round 419 AA, a hunt of generics): the lookahead
+    of a deduced call skips the arguments before the deciding one as text
+    and takes a '<' before a type as the start of type arguments
+    ('generic_call::opens_type_arguments', test 3330); a type argument
+    that a local variable hides is not seen as one, e.g. 'var point = 1'
+    and 'last(tag<point, i32>({}), z, w)' of 'func last<T type>(c i8, b
+    i16, a T)' ends the first argument at the ',' and takes 'T' from 'z';
+    written 'last<i32>(...)' it is accepted
+    => not done: the exact rule is the token before the '<' (a generic
+       function or a method), for a method that needs the type of its
+       receiver, which the text does not give; the trial parse of the item
+       above removes the lookahead
 [p] medium: need approval (round 396): the counter of a 'foo' always in
     memory: today it is in a register, or in memory on x86_64 when 6 or
     more scratch registers are in use; that choice carries
@@ -124,6 +136,20 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[ ] easy: (round 419, a walk of the backend interface and a hunt of
+    generics) 'check_bounds' could open the 'operation_scope' itself as
+    the two capacity checks do, both backends would drop theirs (moves
+    the "free scratch register" comments in every listing); 'array_copy'
+    with a constant 0 reaches 'copy_block', the front end could skip the
+    call and both backends assert; 'address_of', 'bitwise', 'branch',
+    'compare_and_branch', 'copy_value', 'return_function', 'unary' and
+    'zero' have no comment on the interface (what a narrow destination
+    gets is only in the implementations); the label of 'f<int>' is
+    'func.f..i64' on x86_64 and 'func.f..int' on rv32i; three messages of
+    an instance quote another name than the hand expansion ("constant 'k'
+    does not fit", "'T' is a type, not a function", "generic type 'box'
+    is not a type"); 'label_lines()' is built twice and 'layout_image()'
+    three times after the jumps are resolved
 [p] easy: need approval (round 418, the options) 'check_default_stack_fits'
     in 'src/main.cpp' (12 lines) is a special case for '--memory' below
     the default stack; a neutral message in

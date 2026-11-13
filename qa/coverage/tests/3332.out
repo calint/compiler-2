@@ -1,0 +1,4 @@
+
+3332.baz:13:13: cannot deduce 'T' of generic function 'mk', write 'mk<...>'
+    var r = mk(conv<i32, i8>(y))
+            ^~

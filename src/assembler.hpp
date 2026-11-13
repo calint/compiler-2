@@ -26,8 +26,9 @@
 // layout once
 //
 // sections: 'switch_section' starts one of 'section', a subclass writes its
-// directive ('add_section_directive') and the rv32i image is indexed by it;
-// sizes and entries count only in code
+// directive ('add_section_directive'), a line keeps the section it is added
+// to ('line::which') and the rv32i image is indexed by it; sizes and entries
+// count only in code
 //
 // jump optimizations done by 'optimize_jumps', in x86_64 and rv32i syntax:
 //
@@ -114,8 +115,8 @@ class assembler {
         std::unique_ptr<jump_info> jump;
         // in the target's unit, zero when the line emits no code
         size_t code_size{};
-        // a label in code where execution can enter
-        bool entry{};
+        // the section the line is in
+        section which{};
         bool removed{};
         // index of the target's structured form of the line
         std::optional<size_t> record;
@@ -203,7 +204,7 @@ class assembler {
     std::vector<line> lines_;
     // versions being emitted by 'capture', innermost last
     std::vector<captured_lines> captures_;
-    bool code_section_{true};
+    section current_section_{section::text};
     optimization_counts optimizations_{};
     std::vector<body> bodies_;
 
@@ -330,9 +331,7 @@ class assembler {
     auto label(const size_t indent, const std::string_view name) -> void {
         add_text(std::format("{}{}:", indentation(indent), name));
 
-        line& added{current_lines().back()};
-        added.label = name;
-        added.entry = code_section_;
+        current_lines().back().label = name;
     }
 
     // the bodies of each noinline function with their calls and size, in
@@ -409,8 +408,7 @@ class assembler {
 
     // e.g. back to the code after the data of a failure handler
     auto switch_section(const section which) -> void {
-        // code sizes and entries only count in code
-        code_section_ = which == section::text;
+        current_section_ = which;
         add_section_directive(which);
     }
 
@@ -421,7 +419,7 @@ class assembler {
                   jump_info jump,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
-        assert(code_section_);
+        assert(current_section_ == section::text);
 
         add_line(std::format("{}{}", indentation(indent), text),
                  instruction_size(), record);
@@ -433,7 +431,8 @@ class assembler {
     auto add_line(std::string text, const size_t code_size,
                   const std::optional<size_t> record = std::nullopt) -> void {
 
-        assert(code_section_ or code_size == 0);
+        // note: only code has a size
+        assert(current_section_ == section::text or code_size == 0);
 
         current_lines().push_back({
             .text{std::move(text)},
@@ -441,7 +440,7 @@ class assembler {
             .call_target{},
             .jump{},
             .code_size{code_size},
-            .entry{},
+            .which{current_section_},
             .removed{},
             .record{record},
         });
@@ -949,19 +948,16 @@ class assembler {
         return size;
     }
 
-    // numeric labels, named by references such as '1b', are entries without a
-    // lookup
+    // execution enters at a label in code; numeric labels, named by
+    // references such as '1b', are entries without a lookup
     [[nodiscard]] static auto
     is_enterable(const line& l,
                  const std::unordered_set<std::string_view>& referenced)
         -> bool {
 
-        if (not l.entry) {
+        if (l.label.empty() or l.which != section::text) {
             return false;
         }
-
-        // note: only 'label' sets 'entry', with a name
-        assert(not l.label.empty());
 
         if (is_numeric(l.label)) {
             return true;
