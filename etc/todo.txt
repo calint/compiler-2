@@ -137,6 +137,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     (removing it deletes a file the compile did not touch); a default
     'sdcard.img' that is also a source file is reported as "invalid
     --sdcard" although the option was not given
+[ ] easy: user decision (round 407, the docs against the compiler):
+    chapter 8 says the result of "a program that writes its types" does
+    not depend on the target, but an index, a count or start of a bulk
+    operation, an io built-in or a 'foo', and the code of 'exit' are
+    computed at the default type whatever the type of their first element:
+    'var a = i32(2000000000)' 'exit(a + a)' ends with 0 on x86_64 and
+    panics 'overflow' on rv32i unless written 'exit(i32(a + a))'; the
+    sentence holds only if "writes its types" includes those places
+    => reword the sentence, or compute those places at the type of their
+       first element as an expression elsewhere
+[ ] easy: (round 407 design) 'generic_signature_param' is three fields
+    copied from 'stmt_def_func_param::syntax' in 'read_signature', as the
+    result was before round 402 (about -15 lines, mostly a move); its
+    second reader is the deduction lookahead, decide with the item of
+    round 395 on deduction by the trial parse
 [ ] hard: the listing indent lives in 'toc' (round 331) and the backend
     takes it in every 'emit_site' (round 319); held by the machine or the
     assembler, 'emit_site' would shrink to a token and the 142 front-end

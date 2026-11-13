@@ -1615,6 +1615,7 @@ is lowered at the store:
     lw t1, -1740(s0)                  j
     slli t2, t1, 3                    the operand '[t0 + t1 * 8 + 4]' lowered
     add t2, t2, t0
+    li t3, 5
     sw t3, 4(t2)
 ```
 
@@ -1864,7 +1865,7 @@ ones its callees need; one context with a run-time phase, each method of one
 phase asserted it at run time and a declaration branched on it.
 
 Cost: 'toc.hpp' holds about 4k lines; 'toc' has 14 public methods,
-'parse_toc' 27 and 'compile_toc' 30, grouped by the maps above the classes;
+'parse_toc' 27 and 'compile_toc' 29, grouped by the maps above the classes;
 a node can reach every table its phase reads through its context. A function
 that both phases run takes the base, so it cannot ask for what only one phase
 has, e.g. the listing indent.
@@ -2036,8 +2037,11 @@ What depends on the target is listed here, nothing else does:
 
 1. the default type, the width of a register (1.7, 7.12): its arithmetic, a
    panic included, its constants, e.g. 'var k = 3000000000' is rejected on
-   rv32i, its shift counts, e.g. 'x << 40', and an index, computed in it:
+   rv32i, its shift counts, e.g. 'x << 40', and an index, the start and the
+   count of a bulk operation, an io built-in or a 'foo' and the code of
+   'exit', computed in it whatever the type of their first element:
    'a[i + i]' with 'i' an 'i32' of 2000000000 panics 'bounds' on x86_64 and
+   'overflow' on rv32i, 'exit(i + i)' ends with 0 on x86_64 and panics
    'overflow' on rv32i; a list led by a literal has it (1.7): with 'k' an
    'i32' of 31, '1 << k < 0' is false on x86_64 and true on rv32i,
    'i32(1) << k < 0' is true on both; how it mixes with a fixed width does
@@ -2071,8 +2075,9 @@ What depends on the target is listed here, nothing else does:
    the link, e.g. '--vars=0xffff0000' with 'ld.lld', which starts it at
    about 0x11000; on x86_64 '--vars' reaches 2^47 - 16, and variables
    larger than what the host can map link and fail when the program
-   starts; on x86_64 nasm truncates a label to 4095 characters, so a
-   name of about 4000 characters gives a listing that nasm rejects
+   starts; on x86_64 nasm truncates a label to 4095 characters, so the
+   listing writes a symbol longer than 4000 characters as its first 4000,
+   '$' and a number ('assembler_x86_64::shorten_symbols', test 2996)
 5. the devices of the bare-metal targets: 'rv32i-qemu' has no sd card, so
    'sector_read' and 'sector_write' panic 'sd card' there, as on a card
    image without the sector; 'rv32i-fpga' does not detect a sector past the
@@ -2210,6 +2215,10 @@ message, x86_64 stops with a signal.
   code: a constant 'exit' code outside 0 to 255 is rejected, a run-time one
   is taken modulo 256, so 'exit(k)' with 'k' -1 ends with 255, the code of
   a 'bounds' panic.
+- The minimum of 'i64' has no literal: the '-' applies after the literal is
+  read as an 'i64', so '-9223372036854775808' is rejected ("constant
+  '9223372036854775808' is out of range"), as is '0x8000000000000000'; it is
+  written '-9223372036854775807 - 1'.
 - The x86_64 listing leaves the size of each jump to nasm. On rare listings
   nasm's default search ('-Ox') does not settle ("unable to find valid values
   for all labels"), e.g. 'etc/nasm-issue.s'; 'nasm -O1' assembles it, with
