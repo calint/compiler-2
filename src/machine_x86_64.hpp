@@ -53,7 +53,6 @@ class machine_x86_64 final : public machine {
 
     static constexpr size_t size_qword_{assembler_x86_64::size_qword};
     static constexpr size_t size_dword_{assembler_x86_64::size_dword};
-    static constexpr size_t size_word_{assembler_x86_64::size_word};
     static constexpr size_t size_byte_{assembler_x86_64::size_byte};
 
     static constexpr size_t data_alignment_{16};

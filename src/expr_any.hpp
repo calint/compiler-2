@@ -1155,7 +1155,7 @@ class expr_any final : public statement {
                              std::make_unique<expr_zero>(zero_type, tk));
     }
 
-    // the value of one element at the type 'tp': an instance, a zero value,
+    // the value of a single value at the type 'tp': an instance, a zero value,
     // a number, or a condition where 'tp' is a 'bool'
     [[nodiscard]] static auto parse_variant(parse_toc& tc, tokenizer& tz,
                                             const type& tp,

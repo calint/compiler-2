@@ -297,9 +297,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
 [ ] easy: user decision (round 234 US3): a constant, 'dat', variable or
     function used as a type, e.g. 'let n = 3' and 'type t { a n }', gives
     "type 'n' not found", also a generic's constant parameter ('type
-    node<n> { a n }'); one more lookup in 'toc::get_type_or_throw' could
-    say "'n' is a constant, not a type", as the reverse case has its own
-    message
+    node<n> { a n }'); one more lookup in 'parse_toc::get_type_or_throw'
+    could say "'n' is a constant, not a type", as the reverse case has its
+    own message
 [ ] medium: user decision (round 229 UL1): 'p.get() < p.bump()' is
     rejected ("'p' may be written by the call of 'bump' in a later
     operand"), also 'rd(p.x) < bumpx(p.x)' and 'add2(p.get(), p.bump())',
@@ -428,9 +428,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with
     a one-line mode drops comments and collapses whitespace per token
-    (-150 +25, about 60 'source_to' signatures change); with it D1-6
-    'stmt_identifier::dotted_path_' derived from 'elems_' (-3); listings and
-    '--reproduce-source' of every test equal
+    (-150 +25, about 60 'source_to' signatures change); listings and
+    '--reproduce-source' of every test equal (D1-6 is done: the path text
+    is derived by 'stmt_identifier::path_text')
     => not done (2026-11-06, round 108): the sink needs its own collapsing,
        trimming and continuations (about 40 lines), so about -70 net for
        about 60 changed signatures; 'one_line_source' is a leaf
@@ -459,9 +459,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'g(x i8[])' called with 4 elements is accepted, the same in 'main' with
     an 'i8[4]' is rejected; likewise 'array_copy', '{...}' too long, a
     string too long, 'array_length(x[5].a)' and the compare of two lengths
-    in such code; no UB, the code never runs; 'toc::check_skipped' returns
-    in a compile with a call's constants and 'stmt_def_func::check_body'
-    runs without lengths
+    in such code; no UB, the code never runs; 'compile_toc::check_skipped'
+    returns in a compile with a call's constants and
+    'stmt_def_func::check_body' runs without lengths
     => fix if wanted: at a call, compile in a dry run the code skipped by a
        decision known at the parse ('stmt_if::branch::constant_at_parse',
        the 'else' after a branch true at the parse, a 'foo' count and the
@@ -819,8 +819,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        'machine::store_bytes' with the first 'count' decoded bytes
     => runtime count and 'arrays_equal': a machine method that loads the
        address of a '.rodata' label (x86 'lea reg, [rel label]', rv32i 'la');
-       register the constant with 'toc::add_read_only_constant' (kind "str")
-       only when emitted
+       register the constant with 'compile_toc::add_read_only_constant'
+       (kind "str") only when emitted
     => tree-sitter grammar; tests on both targets (runtime copy and compare,
        non-'i8' destination, count above the length, empty string)
 [ ] hard: a way to specify a range in the array: 'foo arr(bgn_index, len,

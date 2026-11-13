@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 408 (2026-11-13, a confirming round. design: the six
+    largest classes member by member, grouped by the data they touch;
+    readability: every hunk changed since round 390 as it stands now, the
+    words the renames left, 60 functions at random; bug hunt: 'foo' and
+    'loop' with the counter in a register and in memory)
+    => done (2026-11-13): 'machine_x86_64::size_word_' removed, nothing
+       read it; no class is two classes by its data, no data member is a
+       hidden parameter, no member that never touches its object, the
+       friend of 'machine' is stated; the comment of
+       'expr_any::parse_variant' says "a single value" (it said "one
+       element", the word of a listed element since round 395); three
+       open items of 'todo.txt' name 'parse_toc' and 'compile_toc' where
+       they said 'toc', the sub-point of 'dotted_path_' is done; 59 of 60
+       sampled functions and every changed hunk read clean, no old name
+       is left; listings unchanged (2495 cases)
+    => not done: 'machine::alloc_named_register' private (no backend
+       calls it; round 394 made it protected as the pair of
+       'alloc_scratch_register'); 'assembler_x86_64::size_word' has no
+       reader now, one of the four widths
+    => bug hunt (8800 programs, 194000 runs against a model; 1728
+       programs in 48 groups with 0 to 11 registers held so the counter
+       moves between a register and memory; a build with every counter in
+       memory passes the x86_64 tests but 0716 and 16089 fuzz runs; nests
+       to 14 deep, bodies of 2.2 MiB): no defect
 [x] easy: round 407 (2026-11-13, the docs against the compiler: every
     claim, quoted message, number, name and reference of chapters 2 to 8
     of 'etc/docs/README.md' and a third of the tutorial, about 330
