@@ -105,6 +105,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[ ] easy: (round 413, the tutorial and the images) 'etc/tutorial.baz'
+    uses "instance" at line 293 before line 504 explains it and does not
+    list a 'dat' among what is defined above its first use; on rv32i-fpga
+    a sector past the card of the emulator ends with "CPU error: 1305" of
+    the emulator, docs chapter 8 describes the end of the card for x86_64
+    only; 'machine_rv32i::emit_stack_capacity_check' computes 'sp -
+    call_bytes' without a note on why it cannot wrap (the stack limit is
+    above the code that pushes)
 [ ] easy: (round 412, the fuzzers) 'fuzz-compiler.py' reports test 1698
     with '--versions=nested' or 'last' as 'compiler-hang' when the machine
     is loaded: 87 s in the sanitizer build against a limit of 120 s; the

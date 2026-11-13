@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 413 (2026-11-13, bug hunt: the bare-metal rv32i targets
+    as whole images; design: who owns what and for how long, 385 members
+    and captures that do not own what they refer to; readability: a
+    newcomer takes the whole tutorial and the root README, 250 programs
+    for its rules on x86_64 and rv32i-fpga, the options and the steps as
+    written, and 60 functions at random)
+    => done (2026-11-13): 'scope::name_' owns its text (it viewed a local
+       string of the caller while the scope was moved into the stack, safe
+       only by the order of the declarations; its siblings 'call_path',
+       'ret_label' and 'continue_label' own theirs); 'compile_toc::add_var'
+       has no copy of the token; the comment of
+       'program::emit_read_only_data' says "read-only constants", a
+       constant initializer without any string makes the section too;
+       listings unchanged (2505 cases)
+    => design: no lifetime defect; the type set of the built-ins is passed
+       through three constructors beside the machine that holds it, asking
+       the machine widens the backend interface, left
+    => readability: every example, rule, message, option and step of the
+       tutorial and the README holds on both targets
+    => bug hunt (6400 programs at the edges of '--vars', '--stack' and
+       '--memory', 14600 accepted and 20100 rejected builds checked
+       against a layout from the linked listing; 48800 images equal byte
+       for byte to the llvm tools; 10100 images run, with a store trace on
+       an emulator of the given memory; the stack check at its smallest
+       stack; the top of the address space; a mutant of the fit check
+       caught): no defect
+    => the fuzzers: only test 1698 with '--versions=nested' or 'last'
+       again ('compiler-hang' and two 'compiler-slow' of 68 s and 81 s in
+       the sanitizer build), the item of round 412
 [x] easy: round 412 (2026-11-13, design: what the code says it relies on,
     480 notes, 388 asserts and 17 'std::unreachable()' read in groups, 445
     programs aimed at the asserts; readability: a newcomer reads chapters

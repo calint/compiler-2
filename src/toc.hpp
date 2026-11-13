@@ -333,7 +333,7 @@ class scope final {
     };
 
     // the function name or the loop label, empty for a block
-    std::string_view name_;
+    std::string name_;
 
     // the bytes of variable storage this scope uses
     size_t allocated_storage_size_bytes_{};
@@ -610,7 +610,7 @@ class scope final {
     }
 
   private:
-    explicit scope(const std::string_view name) noexcept : name_{name} {}
+    explicit scope(const std::string_view name) : name_{name} {}
 
     [[nodiscard]] auto func_part() -> function_part& {
         assert(func_);
@@ -3246,8 +3246,6 @@ class compile_toc final : public toc {
     // placed and commented where it is stored; a variable in a register or
     // at one has no storage
     auto add_var(const var_info& var, const var_kind kind) -> void final {
-        const token src_loc_tk{var.src_loc_tk};
-
         const bool is_in_storage{
             std::holds_alternative<in_storage>(var.placement),
         };
@@ -3258,12 +3256,12 @@ class compile_toc final : public toc {
 
         // note: a 'dat' here is the compile half of 'parse_toc::add_dat'
         if (kind == var_kind::dat) {
-            storage.place_dat(src_loc_tk, declared);
+            storage.place_dat(var.src_loc_tk, declared);
         } else if (is_in_storage) {
-            storage.allocate_var(src_loc_tk, declared);
+            storage.allocate_var(var.src_loc_tk, declared);
         }
 
-        comment_var(src_loc_tk, declared);
+        comment_var(var.src_loc_tk, declared);
     }
 
     //

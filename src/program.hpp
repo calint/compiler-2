@@ -525,7 +525,7 @@ class program final {
     }
 
     static auto emit_read_only_data(compile_toc& tc) -> void {
-        // no section switches without strings
+        // no section switches without read-only constants
         if (tc.data().constants().empty()) {
             return;
         }
