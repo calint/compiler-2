@@ -1,0 +1,10 @@
+# a built-in type followed by '{}' as the argument of a 'mut' parameter of
+# another type is reported by its type
+func f(a mut i32) {
+    a = 1
+}
+
+func main() {
+    f(i8{})
+    exit(0)
+}

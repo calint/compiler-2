@@ -155,6 +155,20 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 422, a hunt of values into destinations and a walk of
+    the conditions) 'd16 = i8' is rejected ("expected type 'i16', got
+    'i8'") while 'd16 = x8' of an 'i8' variable widens, the comment of
+    'parse_instance' says "as 'p = x' of an 'i8' 'x'"; 'di = i8{} + 1'
+    says "expected type 'i64', got 'i8'" where 'di = i8 + 1' says "'i8'
+    is a type, not a value"; a global 'let g = arrays_equal(a, b, 2)' is
+    accepted and runs before 'main', 'read' and a function call there are
+    rejected; a statement that starts with '-', '(' or '[' continues the
+    previous line (the class of round 9 W2-1); x86_64 'if a == 3 and 1 ==
+    2' leaves a lone 'cmp' after the jump passes; the code after an
+    inlined 'exit' inside a condition is emitted; 'if not (not b)' lists
+    "'or' inverted shorthand" for a list of one element; docs 1.2 item 3
+    says "also with '--nopt'" only at 'remove_reloads', 'remove_copies'
+    and 'remove_retests' run too
 [ ] easy: (round 421, a hunt of calls and a walk of the layout) the
     later-argument rule also rejects names whose value is taken at their
     place: 'f(la[l & 3], wm(l))', 'two(g0 + 0, wg())', 'ps[l &

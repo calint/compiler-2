@@ -7996,3 +7996,14 @@ SRC=3369 && COMPERR
 # for its result is rejected like the call with written type arguments
 SRC=3370 && COMPERR
 SRC=3371 && COMPERR
+
+# what follows a deduced generic call stored in a 'bool' is reported as after
+# any other condition
+SRC=3450 && COMPERR
+SRC=3451 && COMPERR
+SRC=3452 && COMPERR
+
+# a built-in type alone where a 'mut' parameter has another type is reported
+# by its type
+SRC=3453 && COMPERR
+SRC=3454 && COMPERR

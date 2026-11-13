@@ -569,6 +569,14 @@ bind x -> 3            a parameter of an inlined body names its argument
 src: operand           an operand read as it is stored; 'src: folded
                        constant' a value known at compile time, 'src:
                        expression' one computed first
+? a < b                a condition, then each element of it at its 'cmp'
+                       label; 'shorthand:' an operand alone, tested as
+                       '!= 0'; ''and' inverted:' an element of a list that
+                       the 'not's before its parentheses invert, compiled
+                       inverted and joined by the 'and' or 'or' named, e.g.
+                       'a == 3' of 'not (a == 3 or b == 4)'; 'const eval to
+                       true' the value of one that folded, after the
+                       inversion
 copy field 'x'         a part of an instance literal
 zero padding: 4 B      the bytes no field writes
 allocate scratch register -> r15, free scratch register r15
@@ -1041,7 +1049,9 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    for ahead and takes the destination, e.g. 'b = make(2)' and 'b = t.to()'
    (3360), not 'b = t.to() or c'. A result of another type, which an
    argument told, is rejected as a condition is: "'same(x)' of type 'i8' is
-   not a 'bool'" (3370, 3371).
+   not a 'bool'" (3370, 3371); the call is parsed as the condition it is, so
+   what follows it is reported as after any other, e.g. "expected '=='" for
+   'b = make() = true' (3450 to 3452).
 
 3. If neither tells the type, the arguments up to the one that told
    nothing, all of them and a surplus one for a result, are checked in

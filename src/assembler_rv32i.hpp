@@ -434,8 +434,8 @@ class assembler_rv32i final : public assembler {
         branch_zero(indent, op::bnez, rs, target);
     }
 
-    // a branch that is never grown, to a nearby label such as '1f' or a
-    // handler
+    // a branch that is never grown, to a nearby numeric label such as '1f'; a
+    // branch to a handler is a 'resolved_branch'
     auto branch(const size_t indent, const op code, const std::string_view rs1,
                 const std::string_view rs2, const std::string_view target)
         -> void {

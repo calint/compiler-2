@@ -1,0 +1,4 @@
+
+3450.baz:9:16: expected '=='
+    b = make() = true
+               ^

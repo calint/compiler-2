@@ -1,0 +1,17 @@
+# a '=' after a deduced generic method call stored in a 'bool' is reported as
+# after the call with written type arguments
+type point {
+    x i8,
+    y i8,
+}
+
+func point.mk<T type>() res T {
+    res = {}
+}
+
+func main() {
+    var p = point{1, 2}
+    var b = false
+    b = p.mk() = true
+    exit(0)
+}

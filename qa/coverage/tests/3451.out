@@ -1,0 +1,4 @@
+
+3451.baz:15:16: expected '=='
+    b = p.mk() = true
+               ^

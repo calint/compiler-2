@@ -1,0 +1,13 @@
+# a '=' after a deduced generic call that is a 'bool' argument is reported as
+# after the call with written type arguments
+func make<T type>() res T {
+    res = {}
+}
+
+func take(a bool) {
+}
+
+func main() {
+    take(make() = true)
+    exit(0)
+}

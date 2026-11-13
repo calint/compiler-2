@@ -1,0 +1,4 @@
+
+3453.baz:8:7: expected type 'i32', got 'i8'
+    f(i8)
+      ^~

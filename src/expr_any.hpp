@@ -1090,8 +1090,8 @@ class expr_any final : public statement {
         return tc.generics().has_func(name);
     }
 
-    // a number, or a generic call that takes the type of a 'bool'
-    // destination
+    // a number; a generic call in it takes the type of a known destination
+    // for its result, e.g. 'x = make()'
     [[nodiscard]] static auto parse_arith_value(parse_toc& tc, tokenizer& tz,
                                                 const type& tp,
                                                 const literal_typing typing)
@@ -1103,13 +1103,7 @@ class expr_any final : public statement {
 
         expr_arith value{tc, tz, expr_arith::options::plain(destination_type)};
 
-        // e.g. 'b = rr(x)' for 'func rr<T type>(a T) res T', the argument
-        // tells the type of the result, not the destination
-        if (tp.is_bool()) {
-            expr_bool_op::assert_boolean_value(value);
-        } else {
-            assert_number_kind(value, tp);
-        }
+        assert_number_kind(value, tp);
 
         // e.g. the '>' of 'int(a > 2)', which would end the number
         expr_arith::assert_no_condition_next(tz);
@@ -1151,11 +1145,14 @@ class expr_any final : public statement {
             });
     }
 
-    // a condition, e.g. 'a < b and c'; one 'bool' operand alone is a value
-    [[nodiscard]] static auto parse_condition(parse_toc& tc, tokenizer& tz)
+    // a condition, e.g. 'a < b and c'; one 'bool' operand alone is a value;
+    // 'result_type' is null unless the value is a generic call alone that
+    // takes the type of the destination
+    [[nodiscard]] static auto parse_condition(parse_toc& tc, tokenizer& tz,
+                                              const type* const result_type)
         -> expr_variant {
 
-        expr_bool value{tc, tz.next_whitespace_token(), tz};
+        expr_bool value{tc, tz.next_whitespace_token(), tz, result_type};
 
         value.assert_boolean_operands();
 
@@ -1197,15 +1194,15 @@ class expr_any final : public statement {
             assert_zero_not_reached_into(after_value);
         }
 
+        // e.g. the 'i8' of 'f(i8)' for a 'mut i64' parameter, reported by
+        // its type like any other value
+        assert_names_type(tc, tk, tp);
+
         if (typing == literal_typing::from_destination) {
-            assert_names_type(tc, tk, tp);
             throw_known_type(tk, tp.name(), "{}");
         }
 
-        const type& zero_type{tc.get_type_or_throw(tk)};
-
-        return builtin_value(tc, tz,
-                             std::make_unique<expr_zero>(zero_type, tk));
+        return builtin_value(tc, tz, std::make_unique<expr_zero>(tp, tk));
     }
 
     // the value of a single value at the type 'tp': an instance, a zero value,
@@ -1237,15 +1234,20 @@ class expr_any final : public statement {
 
         tz.put_back_token(tk);
 
-        // a generic call takes the type of a known destination for its
-        // result, e.g. 'x = make()'
-        if (not tp.is_bool() or (typing == literal_typing::from_destination and
-                                 is_whole_generic_call(tc, tz))) {
-
+        if (not tp.is_bool()) {
             return parse_arith_value(tc, tz, tp, typing);
         }
 
-        return parse_condition(tc, tz);
+        // a generic call that is the whole value takes the type of a known
+        // destination for its result, e.g. 'b = make()'
+        const bool is_result_typed{
+            typing == literal_typing::from_destination and
+                is_whole_generic_call(tc, tz),
+        };
+
+        const type* const result_type{is_result_typed ? &tp : nullptr};
+
+        return parse_condition(tc, tz, result_type);
     }
 
     // e.g. 'n = {}' is 'n = 0' and 'b = {}' is 'b = false'

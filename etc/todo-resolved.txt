@@ -1,6 +1,42 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 422 (2026-11-14, bug hunt: every kind of value into
+    every kind of destination, 152 values and 174 destinations, nested
+    one and two levels; design: the paths by which a value is parsed for
+    a destination; readability: a newcomer follows conditions and control
+    flow in 64 programs from the source to the branches, and 60 functions
+    at random)
+    => done, design: a 'bool' value has one path: 'expr_any::
+       parse_variant' hands a 'bool' destination to 'parse_condition'
+       only, which passes the destination type through 'expr_bool' to the
+       first 'expr_bool_op' where 'is_whole_generic_call' holds;
+       'parse_arith_value' is numbers only, 'assert_boolean_value' is
+       back inside 'assert_boolean_operands' (the second path skipped a
+       check the first makes, the class of the round 421 abort); the first
+       message of 'b = make() = true', 'b = p.mk() = true' and
+       'take(make() = true)' is "expected '=='" as with written type
+       arguments (was "unexpected '='", "expected ')'"); tests 3450 to
+       3452; docs 2.10.2
+    => done, design: 'parse_type_as_zero' calls 'assert_names_type' for
+       both typings: 'f(i8)' and 'f(i8{})' for 'a mut i32' say "expected
+       type 'i32', got 'i8'" as every other value of a wrong type (was
+       "which is not a variable", "expected ')'"); tests 3453, 3454
+    => done, text only: comments of 'assert_boolean_operands' (dated from
+       when a number was a condition), 'compile_last_element' (untrue for
+       an 'or' list), rv32i 'branch' (no handler is reached by it); docs
+       1.6.1 names the '? ...' comment lines of a condition
+    => not done, design: the 'bool' destination to every operand of a
+       condition (accepts 'b = make() == true', a language decision); the
+       kind check once in the constructor of 'expr_any' (reorders
+       messages)
+    => checks: the four targets, far jumps, versions, roome, linear
+       growth, emulator, fuzzers; the listings differ from round 421 only
+       in the five new tests
+    => bug hunt (1.2 million programs, accepted ones run 8 ways, the
+       value bound to 'var' and 'let' first, in skipped code, 138000
+       compiles of the asan build, three mutants caught): no abort, no
+       wrong verdict
 [x] easy: round 421 (2026-11-14, bug hunt: calls, parameters and
     aliasing, the shared-storage rules and the order left to right,
     inlined against 'noinline'; design: the front end of generics as a

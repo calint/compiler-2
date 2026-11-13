@@ -129,8 +129,11 @@ class expr_bool_op final : public statement {
     std::optional<comparison> comparison_;
 
   public:
-    expr_bool_op(parse_toc& tc, tokenizer& tz)
-        : statement{tz.next_whitespace_token()}, nots_{tz}, lhs_{tc, tz},
+    // 'result_type' is the type a generic call that is the whole operand
+    // takes for its result, null when it deduces it from its arguments
+    expr_bool_op(parse_toc& tc, tokenizer& tz, const type* const result_type)
+        : statement{tz.next_whitespace_token()}, nots_{tz},
+          lhs_{tc, tz, expr_arith::options::plain(result_type)},
           comparison_{parse_comparison(tc, tz)} {
 
         set_type(tc.builtins().boolean());
@@ -166,7 +169,8 @@ class expr_bool_op final : public statement {
     //
 
     // a stored 'bool' is 0 or 1 and a condition is a 'bool', an integer is
-    // compared first, e.g. 'n != 0', and not with a 'bool'
+    // compared first, e.g. 'n != 0', and not with a 'bool'; an operand alone
+    // is a 'bool', e.g. not the 'rr(x)' of 'b = rr(x)' for an 'i8' 'x'
     auto assert_boolean_operands() const -> void {
         if (comparison_) {
             assert_not_boolean_with_integer(*comparison_);
@@ -174,7 +178,29 @@ class expr_bool_op final : public statement {
             return;
         }
 
-        assert_boolean_value(lhs_);
+        assert_not_whole_array(lhs_);
+
+        const type& lhs_type{lhs_.get_type()};
+
+        if (lhs_type.is_bool()) {
+            return;
+        }
+
+        // an instance has no comparison with 0 to advise
+        if (not lhs_type.is_builtin()) {
+            throw compile_error{lhs_.tok(),
+                                std::format("an instance of {} is not a 'bool'",
+                                            in_quotes(lhs_type.name()))};
+        }
+
+        const std::string source{trimmed_source(lhs_)};
+        const std::string suggestion{std::format("{} != 0", source)};
+
+        throw compile_error{
+            lhs_.tok(),
+            std::format("{} of type {} is not a 'bool', compare it, e.g. {}",
+                        in_quotes(source), in_quotes(lhs_type.name()),
+                        in_quotes(suggestion))};
     }
 
     // an element of a list: it branches to 'target' when its value is
@@ -264,39 +290,6 @@ class expr_bool_op final : public statement {
         }
 
         return std::move(lhs_);
-    }
-
-    //
-    // statics
-    //
-
-    // 'value' alone is a condition or is stored in a 'bool': it is a 'bool',
-    // e.g. not the 'n' of 'if n' or the 'rr(x)' of 'b = rr(x)' for an 'i8'
-    static auto assert_boolean_value(const expr_arith& value) -> void {
-        assert_not_whole_array(value);
-
-        const type& value_type{value.get_type()};
-
-        if (value_type.is_bool()) {
-            return;
-        }
-
-        // a condition tests a number, an instance would be tested as its
-        // first field
-        if (not value_type.is_builtin()) {
-            throw compile_error{value.tok(),
-                                std::format("an instance of {} is not a 'bool'",
-                                            in_quotes(value_type.name()))};
-        }
-
-        const std::string source{trimmed_source(value)};
-        const std::string suggestion{std::format("{} != 0", source)};
-
-        throw compile_error{
-            value.tok(),
-            std::format("{} of type {} is not a 'bool', compare it, e.g. {}",
-                        in_quotes(source), in_quotes(value_type.name()),
-                        in_quotes(suggestion))};
     }
 
   private:
@@ -1016,10 +1009,14 @@ class expr_bool final : public statement {
     list_parens parens_;
 
   public:
-    expr_bool(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
+    // 'result_type' is the type of the destination when the condition is a
+    // generic call alone, which takes it for its result, e.g. the 'make()'
+    // of 'b = make()'; null otherwise
+    expr_bool(parse_toc& tc, const token& src_loc_tk, tokenizer& tz,
+              const type* const result_type = nullptr)
         : statement{src_loc_tk} {
 
-        parse_list(tc, tz);
+        parse_list(tc, tz, result_type);
     }
 
     // e.g. '(a == b and c == d)' after its 'not's, the '(' has been read
@@ -1031,7 +1028,7 @@ class expr_bool final : public statement {
               .close_tk{},
           } {
 
-        parse_list(tc, tz);
+        parse_list(tc, tz, nullptr);
         assert_parentheses_group();
     }
 
@@ -1338,7 +1335,7 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        // every element that failed has branched to false
+        // the last element branched when false, so the list holds here
         x.branch(tc.indent(), if_true);
 
         return std::nullopt;
@@ -1432,11 +1429,15 @@ class expr_bool final : public statement {
     }
 
     // a comparison or a parenthesized list, either may follow 'not'
-    auto parse_element(parse_toc& tc, tokenizer& tz) -> void {
+    auto parse_element(parse_toc& tc, tokenizer& tz,
+                       const type* const result_type) -> void {
+
         // a comparison reads its 'not's itself, e.g. '(t1 + t2) > 3' is a
         // comparison with a parenthesized operand
         if (not is_list_next(tz)) {
-            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz);
+            bools_.emplace_back(std::in_place_type<expr_bool_op>, tc, tz,
+                                result_type);
+
             return;
         }
 
@@ -1455,12 +1456,14 @@ class expr_bool final : public statement {
 
     // the operands are joined by 'and' or by 'or', not by both, e.g.
     // 'a == 1 and b == 2 and c == 3'
-    auto parse_list(parse_toc& tc, tokenizer& tz) -> void {
+    auto parse_list(parse_toc& tc, tokenizer& tz, const type* const result_type)
+        -> void {
+
         const parse_toc::parse_nesting_scope nesting{tc, tz};
 
         set_type(tc.builtins().boolean());
 
-        parse_element(tc, tz);
+        parse_element(tc, tz, result_type);
 
         while (not parens_.read_close(tz)) {
             const std::optional<spelled_operator<connective>> next{
@@ -1475,7 +1478,7 @@ class expr_bool final : public statement {
 
             ops_.push_back(*next);
 
-            parse_element(tc, tz);
+            parse_element(tc, tz, nullptr);
         }
     }
 

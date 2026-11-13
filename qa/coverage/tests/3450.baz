@@ -1,0 +1,11 @@
+# a '=' after a deduced generic call stored in a 'bool' is reported as after
+# the call with written type arguments
+func make<T type>() res T {
+    res = {}
+}
+
+func main() {
+    var b = false
+    b = make() = true
+    exit(0)
+}
