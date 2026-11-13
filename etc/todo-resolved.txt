@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 415 (2026-11-13, bug hunt: control flow, the reach, the
+    result set on every path; design: stored against computed, 957 data
+    members of 300 classes, the pairs of the parse and the compile, the
+    keys of the memo tables; readability: a newcomer asks who allocates
+    and who frees each register of 'r = a[i].f + g(x) * 2 - b[j]' in 16
+    listings, and 60 functions at random)
+    => done (2026-11-13), text only: docs 6.7 said the caller frees the
+       address registers of a path after its access, a copy of the value
+       frees them before the load, which may take one of them; the note
+       of 'machine::emit_most_efficient' said the second version holds
+       one register more, a call holds one per indexed argument; listings
+       unchanged (2505 cases)
+    => design: nothing to apply; no member is only written, no 'mutable',
+       the keys of the instances, the noinline bodies and the read-only
+       constants are complete, 27 programs could not make a parse answer
+       differ from its compile twin; not done: the count beside the
+       allocations of 'register_trace::peak_use' (a recount is three lines
+       more)
+    => bug hunt (24600 programs with two models, the parse walk of the
+       docs for the verdict and the line, an interpreter for unset results
+       and the exit code; 127000 builds run, inlined, 'noinline', '--nopt'
+       and every '--versions' on x86_64 and rv32i-fpga; 7419 rejections at
+       the expected line; 200 directed programs; 7 of 8 mutants caught, the
+       eighth changes no verdict): no defect; three items in 'todo.txt'
 [x] easy: round 414 (2026-11-13, design: the rules of the language, each
     enforced once, 275 sites that reject a program in about 30 rules, with
     a coverage build over the four targets; readability: a newcomer

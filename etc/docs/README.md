@@ -1708,8 +1708,11 @@ registers that are the path's own ('path_address::fold_register'):
 4. otherwise a new register
 ```
 
-The caller frees all of them after its access, in reverse order of
-allocation.
+The caller frees all of them in reverse order of allocation: after its
+access, or before a copy of the value ('stmt_identifier::compile'), which reads
+the address first and may then load the value into one of them
+('operation_scope::alloc_load_register'), so the listing shows 'free scratch
+register' above the load.
 
 ### 6.8 Where in the code
 

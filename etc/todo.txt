@@ -105,6 +105,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
+[ ] easy: (round 415, a hunt of control flow) docs 1.5.1 does not say
+    that a generic constant folds at the parse of each instance, so a
+    method is rejected for one instance only: 'if N == 2 return' followed
+    by a statement is "not reached" for 'box<2>' alone (docs 7.4 has the
+    rule); a mutant of 'restore_reach_state' that does not put the loop
+    back changes no verdict and no result, is that part needed; 'foo a, 0'
+    takes and sets its iterator and counter registers before it skips the
+    body
+[ ] easy: (round 415, a walk of the registers of an expression) two words
+    for one step and one word for two: the listing says "free", the code
+    'free_held_registers', 'held_registers::release',
+    'release_named_register' and 'pop_allocation'; "held" is allocated
+    ('held_registers', the report) and allocated or protected
+    ('machine::is_any_held', "unavailable" in 'register_pool'); "frame" is
+    a call level of the register trace and the storage of a noinline call
 [ ] easy: (round 413, the tutorial and the images) 'etc/tutorial.baz'
     uses "instance" at line 293 before line 504 explains it and does not
     list a 'dat' among what is defined above its first use; on rv32i-fpga
