@@ -1,0 +1,7 @@
+
+3133.baz:11:16: argument 2 'p[1]' may share storage with argument 1 'p[i]' (both name 'p'), use a temporary variable for one of them
+    swap(p[i], p[1])
+               ^
+3133.baz:17:5: called from
+    f(a, 1)
+    ^

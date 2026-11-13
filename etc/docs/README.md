@@ -717,8 +717,9 @@ the register use at the failure that 'machine::register_error' adds.
    recursion in the check of a body that takes from a call ends at a limit,
    but for the nesting limit in one that nests as deep at every call
    ('inline_call::check_recursion', 1.5); the comment of 'error_kind' names the
-   functions. An error that ends a dry run is a 'source' one, so none of them
-   drops it.
+   functions. An error that ends a dry run keeps its kind: skipped code
+   starts from the registers held where it stands, so a limit it reaches is
+   read as one of the code around it (5.3).
 3. A file that cannot be read is an 'unlocated_error', which
    'program::load_file' locates at its 'include'; so is a relative name in a
    working directory that was removed ('source_files::add'). A file that
@@ -1500,11 +1501,14 @@ registers in one version only. The error carries a kind other than 'source'
 second version holds the registers of the first and more, so only the second
 runs out alone; when the first runs out, its error is reported and the second
 is not compiled. Any other error is an error of the program and ends the
-compile. An error of a dry run is a 'source' error
-('compile_toc::dry_run'), so a version never drops it; the check of a body
-starts from the registers of a noinline body, which do not depend on the code
-around it ('machine::begin_dry_run_body'), and skipped code from the registers
-held where it stands, as if it ran ('machine::dry_run').
+compile. An error of a dry run keeps its kind ('compile_toc::dry_run'):
+skipped code starts from the registers held where it stands, as if it ran
+('machine::dry_run'), and it may stand inside a version, e.g. the operand of
+an 'or' after the one that decides in an argument of a call in an arithmetic
+list, so a limit it reaches only in the second version drops that version
+(tests 3150 to 3153); the check of a body starts from the registers of a
+noinline body, which do not depend on the code around it
+('machine::begin_dry_run_body'), and is inside no version.
 
 What a failed version entered must be left when its error unwinds:
 

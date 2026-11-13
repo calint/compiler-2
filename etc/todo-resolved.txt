@@ -1,6 +1,38 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: round 409 (2026-11-13, bug hunt: the versions and the dry
+    runs; design: the parts earlier opinions did not read, line by line
+    ('noinline_call', the compile half of 'expr_arith', the members of the
+    reach, 'lower_address', the walks); readability: a second sample of 90
+    functions, every class and file as a whole; mutation testing of round
+    408: 121 mutants of the compiler against the tests)
+    => done (2026-11-13), a defect of the versions: an error of a dry run
+       was rethrown as an error of the source, on the premise that skipped
+       code is never inside a version; it is, e.g. the operand of an 'or'
+       after the one that decides, in an argument of a call in an
+       arithmetic list; when it ran out of scratch registers only in the
+       second version the program was rejected, and a choice inside a
+       version made the verdict depend on '--versions'. fix:
+       'compile_toc::dry_run' keeps the kind of the error (the catch is
+       removed), so the second version is dropped as when emitted code runs
+       out; tests 3150 to 3153, docs 1.9 and 5.3. the hunt was cut short by
+       a restart of the computer, round 410 hunts the fix
+    => done, mutation testing: 104 of 121 mutants killed; of the 17 left 9
+       are equivalent, 7 are gaps now closed (tests 3130 to 3136 and three
+       listings in 'test-cli.sh': the exact bound of '--checks=stack', a
+       division under 27 live values on rv32i, a run-time index of an
+       unsized array parameter against a constant element, the upper part
+       of two far addresses added once, a 'bool' in memory tested after it
+       is set) and one is dead code: the line-number routine of rv32i
+       tested the last place to always write a digit, a line is at least 1,
+       so the test is removed (2 instructions less per rv32i program with
+       the line check; '.diff' of 2583, 2960 and 2961 on the three rv32i
+       targets)
+    => design: nothing to apply; one longer sequence noted in 'todo.txt'
+       section 2 ('foo' over an array parameter of a noinline body)
+    => readability: nothing to fix (90 functions, 317 classes, 65 files);
+       16 plain data structs have no header comment, their members say it
 [x] easy: round 408 (2026-11-13, a confirming round. design: the six
     largest classes member by member, grouped by the data they touch;
     readability: every hunk changed since round 390 as it stands now, the

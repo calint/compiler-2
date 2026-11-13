@@ -181,6 +181,53 @@ CLI_RELOADS() {
     echo ok
 }
 
+CLI_RETESTS() {
+    echo -n "cli x86 test after setcc to memory: "
+    # the byte that 'setl' wrote is not compared with zero again, the branch
+    # takes the flags of the comparison
+    "$BIN" --target=x86_64 3134.baz >gen.s 2>err
+    [[ ! -s err ]]
+    local listing
+    listing=$(sed 's/^[[:space:]]*//' gen.s)
+    [[ "$listing" == *$'\nsetl byte ['* ]]
+    [[ "$listing" != *'cmp byte ['* ]]
+    [[ "$listing" == *$'\njge if.9.5.end\n'* ]]
+    [[ "$listing" == *';    removed tests after setcc: 1'* ]]
+    nasm -w+error -f elf64 gen.s -o "$WORK/test.o"
+    ld -s -T "$SCRIPT_DIR/../../baz.ld" -o "$WORK/test" "$WORK/test.o"
+    expect_exit_1 "$WORK/test" </dev/null
+    echo ok
+}
+
+CLI_SHARED_BASE_COPY() {
+    echo -n "cli rv32i copy between far variables through one base: "
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x40000 3135.baz >gen.s 2>err
+    [[ ! -s err ]]
+    local listing
+    listing=$(sed 's/^[[:space:]]*//' gen.s)
+    # one 'lui' and 'add' for both addresses, then the copy is done
+    [[ "$listing" == *$'source and destination share base t0\nlui t0, 24\nadd t0, t0, s0\nlw t1, -336(t0)\nsw t1, -332(t0)\n# [3135.baz:10:9] free scratch register t1\n# [3135.baz:10:9] free scratch register t0\n# [3135.baz:11:5] exit(b)'* ]]
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
+# every instruction from 'main' on, the run-time routines included, is
+# indented one level; labels, comments and directives are not instructions
+CLI_ROUTINE_INDENT() {
+    echo -n "cli rv32i routines indented like main: "
+    local target
+    for target in rv32i rv32i-qemu rv32i-fpga; do
+        "$BIN" --target="$target" --bin=gen-rv32i.bin --checks=noub,line 3136.baz >gen.s 2>err
+        [[ ! -s err ]]
+        grep -q '^\.Lbaz_multiply_checked:$' gen.s
+        awk '/^main:$/ { in_main = 1; next }
+            in_main && !/^ *#/ && !/^ *[A-Za-z_.$0-9]+:$/ && !/^\./ && !/^$/ && !/^    [^ ]/ { bad = 1 }
+            END { exit !in_main || bad }' gen.s
+    done
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
 CLI_JUMP_OPTIMIZATIONS() {
     echo -n "cli x86 jump optimizations: "
     "$BIN" --target=x86_64 --nopt 0429.baz >gen.s 2>err
@@ -726,6 +773,19 @@ CLI_LONG_ARRAY_LOWER_BOUND() {
         --checks=upper,lower gen-long.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Eq '^ +blt t0, zero, baz_bounds_panic$' gen.s
+    # the bound is exact: every negative index fails the unsigned compare of
+    # an array of 2^31 - 1 elements, the index -2^31 passes that of 2^31 + 1
+    sed -i 's/2200000000/2147483647/' gen-long.baz
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
+        --checks=upper,lower gen-long.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Fq 't0 lower bound covered by the unsigned upper bound' gen.s
+    grep -Eq '^ +blt t0, zero, baz_bounds_panic$' gen.s && fail
+    sed -i 's/2147483647/2147483649/' gen-long.baz
+    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
+        --checks=upper,lower gen-long.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Eq '^ +blt t0, zero, baz_bounds_panic$' gen.s
     rm -f gen-long.baz
     echo ok
 }
@@ -1095,6 +1155,9 @@ CLI_BINARY_NAME
 CLI_REPRODUCE_SOURCE
 CLI_JUMP_OPTIMIZATIONS
 CLI_RELOADS
+CLI_RETESTS
+CLI_SHARED_BASE_COPY
+CLI_ROUTINE_INDENT
 CLI_KEYWORD_NAMES() {
     echo -n "cli keywords as names: "
     # every keyword of 'token.hpp' is rejected as the name of a variable

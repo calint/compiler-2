@@ -1,0 +1,13 @@
+# a 'bool' variable in memory that is tested right after it is set: x86_64
+# branches on the flags of the comparison that set it, the test of the byte
+# is removed (listing in 'test-cli.sh')
+
+func main() {
+    var buffer = i8[4]
+    var count = read(0, buffer)
+    var is_short = count < 3
+    if is_short {
+        exit(1)
+    }
+    exit(2)
+}

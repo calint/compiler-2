@@ -1,0 +1,14 @@
+# --checks=stack: the bound of the check is exact, 126 calls of 32 bytes (16
+# for the saved register, 16 for the return address) are the deepest
+# recursion that fits a stack of 4 KB
+func noinline depth(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = 1 + depth(n - 1)
+}
+func main() {
+    var d = depth(126)
+    exit(d - 126)
+}

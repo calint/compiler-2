@@ -1,0 +1,13 @@
+# --checks=stack: the bound of the check is exact, one call more than the
+# deepest recursion that fits a stack of 4 KB (3130.baz) panics
+func noinline depth(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = 1 + depth(n - 1)
+}
+func main() {
+    var d = depth(127)
+    exit(d - 127)
+}

@@ -77,8 +77,9 @@ class compile_error final : public std::exception {
     //   3. 'inline_call::check_recursion' drops a limit in a recursion of the
     //      check of a body that takes from a call, but not 'inlining_limit'
     //      in one that nests as deep at every call
-    //   4. 'compile_toc::dry_run' rethrows an error as a 'source' one, so
-    //      that none of the others drops it
+    // an error of a dry run keeps its kind: skipped code is compiled from
+    // the registers held where it stands, so a limit it reaches is read as
+    // one of the code around it ('compile_toc::dry_run')
     enum class error_kind : uint8_t {
         source,
         out_of_registers,

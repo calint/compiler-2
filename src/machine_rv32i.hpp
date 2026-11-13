@@ -1219,7 +1219,9 @@ class machine_rv32i : public machine {
     // writes the line number of 'report_line_register_' in decimal, then exits
     // with the code in 'report_exit_code_register_': each power of ten of
     // '.Lbaz_decimal_places' gives a digit by repeated subtraction, leading
-    // zeros are skipped and the last place always writes its digit
+    // zeros are skipped
+    //
+    // note: a line number is at least 1, so a digit is written
     auto emit_report_line_routine() -> void override {
         constexpr int digit_zero{'0'};
         constexpr int newline{'\n'};
@@ -1238,15 +1240,12 @@ class machine_rv32i : public machine {
         assembler_.j(1, "2b");
         assembler_.label(0, "3");
         assembler_.or_op(1, "t3", "a2", "t2");
-        assembler_.bnez(1, "t3", "4f");
-        assembler_.li(1, "t3", 1);
-        assembler_.bne(1, "t1", "t3", "5f");
-        assembler_.label(0, "4");
+        assembler_.beqz(1, "t3", "4f");
         assembler_.addi(1, "t2", "t2", digit_zero);
         assembler_.sb(1, "t2", 0, "a1");
         assembler_.addi(1, "a1", "a1", 1);
         assembler_.addi(1, "a2", "a2", 1);
-        assembler_.label(0, "5");
+        assembler_.label(0, "4");
         assembler_.addi(1, "t0", "t0", word_size_bytes_);
         assembler_.li(1, "t3", 1);
         assembler_.bne(1, "t1", "t3", "1b");

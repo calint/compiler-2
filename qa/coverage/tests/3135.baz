@@ -1,0 +1,12 @@
+# a copy between two variables past the 12-bit offsets of rv32i: the upper
+# part of both addresses is added to the base once and serves the load and
+# the store (listing in 'test-cli.sh')
+
+func main() {
+    var big = i8[100000]
+    var a = 7
+    var b = 0
+    big[0] = 1
+    b = a
+    exit(b)
+}

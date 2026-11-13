@@ -1,0 +1,26 @@
+# code that the compile skips stands inside a version: the operand of 'or'
+# after the one that decides is an argument of a call in an arithmetic list
+# stored to memory; it runs out of registers only in the version with a
+# scratch register, which is dropped as when emitted code runs out
+# (rv32i)
+
+func h(p i32) res i32 {
+    res = p + 1
+}
+
+func hb(c bool) res i32 {
+    res = 1
+    if c {
+        res = 2
+    }
+}
+
+func main() {
+    var a = i32[8]
+    var b = i32[8]
+    var i = i32(2)
+    var j = i32(2)
+    var k = i32(3)
+    a[i] = k + hb(1 == 1 or h(b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + b[j])))))))))))))))))))))))) == 3) + k
+    exit(a[i])
+}

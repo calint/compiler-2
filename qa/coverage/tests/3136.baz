@@ -1,0 +1,14 @@
+# a program that uses the run-time routines of rv32i: checked multiply,
+# divide, 'read', 'write', the sector functions and the line report; compiled
+# only, their listing is indented like the code of 'main' (checked in
+# 'test-cli.sh')
+
+func main() {
+    var buffer = i8[512]
+    var a = read(0, buffer)
+    var b = a * a / (a + 1)
+    sector_read(a, buffer)
+    sector_write(a, buffer)
+    write(1, buffer, 1)
+    exit(b)
+}

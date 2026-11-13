@@ -593,6 +593,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     never run); 'arrays_equal(a, c[1], y)' checks the count against 16
     then 15; rv32i loads 'li t0, 1' once per argument; a shift result goes
     through 'mv a1, t1' when a load stands between
+[ ] easy: (round 409, a design reading of the unread parts) a 'foo' over
+    an array parameter of a noinline body loads the address then copies it
+    through an address computation: x86_64 'mov r14, [rbx]' 'lea r15, [r14]'
 [ ] medium: an inline bool call used as a condition is materialized then
     tested (roome.baz 'tk.is', 'tk.is_empty', 'tk.is_name'): x86 'sete;
     cmp; je', rv32i 'xor; sltiu; beq' instead of 'bne'; 'arrays_equal' 'li

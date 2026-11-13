@@ -1,0 +1,29 @@
+# code that the compile skips stands inside a choice inside a version: it
+# runs out of registers only in the second version of the argument of 'nf',
+# which '--versions=nested' compiles and the default does not, so the verdict
+# does not depend on '--versions' (x86_64)
+
+func h(p i32) res i32 {
+    res = p + 1
+}
+
+func hb(c bool) res i32 {
+    res = 1
+    if c {
+        res = 2
+    }
+}
+
+func noinline nf(p i32) res i32 {
+    res = p + 1
+}
+
+func main() {
+    var a = i32[8]
+    var b = i32[8]
+    var i = i32(2)
+    var j = i32(2)
+    var k = i32(3)
+    a[i] = k + nf(k + hb(1 == 1 or h(b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + (b[j] * (b[j] + b[j])))))))) == 3))
+    exit(a[i])
+}

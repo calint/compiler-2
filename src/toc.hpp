@@ -3400,25 +3400,18 @@ class compile_toc final : public toc {
 
     // runs 'compile' for its errors only: its output, read-only constants and
     // use of storage leave no trace ('machine::dry_run'); it starts with the
-    // registers held where it stands; the error it ends at rejects the
-    // program and is rethrown as an error of the source, so no reader of the
-    // kind drops it: the check of a body starts from the registers of a
-    // noinline body ('machine::begin_dry_run_body'), and skipped code is
-    // never inside a version, an inlined body skips no code, see
-    // 'check_skipped'; 'inline_call::check_recursion' reads the kind inside
-    // the run, before it is rethrown
+    // registers held where it stands, so an error keeps its kind: skipped
+    // code may stand inside a version, e.g. in an argument of a call in an
+    // arithmetic list, and a limit it reaches there drops the version as a
+    // limit of the code around it does ('compile_error::error_kind'); the
+    // check of a body starts from the registers of a noinline body
+    // ('machine::begin_dry_run_body') and is inside no version
     auto dry_run(const std::function_ref<void()> compile) -> void {
         const dry_run_scope run{*this};
 
         ::machine& x{machine()};
 
-        try {
-            x.dry_run(compile);
-        } catch (compile_error& e) {
-            e.kind = compile_error::error_kind::source;
-
-            throw;
-        }
+        x.dry_run(compile);
     }
 
     // 'machine::emit_most_efficient' with each version compiled from the

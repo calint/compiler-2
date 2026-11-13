@@ -7920,3 +7920,35 @@ if [[ $MACHINE != x86_64 ]]; then SRC=3001 && COMPERR; fi
 # an untyped 'let' of one constant is folded whole before the default type, so
 # under the overflow check a negated constant is not rejected on rv32i
 SRC=3002 && EXP=1 && OPTS="--checks=noub" RUN
+
+# --checks=stack: the bound of the check is exact, the deepest recursion that
+# fits a stack of 4 KB runs and one call more panics
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=3130 && EXP=0 && OPTS="--stack=0x1000 --checks=stack" RUN; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=3131 && EXP=250 && OPTS="--stack=0x1000 --checks=stack" RUN_ERR; fi
+
+# a division under 27 live values: on rv32i the scratch registers are taken
+# past 'a4', which the division routine changes, so the call saves them;
+# x86_64 has fewer registers
+if [[ $MACHINE != x86_64 ]]; then SRC=3132 && EXP=0 && RUN; fi
+
+# a run-time index of an unsized array parameter may be any element, so it
+# shares storage with a constant element of the same array
+SRC=3133 && COMPERR
+
+# a copy between two variables past the 12-bit offsets of rv32i adds the upper
+# part of their addresses to the base once (listing in 'test-cli.sh')
+SRC=3135 && EXP=7 && RUN
+
+# a 'bool' variable in memory that is tested right after it is set (x86_64
+# removes the test, listing in 'test-cli.sh')
+SRC=3134 && EXP=1 && RUN
+
+# skipped code inside a version that runs out of registers only in the second
+# version drops that version, the first is kept
+if [[ $MACHINE == x86_64 ]]; then SRC=3150 && EXP=8 && RUN; fi
+if [[ $MACHINE == rv32i* ]]; then SRC=3151 && EXP=8 && RUN; fi
+
+# so the verdict does not depend on '--versions': a choice inside a version
+# compiles its second version only with 'nested' and 'last'
+if [[ $MACHINE == x86_64 ]]; then SRC=3152 && EXP=9 && OPTS="--versions=nested" RUN; fi
+if [[ $MACHINE == rv32i* ]]; then SRC=3153 && EXP=9 && OPTS="--versions=nested" RUN; fi

@@ -1,0 +1,10 @@
+# a division under 27 live values: on rv32i the scratch registers are taken
+# past 'a4', which the division routine changes, so the call saves them
+func main() {
+    var a = 1
+    var b = 2
+    var x = 100
+    var y = 7
+    var r = a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (a + b + (x / y)))))))))))))))))))))))))))
+    exit(r - 95)
+}
