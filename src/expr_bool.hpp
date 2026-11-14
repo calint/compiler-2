@@ -688,7 +688,7 @@ class expr_bool_op final : public statement {
         const type& lhs_type{lhs.node->get_type()};
         const type& rhs_type{rhs.node->get_type()};
 
-        if (rhs_type.check_width_bytes() <= lhs_type.check_width_bytes()) {
+        if (not rhs_type.is_wider_than(lhs_type)) {
             return;
         }
 

@@ -2852,7 +2852,8 @@ class parse_toc final : public toc {
         }
 
         // the default type is the widest integer the target computes with,
-        // e.g. 'i32' on rv32i
+        // e.g. 32 bits on rv32i; in bytes, since it is as wide as 'i64' to
+        // the rules ('type::is_wider_than')
         const type& widest{builtins().default_type()};
 
         if (tp.is_builtin() and tp.size_bytes() > widest.size_bytes()) {

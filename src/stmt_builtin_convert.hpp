@@ -46,7 +46,7 @@
 //   3b  a narrower single operand with unary ops, e.g. 'i16(-g())': as row 1
 //
 // wider and narrower compare the widths as the checks see them
-// ('type::check_width_bytes'): where the value is made decides which storage a
+// ('type::is_wider_than'): where the value is made decides which storage a
 // call in the argument writes, so no plan depends on the size of 'int'
 class stmt_builtin_convert final : public statement {
     // e.g. the '(a + 1)' of 'i8(a + 1)'
@@ -200,7 +200,7 @@ class stmt_builtin_convert final : public statement {
 
         const operand widened{x.register_view(converted, dst.type_ref())};
 
-        if (dst.type_ref().size_bytes() > get_type().size_bytes()) {
+        if (dst.type_ref().is_wider_than(get_type())) {
             x.copy_value({tok(), tc.indent()}, widened, converted);
         }
 
@@ -248,7 +248,7 @@ class stmt_builtin_convert final : public statement {
         // at the width of the target, e.g. the '-' of '-i16(g(v))' of
         // an 'i8' -128 gives 128
         if (not uops.is_empty() and
-            scratch_type.size_bytes() < target.type_ref().size_bytes()) {
+            scratch_type.is_narrower_than(target.type_ref())) {
 
             const operand widened{
                 x.register_view(wide, target.type_ref()),
@@ -281,9 +281,7 @@ class stmt_builtin_convert final : public statement {
         //       of an 'int' 'v' gets a register for its result on rv32i too
         //       and no target rejects it for sharing storage with 'v'
 
-        if (dst.type_ref().check_width_bytes() >
-            get_type().check_width_bytes()) {
-
+        if (dst.type_ref().is_wider_than(get_type())) {
             return true;
         }
 
@@ -294,7 +292,7 @@ class stmt_builtin_convert final : public statement {
         // note: a narrower destination is only the argument of an outer
         //       conversion, whose arithmetic wraps
 
-        assert(dst.type_ref().size_bytes() == get_type().size_bytes());
+        assert(not dst.type_ref().is_narrower_than(get_type()));
 
         return true;
     }
@@ -307,9 +305,7 @@ class stmt_builtin_convert final : public statement {
         //       'i32(int(a ^ f()))' keeps a register of its type on rv32i
 
         // e.g. the 'i16' of 'i8(i16(a * (a >> 1)))' is narrowed after it
-        if (target.type_ref().check_width_bytes() <
-            get_type().check_width_bytes()) {
-
+        if (target.type_ref().is_narrower_than(get_type())) {
             return &get_type();
         }
 
@@ -326,9 +322,7 @@ class stmt_builtin_convert final : public statement {
         // note: as the checks see the widths, so an 'i32' argument is
         //       narrower than 'int' also on a 32-bit target
 
-        const bool is_narrower{
-            arg_type.check_width_bytes() < get_type().check_width_bytes(),
-        };
+        const bool is_narrower{arg_type.is_narrower_than(get_type())};
 
         // a narrower argument is computed at the width of the type, where its
         // arithmetic wraps, e.g. 'i16(a * (a >> 1))' of an 'i8' 'a' of 20 is
@@ -412,11 +406,11 @@ class stmt_builtin_convert final : public statement {
         };
     }
 
-    // 'a' on a size tie; a type lives in the type table, so the pointer
+    // 'a' on a width tie; a type lives in the type table, so the pointer
     // stays valid
     [[nodiscard]] static auto wider(const type& a, const type& b)
         -> const type* {
 
-        return b.check_width_bytes() > a.check_width_bytes() ? &b : &a;
+        return b.is_wider_than(a) ? &b : &a;
     }
 };

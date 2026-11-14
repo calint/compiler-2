@@ -235,7 +235,8 @@ class type final {
     // by name: a path looks a field up, a type may hold thousands
     lut<type_field> fields_;
     type_kind kind_{type_kind::user};
-    size_t check_width_bytes_{}; // the width the narrowing rules compare
+    // the width the rules compare, see 'is_wider_than'
+    size_t check_width_bytes_{};
     // the bytes that fields cover, adjacent ones merged, listed as the fields
     // are added until the list is full ('is_full'), so that no work grows
     // with the length of an array or the depth of nested types
@@ -252,7 +253,7 @@ class type final {
         : type{name, size_bytes, kind, size_bytes} {}
 
     // builtins are aligned to their size, a zero size needs no alignment; a
-    // built-in may be checked as wider than it is, see 'check_width_bytes'
+    // built-in may be checked as wider than it is, see 'is_wider_than'
     type(const std::string_view name, const size_t size_bytes,
          const type_kind kind, const size_t check_width_bytes)
         : name_{name}, size_bytes_{size_bytes},
@@ -302,13 +303,6 @@ class type final {
 
     [[nodiscard]] auto alignment() const -> size_t { return alignment_; }
 
-    // the width that narrowing and the wider of two types compare: the
-    // size, except the default type of a 32-bit target, checked as the
-    // 64-bit one so that it mixes with a fixed width as on every target
-    [[nodiscard]] auto check_width_bytes() const -> size_t {
-        return check_width_bytes_;
-    }
-
     [[nodiscard]] auto field(const token& src_loc_tk,
                              const std::string_view name) const
         -> const type_field& {
@@ -357,9 +351,22 @@ class type final {
         return kind_ == type_kind::integer;
     }
 
+    // see 'is_wider_than'
+    [[nodiscard]] auto is_narrower_than(const type& other) const -> bool {
+        return other.is_wider_than(*this);
+    }
+
     // types are unique objects, a type is only the same as itself
     [[nodiscard]] auto is_same(const type& other) const -> bool {
         return this == &other;
+    }
+
+    // what a rule or a plan compares, e.g. narrowing and where a value is
+    // made, never 'size_bytes': the width of a built-in is its size, except
+    // the default type of a 32-bit target, as wide as the 64-bit one so that
+    // it mixes with a fixed width as on every target; a user type has none
+    [[nodiscard]] auto is_wider_than(const type& other) const -> bool {
+        return check_width_bytes_ > other.check_width_bytes_;
     }
 
     [[nodiscard]] auto name() const -> const std::string& { return name_; }
@@ -413,6 +420,8 @@ class type final {
         return size_bytes_ * std::numeric_limits<unsigned char>::digits;
     }
 
+    // the bytes of storage, for offsets, frames and copies; a rule compares
+    // two types with 'is_wider_than'
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 
   private:

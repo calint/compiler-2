@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 434 (2026-11-15, bug hunt: the compile-time verdict
+    against the options, 31 option lists per target, the checks alone
+    and combined, '--nopt', '--versions', inlined against noinline;
+    design: the two widths of a type, 'size_bytes' and the width the
+    rules compare; readability: a newcomer reads the x86_64 backend
+    whole, 'src/machine_x86_64.hpp' and 'src/assembler_x86_64.hpp')
+    => bug hunt: no new defect; every read of a check, versions or
+       inlining choice in the front end read:
+       'stmt_builtin_convert::is_made_at_type' is the only place where
+       a check flag decides where a value is made (the '[p]' item of
+       round 433); 29000 generated programs, the 2524 coverage tests
+       and 3600 programs of the fuzzers under 31 option lists on two
+       targets, every difference of a documented kind; 6 seeded
+       mutants all caught
+    => design: 'type::is_wider_than' and 'is_narrower_than' compare the
+       width of the rules, the accessor 'check_width_bytes()' is
+       removed, so the front end cannot read that width as a number;
+       the 9 rule sites and the three byte comparisons left in
+       'stmt_builtin_convert.hpp' use them; the only comparison of the
+       bytes of two types left in the front end is
+       'toc::get_type_or_throw' (is the type on the target); texts: "a
+       width tie" in 'wider', "not wider than 'i32'" in
+       'stmt_builtin_io.hpp', the default type of rv32i in 'toc.hpp',
+       docs 1.7; no listing differs
+    => readability: comments of 'assembler_x86_64::is_reload' (a store
+       without a width is not taken), 'emit_target_call' (a sector
+       routine changes 'rdi'), 'check_upper_bound' ('start + count'),
+       'emit_signed_divide'; 24 listings and 52 exit codes predicted,
+       edges of displacements and immediates run; no defect
 [x] easy: round 433 (2026-11-15, bug hunt: the default type 'int'
     beside the sized type of its size, 'i32' on rv32i, in every
     construct, each program with 'int' and with 'i32' in its place;

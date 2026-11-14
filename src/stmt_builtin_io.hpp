@@ -357,13 +357,16 @@ class stmt_builtin_io final : public statement {
 
         machine& x{tc.machine()};
 
-        // an argument whose type, which its first element decides, is 32
-        // bits or less is computed at 'i32', e.g. 'i32(-2)' is the sector
-        // 2^32 - 2
+        const type& first_type{first_arg.single().get_type()};
+        const type& i32_type{tc.builtins().i32()};
+
+        // an argument whose type, which its first element decides, is not
+        // wider than 'i32' is computed at 'i32', e.g. 'i32(-2)' is the
+        // sector 2^32 - 2
         const operand first_reg{
-            first_arg.single().get_type().check_width_bytes() <= sizeof(int32_t)
-                ? x.register_view(descriptor, tc.builtins().i32())
-                : descriptor,
+            first_type.is_wider_than(i32_type)
+                ? descriptor
+                : x.register_view(descriptor, i32_type),
         };
 
         first_arg.compile(tc, destination::of_register(first_reg));

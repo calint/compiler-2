@@ -470,9 +470,10 @@ class assembler_x86_64 final : public assembler {
         replace_text(l, jump_text(jump->cc, l.jump->target));
     }
 
-    // an address without a width takes the register's; a 32-bit load would
-    // clear the upper half, which no reader of a dword value takes: it reads
-    // the 32-bit view or extends it with 'movsx'
+    // a store without a width is not taken, the backend writes none that a
+    // load follows; a 32-bit load would clear the upper half, which no reader
+    // of a dword value takes: it reads the 32-bit view or extends it with
+    // 'movsx'
     [[nodiscard]] auto is_reload(const line& store, const line& load) const
         -> bool override {
 

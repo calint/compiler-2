@@ -2930,7 +2930,7 @@ class stmt_call final : public statement {
                                                  const type& dst_type) -> bool {
 
         return result_type.is_integer() and dst_type.is_integer() and
-               result_type.check_width_bytes() < dst_type.check_width_bytes();
+               result_type.is_narrower_than(dst_type);
     }
 
     // the storage of the variable an argument names
@@ -2971,7 +2971,7 @@ class stmt_call final : public statement {
         const bool is_narrowing{
             param.is_read_only() and not param.is_array() and
                 param_type.is_integer() and arg_type.is_integer() and
-                arg_type.check_width_bytes() > param_type.check_width_bytes(),
+                arg_type.is_wider_than(param_type),
         };
 
         const std::string hint{

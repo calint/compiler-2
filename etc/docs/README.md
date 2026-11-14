@@ -634,7 +634,7 @@ a list led by a literal, since the first element decides the type of a list:
 depends on the target (chapter 8); a portable program writes the type, e.g.
 'lim i32' or 'i32(1) << k'. How the default type mixes with a fixed width
 does not: the narrowing rules compare it as 64 bits wide on every target
-('type::check_width_bytes'), and on rv32i it is a type of its own, named
+('type::is_wider_than'), and on rv32i it is a type of its own, named
 'int', so 'x = k' or 'x == k' of an 'i32' 'x' and 'f(x)' of a 'mut'
 parameter without a type are rejected on rv32i as on x86_64.
 
