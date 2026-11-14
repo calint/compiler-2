@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 423 (2026-11-14, bug hunt: the passes on the emitted
+    lines, jumps, reloads, copies, retests, far jumps and the image
+    layout; design: how a name is resolved and declared; readability: a
+    learner walks the tutorial and the front page, about 170 statements
+    of the tutorial in 220 programs and 110 claims of 'README.md')
+    => done, design: the "already defined" rule of a scope has one owner,
+       'definition_checks::assert_not_declared_in_scope' is merged into
+       'assert_name_free', the check of parameter and result in
+       'toc::declare_var' could not fire and is an assert, 'scope::
+       var_role' loses its "variable" branch; 'ident_resolver::resolve'
+       decides once, 'resolve_or_empty', 'ident_info::make_empty' and
+       'is_empty' are gone; 77 lines added, 107 removed in 'src/toc.hpp'
+       and 'src/ident_info.hpp'; no listing or message differs over 2524
+       cases
+    => bug hunt: no defect; about 15000 generated programs in 260000
+       builds on x86_64, rv32i-fpga, rv32i and rv32i-qemu with 8 option
+       lists, 184 programs with a pad of 1.08 MiB under up to 14 'foo', a
+       replay of every listing against a compiler built without the
+       passes (1000 programs and the 2510 suite files that compile), 1500
+       layouts and 38843 'li' constants equal to llvm's, asan clean; 22
+       seeded mutants, 19 caught
+    => docs 1.2 item 3: "'--nopt' decides no verdict" names its exception,
+       the fit of a larger image in the device memory
+    => readability: nothing to apply
 [x] easy: round 422 (2026-11-14, bug hunt: every kind of value into
     every kind of destination, 152 values and 174 destinations, nested
     one and two levels; design: the paths by which a value is parsed for

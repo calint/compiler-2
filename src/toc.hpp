@@ -520,10 +520,10 @@ class scope final {
         return func_part().takes_from_call;
     }
 
-    // what the name 'name' of this scope is in a message: a function scope
-    // declares only the parameters, the result and the constants of the
-    // generic type of a method, a loop scope only the 'e', 'i' and 'n' of a
-    // 'foo'
+    // what the name 'name' of this function or loop scope is in a message: a
+    // function scope declares only the parameters, the result and the
+    // constants of the generic type of a method, a loop scope only the 'e',
+    // 'i' and 'n' of a 'foo'
     [[nodiscard]] auto var_role(const std::string_view name) const
         -> std::string_view {
 
@@ -535,9 +535,10 @@ class scope final {
             return name == reserved_names::foo_length ? "length" : "element";
         }
 
-        if (not is_func()) {
-            return "variable";
-        }
+        // note: the names of a block are variables and constants, which
+        //       'definition_checks::assert_name_free' names itself
+
+        assert(is_func());
 
         if (has_const(name)) {
             return "generic parameter";
@@ -1810,50 +1811,46 @@ class ident_resolver final {
         : scopes_{scopes}, machine_{backend}, funcs_{funcs},
           generics_{generics}, builtins_{builtins} {}
 
-    // the diagnostic names what an unresolved identifier is instead
     [[nodiscard]] auto resolve(const token& src_loc_tk,
                                const std::string_view ident) const
         -> ident_info {
 
+        assert(not ident.empty());
+
         const name_meaning meaning{scopes_.get().lookup(ident)};
+
+        if (not meaning.is_value()) {
+            return resolve_literal(src_loc_tk, ident);
+        }
+
+        const scope& scp{scopes_.get().at(meaning.scope_index)};
+
+        // the argument was resolved where the call is made
+        if (meaning.is_binding()) {
+            return scp.get_binding(ident).info;
+        }
+
+        if (meaning.is_constant()) {
+            const folded_value& constant{scp.get_const(ident).constant};
+
+            // an untyped constant reads at the default type
+            const type& constant_type{
+                constant.is_typed() ? *constant.own_type
+                                    : builtins_.get().default_type(),
+            };
+
+            return ident_info::make_const(constant_type, constant);
+        }
 
         // e.g. the 'a' of 'var a = a[0]', before its type, which is not known
         // yet, tells another mistake
-        if (meaning.is_variable() and
-            scopes_.get().at(meaning.scope_index).is_initializer()) {
-
+        if (scp.is_initializer()) {
             throw compile_error{src_loc_tk,
                                 std::format("{} is read in its own initializer",
                                             in_quotes(ident))};
         }
 
-        const ident_info id_info{resolve_or_empty(src_loc_tk, ident, meaning)};
-
-        if (not id_info.is_empty()) {
-            return id_info;
-        }
-
-        if (generics_.get().has_type(ident)) {
-            throw_generic_type_not(src_loc_tk, ident, "a value");
-        }
-
-        // note: a function used as a value is rejected where it is parsed
-        //       ('parse_call_or_identifier')
-
-        assert(not funcs_.get().has(ident) and
-               not generics_.get().has_func(ident));
-
-        if (starts_number(ident)) {
-            throw_unparsed_number(src_loc_tk, ident);
-        }
-
-        // e.g. the '$' of 'var x = $', which no definition can name
-        if (not is_identifier(ident)) {
-            throw_invalid_name(src_loc_tk, ident);
-        }
-
-        throw compile_error{src_loc_tk,
-                            std::format("{} not found", in_quotes(ident))};
+        return resolve_var(scp.get_var(ident));
     }
 
     // what 'name' names with 'path' inside it, as a root variable and the
@@ -1941,61 +1938,48 @@ class ident_resolver final {
     }
 
   private:
-    // a number, 'true' or 'false', else empty: the caller reports an unknown
-    // name with its own wording
-    [[nodiscard]] auto
-    resolve_literal_or_empty(const token& src_loc_tk,
-                             const std::string_view ident) const -> ident_info {
+    // a number, 'true' or 'false'; the diagnostic names what any other
+    // identifier is instead
+    [[nodiscard]] auto resolve_literal(const token& src_loc_tk,
+                                       const std::string_view ident) const
+        -> ident_info {
 
         // e.g. '0x10' or 'true'
         const std::optional<constant_parser::literal> literal{
             constant_parser::literal_value(src_loc_tk, ident),
         };
 
-        if (not literal) {
-            return ident_info::make_empty();
-        }
-
-        const type& literal_type{
-            literal->is_bool ? builtins_.get().boolean()
-                             : builtins_.get().default_type(),
-        };
-
-        return ident_info::make_const(literal_type,
-                                      folded_value::untyped(literal->value));
-    }
-
-    [[nodiscard]] auto resolve_or_empty(const token& src_loc_tk,
-                                        const std::string_view ident,
-                                        const name_meaning& meaning) const
-        -> ident_info {
-
-        assert(not ident.empty());
-
-        if (not meaning.is_value()) {
-            return resolve_literal_or_empty(src_loc_tk, ident);
-        }
-
-        const scope& scp{scopes_.get().at(meaning.scope_index)};
-
-        if (meaning.is_variable()) {
-            return resolve_var(scp.get_var(ident));
-        }
-
-        if (meaning.is_constant()) {
-            const folded_value& constant{scp.get_const(ident).constant};
-
-            // an untyped constant reads at the default type
-            const type& constant_type{
-                constant.is_typed() ? *constant.own_type
-                                    : builtins_.get().default_type(),
+        if (literal) {
+            const type& literal_type{
+                literal->is_bool ? builtins_.get().boolean()
+                                 : builtins_.get().default_type(),
             };
 
-            return ident_info::make_const(constant_type, constant);
+            return ident_info::make_const(
+                literal_type, folded_value::untyped(literal->value));
         }
 
-        // the argument was resolved where the call is made
-        return scp.get_binding(ident).info;
+        if (generics_.get().has_type(ident)) {
+            throw_generic_type_not(src_loc_tk, ident, "a value");
+        }
+
+        // note: a function used as a value is rejected where it is parsed
+        //       ('parse_call_or_identifier')
+
+        assert(not funcs_.get().has(ident) and
+               not generics_.get().has_func(ident));
+
+        if (starts_number(ident)) {
+            throw_unparsed_number(src_loc_tk, ident);
+        }
+
+        // e.g. the '$' of 'var x = $', which no definition can name
+        if (not is_identifier(ident)) {
+            throw_invalid_name(src_loc_tk, ident);
+        }
+
+        throw compile_error{src_loc_tk,
+                            std::format("{} not found", in_quotes(ident))};
     }
 
     //
@@ -2102,9 +2086,14 @@ class definition_checks final {
     auto assert_name_free(const token& src_loc_tk, const std::string_view what,
                           const std::string_view name) const -> void {
 
-        assert_not_declared_in_scope(src_loc_tk, name);
-
         const scope& scp{scopes_.get().back()};
+
+        if (scp.has_var(name)) {
+            const var_info& existing{scp.get_var(name)};
+
+            throw_already_defined(src_loc_tk, "variable", name,
+                                  where(existing.src_loc_tk));
+        }
 
         if (scp.has_const(name)) {
             const const_info& existing{scp.get_const(name)};
@@ -2114,24 +2103,6 @@ class definition_checks final {
         }
 
         assert_not_hiding_signature(src_loc_tk, what, name);
-    }
-
-    // a parameter may hide a constant of the generic instance in the same
-    // function scope
-    auto assert_not_declared_in_scope(const token& src_loc_tk,
-                                      const std::string_view name) const
-        -> void {
-
-        const scope& scp{scopes_.get().back()};
-
-        if (not scp.has_var(name)) {
-            return;
-        }
-
-        const var_info& decl_var{scp.get_var(name)};
-
-        throw_already_defined(src_loc_tk, scp.var_role(name), name,
-                              where(decl_var.src_loc_tk));
     }
 
     // a generic type and a type share the namespace of types
@@ -2444,9 +2415,13 @@ class toc {
     auto declare_var(const var_info& var, const var_kind kind) -> var_info& {
         toc_tables& t{tables()};
 
+        // note: the names of a signature are told apart where it is read
+        //       ('syntax_list::read', 'assert_result_not_named_like_param'), a
+        //       parameter may hide a constant of the generic instance in its
+        //       function scope
+
         if (kind == var_kind::param or kind == var_kind::result) {
-            t.definitions.assert_not_declared_in_scope(var.src_loc_tk,
-                                                       var.name);
+            assert(not t.scopes.back().has_var(var.name));
         } else {
             t.definitions.assert_name_free(var.src_loc_tk, "variable",
                                            var.name);

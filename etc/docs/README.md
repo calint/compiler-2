@@ -240,11 +240,12 @@ Invariants the code relies on:
    the condition ('assembler::remove_retests'), and on rv32i the jumps that
    do not reach their targets grow ('assembler_rv32i::resolve_jumps'; one
    without a free scratch register borrows 't0', restored at a landing before
-   the target, so '--nopt' decides no verdict), the report is added as
-   comments, the assembly is written, the rv32i targets also write the binary
-   image. An image or a listing that cannot be written whole, e.g. on a full
-   disk, leaves no image: the file is removed, also through a symbolic link,
-   but not a device or a pipe ('machine_rv32i::remove_image').
+   the target, so '--nopt' decides no verdict but the fit of a larger image
+   in the device memory), the report is added as comments, the assembly is
+   written, the rv32i targets also write the binary image. An image or a
+   listing that cannot be written whole, e.g. on a full disk, leaves no
+   image: the file is removed, also through a symbolic link, but not a device
+   or a pipe ('machine_rv32i::remove_image').
 
 ### 1.3 Names during compile: scopes and bindings
 

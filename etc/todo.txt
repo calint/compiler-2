@@ -155,6 +155,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 423, a hunt of the passes on the emitted lines and a
+    learner's walk of the tutorial) 'assembler::copy_end' gives up when
+    the source of a copy is written, also when no read of the copy
+    follows: a dead 'mv t0, a0' stays (0837 with '--checks=noub,line'),
+    stopping only at a read of the copy after the source changed is about
+    15 lines and changes 27 of about 8600 suite listings by one
+    instruction each; no test distinguishes a compiler where labels named
+    outside jumps are not entries (such a label always follows an
+    unconditional transfer); the tutorial does not say that a variable
+    argument must have exactly the type of its parameter; a zero divisor
+    without the check exits 253 on rv32i
 [ ] easy: (round 422, a hunt of values into destinations and a walk of
     the conditions) 'd16 = i8' is rejected ("expected type 'i16', got
     'i8'") while 'd16 = x8' of an 'i8' variable widens, the comment of
@@ -942,8 +953,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        constant, is named apart from the parameters and the result: the
        'is_type_only' flag of 'assert_apart_from_receiver_params' goes,
        'toc::add_var' uses 'assert_name_free' for every kind
-       ('assert_not_declared_in_scope' merged into it); 14 source lines
-       fewer; 1177 and 2644 become rejection tests, the box part of 1185
+       ('assert_not_declared_in_scope' is merged into it since round
+       423); 14 source lines fewer; 1177 and 2644 become rejection tests, the box part of 1185
        goes; rejects programs accepted today, e.g. 'func list.get(n)' on
        'type list<T type, n>'; the patch was kept in '/tmp' and is gone
        (2026-11-13)

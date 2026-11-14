@@ -186,11 +186,12 @@ enum class var_address : uint8_t {
     by_call,
 };
 
-// what a name resolves to: nothing, a constant, a register or storage, with
-// the type of the last element of its path, e.g. that of 'x' for 'p.x', which
-// a register or storage has as the type of its operand; what else is known
+// what a name resolves to: a constant, a register or storage, with the type
+// of the last element of its path, e.g. that of 'x' for 'p.x', which a
+// register or storage has as the type of its operand; what else is known
 // depends on the kind and is in its part, the accessors give what a kind does
-// not have as empty, e.g. 'is_array' of a constant is false
+// not have as empty, e.g. 'is_array' of a constant is false; a default one is
+// not resolved yet
 class ident_info final {
     // a constant and the type it is read as, e.g. a literal of the default type
     struct const_part {
@@ -280,10 +281,6 @@ class ident_info final {
         return std::holds_alternative<const_part>(part_);
     }
 
-    [[nodiscard]] auto is_empty() const -> bool {
-        return std::holds_alternative<std::monostate>(part_);
-    }
-
     // see 'array_shape::is_length_unknown'
     [[nodiscard]] auto is_length_unknown() const -> bool {
         return shape().is_length_unknown();
@@ -325,7 +322,7 @@ class ident_info final {
         return var == nullptr ? array_shape{} : var->shape;
     }
 
-    // note: an empty info has no type
+    // note: a default info has no type
     [[nodiscard]] auto type_ref() const -> const type& {
         if (const const_part* const constant{std::get_if<const_part>(&part_)}) {
             return *constant->type_ptr;
@@ -361,8 +358,6 @@ class ident_info final {
 
         return info;
     }
-
-    [[nodiscard]] static auto make_empty() -> ident_info { return {}; }
 
     [[nodiscard]] static auto make_register(const ::operand& reg)
         -> ident_info {
