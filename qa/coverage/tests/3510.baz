@@ -1,0 +1,272 @@
+# the padding of a result written field by field is zeroed whatever the types
+# that hold it: a type lists the bytes its fields cover as the fields are
+# added, from the lists of their types, so the gaps of nested types and of
+# arrays are found without walking them; up to 4 gaps on x86_64 and 8 on rv32i
+# are zeroed one by one, above that the instance is zeroed
+type pair {a i8, b i32}
+# 2 gaps: 3 B after 'p.a' and 3 B after 'c'
+type two {p pair, c i8}
+# 4 gaps: x86_64 and rv32i zero them one by one
+type four {x two[2]}
+# 5 gaps: x86_64 zeroes the instance, rv32i the gaps
+type five {x two[2], t i8}
+# 8 gaps: the most that rv32i zeroes one by one
+type eight {x two[4]}
+# 9 gaps: both zero the instance
+type nine {x two[4], t i8}
+# 13 gaps, more than a type lists: the list stops in the array
+type many {x two[6], t i8}
+# holds a type whose list stopped
+type outer {m many, u i8}
+# the gaps of four levels of types, an array among them
+type l1 {v two, w i8}
+type l2 {w i8, v l1}
+type l3 {v l2[2], w i8}
+type l4 {w i8, v l3}
+
+# fills the storage that the frames of the calls below use with ones
+func noinline scribble() {
+    var junk = i8[512]
+    foo junk {
+        e = -1
+    }
+}
+
+func noinline make_four() res four {
+    res.x[0].p.a = 7
+    res.x[0].p.b = 2
+    res.x[0].c = 7
+    res.x[1].p.a = 7
+    res.x[1].p.b = 2
+    res.x[1].c = 7
+}
+
+func noinline is_four_whole() res bool {
+    var got = make_four()
+    var want = four{
+        {
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+        },
+    }
+    res = got == want
+}
+
+func noinline make_five() res five {
+    res.x[0].p.a = 7
+    res.x[0].p.b = 2
+    res.x[0].c = 7
+    res.x[1].p.a = 7
+    res.x[1].p.b = 2
+    res.x[1].c = 7
+    res.t = 7
+}
+
+func noinline is_five_whole() res bool {
+    var got = make_five()
+    var want = five{
+        {
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+        },
+        7,
+    }
+    res = got == want
+}
+
+func noinline make_eight() res eight {
+    res.x[0].p.a = 7
+    res.x[0].p.b = 2
+    res.x[0].c = 7
+    res.x[1].p.a = 7
+    res.x[1].p.b = 2
+    res.x[1].c = 7
+    res.x[2].p.a = 7
+    res.x[2].p.b = 2
+    res.x[2].c = 7
+    res.x[3].p.a = 7
+    res.x[3].p.b = 2
+    res.x[3].c = 7
+}
+
+func noinline is_eight_whole() res bool {
+    var got = make_eight()
+    var want = eight{
+        {
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+        },
+    }
+    res = got == want
+}
+
+func noinline make_nine() res nine {
+    res.x[0].p.a = 7
+    res.x[0].p.b = 2
+    res.x[0].c = 7
+    res.x[1].p.a = 7
+    res.x[1].p.b = 2
+    res.x[1].c = 7
+    res.x[2].p.a = 7
+    res.x[2].p.b = 2
+    res.x[2].c = 7
+    res.x[3].p.a = 7
+    res.x[3].p.b = 2
+    res.x[3].c = 7
+    res.t = 7
+}
+
+func noinline is_nine_whole() res bool {
+    var got = make_nine()
+    var want = nine{
+        {
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+        },
+        7,
+    }
+    res = got == want
+}
+
+func noinline make_many() res many {
+    res.x[0].p.a = 7
+    res.x[0].p.b = 2
+    res.x[0].c = 7
+    res.x[1].p.a = 7
+    res.x[1].p.b = 2
+    res.x[1].c = 7
+    res.x[2].p.a = 7
+    res.x[2].p.b = 2
+    res.x[2].c = 7
+    res.x[3].p.a = 7
+    res.x[3].p.b = 2
+    res.x[3].c = 7
+    res.x[4].p.a = 7
+    res.x[4].p.b = 2
+    res.x[4].c = 7
+    res.x[5].p.a = 7
+    res.x[5].p.b = 2
+    res.x[5].c = 7
+    res.t = 7
+}
+
+func noinline is_many_whole() res bool {
+    var got = make_many()
+    var want = many{
+        {
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+            {{7, 2}, 7},
+        },
+        7,
+    }
+    res = got == want
+}
+
+func noinline make_outer() res outer {
+    res.m.x[0].p.a = 7
+    res.m.x[0].p.b = 2
+    res.m.x[0].c = 7
+    res.m.x[1].p.a = 7
+    res.m.x[1].p.b = 2
+    res.m.x[1].c = 7
+    res.m.x[2].p.a = 7
+    res.m.x[2].p.b = 2
+    res.m.x[2].c = 7
+    res.m.x[3].p.a = 7
+    res.m.x[3].p.b = 2
+    res.m.x[3].c = 7
+    res.m.x[4].p.a = 7
+    res.m.x[4].p.b = 2
+    res.m.x[4].c = 7
+    res.m.x[5].p.a = 7
+    res.m.x[5].p.b = 2
+    res.m.x[5].c = 7
+    res.m.t = 7
+    res.u = 7
+}
+
+func noinline is_outer_whole() res bool {
+    var got = make_outer()
+    var want = outer{
+        {
+            {
+                {{7, 2}, 7},
+                {{7, 2}, 7},
+                {{7, 2}, 7},
+                {{7, 2}, 7},
+                {{7, 2}, 7},
+                {{7, 2}, 7},
+            },
+            7,
+        },
+        7,
+    }
+    res = got == want
+}
+
+func noinline make_l4() res l4 {
+    res.w = 7
+    res.v.v[0].w = 7
+    res.v.v[0].v.v.p.a = 7
+    res.v.v[0].v.v.p.b = 2
+    res.v.v[0].v.v.c = 7
+    res.v.v[0].v.w = 7
+    res.v.v[1].w = 7
+    res.v.v[1].v.v.p.a = 7
+    res.v.v[1].v.v.p.b = 2
+    res.v.v[1].v.v.c = 7
+    res.v.v[1].v.w = 7
+    res.v.w = 7
+}
+
+func noinline is_l4_whole() res bool {
+    var got = make_l4()
+    var want = l4{
+        7,
+        {
+            {
+                {
+                    7,
+                    {
+                        {{7, 2}, 7},
+                        7,
+                    },
+                },
+                {
+                    7,
+                    {
+                        {{7, 2}, 7},
+                        7,
+                    },
+                },
+            },
+            7,
+        },
+    }
+    res = got == want
+}
+
+func main() {
+    scribble()
+    if not is_four_whole() exit(1)
+    scribble()
+    if not is_five_whole() exit(2)
+    scribble()
+    if not is_eight_whole() exit(3)
+    scribble()
+    if not is_nine_whole() exit(4)
+    scribble()
+    if not is_many_whole() exit(5)
+    scribble()
+    if not is_outer_whole() exit(6)
+    scribble()
+    if not is_l4_whole() exit(7)
+}

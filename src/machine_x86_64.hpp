@@ -549,6 +549,8 @@ class machine_x86_64 final : public machine {
     auto zero(const emit_site site, const operand& dst, const size_t size_bytes,
               [[maybe_unused]] const size_t alignment) -> void override {
 
+        assert(size_bytes != 0);
+
         const size_t parts{part_count(size_bytes)};
 
         if (takes_rep_form(parts, stosb_registers_)) {

@@ -401,13 +401,13 @@ class expr_bool_op final : public statement {
 
         assert_sides_fit(lhs, rhs, cmp.op);
 
-        // a constant 'lhs' becomes an immediate 'rhs' instead of a scratch
-        // register copy: an untyped one fits the other side, a typed one when
-        // its value does, which then compares as it would at its own width
+        // a constant 'lhs' that fits the other side becomes an immediate 'rhs'
+        // instead of a scratch register copy: an untyped one was checked to
+        // fit ('assert_sides_fit'), a typed one that does compares as it
+        // would at its own width
         const bool is_mirrored{
-            lhs.is_untyped_constant() or
-                (lhs.folded and constant_arith::fits_width(
-                                    lhs.folded->value, rhs.node->get_type())),
+            lhs.folded and constant_arith::fits_width(lhs.folded->value,
+                                                      rhs.node->get_type()),
         };
 
         if (not is_mirrored) {

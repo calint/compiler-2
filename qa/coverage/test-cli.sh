@@ -1216,6 +1216,33 @@ CLI_MEMORY_DEFAULT_STACK() {
     echo ok
 }
 
+# a chain of nested types as long as the source: the padding of a result is
+# found without walking the chain, a walk overflowed the stack of the compiler
+# at 45000 types
+CLI_NESTED_TYPE_CHAIN() {
+    echo -n "cli chain of nested types: "
+    local i
+    {
+        printf 'type t0 {a i8, b i32}\n'
+        for ((i = 1; i <= 6000; i++)); do
+            printf 'type t%d {c i8, a t%d}\n' "$i" "$((i - 1))"
+        done
+        printf 'func t6000.at(o t5999) self {\n    self.c = 1\n    self.a = o\n}\n\n'
+        printf 'func main() {\n    var o = t5999\n    var v = t6000.at(o)\n'
+        printf '    exit(v.c)\n}\n'
+    } >gen-chain.baz
+    (
+        # note: 1 MiB, the walk took about 190 B per type
+        ulimit -s 1024
+        "$BIN" gen-chain.baz >gen.s 2>err
+    )
+    [[ ! -s err ]]
+    # every type adds a gap, so the instance is zeroed
+    grep -Fq 'zero instance for its padding: 24008 B' gen.s
+    rm -f gen-chain.baz
+    echo ok
+}
+
 CLI_CHECKS_NOUB
 CLI_CHECKS_LIST
 CLI_FILE_ERRORS
@@ -1249,5 +1276,6 @@ CLI_PADDING_ZERO
 CLI_PADDING_ZERO_BY_TARGET
 CLI_SHARED_STRING_CONSTANT
 CLI_KEYWORD_NAMES
+CLI_NESTED_TYPE_CHAIN
 
 rm -f gen.s diff.baz out err gen-rv32i.bin

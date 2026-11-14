@@ -8030,3 +8030,8 @@ SRC=3490 && EXP=116 && RUN
 # read-only constant laid out differently under the label of the kept one:
 # the constants of a version that fails leave the table
 if [[ $MACHINE == rv32i* ]]; then SRC=3500 && EXP=117 && OPTS="--vars=64 --checks=upper,lower,line" RUN; fi
+
+# a type lists the bytes its fields cover as its fields are added, so the
+# padding of a result is found without walking nested types and arrays: types
+# on both sides of the gap counts that are zeroed one by one
+SRC=3510 && EXP=0 && RUN

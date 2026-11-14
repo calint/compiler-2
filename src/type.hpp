@@ -235,6 +235,14 @@ class type final {
     std::vector<type_field> fields_;
     type_kind kind_{type_kind::user};
     size_t check_width_bytes_{}; // the width the narrowing rules compare
+    // the bytes that fields cover, adjacent ones merged, listed as the fields
+    // are added until the list is full ('is_full'), so that no work grows
+    // with the length of an array or the depth of nested types
+    std::vector<byte_range> data_ranges_;
+
+    static constexpr size_t max_listed_data_ranges_{9};
+    // note: 1 more than the most gaps a target zeroes one by one (8, rv32i),
+    //       since a gap is between two ranges, see 'padding_gaps'
 
   public:
     // a built-in checked at its size
@@ -248,7 +256,13 @@ class type final {
          const type_kind kind, const size_t check_width_bytes)
         : name_{name}, size_bytes_{size_bytes},
           alignment_{std::max(size_bytes, size_t{1})}, kind_{kind},
-          check_width_bytes_{check_width_bytes} {}
+          check_width_bytes_{check_width_bytes} {
+
+        // 'void' has no bytes
+        if (size_bytes != 0) {
+            append_range(data_ranges_, 0, size_bytes);
+        }
+    }
 
     // a user type, its fields added by 'add_field'
     explicit type(const std::string_view name) : name_{name} {}
@@ -276,6 +290,8 @@ class type final {
             add_storage_size(src_loc_tk, field.offset, field.size_bytes);
 
         fields_.emplace_back(std::move(field));
+
+        append_field_ranges(data_ranges_, fields_.back());
 
         alignment_ = std::max(alignment_, tp.alignment_);
 
@@ -372,27 +388,23 @@ class type final {
     }
 
     // the bytes that no field covers, between the data ranges and after the
-    // last one; the first of them when there are more than 'max_count'
+    // last one; more than 'max_count' of them when there are more
     [[nodiscard]] auto padding_gaps(const size_t max_count) const
         -> std::vector<padding_gap> {
 
-        const size_t max_range_count{max_count + 1};
-
-        // note: +1 because a gap is between two ranges, so more than
-        //       'max_count' + 1 ranges give more than 'max_count' gaps
-
-        const std::vector<byte_range> ranges{data_ranges(max_range_count)};
+        // note: a full list then has more than 'max_count' gaps
+        assert(max_count < max_listed_data_ranges_);
 
         std::vector<padding_gap> gaps;
         size_t covered_bytes{};
 
-        for (const byte_range& r : ranges) {
+        for (const byte_range& r : data_ranges_) {
             append_gap(gaps, covered_bytes, r.offset, alignment_);
             covered_bytes = r.end();
         }
 
-        // the last range of a stopped search may be incomplete
-        if (ranges.size() > max_range_count) {
+        // the tail is not known after a list that is not continued
+        if (is_full(data_ranges_)) {
             return gaps;
         }
 
@@ -408,42 +420,17 @@ class type final {
     [[nodiscard]] auto size_bytes() const -> size_t { return size_bytes_; }
 
   private:
-    // the bytes of a value without padding, adjacent fields are merged; stops
-    // at more than 'max_count' ranges, the last of which may then be
-    // incomplete, so the work does not grow with the size of an array
-    [[nodiscard]] auto data_ranges(const size_t max_count) const
-        -> std::vector<byte_range> {
-
-        std::vector<byte_range> ranges;
-
-        if (is_builtin()) {
-            append_range(ranges, 0, size_bytes_);
-            return ranges;
-        }
-
-        for (const type_field& f : fields_) {
-            if (ranges.size() > max_count) {
-                break;
-            }
-
-            append_field_ranges(ranges, f, max_count);
-        }
-
-        return ranges;
-    }
-
     //
     // statics
     //
 
-    // the data ranges of the elements of 'f', the elements stop at more than
-    // 'max_count' ranges
+    // the data ranges of the elements of 'f', whose type is complete, until
+    // the list is full
     static auto append_field_ranges(std::vector<byte_range>& ranges,
-                                    const type_field& f, const size_t max_count)
-        -> void {
+                                    const type_field& f) -> void {
 
-        const std::vector<byte_range> element_ranges{
-            f.type_ref().data_ranges(max_count),
+        const std::vector<byte_range>& element_ranges{
+            f.type_ref().data_ranges_,
         };
 
         const bool is_unpadded{
@@ -457,10 +444,12 @@ class type final {
         }
 
         // note: each padded element after the first adds a range, so the
-        //       loop ends within 'max_count' + 2 elements
+        //       loop ends within 'max_listed_data_ranges_' + 2 elements
 
-        for (size_t i{};
-             i < f.shape.element_count() and ranges.size() <= max_count; ++i) {
+        for (size_t i{}; i < f.shape.element_count(); ++i) {
+            if (is_full(ranges)) {
+                return;
+            }
 
             const size_t element_offset{
                 f.offset + (i * f.type_ref().size_bytes_),
@@ -488,13 +477,17 @@ class type final {
         });
     }
 
-    // fields that touch each other form one range
+    // fields that touch each other form one range; a full list takes none
     static auto append_range(std::vector<byte_range>& ranges,
                              const size_t offset, const size_t size_bytes)
         -> void {
 
         // note: a field or an array is never empty
         assert(size_bytes != 0);
+
+        if (is_full(ranges)) {
+            return;
+        }
 
         if (not ranges.empty() and ranges.back().end() == offset) {
             ranges.back().size_bytes += size_bytes;
@@ -505,6 +498,14 @@ class type final {
             .offset{offset},
             .size_bytes{size_bytes},
         });
+    }
+
+    // a list of more than 'max_listed_data_ranges_' ranges is not continued,
+    // its last range may be incomplete
+    [[nodiscard]] static auto is_full(const std::vector<byte_range>& ranges)
+        -> bool {
+
+        return ranges.size() > max_listed_data_ranges_;
     }
 };
 

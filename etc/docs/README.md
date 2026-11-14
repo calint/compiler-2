@@ -705,10 +705,10 @@ The front end holds registers, the backend names and picks them
    chain of inlined calls can run out where the same body as noinline does
    not. The check of a body without its calls (1.5) starts from the registers
    a noinline body starts with ('machine::noinline_body_pool': the backend's
-   own and the frame base), so its verdict does not depend on the code around
-   it; skipped code keeps the registers held where it stands (1.5.1). A
-   noinline body has one register fewer than 'main', which holds no frame base
-   (1.5 item 3).
+   own, the variables base and the frame base), so its verdict does not
+   depend on the code around it; skipped code keeps the registers held where
+   it stands (1.5.1). A noinline body has one register fewer than 'main',
+   which holds no frame base (1.5 item 3).
 
 ### 1.9 Errors
 
@@ -2286,10 +2286,10 @@ outside 'src' included:
   'emit_uart_setup'); another instruction set is a 'machine' and an
   'assembler' subclass as 'machine_x86_64' and 'assembler_x86_64': a
   'target_description' ('x86_64_target'), the virtual methods of 'machine',
-  public the operations and protected what the shared code calls (the entry,
-  the checks, the calls, the routines and the failure messages), and those
-  of 'assembler' (the directives and what the passes of 'optimize' ask); in
-  'main.cpp' the
+  public the operations and not public what the shared code calls (the entry,
+  the checks, the calls, the routines, the failure messages and the names of
+  the registers), and those of 'assembler' (the directives and what the
+  passes of 'optimize' ask); in 'main.cpp' the
   include of its header, its row in 'target_names' (name, backend, image,
   the options it reads) and its line in 'usage_format', which
   'etc/readme/make.sh' pastes into 'README.md'; chapter 8, what depends on

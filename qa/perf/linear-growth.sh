@@ -1,9 +1,9 @@
 #!/bin/sh
 # checks that compile time grows linearly in the inputs that once grew
 # faster: a long expression on one line, many statements on one line, a path
-# of constant indexes and a path of fields (each compiled at a size and at 4
-# times it, the best of 3 runs; a ratio above 8 fails, linear is about 4 and
-# quadratic about 16)
+# of constant indexes, a path of fields and the result of a chain of nested
+# types (each compiled at a size and at 4 times it, the best of 3 runs; a
+# ratio above 8 fails, linear is about 4 and quadratic about 16)
 #
 # usage: linear-growth.sh
 set -eu
@@ -51,6 +51,15 @@ def field_path(n):
         f"\nfunc main() {{\nvar p = t{n - 1}\nexit(i8(p{path}))\n}}\n"
 
 
+# every type adds a gap of padding, zeroed for the result of the call
+def nested_result(n):
+    types = ["type t0 {a i8, b i32}"]
+    types += [f"type t{i} {{c i8, a t{i - 1}}}" for i in range(1, n)]
+    return "\n".join(types) + \
+        f"\nfunc noinline make() res t{n - 1} {{\nres = {{}}\n}}\n" \
+        "func main() {\nvar p = make()\nexit(p.c)\n}\n"
+
+
 # name, generator, base size, options
 CASES = [
     ("long expression on one line", long_expression, 10000, []),
@@ -58,6 +67,7 @@ CASES = [
     ("path of constant indexes", constant_index_path, 1600,
      ["--vars=0x10000000"]),
     ("path of fields", field_path, 20000, ["--vars=0x10000000"]),
+    ("result of nested types", nested_result, 10000, ["--vars=0x10000000"]),
 ]
 
 

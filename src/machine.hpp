@@ -213,7 +213,8 @@ class machine {
         const std::optional<operand>& preferred, address_use use)>;
 
     // whether an operation may overwrite a register operand, e.g. a scratch
-    // register that holds a factor and is freed after the operation
+    // register that holds a factor and is freed after the operation; a factor
+    // it may overwrite is a register of the type of the product
     enum class factor_use : uint8_t { read_only, may_overwrite };
 
     using frame_kind = register_trace::frame_kind;
@@ -857,7 +858,8 @@ class machine {
 
     // an enabled check makes a signed result that does not fit the width of
     // 'dst' jump to the overflow failure handler, also in 'multiply' and
-    // 'unary'
+    // 'unary'; a constant 'src' that keeps 'dst', e.g. an added 0, is folded
+    // away before, also for 'bitwise'
     virtual auto add_subtract(const emit_site site,
                               const arithmetic_operator operation,
                               const operand& dst, const operand& src,
@@ -873,6 +875,8 @@ class machine {
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
 
+    // compares at the width of 'lhs', which is not an immediate; 'rhs' is not
+    // wider, a constant fits that width
     virtual auto compare_and_branch(const emit_site site, const operand& lhs,
                                     const operand& rhs,
                                     const comparison_action& action)
@@ -891,6 +895,8 @@ class machine {
                   const std::function_ref<void(const operand&)> emit_count,
                   const copy_request& request) -> void = 0;
 
+    // a 'src' narrower than 'dst' is sign extended, a wider one loses its
+    // high bits, also as the second operand of an arithmetic operation
     virtual auto copy_value(const emit_site site, const operand& dst,
                             const operand& src) -> void = 0;
 
@@ -911,9 +917,9 @@ class machine {
                    const address_emitter& lhs, const address_emitter& rhs,
                    const size_t alignment, const operand& dst) -> void = 0;
 
-    // compares 'size_bytes' at the addresses 'lhs' and 'rhs', whose registers
-    // the caller holds, and puts 1 into the destination of the request when
-    // they are equal, when they differ if it is 'inverted'
+    // compares 'size_bytes', not 0, at the addresses 'lhs' and 'rhs', whose
+    // registers the caller holds, and puts 1 into the destination of the
+    // request when they are equal, when they differ if it is 'inverted'
     virtual auto memory_equal(const emit_site site, const size_t size_bytes,
                               const operand& lhs, const operand& rhs,
                               const equality_request& request) -> void = 0;
@@ -925,7 +931,8 @@ class machine {
     virtual auto return_function(const size_t indent) -> void = 0;
 
     // an enabled check makes a count below zero or not below the width of the
-    // type of 'dst' jump to the shift failure handler
+    // type of 'dst' jump to the shift failure handler; a constant count is
+    // above 0 and below that width
     virtual auto shift(const emit_site site,
                        const arithmetic_operator operation, const operand& dst,
                        const operand& count, const runtime_check& check)
@@ -947,6 +954,7 @@ class machine {
     // writes the lines buffered from 'start'
     virtual auto write_assembly(std::ostream& os) -> void = 0;
 
+    // 'size_bytes' is not 0, 'alignment' is the alignment known for 'dst'
     virtual auto zero(const emit_site site, const operand& dst,
                       const size_t size_bytes, const size_t alignment)
         -> void = 0;

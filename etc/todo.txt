@@ -155,6 +155,19 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] medium: (round 429, a hunt of type definitions and a review of the
+    condition code) a chain of generic types each based on the one before
+    uses memory quadratic in its length, 2000 levels 427 MiB, 8000 levels
+    6.7 GiB ('generic_trace::inside' copies every outer frame into each
+    level, each method instance copies its receiver with the trace; a
+    shared list of frames would be linear, a depth limit changes what is
+    accepted); 'body_uses::add_binding' searches the recorded paths
+    linearly, a constructor that writes 20000 padded fields takes 7.3 s;
+    a memory comparison that only branches stores 0 or 1 in a scratch
+    register and compares it with 0, a 'memory_equal' that branches
+    changes the interface and the '--nopt' and rv32i listings (not
+    measured); the last element of a condition emits a jump to the label
+    that follows, which the jump pass removes
 [p] easy: need approval (round 428, the design of compiling without
     emitting): the three 'is_dry_run' tests that skip comments
     ('machine::comment' twice, 'statement::comment_source') are not
@@ -284,9 +297,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     the "free scratch register" comments in every listing); 'array_copy'
     with a constant 0 reaches 'copy_block', the front end could skip the
     call and both backends assert; 'address_of', 'bitwise', 'branch',
-    'compare_and_branch', 'copy_value', 'return_function', 'unary' and
-    'zero' have no comment on the interface (what a narrow destination
-    gets is only in the implementations); the label of 'f<int>' is
+    'return_function' and 'unary' have no comment on the interface
+    ('compare_and_branch', 'copy_value' and 'zero' got theirs in round
+    429); the label of 'f<int>' is
     'func.f..i64' on x86_64 and 'func.f..int' on rv32i; three messages of
     an instance quote another name than the hand expansion ("constant 'k'
     does not fit", "'T' is a type, not a function", "generic type 'box'

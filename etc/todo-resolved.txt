@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 429 (2026-11-14, bug hunt: type definitions and what
+    hangs on a type, fields, bases, aliases, methods, constructors, the
+    order and name rules; design: how a condition becomes code;
+    readability: a newcomer reads the backend interface of 'machine' as
+    for a third backend, 47 virtual functions and the target description)
+    => done, defect: a chain of 45000 nested types ('type tN {c i8, a
+       tN-1}') with a method or result written field by field crashed
+       the compiler (exit 139; from 6000 types under a 1 MiB stack);
+       'type::padding_gaps' recursed through 'data_ranges' into every
+       field type without a bound, and the work was quadratic; a type now
+       keeps the ranges its fields cover ('data_ranges_'), built in
+       'add_field' from the lists of the field types, the recursive
+       'data_ranges' is gone; 300000 nested types compile in 2 s; no
+       listing differs; test 3510, 'CLI_NESTED_TYPE_CHAIN' in
+       'test-cli.sh', a case in 'linear-growth.sh'
+    => bug hunt otherwise: about 18500 accepted programs against a model
+       of layout and methods, about 34000 rejected programs with the
+       message and position predicted, 15000 token mutations, asan
+       clean, 7 seeded mutants all caught
+    => design: 'compile_comparison' mirrors "a folded left side that fits
+       the right side" without the special case of an untyped constant
+       ('assert_sides_fit' rejects one that does not fit); rv32i
+       'emit_comparison_branch' loses the 'operation' parameter its
+       caller passed beside 'action'; a probe of 50 points found no dead
+       path
+    => readability: the interface states what both backends rely on in
+       'factor_use', 'add_subtract', 'compare_and_branch', 'copy_value',
+       'memory_equal', 'shift' and 'zero'; x86_64 'zero' asserts a size
+       above 0 as rv32i does; docs 1.8 item 4 and chapter 9
 [x] easy: round 428 (2026-11-14, bug hunt: the read-only constants and
     the data table with the fix of round 427; design: compiling without
     emitting, dry runs, skipped code and versions; readability: a

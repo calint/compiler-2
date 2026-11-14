@@ -551,7 +551,7 @@ class machine_rv32i : public machine {
 
         // branch-only comparisons do not need a materialized boolean
         if (action.destination.is_empty()) {
-            emit_comparison_branch(site.indent, operation, left, right, action);
+            emit_comparison_branch(site.indent, left, right, action);
             return;
         }
 
@@ -2473,9 +2473,8 @@ class machine_rv32i : public machine {
         assembler_.label(site.indent, check_passed_.name);
     }
 
-    auto emit_comparison_branch(const size_t indent,
-                                const comparison_operator operation,
-                                const operand& left, const operand& right,
+    auto emit_comparison_branch(const size_t indent, const operand& left,
+                                const operand& right,
                                 const comparison_action& action) -> void {
 
         // note: a comparison without a boolean result is a branch
@@ -2483,7 +2482,8 @@ class machine_rv32i : public machine {
 
         // the comparison the branch is taken on
         const comparison_operator taken{
-            action.branch_on_true ? operation : negated(operation),
+            action.branch_on_true ? action.operation
+                                  : negated(action.operation),
         };
 
         // only 'blt' and 'bge' exist: 'x > y' branches as 'y < x' and
