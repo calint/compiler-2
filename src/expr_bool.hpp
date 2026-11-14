@@ -615,7 +615,7 @@ class expr_bool_op final : public statement {
     // an instance is compared as memory, which only a variable has, e.g. the
     // 'mk()' of 'p == mk()'
     static auto assert_instance_stored(const expr_arith& side) -> void {
-        if (side.get_type().is_builtin() or side.operand_path() != nullptr) {
+        if (side.get_type().is_builtin() or not side.is_computed()) {
             return;
         }
 

@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 435 (2026-11-15, bug hunt: instruction selection of
+    the rv32i backend at its edges, 12-bit immediates and
+    displacements, the multiply and divide helpers, widths, bulk copies
+    at boundary sizes; design: the virtual interface of 'statement' and
+    its overrides; readability: a newcomer checks chapters 4, 5, 8 and
+    9 of the docs sentence by sentence, about 140 sentences, 165
+    programs and command lines, 180 names, 97 test numbers)
+    => bug hunt: no defect; 232000 programs against a model on the
+       rv32i targets and x86_64, with and without the checks and
+       '--nopt', 98 % of the lines of 'machine_rv32i.hpp' reached; 20
+       seeded mutants, 19 caught, one equivalent
+    => design: the interface is minimal, 11 virtuals, no two answer one
+       question, every default and override reached by an instrumented
+       build except the two 'std::unreachable()' defaults;
+       'expr_bool_op::assert_instance_stored' asks 'is_computed' as
+       every other site; 'statement::tok' says why it is virtual;
+       twelve ideas weighed and left
+    => readability: docs chapter 8, the sd card past its end on
+       rv32i-fpga ends a 'sector_write' with "CPU error: 1304" and exit
+       24 (only the numbers of 'sector_read' were given); chapter 9
+       names 'fuzz-mutate.py' and 'fuzz-frames.py' among the target
+       lists and no longer a range of panic codes in
+       'fuzz-compiler.py'
 [x] easy: round 434 (2026-11-15, bug hunt: the compile-time verdict
     against the options, 31 option lists per target, the checks alone
     and combined, '--nopt', '--versions', inlined against noinline;

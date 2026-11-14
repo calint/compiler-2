@@ -2129,7 +2129,8 @@ What depends on the target is listed here, nothing else does:
    'sector_read' and 'sector_write' panic 'sd card' there, as on a card
    image without the sector; 'rv32i-fpga' does not detect a sector past the
    end of the card, which panics 'sd card' on x86_64
-   and rv32i, its emulator stops with "CPU error: 1305" and exit code 25;
+   and rv32i, its emulator stops a 'sector_read' with "CPU error: 1305"
+   and exit code 25, a 'sector_write' with 1304 and 24;
    the descriptors do not differ: on every target 'read' serves only 0 and
    'write' only 1 and 2, compared at the full width of the value (a
    descriptor led by 'i8' or 'i16' is computed at 'i32', e.g. 'write(d8 <<
@@ -2306,7 +2307,8 @@ outside 'src' included:
   how it assembles and runs a target), 'qa/coverage/test-all.sh',
   'qa/coverage/test-cli.sh', 'qa/coverage/compare-listings.sh',
   'qa/coverage/test-far-jumps-no-scratch.sh', 'qa/fuzz/fuzzlib.py' (also how
-  it runs a target), 'qa/fuzz/fuzz-options.py', 'qa/fuzz/fuzz-combos.py' and
+  it runs a target), 'qa/fuzz/fuzz-options.py', 'qa/fuzz/fuzz-combos.py',
+  'qa/fuzz/fuzz-mutate.py', 'qa/fuzz/fuzz-frames.py' and
   'qa/fuzz/constructs.py', and in 'qa/coverage/cases.sh' the target
   conditions and the expected files of a target ('NNN.TARGET.out') where a
   result differs
@@ -2323,8 +2325,8 @@ outside 'src' included:
   exit code in 8.2), the lists of checks and of exit codes in
   'etc/readme/README.1.md', whose panics 'qa/lint/check-doc-examples.py'
   runs, one program each, and the list of checks of 'etc/tutorial.baz';
-  outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics),
-  'qa/fuzz/fuzz-compiler.py' (the range of those codes),
+  outside: 'qa/fuzz/fuzzlib.py' (the exit codes of the panics, which the
+  other fuzzers read from it),
   'qa/fuzz/fuzz-options.py', 'qa/fuzz/fuzz-combos.py' and
   'qa/coverage/test-cli.sh' (the check names; each check must change the
   code of its '2145.baz'), and a scenario of 'qa/fuzz/fuzz-ub.py' that

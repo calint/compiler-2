@@ -266,6 +266,9 @@ class statement {
         token_.source_to(os);
     }
 
+    // where a message or a listing comment points; 'expr_any', whose own
+    // token is the whitespace before its value, answers the token of that
+    // value
     [[nodiscard]] virtual auto tok() const -> const token& { return token_; }
 
     // definite assignment: checks the reads of the result and records its
