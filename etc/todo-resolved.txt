@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 430 (2026-11-14, bug hunt: the compiler at scale, every
+    recursion a source drives and about 90 program families doubled to a
+    limit message, 60 s or 2 GiB; design: how a function body is entered
+    and left; readability: a newcomer reads 'src/expr_arith.hpp' whole
+    and predicts the code of 55 expressions)
+    => done, four lookups that were linear per element use an index:
+       'noinline_body_list' keeps a map from function to the array
+       lengths (chain of noinline functions, 10000 to 40000: 15 times
+       the time before, 4.4 now), 'assembler::summary_of' is a local
+       index, a type holds 'lut<type_field>' (65536 fields of one type:
+       21 before, 3.8 now), 'data_table' holds 'lut<placed_dat>' (65536
+       dats: 9.3 before, 4.1 now); three cases in 'linear-growth.sh'; no
+       listing differs over 2532 cases
+    => found, documented in 'etc/todo.txt' on the owner's word and not
+       fixed: the compiler overflows its stack (exit 139) when inlined
+       calls and nested parentheses multiply, and the growth above 6 of
+       five more families
+    => design: nothing to apply, 34 points probed on the entry and exit
+       paths, 33 reached; the one not reached is reachable and got test
+       3530 (a generic noinline function with two array lengths); nine
+       ideas weighed and left
+    => readability: in 'expr_arith.hpp' a nested list as first element is
+       computed in the destination, a nested list plans its own steps,
+       'is_negation_absorbed' for 'is_negation_folded' (no constant is
+       involved), "a memory destination", "applies the passes"; docs
+       1.6.1 lists the two more forms of the 'src:' comment
+    => the fuzz step reported the known hang of test 1698 again, 0 new
+       findings
 [x] easy: round 429 (2026-11-14, bug hunt: type definitions and what
     hangs on a type, fields, bases, aliases, methods, constructors, the
     order and name rules; design: how a condition becomes code;

@@ -1,9 +1,10 @@
 #!/bin/sh
 # checks that compile time grows linearly in the inputs that once grew
 # faster: a long expression on one line, many statements on one line, a path
-# of constant indexes, a path of fields and the result of a chain of nested
-# types (each compiled at a size and at 4 times it, the best of 3 runs; a
-# ratio above 8 fails, linear is about 4 and quadratic about 16)
+# of constant indexes, a path of fields, the result of a chain of nested
+# types, a chain of noinline functions, the fields of one type and the dats
+# (each compiled at a size and at 4 times it, the best of 3 runs; a ratio
+# above 8 fails, linear is about 4 and quadratic about 16)
 #
 # usage: linear-growth.sh
 set -eu
@@ -60,6 +61,28 @@ def nested_result(n):
         "func main() {\nvar p = make()\nexit(p.c)\n}\n"
 
 
+# every function is a body of its own, found by its function when called
+def noinline_chain(n):
+    funcs = ["func noinline f0() {}"]
+    funcs += [f"func noinline f{i}() {{ f{i - 1}() }}" for i in range(1, n)]
+    return "\n".join(funcs) + \
+        f"\nfunc main() {{\nf{n - 1}()\nexit(0)\n}}\n"
+
+
+# every field is looked up by its name, at its definition and in a path
+def fields_of_one_type(n):
+    fields = ", ".join(f"f{i} i8" for i in range(n))
+    writes = "".join(f"p.f{i} = 1\n" for i in range(0, n, 16))
+    return f"type t {{ {fields} }}\n" \
+        f"func main() {{\nvar p = t\n{writes}exit(p.f{n - 1})\n}}\n"
+
+
+# every dat is placed by its name
+def dats(n):
+    lines = "".join(f"dat g{i} = {i % 100}\n" for i in range(n))
+    return f"{lines}func main() {{\nexit(i8(g{n - 1}))\n}}\n"
+
+
 # name, generator, base size, options
 CASES = [
     ("long expression on one line", long_expression, 10000, []),
@@ -68,6 +91,9 @@ CASES = [
      ["--vars=0x10000000"]),
     ("path of fields", field_path, 20000, ["--vars=0x10000000"]),
     ("result of nested types", nested_result, 10000, ["--vars=0x10000000"]),
+    ("chain of noinline functions", noinline_chain, 10000, []),
+    ("fields of one type", fields_of_one_type, 16000, ["--vars=0x10000000"]),
+    ("dats", dats, 16000, ["--vars=0x10000000"]),
 ]
 
 

@@ -572,8 +572,12 @@ The comment lines say what was compiled and how:
 
 ```text
 bind x -> 3            a parameter of an inlined body names its argument
-src: operand           an operand read as it is stored; 'src: folded
-                       constant' a value known at compile time, 'src:
+src: operand           an operand read as it is stored; 'src: operand with
+                       unary ops' its '-' and '~' applied in a register;
+                       'src: negated operand' a '-b' read as it is stored,
+                       the add or subtract swapped; 'src: folded constant' a
+                       value known at compile time, with the source of the
+                       constants merged into it, e.g. '+ 3 + 5'; 'src:
                        expression' one computed first
 ? a < b                a condition, then each element of it at its 'cmp'
                        label; 'shorthand:' an operand alone, tested as

@@ -153,6 +153,9 @@
 - One consistency topic at a time across all sources.
 - A todo item whose solution complicates the code is not done: note why in
   the item and go to the next.
+- A finding that needs an extreme input (thousands of nesting levels,
+  fields, arguments or files) is documented in `etc/todo.txt` with its
+  measurements, not fixed; rounds look at ordinary programs.
 - What needs the user's approval (a new source file, a todo item marked
   "user decision", removing behavior) goes into `etc/todo.txt` as `[p]` with
   "need approval", the proposed change and its measurements; then go on.

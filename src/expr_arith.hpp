@@ -38,20 +38,20 @@
 
 // the steps of an arithmetic list and the passes that regroup its constants
 // before the list is compiled; pass 0 is 'expr_arith::make_steps', which
-// folds the elements, 'plan' runs the passes 1 to 3 in order:
+// folds the elements, 'plan' applies the passes 1 to 3 in order:
 // 'merge_regroupable_constants', 'merge_divisors', 'lead_with_constant';
 // invariant: a step without an element is a merged constant ('is_merged')
 class arith_steps final {
   public:
-    // an operation of the list being folded: an element, or merged constants
-    // when 'element' is null
+    // an operation of a list: an element, or merged constants when 'element'
+    // is null
     struct step {
         arithmetic_operator op{arithmetic_operator::assign};
         const statement* element{};
         std::optional<int64_t> value; // set when the step is a constant
         std::string folded_source;    // e.g. '* 3 * 2' for the comment
         // the element is a lone negation of a stored value, e.g. '-b', which
-        // pass 3 moves after a constant and add or subtract folds
+        // pass 3 moves after a constant and add or subtract absorbs
         bool is_negated_operand{};
     };
 
@@ -324,9 +324,10 @@ struct list_parens {
 // nested lists; a lower-precedence operation ends a nested list and continues
 // its parent, e.g. 'a * b + c' is one list
 //
-// note: a list is computed left to right in its destination; a nested list,
-//       a destination that a later element reads, or a measured shorter
-//       version uses a scratch register
+// note: a list is computed left to right in its destination; a computed
+//       element after the first, e.g. a nested list or a call, a destination
+//       that a later element reads, or a measured shorter version uses a
+//       scratch register
 //
 class expr_arith final : public statement {
     using step = arith_steps::step;
@@ -542,8 +543,9 @@ class expr_arith final : public statement {
         // the steps compiled in place, which the clobber check reads
         const std::vector<step> steps{plan_steps(tc, dst)};
 
-        // a single element in memory that 'is_compiled_in_place' is compiled
-        // once, without trying with and without a scratch register
+        // a single element that 'is_compiled_in_place' is compiled once into
+        // a memory destination, without trying with and without a scratch
+        // register
         // note: it needs no clobber check, a name is read before 'dst' is
         //       written and a computed element orders its own reads, e.g. a
         //       nested list checks itself and a call rejects a destination
@@ -908,8 +910,8 @@ class expr_arith final : public statement {
         compile_stored_operand(tc, dst, s);
     }
 
-    // the steps that 'plan_steps' made for 'dst'; a nested list is folded
-    // when it is compiled as an element:
+    // the steps that 'plan_steps' made for 'dst'; a nested list plans its
+    // own when it is compiled as an element:
     //   '3 + a * 3 * 2 / 3 / 2 * 4 + 5'  =>  'a * 6 / 6 * 4 + 8'
     auto compile_steps(compile_toc& tc, const destination& dst,
                        const std::span<const step> steps) const -> void {
@@ -1268,7 +1270,7 @@ class expr_arith final : public statement {
         //       whole value and folds before; the rewrite hides an overflow
         //       of the negation, the check computes it
 
-        const bool is_negation_folded{
+        const bool is_negation_absorbed{
             arith_steps::is_additive(op) and
                 not tc.overflow_check(dst).enabled and s.is_negated_operand,
         };
@@ -1284,11 +1286,11 @@ class expr_arith final : public statement {
         machine& x{tc.machine()};
 
         x.comment({src.tok(), tc.indent()}, "{}",
-                  stored_operand_comment(is_negation_folded, has_unary_ops));
+                  stored_operand_comment(is_negation_absorbed, has_unary_ops));
 
         machine::held_registers held{x, {src.tok(), tc.indent()}};
 
-        if (is_negation_folded) {
+        if (is_negation_absorbed) {
             const arithmetic_operator flipped{
                 op == arithmetic_operator::add ? arithmetic_operator::subtract
                                                : arithmetic_operator::add,
@@ -1444,7 +1446,7 @@ class expr_arith final : public statement {
         return traits_of(op).family == operator_family::divide;
     }
 
-    // a lone negation folds into add/sub: 'a - -b' is 'a + b'
+    // add or subtract absorbs a lone negation: 'a - -b' is 'a + b'
     [[nodiscard]] static auto is_negated_operand(const toc& tc,
                                                  const statement& src) -> bool {
 
@@ -1505,10 +1507,10 @@ class expr_arith final : public statement {
     }
 
     [[nodiscard]] static auto
-    stored_operand_comment(const bool is_negation_folded,
+    stored_operand_comment(const bool is_negation_absorbed,
                            const bool has_unary_ops) -> std::string_view {
 
-        if (is_negation_folded) {
+        if (is_negation_absorbed) {
             return "src: negated operand";
         }
 

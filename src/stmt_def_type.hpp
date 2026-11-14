@@ -1,6 +1,5 @@
 #pragma once
 
-#include <algorithm>
 #include <cassert>
 #include <format>
 #include <memory>
@@ -10,6 +9,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -55,20 +55,24 @@ class type_fields final {
                 const token& definition_tk)
         : open_brace_tk_{tz.seen_char_token('{')} {
 
+        // the index in 'fields_' of each name
+        std::unordered_map<std::string_view, size_t> field_indexes;
+
         while (true) {
             // a field starts with its name
             // e.g. 'items point[4]'
             const token field_tk{tz.next_token()};
 
             // checked where it is read, before the errors of later fields
-            const auto existing{
-                std::ranges::find(fields_, field_tk.text(),
-                                  &stmt_def_type_field::name),
+            const auto [existing, is_new]{
+                field_indexes.try_emplace(field_tk.text(), fields_.size()),
             };
 
-            if (existing != fields_.end()) {
+            if (not is_new) {
+                const stmt_def_type_field& first{fields_.at(existing->second)};
+
                 throw_already_defined(field_tk, "field", field_tk.text(),
-                                      tc.where(existing->tok()));
+                                      tc.where(first.tok()));
             }
 
             fields_.emplace_back(tc, field_tk, tz, name_tk);

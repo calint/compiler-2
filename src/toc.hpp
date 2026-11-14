@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <ranges>
+#include <set>
 #include <span>
 #include <string>
 #include <string_view>
@@ -851,7 +852,7 @@ struct placed_dat {
 // are placed here once, in declaration order, the storage and the data section
 // read their offsets
 class data_table final {
-    std::vector<placed_dat> dats_;
+    lut<placed_dat> dats_;
     std::vector<machine::read_only_constant> constants_;
     size_t total_size_bytes_{};
 
@@ -889,12 +890,13 @@ class data_table final {
 
         total_size_bytes_ = add_storage_size(name_tk, offset_bytes, size_bytes);
 
-        dats_.push_back({
-            .def{&dat},
-            .name{name_tk.text()},
-            .padding_bytes{padding_bytes},
-            .offset_bytes{offset_bytes},
-        });
+        dats_.put(std::string{name_tk.text()},
+                  {
+                      .def{&dat},
+                      .name{name_tk.text()},
+                      .padding_bytes{padding_bytes},
+                      .offset_bytes{offset_bytes},
+                  });
     }
 
     // gives back the constants that 'take_constants_after' took out
@@ -921,20 +923,14 @@ class data_table final {
     }
 
     [[nodiscard]] auto dats() const -> std::span<const placed_dat> {
-        return dats_;
+        return dats_.values();
     }
 
     // the name is a dat
     [[nodiscard]] auto get_dat(const std::string_view name) const
         -> const placed_dat& {
 
-        for (const placed_dat& dat : dats_) {
-            if (dat.name == name) {
-                return dat;
-            }
-        }
-
-        std::unreachable();
+        return dats_.get_const_ref(name);
     }
 
     // drops the constants added after the first 'count'
@@ -2991,14 +2987,20 @@ struct noinline_body {
 // a worklist that grows while its bodies compile
 class noinline_body_list final {
     std::vector<noinline_body> bodies_;
+    // the array lengths of the bodies of each function, so that a call does
+    // not search the list: a program may hold tens of thousands of bodies
+    std::map<const stmt_def_func*, std::set<std::vector<std::optional<size_t>>>>
+        array_lengths_by_func_;
 
   public:
     auto add_once(noinline_body body) -> void {
-        if (contains(*body.func, body.array_lengths)) {
-            return;
-        }
+        const bool is_new{
+            array_lengths_by_func_[body.func].insert(body.array_lengths).second,
+        };
 
-        bodies_.push_back(std::move(body));
+        if (is_new) {
+            bodies_.push_back(std::move(body));
+        }
     }
 
     // a copy, the list grows while the bodies compile
@@ -3011,11 +3013,10 @@ class noinline_body_list final {
              const std::vector<std::optional<size_t>>& array_lengths) const
         -> bool {
 
-        return std::ranges::any_of(
-            bodies_, [&](const noinline_body& known) -> bool {
-                return known.func == &func and
-                       known.array_lengths == array_lengths;
-            });
+        const auto lengths_of_func{array_lengths_by_func_.find(&func)};
+
+        return lengths_of_func != array_lengths_by_func_.end() and
+               lengths_of_func->second.contains(array_lengths);
     }
 
     [[nodiscard]] auto count() const -> size_t { return bodies_.size(); }

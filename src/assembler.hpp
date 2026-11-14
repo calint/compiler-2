@@ -349,8 +349,23 @@ class assembler {
         }
 
         std::vector<function_summary> summaries;
+        // the index in 'summaries' of each function
+        std::unordered_map<std::string_view, size_t> summary_indexes;
         for (const body& b : bodies_) {
-            function_summary& summary{summary_of(summaries, b.function)};
+            const auto [known, is_new]{
+                summary_indexes.try_emplace(b.function, summaries.size()),
+            };
+
+            if (is_new) {
+                summaries.push_back(function_summary{
+                    .function{b.function},
+                    .body_count{},
+                    .call_count{},
+                    .instruction_count{},
+                });
+            }
+
+            function_summary& summary{summaries.at(known->second)};
 
             ++summary.body_count;
             summary.call_count += calls[b.label];
@@ -985,23 +1000,5 @@ class assembler {
         default:
             return std::nullopt;
         }
-    }
-
-    [[nodiscard]] static auto
-    summary_of(std::vector<function_summary>& summaries,
-               const std::string_view function) -> function_summary& {
-
-        for (function_summary& summary : summaries) {
-            if (summary.function == function) {
-                return summary;
-            }
-        }
-
-        return summaries.emplace_back(function_summary{
-            .function{std::string{function}},
-            .body_count{},
-            .call_count{},
-            .instruction_count{},
-        });
     }
 };

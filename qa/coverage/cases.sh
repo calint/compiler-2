@@ -8035,3 +8035,7 @@ if [[ $MACHINE == rv32i* ]]; then SRC=3500 && EXP=117 && OPTS="--vars=64 --check
 # padding of a result is found without walking nested types and arrays: types
 # on both sides of the gap counts that are zeroed one by one
 SRC=3510 && EXP=0 && RUN
+
+# a generic noinline function with an array parameter gets a body for each
+# array length of its instance
+SRC=3530 && EXP=12 && RUN

@@ -7,7 +7,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
-#include <iterator>
 #include <limits>
 #include <optional>
 #include <span>
@@ -17,6 +16,7 @@
 #include <vector>
 
 #include "compile_error.hpp"
+#include "lut.hpp"
 #include "token.hpp"
 
 //
@@ -232,7 +232,8 @@ class type final {
     size_t size_bytes_{};       // total size of type in bytes including padding
     size_t fields_end_bytes_{}; // end of the last field before tail padding
     size_t alignment_{1};
-    std::vector<type_field> fields_;
+    // by name: a path looks a field up, a type may hold thousands
+    lut<type_field> fields_;
     type_kind kind_{type_kind::user};
     size_t check_width_bytes_{}; // the width the narrowing rules compare
     // the bytes that fields cover, adjacent ones merged, listed as the fields
@@ -289,9 +290,9 @@ class type final {
         fields_end_bytes_ =
             add_storage_size(src_loc_tk, field.offset, field.size_bytes);
 
-        fields_.emplace_back(std::move(field));
+        fields_.put(std::string{name}, std::move(field));
 
-        append_field_ranges(data_ranges_, fields_.back());
+        append_field_ranges(data_ranges_, fields_.values().back());
 
         alignment_ = std::max(alignment_, tp.alignment_);
 
@@ -312,10 +313,8 @@ class type final {
                              const std::string_view name) const
         -> const type_field& {
 
-        for (const type_field& fld : fields_) {
-            if (fld.name == name) {
-                return fld;
-            }
+        if (fields_.has(name)) {
+            return fields_.get_const_ref(name);
         }
 
         // e.g. the 'x' of 'b.x' with 'b' a 'bool'
@@ -330,11 +329,11 @@ class type final {
     }
 
     [[nodiscard]] auto fields() const -> std::span<const type_field> {
-        return fields_;
+        return fields_.values();
     }
 
     [[nodiscard]] auto has_field(const std::string_view name) const -> bool {
-        return std::ranges::contains(fields_, name, &type_field::name);
+        return fields_.has(name);
     }
 
     // the same type or an integer of the same size, e.g. 'i32' and the
@@ -370,21 +369,18 @@ class type final {
     [[nodiscard]] auto next_field_offset(const type_field& fld) const
         -> std::optional<size_t> {
 
-        const auto it{
-            std::ranges::find(
-                fields_, &fld,
-                [](const type_field& f) -> const type_field* { return &f; }),
-        };
+        const std::span<const type_field> flds{fields_.values()};
 
-        assert(it != fields_.end());
+        // note: 'fld' is an element of the fields, its address gives its index
+        const size_t index{static_cast<size_t>(&fld - flds.data())};
 
-        const auto next{std::next(it)};
+        assert(index < flds.size());
 
-        if (next == fields_.end()) {
+        if (index + 1 == flds.size()) {
             return std::nullopt;
         }
 
-        return next->offset;
+        return flds.at(index + 1).offset;
     }
 
     // the bytes that no field covers, between the data ranges and after the

@@ -1,0 +1,11 @@
+func noinline first<T type>(a T[]) res T {
+    if 1 == 1 { res = a[0] }
+}
+
+func main() {
+    var b = i8[3]
+    b[0] = 7
+    var c = i8[5]
+    c[0] = 5
+    exit(first<i8>(b) + first<i8>(c))
+}

@@ -155,6 +155,71 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] medium: extreme sizes, documented and not fixed (round 430, a hunt
+    of the compiler at scale; generators in the round's scratch, the
+    families are easy to rewrite)
+    1. the compiler overflows its stack (exit 139) on 824 bytes of source:
+       'func r(k) res { res = 0  if k == 0 return  res = (((r(k - 1) +
+       1) + 1) ...) }' with 120 parentheses and 'r(60)', x86_64 and
+       rv32i-fpga, 8 MiB stack; a chain of 48 inlined functions each
+       calling the next inside 120 parentheses does the same (40
+       compile; under a 1 MiB stack 5 compile, 6 crash); the 128 levels
+       of 'parse_toc::max_parse_nesting_' bound the parse of one body,
+       the compile of an inlined call recurses into the body of the
+       callee, so the depth is inlined calls times expression levels,
+       about 1.5 KiB of stack per parenthesized level (through
+       'emit_most_efficient' and 'assembler::capture'); the limits of 64
+       recursion levels and 256 scopes count blocks and calls only and
+       allow about 127 x 127 levels, 25 MiB; parenthesized 'and' lists
+       crash from a chain of 128 functions
+       => either count expression and block levels across inlined calls
+          at compile time with a limit such as 2048 (about 3.3 MiB; a
+          new limit, rejects programs accepted today), or run the
+          compile on a stack sized for the product of the limits
+          (depends on the frame sizes of the build, '-O0' and asan are
+          larger); the 128 limit applied cumulatively would reject
+          inlined chains accepted today (a chain of 64 passes)
+    2. time at 4 times the size, x86_64 (rv32i-fpga and 'noub' alike):
+       2.1 'body_uses::add_global', a body reading 16384 to 65536
+           globals: 1.25 s to 18.7 s (15 times); with 'add_binding' of
+           the round 429 item (a method writing 8192 to 32768 fields
+           1.1 s to 41 s)
+       2.2 'stmt_call::visit_effects_of' scans all bindings per argument
+           and 'shared_storage_check::may_share' is pairwise: a call with
+           8192 to 32768 arguments 1.15 s to 21.5 s (18.6 times)
+       2.3 'assert_read_not_written' compares every element of a literal
+           with all parts written before: 'var d = []{x, x, ...}' 32768
+           to 131072 elements 2.8 s to 38.5 s (13.8 times); the same for
+           a type literal of N fields and an array of N instance
+           literals
+       2.4 'source_files::contains' calls 'std::filesystem::equivalent'
+           against every loaded file per 'include': 512 to 2048 files
+           0.19 s to 4.6 s (24 times), 8192 files 45 s; a canonical path
+           would treat hard-linked files differently
+    3. memory: 'body_uses' is cubic for nested types whose noinline
+       methods delegate to the method of the field ('tN.set' calls
+       'self.a.set()'): 128 types 15 MiB, 256 76 MiB, 512 538 MiB, 1024
+       more than 2 GiB
+    4. under a memory limit of 2 GiB some families end with exit 134
+       ("terminate called after throwing std::bad_alloc") instead of
+       "internal error: std::bad_alloc": the allocation fails inside a
+       destructor that emits ('machine::held_registers::
+       ~held_registers'); seen on long arithmetic lists and 'write'
+       sequences
+    5. with these belong the round 429 item (a chain of generic types,
+       memory quadratic), the round 427 item ('data_table::add_constant'
+       quadratic) and the fan-out of inlined calls (round 226 UF1)
+[ ] easy: (round 430, a walk of the arithmetic path) '-(-a)' without
+    the overflow check emits two 'neg', pairs cancel inside one
+    'unary_ops' but not between the unary operators of a list and those
+    of its single element; the class comment of 'expr_arith' says "nested
+    list", the parse helpers "sub-expression"
+    ('open_implied_subexpression'); 'constant_arith::eval_constant'
+    compares two constants; the docs have no section on how an
+    arithmetic list is planned (steps, the passes, when a scratch
+    register is used); one list for the result and the argument bindings
+    of an inlined call would drop 'inline_call::call_bindings' (about 10
+    lines) and changes 72 rv32i listings
 [ ] medium: (round 429, a hunt of type definitions and a review of the
     condition code) a chain of generic types each based on the one before
     uses memory quadratic in its length, 2000 levels 427 MiB, 8000 levels
