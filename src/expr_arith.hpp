@@ -1318,7 +1318,10 @@ class expr_arith final : public statement {
     [[nodiscard]] static auto constant_operand(const destination& dst,
                                                const int64_t value) -> operand {
 
-        return folded_value::untyped(value).operand_at(dst.type_ref());
+        // note: 'fold' wrapped the value to the width of 'dst'
+        assert(constant_arith::fits_width(value, dst.type_ref()));
+
+        return operand::imm(value, dst.type_ref());
     }
 
     // the first step writes the destination, a later step that reads it

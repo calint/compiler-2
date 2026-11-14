@@ -1105,8 +1105,8 @@ auto check_output_files(const target_name& target, const source_files& files,
     }
 }
 
-// e.g. a full disk, the listing is incomplete; a failed compile leaves no
-// image
+// e.g. a full disk, the listing is incomplete, so the image written with it
+// is removed; an error before the output leaves an earlier image as it is
 auto check_listing_written(const machine& backend) -> void {
     std::cout.flush();
 

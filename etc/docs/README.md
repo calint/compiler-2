@@ -218,12 +218,15 @@ Invariants the code relies on:
 
 2. compile ('program::build'): the statements are walked again through a
    'compile_toc' over the same tables, with a fresh scope stack. Global
-   variables and data are declared again, then 'main' is compiled where the
-   program starts. An inlined call compiles the body of the callee in place
-   (1.3). A noinline call adds a body to compile for the array lengths of its
-   arguments; the bodies are compiled after 'main', and compiling one can add
-   more. Then each function but 'main' and an emitted noinline body without
-   array parameters is checked once without its calls and emits nothing (1.5),
+   variables and data are declared again, the initializer of a global
+   variable is emitted there, in the order of the files, and runs before
+   'main' (it holds no call, 'assert_call_in_func'), then 'main' is compiled,
+   which that code falls into. An inlined call compiles the body of the
+   callee in place (1.3). A noinline call adds a body to compile for the
+   array lengths of its arguments; the bodies are compiled after 'main', and
+   compiling one can add more. Then each function but 'main' and an emitted
+   noinline body without array parameters is checked once without its calls
+   and emits nothing (1.5),
    then the noinline bodies that skipped code and those checks asked for
    ('program::check_noinline_bodies'). Then the failure handlers that the code
    branches to ('machine::emit_used_failure_handlers'), the routines and helpers
@@ -346,9 +349,11 @@ unwinds it:
    'scope_stack::reach_state') and the read-only constants added
 2. 'compile_toc::emit_most_efficient', for a version: the same peaks and reach
    state, each version starts from those before it and the kept one's remain,
-   e.g. the frame size of a noinline body that '--checks=frame' checks; a
-   read-only constant that the dropped version added stays, unused, so the
-   labels stay unique
+   e.g. the frame size of a noinline body that '--checks=frame' checks; the
+   read-only constants a version added leave the table with it and those of
+   the kept one are given back: the two may lay out one constant differently
+   under the same label, e.g. on rv32i a string stored to a local that a
+   temporary of one version moves within its word (test 3490)
 3. 'machine::version_scope', for a version and for the code of
    'machine::dry_run': the members of 'machine::version_state', e.g.
    the registers held, the routines marked used ('machine::mark_used') and
@@ -659,7 +664,7 @@ narrows the result to its type; 'statement::fold_checked' adds the check of
 'assert_not_narrowed' at the same width, so a folded comparison side or
 initializer is rejected where a computed one is. A constant reaches a
 destination only through the list that holds it ('expr_arith', the
-immediate by 'folded_value::operand_at'); the nodes in a list never emit one.
+immediate by 'constant_operand'); the nodes in a list never emit one.
 A comparison side has its own rule ('expr_bool_op::right_operand',
 'immediate_of'): the backend compares at the width of the left side, so an
 untyped constant on the right is checked to fit it ('assert_sides_fit')

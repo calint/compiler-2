@@ -897,6 +897,13 @@ class data_table final {
         });
     }
 
+    // gives back the constants that 'take_constants_after' took out
+    auto append_constants(std::vector<machine::read_only_constant> taken)
+        -> void {
+
+        constants_.append_range(std::move(taken));
+    }
+
     [[nodiscard]] auto constant_count() const -> size_t {
         return constants_.size();
     }
@@ -933,6 +940,20 @@ class data_table final {
     // drops the constants added after the first 'count'
     auto resize_constants(const size_t count) -> void {
         constants_.resize(count);
+    }
+
+    // the constants added after the first 'count', which leave the table
+    [[nodiscard]] auto take_constants_after(const size_t count)
+        -> std::vector<machine::read_only_constant> {
+
+        std::vector<machine::read_only_constant> taken;
+
+        taken.append_range(std::span{constants_}.subspan(count) |
+                           std::views::as_rvalue);
+
+        constants_.resize(count);
+
+        return taken;
     }
 
     [[nodiscard]] auto total_size_bytes() const -> size_t {
@@ -3035,8 +3056,8 @@ struct usage_statistics {
 // bytes ('add_read_only_constant'), a noinline body once
 // ('add_noinline_body'), the scopes and their variables are popped
 // ('scope_entry'); the peaks ('compile_state') are put back by a dry run
-// with the constant count ('dry_run_scope') and set to those of the kept
-// version by 'emit_most_efficient'
+// with the constant count ('dry_run_scope') and set with the constants to
+// those of the kept version by 'emit_most_efficient'
 //
 // the modes a node does not see, each set by one function and read elsewhere:
 //
@@ -3068,6 +3089,13 @@ class compile_toc final : public toc {
         size_t max_scope_count{};
         storage_layout::peaks storage{};
         scope_stack::reach_state reach{};
+    };
+
+    // what a version of 'emit_most_efficient' ends with: its 'compile_state'
+    // and the read-only constants it added, taken out of the table
+    struct version_end {
+        compile_state state{};
+        std::vector<::machine::read_only_constant> constants;
     };
 
     // what a dry run changes in the context is put back when it ends, also
@@ -3385,34 +3413,50 @@ class compile_toc final : public toc {
     }
 
     // 'machine::emit_most_efficient' with each version compiled from the
-    // state before it ('compile_state'), so the state that remains is that of
-    // the kept version, e.g. the frame size of a noinline body; a read-only
-    // constant that the other version added stays, unused, so the labels stay
-    // unique
+    // state before it ('compile_state') and without the read-only constants
+    // of the other, so the state and the constants that remain are those of
+    // the kept version, e.g. the frame size of a noinline body
+    // note: the versions may lay out the same constant differently under one
+    //       label, e.g. on rv32i a string stored to a local of an inlined
+    //       body that a temporary of one version moves within its word
     auto emit_most_efficient(const token& src_loc_tk,
                              const std::function_ref<void()> emit_first,
                              const std::function_ref<void()> emit_second)
         -> void {
 
         const compile_state start{compile_state_now()};
+        const size_t start_constant_count{data().constant_count()};
 
-        compile_state first_end{start};
-        compile_state second_end{start};
+        version_end first_end{
+            .state{start},
+            .constants{},
+        };
 
-        const auto first{
-            [&] -> void {
+        version_end second_end{
+            .state{start},
+            .constants{},
+        };
+
+        const auto compile_from_start{
+            [&](const std::function_ref<void()> emit,
+                version_end& end) -> void {
                 restore_compile_state(start);
-                emit_first();
-                first_end = compile_state_now();
+
+                emit();
+
+                end.state = compile_state_now();
+
+                end.constants =
+                    tables().data.take_constants_after(start_constant_count);
             },
         };
 
+        const auto first{
+            [&] -> void { compile_from_start(emit_first, first_end); },
+        };
+
         const auto second{
-            [&] -> void {
-                restore_compile_state(start);
-                emit_second();
-                second_end = compile_state_now();
-            },
+            [&] -> void { compile_from_start(emit_second, second_end); },
         };
 
         ::machine& x{machine()};
@@ -3421,7 +3465,15 @@ class compile_toc final : public toc {
             x.emit_most_efficient({src_loc_tk, indent_}, first, second),
         };
 
-        restore_compile_state(keeps_first ? first_end : second_end);
+        version_end& kept{keeps_first ? first_end : second_end};
+
+        restore_compile_state(kept.state);
+
+        // a version that failed left its constants in the table
+        data_table& table{tables().data};
+
+        table.resize_constants(start_constant_count);
+        table.append_constants(std::move(kept.constants));
     }
 
     [[nodiscard]] auto emitted_bodies() const -> const noinline_body_list& {

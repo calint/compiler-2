@@ -133,15 +133,13 @@ class initializer_declaration final {
             }
         }
 
-        const value_use use{tc.use_at(tp)};
-
-        const std::optional<folded_value> folded{value.fold(tc, use)};
+        const std::optional<folded_value> folded{
+            value.fold_checked(tc, tc.use_at(tp)),
+        };
 
         if (not folded) {
             return std::nullopt;
         }
-
-        value.assert_not_narrowed(tc, use.width_ref());
 
         folded_value constant{*folded};
 

@@ -630,7 +630,8 @@ class stmt_def_func final : public statement {
         x.label(tc.indent(), ret_jmp_label);
     }
 
-    // where the program starts, 'main' takes nothing from a call
+    // where the program starts after the initializers of the globals, whose
+    // code falls into it; 'main' takes nothing from a call
     auto compile_main(compile_toc& tc) const -> void {
         assert(name() == reserved_names::main);
 

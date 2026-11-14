@@ -8021,3 +8021,7 @@ if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=3470 && SDCARD=1M DIF
 SRC=3480 && COMPERR
 SRC=3481 && COMPERR
 SRC=3482 && COMPERR
+
+# the two versions of a list lay out one read-only constant differently under
+# the same label: the constants of the dropped version leave the table
+SRC=3490 && EXP=116 && RUN

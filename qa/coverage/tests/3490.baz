@@ -1,0 +1,23 @@
+# a string stored to a local of an inlined body whose place within a word
+# differs between the two versions of the list around it: the scratch version
+# adds a temporary for the result of the noinline call before the local, so
+# on rv32i each version lays out the read-only constant at its own phase
+# under the same label; the constants of the dropped version leave the table
+
+func h() res i8 {
+    var s = i8[40]
+    s = "a string of more than sixteen bytes"
+    res = s[2]
+}
+
+func noinline g(v i8) res i8 {
+    res = v
+}
+
+func main() {
+    var pad = i8(1)
+    var a = i8(1)
+    var x = i8(0)
+    x = g(h()) + a
+    exit(x)
+}

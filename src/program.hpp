@@ -315,7 +315,9 @@ class program final {
             const compile_toc::scope_entry root{tc, scope::block()};
 
             // a global 'var' or 'dat' is declared again with its storage, a
-            // type writes its layout comment, a function emits nothing here
+            // type writes its layout comment, a function emits nothing here;
+            // the initializer of a global 'var' is emitted here, in the
+            // order of the files, so it runs before 'main'
             for (const parsed_file& parsed : parsed_files_) {
                 for (const std::unique_ptr<statement>& s : parsed.statements) {
                     s->compile(tc, destination{});

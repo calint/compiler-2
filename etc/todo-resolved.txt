@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 427 (2026-11-14, bug hunt: the versions mechanism,
+    '--versions', the state after a dropped version and the register
+    report; design: the life of a compile-time constant; readability: a
+    newcomer follows one run from 'src/main.cpp' to the written files)
+    => done, defect: the compiler aborted (exit 134, "not
+       values.contains(name)" in 'assembler_rv32i.hpp') on every rv32i
+       target for a string of more than 16 bytes copied inside a
+       construct with two versions, 'x = g(h()) + a'; 'compile_toc::
+       emit_most_efficient' left the read-only constants of the dropped
+       version in 'data_table', and the two versions lay one constant
+       out at different phases of the word under the same label; the
+       constants are now part of what a version ends with ('compile_toc::
+       version_end', 'data_table::take_constants_after' and
+       'append_constants'), only those of the kept version return; no
+       existing listing differs; test 3490, docs 1.4 item 2
+    => bug hunt otherwise: 5500 generated programs in 24 builds each, a
+       state probe over 40240 compiles of the suite, the report
+       recomputed from the listing for 2515 tests in 16 configurations,
+       18 seeded mutants all caught
+    => design: 'folded_value::operand_at' is gone, 'expr_arith::
+       constant_operand' asserts that the folded value fits and builds
+       the immediate; 'initializer_declaration::fold_let' calls
+       'fold_checked'; 8 lines added, 13 removed
+    => readability: the initializers of the globals are emitted before
+       'main' in the order of the files and fall into it, said in
+       'program::compile', 'compile_main' and docs 1.2 item 2; the
+       comment of 'check_listing_written' said "a failed compile leaves
+       no image", an error before the output leaves an earlier image
+    => the fuzz step reported the known false hang of test 1698 under
+       load ('compiler-hang-e9a4e600bc'), 0 new findings
 [x] easy: round 426 (2026-11-14, bug hunt: the lexical layer, tokens,
     literals, comments, line ends, includes, error positions and broken
     sources; design: how registers are handed out and given back;
