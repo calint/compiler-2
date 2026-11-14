@@ -18,6 +18,8 @@ class machine_rv32i_linux final : public machine_rv32i {
     static constexpr int syscall_write_{64};
     static constexpr int syscall_exit_{93};
     static constexpr int syscall_openat_{56};
+    static constexpr int syscall_close_{57};
+    static constexpr int syscall_fcntl64_{25};
     static constexpr int syscall_llseek_{62};
     static constexpr int syscall_pread_{67};
     static constexpr int syscall_pwrite_{68};
@@ -44,9 +46,9 @@ class machine_rv32i_linux final : public machine_rv32i {
 
     // the registers as 'sector_read_label_' says; an operating system
     // transfers the sectors of the image file: the image file is opened at
-    // the first transfer, its descriptor and last sector kept in
-    // '.Lbaz_sd_card', a sector past the end, a failed open or a short
-    // transfer panics
+    // the first transfer and kept above the standard descriptors, its
+    // descriptor and last sector kept in '.Lbaz_sd_card', a sector past the
+    // end, a failed open or a short transfer panics
     auto emit_sector_routines(const bool read_used, const bool write_used)
         -> void override {
 
@@ -57,10 +59,13 @@ class machine_rv32i_linux final : public machine_rv32i {
 
         constexpr std::string_view sd_card_label{".Lbaz_sd_card"};
         constexpr std::string_view sd_card_name_label{".Lbaz_sd_card_name"};
-        // 'AT_FDCWD', 'O_RDWR' and 'SEEK_END' of linux
+        // 'AT_FDCWD', 'O_RDWR', 'SEEK_END' and 'F_DUPFD' of linux
         constexpr int current_directory{-100};
         constexpr int read_write{2};
         constexpr int seek_end{2};
+        constexpr int duplicate{0};
+        // the descriptor after the standard ones
+        constexpr int first_free{stderr_descriptor_ + 1};
         // the 64 bit size of the file, the descriptor, -1 until the file is
         // opened, and the last sector
         constexpr std::array<int64_t, 4> sd_card_words{0, 0, -1, 0};
@@ -117,8 +122,22 @@ class machine_rv32i_linux final : public machine_rv32i {
         output.li(1, "a7", syscall_openat_);
         output.ecall(1);
         output.bltz(1, "a0", sd_card_failure_.label);
+        // a program started without a standard descriptor got its number for
+        // the file, which 'read' or 'write' would then serve: 'fcntl64'
+        // copies it to the lowest free descriptor from 'first_free'
+        output.mv(1, "a4", "a0");
+        output.li(1, "a1", duplicate);
+        output.li(1, "a2", first_free);
+        output.li(1, "a7", syscall_fcntl64_);
+        output.ecall(1);
+        // the copy is kept for later transfers, '-errno' when it failed
         output.sw(1, "a0", descriptor_offset, "a3");
+        output.mv(1, "a0", "a4");
+        output.li(1, "a7", syscall_close_);
+        output.ecall(1);
+        output.lw(1, "a0", descriptor_offset, "a3");
         // 'llseek' writes the size of the file at 'a3'
+        // note: a copy that failed is not a descriptor, so the seek fails
         output.li(1, "a1", 0);
         output.li(1, "a2", 0);
         output.li(1, "a4", seek_end);

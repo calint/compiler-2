@@ -1,0 +1,15 @@
+without descriptor 0
+  exit code: 27
+  output: b'not to the card\n'
+  errors: b''
+  card bytes: 1048576
+without descriptor 1
+  exit code: 11
+  output: b''
+  errors: b''
+  card bytes: 1048576
+without descriptor 2
+  exit code: 248
+  output: b'not to the card\n'
+  errors: b''
+  card bytes: 1048576

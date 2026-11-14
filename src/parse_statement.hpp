@@ -57,34 +57,28 @@
 // where a call of a built-in is parsed: in a value, or alone as a statement
 enum class builtin_place : uint8_t { value, statement };
 
-// a built-in 'fn' where it stands, null for a conversion, which has a value
-// only; e.g. 'exit' has no value and 'arrays_equal' is no statement
-inline auto
-assert_builtin_place(const token& tk,
-                     const reserved_names::builtin_function* const fn,
-                     const builtin_place at) -> void {
-
-    const reserved_names::builtin_use use{
-        fn == nullptr ? reserved_names::builtin_use::value : fn->use,
-    };
+// the built-in function 'fn' where it stands, e.g. 'exit' has no value and
+// 'arrays_equal' is no statement
+inline auto assert_builtin_place(const token& tk,
+                                 const reserved_names::builtin_function& fn,
+                                 const builtin_place at) -> void {
 
     if (at == builtin_place::value and
-        use == reserved_names::builtin_use::statement) {
+        fn.use == reserved_names::builtin_use::statement) {
 
         throw_no_value(tk, tk.text());
     }
 
     if (at == builtin_place::statement and
-        use == reserved_names::builtin_use::value) {
+        fn.use == reserved_names::builtin_use::value) {
 
         throw_discarded_result(tk, tk.text());
     }
 }
 
-// the statement of the built-in at 'tk', a conversion to 'converted' when it
-// is not null
-inline auto make_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
-                         const type* const converted, unary_ops uops)
+// the statement of the built-in function at 'tk'
+inline auto make_builtin_function(parse_toc& tc, tokenizer& tz, const token& tk,
+                                  unary_ops uops)
     -> std::unique_ptr<statement> {
 
     if (const stmt_builtin_io::io_function* const io{
@@ -108,18 +102,13 @@ inline auto make_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
                                                            tk, tz);
     }
 
-    if (tk.is_text("arrays_equal")) {
-        return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops),
-                                                           tk, tz);
-    }
+    // note: every other built-in of 'reserved_names::builtin_functions' has
+    //       a branch above
 
-    // note: every built-in of 'reserved_names::builtin_functions' has a
-    //       branch above, what is left is an integer conversion
+    assert(tk.is_text("arrays_equal"));
 
-    assert(converted != nullptr);
-
-    return std::make_unique<stmt_builtin_convert>(tc, *converted,
-                                                  std::move(uops), tk, tz);
+    return std::make_unique<stmt_builtin_arrays_equal>(tc, std::move(uops), tk,
+                                                       tz);
 }
 
 // a built-in function or a conversion, the terms 'parse_builtin' takes
@@ -128,7 +117,7 @@ inline auto make_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
 }
 
 // a call of the built-in at 'tk', classified as 'tm' ('is_builtin_term'); the
-// catalog says where it may stand ('assert_builtin_place')
+// catalog says where a function may stand ('assert_builtin_place')
 inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
                           const term_kind tm, unary_ops uops,
                           const builtin_place at)
@@ -136,32 +125,41 @@ inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
 
     assert(is_builtin_term(tm));
 
+    // e.g. 'bool(5)' or 'void(5)', only the integer types convert; a
+    // conversion has a value only, e.g. not 'i8(x)' alone
+    if (tm == term_kind::conversion) {
+        const type& converted{conversion_type(tc, tk)};
+
+        if (at == builtin_place::statement) {
+            throw_discarded_result(tk, tk.text());
+        }
+
+        return std::make_unique<stmt_builtin_convert>(tc, converted,
+                                                      std::move(uops), tk, tz);
+    }
+
     const reserved_names::builtin_function* const fn{
         reserved_names::find_builtin_function(tk.text()),
     };
 
-    const char next{tz.peek_char_after_whitespace()};
+    // note: the name was classified as a built-in function
+    assert(fn != nullptr);
 
     // a built-in is not generic, e.g. 'read<i8>(0, buf)'
-    if (fn != nullptr and tz.is_type_args_next()) {
+    if (tz.is_type_args_next()) {
         throw_not_generic(tk, "built-in function", tk.text());
     }
 
     // checked before where it may stand, e.g. a lone 'exit' or the
     // 'array_length a' of a value; at the name, the next token can be on a
     // later line
-    if (fn != nullptr and next != '(') {
+    if (tz.peek_char_after_whitespace() != '(') {
         throw compile_error{tk, "expected '(' after function name"};
     }
 
-    // e.g. 'bool(5)' or 'void(5)', only the integer types convert
-    const type* const converted{
-        tm == term_kind::conversion ? &conversion_type(tc, tk) : nullptr,
-    };
+    assert_builtin_place(tk, *fn, at);
 
-    assert_builtin_place(tk, fn, at);
-
-    return make_builtin(tc, tz, tk, converted, std::move(uops));
+    return make_builtin_function(tc, tz, tk, std::move(uops));
 }
 
 // e.g. the 'a' of 'return a', a value on the line of the 'return' that no
@@ -324,9 +322,7 @@ inline auto parse_call_or_identifier(parse_toc& tc, tokenizer& tz,
     assert_value_or_call(tc, tz, tk, tm);
 
     // e.g. 'f(x)' or 'show<name>(x)', the call reads the type arguments
-    if (tz.peek_char_after_whitespace() == '(' or
-        tm == term_kind::generic_call) {
-
+    if (tm == term_kind::call or tm == term_kind::generic_call) {
         return std::make_unique<stmt_call>(tc, std::move(uops), tk, tz,
                                            expected_type);
     }
@@ -413,7 +409,7 @@ inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
             std::get_if<std::unique_ptr<stmt_call>>(&parsed),
         }) {
 
-        if (not(*call)->get_type().is_same(tc.builtins().void_type())) {
+        if ((*call)->callee().has_result()) {
             throw_discarded_result((*call)->callee_name_token(),
                                    (*call)->callee().name());
         }
@@ -533,7 +529,7 @@ inline auto parse_operand(parse_toc& tc, tokenizer& tz, unary_ops uops,
         }) {
 
         // a function without a result has no value
-        if ((*call)->get_type().is_same(tc.builtins().void_type())) {
+        if (not(*call)->callee().has_result()) {
             throw_no_value((*call)->callee_name_token(),
                            (*call)->callee().name());
         }

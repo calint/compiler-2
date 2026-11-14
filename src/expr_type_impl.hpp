@@ -51,7 +51,7 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
     const bool is_typed_literal{tm == term_kind::instance_literal or is_bare};
 
     // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
-    if (is_bare_builtin_type(tc, tk, tz)) {
+    if (is_bare_builtin_type(tm, tz)) {
         throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
     }
 

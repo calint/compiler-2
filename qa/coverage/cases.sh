@@ -8007,3 +8007,8 @@ SRC=3452 && COMPERR
 # by its type
 SRC=3453 && COMPERR
 SRC=3454 && COMPERR
+
+# x86_64 and rv32i keep the card image above the standard descriptors: a
+# program started without one of them does not reach the image with 'read' or
+# 'write', and a panic does not print into it
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=3470 && SDCARD=1M DIFFPY; fi

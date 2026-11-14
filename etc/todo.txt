@@ -155,6 +155,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 425, a hunt of the input and output built-ins and a
+    walk of the parser's dispatch) the -9 of a descriptor that is not
+    served equals '-EBADF' of linux, so a 'read' that also served 1 or a
+    'write' that also served 3 is not told apart when the descriptors are
+    pipes or one-way files as in 'test-coverage.sh' (the generator caught
+    both mutants only with 0 to 2 opened read-write);
+    'assert_return_without_value' keeps its own classification of the
+    next term beside 'classify_term', folding it changes which programs
+    get "'return' takes no value"; 'term_kind::string' and 'unknown' are
+    tested by no caller
 [ ] easy: (round 424, a hunt of arrays and structured types and a walk
     of the 40 longest functions) with '--checks=lower' alone
     'array_copy(a, b, n)' of a run-time count and constant starts tests

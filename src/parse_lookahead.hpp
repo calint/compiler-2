@@ -396,12 +396,10 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
 
 // e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
 // 'i8 + 1' or 'bool and true' continue an expression
-[[nodiscard]] inline auto is_bare_builtin_type(const parse_toc& tc,
-                                               const token& tk,
+[[nodiscard]] inline auto is_bare_builtin_type(const term_kind tm,
                                                const tokenizer& tz) -> bool {
 
-    return classify_term(tc, tk, tz) == term_kind::builtin_type and
-           not continues_expression(tz);
+    return tm == term_kind::builtin_type and not continues_expression(tz);
 }
 
 // skips the literal at 'probe': an optional '[...]', then an optional

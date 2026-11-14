@@ -2124,7 +2124,8 @@ What depends on the target is listed here, nothing else does:
    descriptor led by 'i8' or 'i16' is computed at 'i32', e.g. 'write(d8 <<
    1, b)' with 'd8' 64 writes to 128), and any other returns -9 without a
    system call, also the descriptor of the card image that x86_64 and
-   rv32i keep open;
+   rv32i keep open, which they move above 2, so a program started without
+   a standard descriptor does not get the image in its place (test 3470);
    on the uart of 'rv32i-qemu' and 'rv32i-fpga' a 'read' returns at most one
    line, a carriage return reads as a newline,
    and an end of transmission byte ends a read, also inside the input; the

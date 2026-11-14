@@ -850,13 +850,12 @@ class expr_any final : public statement {
     // an instance or array literal where the built-in 'tp' is expected, also
     // one reached into, e.g. 'pt{1, 2}.x'
     static auto assert_not_aggregate(const parse_toc& tc, const tokenizer& tz,
-                                     const type& tp, const token& tk) -> void {
+                                     const type& tp, const token& tk,
+                                     const term_kind tm) -> void {
 
         // a user type or an instance literal, e.g. 'x = point' or
         // 'x = point{1, 2}' for an 'i8' 'x'; a condition may compare an
         // instance literal, which the comparison rejects
-        const term_kind tm{classify_term(tc, tk, tz)};
-
         if (tm == term_kind::instance_literal and is_literal_reached_into(tz)) {
             throw_instance_literal_not_operand(tk, tk.text());
         }
@@ -1225,12 +1224,13 @@ class expr_any final : public statement {
         }
 
         const token tk{tz.next_token()};
+        const term_kind tm{classify_term(tc, tk, tz)};
 
-        if (is_bare_builtin_type(tc, tk, tz)) {
+        if (is_bare_builtin_type(tm, tz)) {
             return parse_type_as_zero(tc, tz, tp, typing, tk);
         }
 
-        assert_not_aggregate(tc, tz, tp, tk);
+        assert_not_aggregate(tc, tz, tp, tk, tm);
 
         tz.put_back_token(tk);
 
@@ -1394,8 +1394,9 @@ inline auto stmt_array_size::assert_size_not_type(const parse_toc& tc,
     tokenizer probe{tz};
 
     const token tk{probe.next_token()};
+    const term_kind tm{classify_term(tc, tk, probe)};
 
-    if (not is_bare_builtin_type(tc, tk, probe)) {
+    if (not is_bare_builtin_type(tm, probe)) {
         return;
     }
 

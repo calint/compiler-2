@@ -1,0 +1,18 @@
+# a program started without a standard descriptor: the card image does not
+# take its number, so 'write' and 'read' of it return -9 and do not reach the
+# image, and a panic does not print into it; the script runs the program
+# without each of the three in turn
+
+dat block = i8[512]
+dat text = "not to the card\n"
+
+func main() {
+    sector_read(0, block)
+    var written = write(1, text)
+    var got = read(0, block, 4)
+    if written + got == 16 {
+        # a sector past the end of the card panics on standard error
+        sector_read(4096, block)
+    }
+    exit(written + got + 20)
+}

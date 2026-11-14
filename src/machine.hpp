@@ -64,9 +64,10 @@ struct runtime_check {
 // where an emitted instruction comes from: the source token the listing
 // attributes it to and the indent it is written at
 //
-// note: passed by value for one emit call; 'src_loc_tk' refers to a token of
-//       the parsed program or of the caller, so a holder that outlives the
-//       call copies the token instead
+// note: passed by value for one emit call, or held by a scope of the caller
+//       ('machine::held_registers'); 'src_loc_tk' refers to a token of the
+//       parsed program or of the caller, so a holder that outlives the
+//       caller copies the token instead
 struct emit_site {
     // note: a constructor keeps the call sites short: '{tok(), tc.indent()}'
     emit_site(const token& src_loc_tk_in, const size_t indent_in)

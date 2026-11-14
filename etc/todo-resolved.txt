@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 425 (2026-11-14, bug hunt: the input and output
+    built-ins and constant data, 'read', 'write', the sector calls,
+    'exit', strings, 'dat' and 'let'; design: how the parser decides what
+    a statement is; readability: a newcomer checks the header of each of
+    the 312 classes and structs against its code)
+    => done, defect: a program with sector calls started without a
+       standard descriptor ('./prog >&-') got the card image at that
+       number, 'write(1, text)' and a panic message were appended to the
+       image and 'read(0, ..)' read from it, against chapter 8 item 5;
+       the sector routine of x86_64 and of rv32i linux now copies the
+       descriptor above 2 ('fcntl' 'F_DUPFD') and closes the first, a
+       failed copy fails the seek check; x86_64 +6 instructions (28 B),
+       rv32i +9 (48 B), once per program with sector calls, 106 listings
+       of 29 tests differ; test 3470, docs chapter 8 item 5
+    => bug hunt otherwise: about 48500 generated programs in 870000
+       builds against a model of bytes, exit codes, panics and the card
+       image, 691 rejection probes, asan clean, 16 seeded mutants all
+       caught
+    => design: in 'parse_builtin' a conversion is one early branch
+       ('assert_builtin_place' takes a 'builtin_function&',
+       'make_builtin_function' has no nullable 'converted');
+       'parse_call_or_identifier' uses the term kind instead of peeking
+       '(' again; "the call has no result" is 'callee().has_result()' in
+       all four places; 'is_bare_builtin_type' takes the term kind, so
+       'classify_term' runs once per token in three callers; 52 lines
+       added, 57 removed, a probe build trapped on no difference
+    => readability: the header of 'in_storage' described 'var_placement'
+       and moved there; the note of 'emit_site' names 'machine::
+       held_registers', which holds one for its scope
 [x] easy: round 424 (2026-11-14, bug hunt: arrays and structured types,
     element and field addressing three levels deep, the bounds and overlap
     checks, the array built-ins, whole copies and comparisons; design: how

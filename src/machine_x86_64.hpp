@@ -62,6 +62,8 @@ class machine_x86_64 final : public machine {
     static constexpr int syscall_write_{1};
     static constexpr int syscall_exit_{60};
     static constexpr int syscall_open_{2};
+    static constexpr int syscall_close_{3};
+    static constexpr int syscall_fcntl_{72};
     static constexpr int syscall_lseek_{8};
     static constexpr int syscall_pread_{17};
     static constexpr int syscall_pwrite_{18};
@@ -828,15 +830,18 @@ class machine_x86_64 final : public machine {
     }
 
     // the routines take the sector in 'rdi', the address in 'rsi' and the size
-    // in 'rdx'; the image file is opened at the first transfer, a sector past
-    // its end or outside -2^31 to 2^32 - 1, a failed open or a short transfer
-    // panics
+    // in 'rdx'; the image file is opened at the first transfer and kept above
+    // the standard descriptors, a sector past its end or outside -2^31 to
+    // 2^32 - 1, a failed open or a short transfer panics
     auto emit_sector_routines(const bool read_used, const bool write_used)
         -> void override {
 
-        // 'O_RDWR' and 'SEEK_END' of linux
+        // 'O_RDWR', 'SEEK_END' and 'F_DUPFD' of linux
         constexpr int read_write{2};
         constexpr int seek_end{2};
+        constexpr int duplicate{0};
+        // the descriptor after the standard ones
+        constexpr int first_free{stderr_descriptor_ + 1};
         constexpr int sector_shift{std::countr_zero(card_sector_size_bytes_)};
         // the bits below the sign of a 32 bit register
         constexpr int low_bits{31};
@@ -896,11 +901,27 @@ class machine_x86_64 final : public machine {
         // a negative result is '-errno', the open failed
         assembler_.instruction(1, op::test, "rax", "rax");
         assembler_.jcc(1, condition::s, sd_card_failure_.label);
-        // keep the descriptor for later transfers
+        assembler_.comment(1, "the file moves above the standard descriptors");
+        // a program started without a standard descriptor got its number for
+        // the file, which 'read' or 'write' would then serve:
+        // fcntl(opened, 'F_DUPFD', first_free) copies it to the lowest free
+        // descriptor from 'first_free'
+        assembler_.instruction(1, op::mov, "rdi", "rax");
+        // note: 'F_DUPFD' is zero, which 'xor' sets shorter
+        static_assert(duplicate == 0);
+        assembler_.instruction(1, op::xor_op, "esi", "esi");
+        assembler_.instruction(1, op::mov, "edx", first_free);
+        assembler_.instruction(1, op::mov, "eax", syscall_fcntl_);
+        assembler_.instruction(1, op::syscall);
+        // keep the copy for later transfers, '-errno' when it failed
         assembler_.instruction(1, op::mov, descriptor, "rax");
+        // close(opened), a system call keeps 'rdi'
+        assembler_.instruction(1, op::mov, "eax", syscall_close_);
+        assembler_.instruction(1, op::syscall);
         assembler_.comment(1, "the size of the file in sectors");
         // lseek(descriptor, 0, 'SEEK_END') returns the file size in bytes
-        assembler_.instruction(1, op::mov, "rdi", "rax");
+        // note: a copy that failed is not a descriptor, so the seek fails
+        assembler_.instruction(1, op::mov, "rdi", descriptor);
         assembler_.instruction(1, op::xor_op, "esi", "esi");
         assembler_.instruction(1, op::mov, "edx", seek_end);
         assembler_.instruction(1, op::mov, "eax", syscall_lseek_);

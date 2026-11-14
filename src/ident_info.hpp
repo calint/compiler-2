@@ -82,8 +82,8 @@ struct folded_value {
     }
 };
 
-// where a variable lives: in storage at an offset from a base register, at
-// the memory a register points to, or in a register without storage
+// e.g. a global or a local 'var', in storage at an offset from a base
+// register
 struct in_storage {
     // from the base register, set when the storage is allocated
     int64_t offset{};
@@ -106,6 +106,8 @@ struct in_value_register {
     operand reg;
 };
 
+// where a variable lives: in storage at an offset from a base register, at
+// the memory a register points to, or in a register without storage
 using var_placement =
     std::variant<in_storage, at_address_register, in_value_register>;
 
