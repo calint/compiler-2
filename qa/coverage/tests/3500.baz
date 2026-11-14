@@ -1,0 +1,24 @@
+# the scratch version of the list runs out of variable storage at 'last',
+# after the inlined body stored its string: the temporary of that version
+# moves 's' within its word, so the version leaves a read-only constant laid
+# out differently under the label of the kept one; the constants of a version
+# that fails leave the table too ('--vars=64' on rv32i)
+
+func h() res i8 {
+    var s = i8[59]
+    s = "a string of more than sixteen bytes"
+    var last = i8(1)
+    res = s[2] + last
+}
+
+func noinline g(v i8) res i8 {
+    res = v
+}
+
+func main() {
+    var a = i8(1)
+    var x = i8(0)
+    var b = i8(1)
+    x = g(h()) + a
+    exit(x + b - 1)
+}

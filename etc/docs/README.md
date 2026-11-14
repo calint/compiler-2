@@ -343,12 +343,12 @@ would quote; a version writes them, its lines may be kept.
 What dropped code changed is put back by its owner, also when an error
 unwinds it:
 
-1. 'compile_toc::dry_run_scope', for a dry run: the 'compile_toc::compile_state'
-   (the deepest scope count, the storage peak and the frame peak
-   ('storage_layout::peaks'), and whether the code after is reached,
-   'scope_stack::reach_state') and the read-only constants added
-2. 'compile_toc::emit_most_efficient', for a version: the same peaks and reach
-   state, each version starts from those before it and the kept one's remain,
+1. 'compile_toc::version_scope', for a dry run and for a version: the
+   'compile_toc::compile_state' (the deepest scope count, the storage peak and
+   the frame peak ('storage_layout::peaks'), and whether the code after is
+   reached, 'scope_stack::reach_state') and the read-only constants added
+2. 'compile_toc::emit_most_efficient', for the kept version: the peaks and
+   reach state it ended with ('compile_toc::version_end') are set again,
    e.g. the frame size of a noinline body that '--checks=frame' checks; the
    read-only constants a version added leave the table with it and those of
    the kept one are given back: the two may lay out one constant differently
@@ -1328,8 +1328,9 @@ needed (8.3).
 ### 3.10 Definite assignment
 
 'ub_assigned.hpp' tells which bytes of the result of a function are set before
-they are read. 'assignment_flow' walks the result of a function through its body, which every
-path must set before it returns ('stmt_def_func::assert_sets_result'). The
+they are read. 'assignment_flow' walks the result of a function through its
+body, which every path must set before it returns
+('stmt_def_func::assert_sets_result'). The
 parse tells which reads and writes name the result, by the one lookup of 1.3
 ('scope_stack::names_result'), so a name that hides it is not the result.
 Each statement reports what it does ('assign', 'end_path', 'record_break'), the

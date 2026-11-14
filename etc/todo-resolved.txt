@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 428 (2026-11-14, bug hunt: the read-only constants and
+    the data table with the fix of round 427; design: compiling without
+    emitting, dry runs, skipped code and versions; readability: a
+    newcomer checks chapters 2, 3 and 6 of the docs sentence by sentence,
+    about 230 sentences, 73 programs, 95 code names)
+    => done, design: one scope object puts the context back after a dry
+       run and after a version, 'compile_toc::dry_run_scope' is
+       'version_scope' and each version of 'emit_most_efficient' runs
+       inside one; the saved start, the restore by hand and the cut of a
+       failed version's constants are gone; 19 lines added, 27 removed,
+       docs 1.4; no listing differs over 2530 cases
+    => bug hunt: no defect; 9400 generated programs in about 325000
+       runs with every '--versions' value, every rv32i image equal to
+       llvm's, a probe of the table over 80479 compiles of the suite, 16
+       seeded mutants, 15 caught; test 3500 closes a gap, a second
+       version that runs out of storage after it added a constant (a
+       mutant that keeps those constants passed the suite before)
+    => readability: nothing to apply, every rule, message, listing and
+       cross reference checked holds; one line of 3.10 rewrapped
+    => the fuzz step reported the known hang of test 1698 again, 0 new
+       findings; the finding compiles in 10.0 s with the build of round
+       426 and 10.1 s with this one
 [x] easy: round 427 (2026-11-14, bug hunt: the versions mechanism,
     '--versions', the state after a dropped version and the register
     report; design: the life of a compile-time constant; readability: a

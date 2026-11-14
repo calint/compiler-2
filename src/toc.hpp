@@ -3055,9 +3055,9 @@ struct usage_statistics {
 // compile adds here is the same each time: a constant is kept once by its
 // bytes ('add_read_only_constant'), a noinline body once
 // ('add_noinline_body'), the scopes and their variables are popped
-// ('scope_entry'); the peaks ('compile_state') are put back by a dry run
-// with the constant count ('dry_run_scope') and set with the constants to
-// those of the kept version by 'emit_most_efficient'
+// ('scope_entry'); the peaks ('compile_state') and the constant count are
+// put back after a dry run and a version ('version_scope') and set with the
+// constants to those of the kept version by 'emit_most_efficient'
 //
 // the modes a node does not see, each set by one function and read elsewhere:
 //
@@ -3098,25 +3098,26 @@ class compile_toc final : public toc {
         std::vector<::machine::read_only_constant> constants;
     };
 
-    // what a dry run changes in the context is put back when it ends, also
-    // when an error unwinds: the 'compile_state' and the read-only constants;
-    // the machine puts back the mode ('is_dry_run')
-    class dry_run_scope final {
+    // what a dry run or a version changes in the context is put back when it
+    // ends, also when an error unwinds: the 'compile_state' and the read-only
+    // constants; a version that is kept is given its end again
+    // ('emit_most_efficient'); the machine puts back the mode ('is_dry_run')
+    class version_scope final {
         compile_toc& tc_;
         compile_state kept_state_{};
         size_t kept_constant_count_{};
 
       public:
-        explicit dry_run_scope(compile_toc& tc)
+        explicit version_scope(compile_toc& tc)
             : tc_{tc}, kept_state_{tc.compile_state_now()},
               kept_constant_count_{tc.data().constant_count()} {}
 
-        dry_run_scope(const dry_run_scope&) = delete;
-        dry_run_scope(dry_run_scope&&) = delete;
-        auto operator=(const dry_run_scope&) -> dry_run_scope& = delete;
-        auto operator=(dry_run_scope&&) -> dry_run_scope& = delete;
+        version_scope(const version_scope&) = delete;
+        version_scope(version_scope&&) = delete;
+        auto operator=(const version_scope&) -> version_scope& = delete;
+        auto operator=(version_scope&&) -> version_scope& = delete;
 
-        ~dry_run_scope() {
+        ~version_scope() {
             tc_.restore_compile_state(kept_state_);
             tc_.tables().data.resize_constants(kept_constant_count_);
         }
@@ -3405,7 +3406,7 @@ class compile_toc final : public toc {
     // check of a body starts from the registers of a noinline body
     // ('machine::begin_dry_run_body') and is inside no version
     auto dry_run(const std::function_ref<void()> compile) -> void {
-        const dry_run_scope run{*this};
+        const version_scope run{*this};
 
         ::machine& x{machine()};
 
@@ -3424,23 +3425,16 @@ class compile_toc final : public toc {
                              const std::function_ref<void()> emit_second)
         -> void {
 
-        const compile_state start{compile_state_now()};
         const size_t start_constant_count{data().constant_count()};
 
-        version_end first_end{
-            .state{start},
-            .constants{},
-        };
-
-        version_end second_end{
-            .state{start},
-            .constants{},
-        };
+        // note: a version that fails is not kept, so the kept one has its end
+        version_end first_end{};
+        version_end second_end{};
 
         const auto compile_from_start{
             [&](const std::function_ref<void()> emit,
                 version_end& end) -> void {
-                restore_compile_state(start);
+                const version_scope version{*this};
 
                 emit();
 
@@ -3469,10 +3463,8 @@ class compile_toc final : public toc {
 
         restore_compile_state(kept.state);
 
-        // a version that failed left its constants in the table
         data_table& table{tables().data};
 
-        table.resize_constants(start_constant_count);
         table.append_constants(std::move(kept.constants));
     }
 

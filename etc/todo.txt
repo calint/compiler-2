@@ -155,6 +155,26 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[p] easy: need approval (round 428, the design of compiling without
+    emitting): the three 'is_dry_run' tests that skip comments
+    ('machine::comment' twice, 'statement::comment_source') are not
+    needed for the output, the capture drops the lines; a build without
+    them gives the same listings over 2529 cases
+    => proposed, not applied: remove them and move the flag from
+       'machine::version_state' to 'compile_toc', an estimated 15 to 25
+       lines fewer; 'roome/src/main.baz' then compiles in 0.075 s
+       instead of 0.060 s on rv32i-fpga (best of 7); docs 1.4 describes
+       the skip as intended
+[ ] easy: (round 428, a hunt of the read-only constants and a walk of
+    docs chapters 2, 3 and 6) 'array_copy(a, b, f())' and
+    'arrays_equal(a, b, f())' with an inlined 'f' that zeroes a local
+    array of 55 bytes or more is rejected on x86_64 ("register rdi is
+    always used by the operation") and accepted on rv32i (the class of
+    the round 417 item); the least '--vars' of a program with a noinline
+    call differs between the targets for 'i8' variables; 'p = {1,
+    gety(p)}' says "'p' is read but has been overwritten" where 'gety'
+    reads one field, 3.9 and 8.3 state the whole-argument read only for
+    a parameter or a global passed on
 [ ] easy: (round 427, a hunt of the versions mechanism and a walk from
     'main.cpp' to the files) 'data_table::add_constant' searches all
     constants by bytes, compile time is quadratic in distinct read-only

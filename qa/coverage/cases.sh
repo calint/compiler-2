@@ -8025,3 +8025,8 @@ SRC=3482 && COMPERR
 # the two versions of a list lay out one read-only constant differently under
 # the same label: the constants of the dropped version leave the table
 SRC=3490 && EXP=116 && RUN
+
+# the second version of a list runs out of variable storage after it added a
+# read-only constant laid out differently under the label of the kept one:
+# the constants of a version that fails leave the table
+if [[ $MACHINE == rv32i* ]]; then SRC=3500 && EXP=117 && OPTS="--vars=64 --checks=upper,lower,line" RUN; fi
