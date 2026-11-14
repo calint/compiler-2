@@ -292,7 +292,9 @@ class scope final {
     struct function_part {
         func_kind kind{};
 
-        // a unique path of source locations of the inlined call
+        // keeps the labels of the body unique: the source locations of the
+        // inlined calls around it, or of a noinline body its array lengths
+        // and instance name, see 'compile_toc::call_path_at'
         std::string call_path;
 
         // the label to jump to when exiting an inlined function
@@ -772,7 +774,8 @@ class type_table final {
         return entries_.get_const_ref(name);
     }
 
-    // a type parameter of the innermost instance being parsed
+    // a type parameter of the innermost instance being parsed or the generic
+    // type of a method, see 'add_receiver'
     [[nodiscard]] auto is_param(const std::string_view name) const -> bool {
         return not params_.empty() and params_.back().has(name);
     }
@@ -1927,7 +1930,7 @@ class ident_resolver final {
         return named;
     }
 
-    // the storage of a variable as it is placed
+    // a variable as it is placed: its value register or its memory
     [[nodiscard]] auto resolve_var(const var_info& var) const -> ident_info {
         if (const in_value_register* const in_register{
                 std::get_if<in_value_register>(&var.placement),
@@ -3105,13 +3108,13 @@ class compile_toc final : public toc {
     // ('emit_most_efficient'); the machine puts back the mode ('is_dry_run')
     class version_scope final {
         compile_toc& tc_;
-        compile_state kept_state_{};
-        size_t kept_constant_count_{};
+        compile_state start_state_{};
+        size_t start_constant_count_{};
 
       public:
         explicit version_scope(compile_toc& tc)
-            : tc_{tc}, kept_state_{tc.compile_state_now()},
-              kept_constant_count_{tc.data().constant_count()} {}
+            : tc_{tc}, start_state_{tc.compile_state_now()},
+              start_constant_count_{tc.data().constant_count()} {}
 
         version_scope(const version_scope&) = delete;
         version_scope(version_scope&&) = delete;
@@ -3119,8 +3122,8 @@ class compile_toc final : public toc {
         auto operator=(version_scope&&) -> version_scope& = delete;
 
         ~version_scope() {
-            tc_.restore_compile_state(kept_state_);
-            tc_.tables().data.resize_constants(kept_constant_count_);
+            tc_.restore_compile_state(start_state_);
+            tc_.tables().data.resize_constants(start_constant_count_);
         }
     };
 

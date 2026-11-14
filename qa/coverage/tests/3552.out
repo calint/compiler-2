@@ -1,0 +1,4 @@
+
+3552.baz:9:19: argument 1 'v' may share storage with the result destination 'v' (both name 'v'), use a temporary variable for one of them
+    v = int(-half(v))
+                  ^

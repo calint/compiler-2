@@ -85,13 +85,11 @@ class tokenizer final {
     [[nodiscard]] auto accept_char_token(const char ch)
         -> std::optional<token> {
 
-        const std::string_view ws_before{next_whitespace()};
-
-        if (peek_char() != ch) {
-            move_back(ws_before.size());
+        if (peek_char_after_whitespace() != ch) {
             return std::nullopt;
         }
 
+        const std::string_view ws_before{next_whitespace()};
         const size_t at_line{at_line_};
         const size_t bgn_ix{char_ix_};
         ++char_ix_;

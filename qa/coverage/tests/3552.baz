@@ -1,0 +1,11 @@
+# an 'int' conversion of a narrower call with a unary op is computed in its
+# destination on every target, also on rv32i where 'int' and 'i32' have the
+# same size, so a destination that the call takes is rejected there too
+
+func half(v) res i32 { res = i32(v / 2) }
+
+func main() {
+    var v = 10
+    v = int(-half(v))
+    exit(v)
+}

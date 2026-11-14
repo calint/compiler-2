@@ -1,0 +1,34 @@
+# an 'i32' conversion of a call that takes or writes its 'int' destination
+# makes the result in a register on every target, also on rv32i where 'int'
+# and 'i32' have the same size, so the destination does not share storage
+# with the result
+
+func same(v) res { res = v }
+
+func noinline same_noinline(v) res { res = v }
+
+func narrow(v) res i32 { res = i32(v) }
+
+dat total = 5
+
+func next() res {
+    total = total + 1
+    res = total
+}
+
+func main() {
+    var v = 5
+    v = i32(same(v))
+    v = i32(same_noinline(v))
+    v = int(i32(same(v)))
+    v = i32(int(same(v)))
+    v = int(narrow(v))
+
+    var a = [4]
+    a[1] = 3
+    a[1] = i32(same(a[1]))
+
+    total = i32(next())
+
+    exit(v + a[1] + total)
+}

@@ -155,6 +155,46 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[p] medium: (round 433, bug hunt of 'int' beside the sized types) need
+    approval: a verdict depends on '--checks', alike on every target:
+    'v = -int(same(v))' (also '~', and 'v = -i32(f(v))' of an 'i32'
+    'v') is accepted with the overflow check and rejected without it;
+    'stmt_builtin_convert::is_made_at_type' makes the value in a
+    register only when the overflow check is enabled; docs chapter 8
+    exception 4 names only the other direction
+    => a. make it at the type whenever the conversion has unary ops and
+          the destination has its type: accepted everywhere; the
+          default listings of tests 1338, 1366, 2127, 2721 and 2723
+          change (rv32i images +8 B in four, -4 B in 1366; x86_64
+          lines 0, -1, +1, 0, +2); a scratch register for a memory
+          destination, against the scratch-register rule
+       b. store first, then apply the ops to the destination under the
+          check: rejected everywhere, removes an acceptance under
+          'noub'
+[ ] easy: (round 433, bug hunt of 'int' beside the sized types)
+    1. the one more 'mv' of test 1218 on rv32i goes away when the
+       argument is compiled into the target register viewed at the
+       argument's type where both have one representation; a case more
+       in 'plan_scratch_type'
+    2. messages name the default type 'i64' on x86_64 and 'int' on
+       rv32i, so a test of a message that names it needs two expected
+       files (the round 419 item covers only the label of 'f<int>')
+[ ] easy: (round 433, design of the lexical layer) the 'str' parameter
+    of 'constant_parser::parse_character', 'parse_constant' and
+    'literal_value' equals the text of the token beside it at every
+    call of the tests; dropping it (3 signatures, 4 call sites) needs
+    the proof that the two callers of 'toc::resolve_declared' with
+    another name ('stmt_builtin_foo.hpp', 'stmt_call.hpp') never reach
+    'ident_resolver::resolve_literal'
+[ ] easy: (round 433, a walk of 'src/toc.hpp') names left:
+    1. 'scope': the factory 'loop(...)' and the private accessor
+       'loop()' share a name, the function side has 'function(...)' and
+       'func_part()'
+    2. 'function_part::ret_label' and 'func_ret_label()' against the
+       factory parameter 'return_label'
+    3. 'param_binding::from' is the parameter name; no comment says so
+    4. "commented where it is stored" ('compile_toc' header, 'add_var')
+       means the comment tells where the variable is stored
 [ ] easy: (round 432, a walk of 'src/stmt_call.hpp') names and texts
     left:
     1. three names for one 'places.at(i)': 'arg_place', 'written' and

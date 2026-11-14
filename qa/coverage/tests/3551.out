@@ -1,0 +1,4 @@
+
+3551.baz:5:16: 'array_length(a)' of type 'i64' is narrowed to 'i32', use 'i32(...)'
+dat b = i32[2]{array_length(a), 1}
+               ^~~~~~~~~~~~

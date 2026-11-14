@@ -1,0 +1,4 @@
+
+3570.baz:5:16: expected '}' to close block
+    var y = x +
+               ^

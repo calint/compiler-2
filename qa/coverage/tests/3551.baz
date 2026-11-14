@@ -1,0 +1,9 @@
+# an 'array_length' in a 'dat' of a narrower type is reported as narrowed, as
+# a typed constant in its place, on every target
+
+dat a = i8[4]
+dat b = i32[2]{array_length(a), 1}
+
+func main() {
+    exit(b[0])
+}

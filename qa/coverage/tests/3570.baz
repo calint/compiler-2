@@ -1,0 +1,5 @@
+# a generic body without its closing brace that ends at an operator: the skip
+# of the body reads the whitespace after it up to the end of the source
+
+func f<T type>(x T) {
+    var y = x +

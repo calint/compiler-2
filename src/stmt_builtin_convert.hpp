@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cassert>
-#include <cstddef>
 #include <cstdint>
 #include <optional>
 #include <ostream>
@@ -45,6 +44,10 @@
 //   3a  an argument at least as wide as T, or a single operand without unary
 //       ops: in a scratch register of the argument's type
 //   3b  a narrower single operand with unary ops, e.g. 'i16(-g())': as row 1
+//
+// wider and narrower compare the widths as the checks see them
+// ('type::check_width_bytes'): where the value is made decides which storage a
+// call in the argument writes, so no plan depends on the size of 'int'
 class stmt_builtin_convert final : public statement {
     // e.g. the '(a + 1)' of 'i8(a + 1)'
     struct argument_part {
@@ -274,7 +277,13 @@ class stmt_builtin_convert final : public statement {
     [[nodiscard]] auto is_made_at_type(const compile_toc& tc,
                                        const destination& dst) const -> bool {
 
-        if (dst.type_ref().size_bytes() > get_type().size_bytes()) {
+        // note: widths as the checks see them, so a call in 'v = i32(f(v))'
+        //       of an 'int' 'v' gets a register for its result on rv32i too
+        //       and no target rejects it for sharing storage with 'v'
+
+        if (dst.type_ref().check_width_bytes() >
+            get_type().check_width_bytes()) {
+
             return true;
         }
 
@@ -312,17 +321,19 @@ class stmt_builtin_convert final : public statement {
     [[nodiscard]] auto plan_scratch_type(const destination& target) const
         -> const type* {
 
-        const size_t type_size_bytes{get_type().size_bytes()};
         const type& arg_type{argument().get_type()};
+
+        // note: as the checks see the widths, so an 'i32' argument is
+        //       narrower than 'int' also on a 32-bit target
+
+        const bool is_narrower{
+            arg_type.check_width_bytes() < get_type().check_width_bytes(),
+        };
 
         // a narrower argument is computed at the width of the type, where its
         // arithmetic wraps, e.g. 'i16(a * (a >> 1))' of an 'i8' 'a' of 20 is
-        // 200; a single operand keeps its own width; widths are compared as
-        // the checks see them, so an 'i32' list is narrower than 'int' also
-        // on a 32-bit target
-        if (not argument().is_single_operand() and
-            arg_type.check_width_bytes() < get_type().check_width_bytes()) {
-
+        // 200; a single operand keeps its own width
+        if (is_narrower and not argument().is_single_operand()) {
             return plan_at_type(target);
         }
 
@@ -340,7 +351,7 @@ class stmt_builtin_convert final : public statement {
 
         // '/', '%', shifts and calls are computed at the argument's width, a
         // call's result must also have its declared type
-        if (arg_type.size_bytes() >= type_size_bytes or
+        if (not is_narrower or
             argument().single_operand().get_unary_ops().is_empty()) {
 
             return &arg_type;

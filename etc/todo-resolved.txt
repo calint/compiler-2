@@ -1,6 +1,47 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 433 (2026-11-15, bug hunt: the default type 'int'
+    beside the sized type of its size, 'i32' on rv32i, in every
+    construct, each program with 'int' and with 'i32' in its place;
+    design: the source and lexical layer and how the parser consumes
+    it; readability: a newcomer reads 'src/toc.hpp' whole and predicts
+    55 programs)
+    => defects, fixed, all of one class (a size in bytes compared where
+       the width as the checks see it is meant, 'int' and 'i32' are
+       both 4 bytes on rv32i):
+       1. 'v = i32(same(v))' of an 'int' 'v' was accepted on x86_64 and
+          rejected on rv32i for shared storage;
+          'stmt_builtin_convert::is_made_at_type' compares
+          'check_width_bytes', the call gets a register on rv32i too;
+          test 3550
+       2. 'v = int(-half(v))' with 'half' returning 'i32' was rejected
+          on x86_64 and accepted on rv32i; 'plan_scratch_type' uses one
+          'is_narrower' from the check widths for both of its tests;
+          rv32i rejects it too (x86_64 cannot accept it without a
+          scratch register); test 3552
+       3. 'dat b = i32[2]{array_length(a), 1}' was "not a constant" on
+          x86_64 and "narrowed" on rv32i; 'array_length' folds at any
+          width like a typed constant and 'assert_not_narrowed' rejects
+          it, "narrowed" on every target; test 3551
+       listings: test 1218 on the rv32i targets gets one more 'mv' (20
+       to 21 instructions), the 'int' shift of 'i32(a << n)' is made in
+       a scratch register as on x86_64; no other existing case differs
+    => bug hunt volumes: about 60 uses of the two widths read; about
+       150000 generated programs and 137 hand cases; 7 seeded mutants
+       all caught
+    => design: 'tokenizer::accept_char_token' looks first and reads on
+       a match instead of reading and rewinding; 'source_files' keeps
+       'main_dir_' instead of the absolute path of every file; the
+       comment of 'source_locations'; 80 points probed, 77 reached, one
+       of the others got test 3570 (a skipped generic body ending in an
+       operator); eleven ideas weighed and left
+    => readability: in 'toc.hpp' the comments of 'call_path' (wrong for
+       a noinline body), 'type_table::is_param' (also a receiver's
+       generic type), 'ident_resolver::resolve_var' (also a value
+       register); 'start_state_' and 'start_constant_count_' for
+       'kept_*' in 'compile_toc::version_scope', where "kept" means the
+       chosen version elsewhere
 [x] easy: round 432 (2026-11-15, bug hunt: compile-time against
     run-time evaluation, every operator and integer type at the edge
     values, constants against variables, inlined against noinline, the

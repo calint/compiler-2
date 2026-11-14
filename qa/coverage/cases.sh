@@ -8049,3 +8049,22 @@ SRC=3540 && EXP=20 && RUN
 # without the division check the minimum divided by -1 wraps to the minimum,
 # folded as at run time, and the next division reads the wrapped value
 SRC=3541 && EXP=6 && OPTS="--checks=upper,lower" RUN
+
+# a skipped generic body without its closing brace ends at an operator and
+# the whitespace after it
+SRC=3570 && COMPERR
+
+# an 'i32' conversion of a call that takes or writes its 'int' destination
+# makes the result in a register on every target, also on rv32i where 'int'
+# and 'i32' have the same size, so the destination does not share storage
+# with the result
+SRC=3550 && EXP=14 && RUN
+
+# an 'array_length' in a 'dat' of a narrower type is reported as narrowed, as
+# a typed constant in its place, on every target
+SRC=3551 && COMPERR
+
+# an 'int' conversion of a narrower call with a unary op is computed in its
+# destination on every target, also on rv32i where 'int' and 'i32' have the
+# same size, so a destination that the call takes is rejected there too
+SRC=3552 && COMPERR

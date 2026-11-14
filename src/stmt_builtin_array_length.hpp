@@ -75,13 +75,11 @@ class stmt_builtin_array_length final : public statement {
         assert(src_info.is_length_unknown());
     }
 
-    // a narrower width stays unfolded, 'assert_not_narrowed' rejects it
-    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
+    // folds at any width like a typed constant, 'assert_not_narrowed' rejects
+    // a narrower one, so a 'dat' reports it as narrowed on every target
+    [[nodiscard]] auto fold(const toc& tc,
+                            [[maybe_unused]] const value_use& use) const
         -> std::optional<folded_value> override {
-
-        if (use.width_ref().size_bytes() < get_type().size_bytes()) {
-            return std::nullopt;
-        }
 
         // the parse checked the indexes against the lengths it knows, a call
         // gives an unsized array parameter its length

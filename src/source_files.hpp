@@ -31,10 +31,6 @@ class source_files final {
     struct file {
         std::string name;
         std::string text;
-        // the absolute path, its directory resolved ('resolved_path'), e.g.
-        // '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'; the
-        // relative names are built from it
-        std::filesystem::path absolute;
         // see 'relative_name'
         std::string relative_name;
         // the index where each line begins, the first is 0
@@ -45,6 +41,8 @@ class source_files final {
     };
 
     std::deque<file> files_;
+    // the directory of the main file, the relative names start there
+    std::filesystem::path main_dir_;
 
   public:
     // returns the index of the file, 'included_at' is none for the main file
@@ -66,15 +64,16 @@ class source_files final {
                             in_quotes(name))};
         }
 
-        std::filesystem::path absolute{resolved_path(given)};
+        // the absolute path, its directory resolved ('resolved_path'), e.g.
+        // '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'
+        const std::filesystem::path absolute{resolved_path(given)};
 
-        const std::filesystem::path main_dir{
-            files_.empty() ? absolute.parent_path()
-                           : files_.front().absolute.parent_path(),
-        };
+        if (files_.empty()) {
+            main_dir_ = absolute.parent_path();
+        }
 
         std::string relative_name{
-            absolute.lexically_relative(main_dir).string(),
+            absolute.lexically_relative(main_dir_).string(),
         };
 
         std::vector<size_t> line_begins{line_begins_of(text)};
@@ -82,7 +81,6 @@ class source_files final {
         files_.push_back({
             .name{std::move(name)},
             .text{std::move(text)},
-            .absolute{std::move(absolute)},
             .relative_name{std::move(relative_name)},
             .line_begins{std::move(line_begins)},
             .included_at{included_at},
@@ -237,7 +235,8 @@ class source_files final {
     }
 };
 
-// where a token is in the source, as numbers or as text
+// where a token is in the source, as the text of an error, a label, a
+// comment, a listing or a message
 class source_locations final {
     std::reference_wrapper<const source_files> files_;
 
