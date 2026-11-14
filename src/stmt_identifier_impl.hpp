@@ -166,7 +166,7 @@ stmt_identifier::assert_constant_indexes_in_bounds(const toc& tc) const
         }
 
         const std::optional<int64_t> value{
-            checked_constant_index(tc, step.elem_index, *step.info, false),
+            checked_constant_index(tc, step.elem_pos, *step.info, false),
         };
 
         // note: 'assert_constant_indexes' rejected a run-time index
@@ -175,10 +175,10 @@ stmt_identifier::assert_constant_indexes_in_bounds(const toc& tc) const
 }
 
 inline auto stmt_identifier::checked_constant_index(
-    const toc& tc, const size_t elem_index, const ident_info& array_info,
+    const toc& tc, const size_t elem_pos, const ident_info& array_info,
     const bool allow_end) const -> std::optional<int64_t> {
 
-    const expr_any& index{elems_.at(elem_index).index_expr()};
+    const expr_any& index{elems_.at(elem_pos).index_expr()};
     const std::optional<int64_t> value{index.constant_value(tc)};
 
     if (not value) {
@@ -197,7 +197,7 @@ inline auto stmt_identifier::checked_constant_index(
     //       would build a text as long as the path
 
     throw_constant_index_out_of_bounds(array_info, index.tok(),
-                                       array_text(elem_index), *value);
+                                       array_text(elem_pos), *value);
 }
 
 inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,

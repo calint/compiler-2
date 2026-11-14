@@ -155,6 +155,24 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 431, a walk of the accessor path) names and texts
+    left:
+    1. 'path_step' of 'access_path.hpp' sits beside 'prefix_step' and
+       the 'path_*' names of the written path in 'stmt_identifier.hpp';
+       'access_step' would tell them apart
+    2. the info of a path ignores its indexes; only an example says so,
+       neither 'place::info' nor 'make_ident_info' states it
+    3. 'compile_checked_index' also compiles an index that needs no
+       check
+[ ] easy: (round 431, design of the built-in statements) the choice of
+    a run-time range is written twice, in 'bulk_operands::range_of' and
+    in 'stmt_builtin_io'; one helper would need a shared operand shape
+[p] easy: (round 431, bug hunt of the rules of reads and writes) need
+    approval: new files under 'qa/fuzz'; the generators of the hunt (a
+    left to right model of reads and writes, the inlined against the
+    noinline verdict, definite assignment against a static model)
+    caught 8 of 8 seeded mutants and are kept only in the round's
+    scratch; the class of the round 396 to 402 item
 [ ] medium: extreme sizes, documented and not fixed (round 430, a hunt
     of the compiler at scale; generators in the round's scratch, the
     families are easy to rewrite)

@@ -260,7 +260,7 @@ class stmt_identifier final : public statement {
     struct prefix_step {
         const ident_elem* elem{};
         // the position of 'elem' in the path, its text is 'array_text' of it
-        size_t elem_index{};
+        size_t elem_pos{};
         // what the path up to the element resolves to
         const ident_info* info{};
         bool is_last{};
@@ -287,9 +287,9 @@ class stmt_identifier final : public statement {
               owned_from_{held.registers().size()},
               address_register_{std::move(address_register)} {}
 
-        // the address after the element index, a constant index, which the
-        // caller checked, goes into the displacement and any other one into an
-        // index register
+        // the address after the index of 'cur_elem', a constant index, which
+        // the caller checked, goes into the displacement and any other one
+        // into an index register
         // 'is_range' when the index starts a range, 'start_register' then
         // receives a run-time index
         [[nodiscard]] auto
@@ -299,14 +299,14 @@ class stmt_identifier final : public statement {
                         const std::optional<operand>& start_register,
                         const operand& address) -> operand;
 
-        // the address a call computed, the address a slot holds or the
-        // storage
-        [[nodiscard]] auto start(const ident_info& storage) -> operand {
-            if (storage.holds_address()) {
-                return load_held_address(storage.operand());
+        // where the resolved 'root' starts the address: the address a call
+        // computed, the address a slot holds or the storage
+        [[nodiscard]] auto start(const ident_info& root) -> operand {
+            if (root.holds_address()) {
+                return load_held_address(root.operand());
             }
 
-            return storage.operand();
+            return root.operand();
         }
 
       private:
@@ -632,7 +632,7 @@ class stmt_identifier final : public statement {
             };
 
             const std::optional<int64_t> constant_index{
-                checked_constant_index(tc, step.elem_index, cur_info, is_range),
+                checked_constant_index(tc, step.elem_pos, cur_info, is_range),
             };
 
             const std::optional<operand> start_register{
@@ -686,9 +686,9 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
 
-    // the address of what 'info' resolves this statement to is computed into
-    // a register: an indexed access, an address held in a slot or an address
-    // a call computed
+    // the address of what 'info' resolves this statement to is computed, not
+    // the storage of a name: an indexed access (a constant index takes no
+    // register), an address held in a slot or an address a call computed
     [[nodiscard]] auto has_computed_address(const ident_info& info) const
         -> bool {
 
@@ -754,8 +754,8 @@ class stmt_identifier final : public statement {
         return method_->name_tk;
     }
 
-    // the operand of what 'info' resolves this statement to, a computed
-    // address goes into 'held'
+    // the operand of what 'info' resolves this statement to, the registers of
+    // a computed address go into 'held'
     [[nodiscard]] auto operand_of(compile_toc& tc, const ident_info& info,
                                   machine::held_registers& held) const
         -> operand {
@@ -900,20 +900,18 @@ class stmt_identifier final : public statement {
   private:
     stmt_identifier(parse_toc& tc, token tk, tokenizer& tz, path_reach reach);
 
-    // the path as written up to the element at 'elem_index', without its
+    // the path as written up to the element at 'elem_pos', without its
     // index, as the messages about that index name the array, e.g. 'hs[1].v'
     // of 'hs[1].v[2]'
-    [[nodiscard]] auto array_text(const size_t elem_index) const
-        -> std::string {
-
+    [[nodiscard]] auto array_text(const size_t elem_pos) const -> std::string {
         std::stringstream ss;
 
-        for (size_t i{}; i < elem_index; ++i) {
+        for (size_t i{}; i < elem_pos; ++i) {
             elems_.at(i).source_to(ss);
             elem_delims_tk_.at(i).source_to(ss);
         }
 
-        elems_.at(elem_index).name_tk.source_to(ss);
+        elems_.at(elem_pos).name_tk.source_to(ss);
 
         return one_line_source::of(ss.view());
     }
@@ -1005,10 +1003,10 @@ class stmt_identifier final : public statement {
                                                  in_quotes(method_path))};
     }
 
-    // the constant index of the element at 'elem_index' of the path, checked
+    // the constant index of the element at 'elem_pos' of the path, checked
     // against 'array_info' by 'is_constant_index_in_bounds', empty when
     // computed at run time
-    [[nodiscard]] auto checked_constant_index(const toc& tc, size_t elem_index,
+    [[nodiscard]] auto checked_constant_index(const toc& tc, size_t elem_pos,
                                               const ident_info& array_info,
                                               bool allow_end) const
         -> std::optional<int64_t>;
@@ -1034,7 +1032,7 @@ class stmt_identifier final : public statement {
 
             visit({
                 .elem{&elem},
-                .elem_index{i},
+                .elem_pos{i},
                 .info{&info},
                 .is_last{i == elems_.size() - 1},
             });
@@ -1060,9 +1058,9 @@ class stmt_identifier final : public statement {
         };
     }
 
-    // the index of the last element parsed, 'array_info' its array; an
-    // unknown element leaves the whole array as the accessed range and adds a
-    // run-time index to the path
+    // the index of the last path element parsed, 'array_info' its array; an
+    // array element that is not known leaves the whole array as the accessed
+    // range and adds a run-time index to 'access_path_'
     auto narrow_to_element(const toc& tc, const ident_info& array_info,
                            path_reach reach) -> void;
 

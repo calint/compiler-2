@@ -2248,7 +2248,10 @@ message, x86_64 stops with a signal.
   a read of each path it parses; deferring it until the call knows the path
   is passed in place complicates the parse.
 - Definite assignment does not count the writes of a call, e.g.
-  'init(res)' is a read of 'res'; a conservative rejection.
+  'init(res)' is a read of 'res', and does not end a path at a call that
+  never returns: a branch that calls 'stop(k)', whose body is 'exit(k)',
+  must still set the result, where a branch with 'exit(k)' need not; both
+  are conservative rejections.
 - An inlined call that never returns ends the path where it is a whole
   statement, an 'if' condition, a 'foo' count or the body of a 'foo' that
   runs, but not inside a longer expression ('stop(k) + a[k]', an argument,

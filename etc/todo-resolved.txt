@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 431 (2026-11-14, bug hunt: the rules of reads and
+    writes, docs chapter 3, 4.2 and 8.3; design: how the built-in
+    statements are compiled; readability: a newcomer walks the path of
+    an accessor, 'src/stmt_identifier.hpp' and its implementation)
+    => bug hunt: no defect; about 87000 random programs run against a
+       strict left to right model, inlined, noinline and mixed, on
+       three targets; 72000 small-world programs comparing the verdict
+       of the inlined and the noinline build; 41000 definite-assignment
+       programs against a static model; an effect in each of 74
+       containers of a body; about 190 hand cases; 8 seeded mutants all
+       caught; docs 8.3 gains that definite assignment does not end a
+       path at a call that never returns
+    => design: nothing to apply, 102 points probed and all reached; ten
+       ideas weighed and left
+    => readability: in 'stmt_identifier.hpp' the comment of
+       'has_computed_address' no longer says a register is always used
+       (a constant index takes none), 'operand_of' says the registers
+       of the address go into 'held', two comments name the path
+       element and the array element apart; 'elem_pos' for 'elem_index'
+       where it is the position in the path, 'root' for the parameter
+       'storage' of 'path_address::start'; no listing differs
 [x] easy: round 430 (2026-11-14, bug hunt: the compiler at scale, every
     recursion a source drives and about 90 program families doubled to a
     limit message, 60 s or 2 GiB; design: how a function body is entered
