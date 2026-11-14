@@ -254,11 +254,12 @@ class type final {
     explicit type(const std::string_view name) : name_{name} {}
 
     // fields are placed at offsets aligned to their type and the size is
-    // rounded up so that array elements stay aligned; 'array_count' is empty
-    // for a field that is not an array
+    // rounded up so that array elements stay aligned
     auto add_field(const token& src_loc_tk, const std::string_view name,
-                   const type& tp, const std::optional<size_t> array_count)
-        -> void {
+                   const type& tp, const array_shape shape) -> void {
+
+        // note: a field has no initializer to give an array its length
+        assert(not shape.is_length_unknown());
 
         type_field field{
             .name{name},
@@ -267,14 +268,9 @@ class type final {
                 checked_align_storage_size(src_loc_tk, fields_end_bytes_,
                                            tp.alignment_),
             },
-            .size_bytes{},
-            .shape{
-                array_count ? array_shape::array(array_count) : array_shape{},
-            },
+            .size_bytes{shape.value_size_bytes(src_loc_tk, tp)},
+            .shape{shape},
         };
-
-        field.size_bytes = multiply_storage_size(src_loc_tk, tp.size_bytes_,
-                                                 field.shape.element_count());
 
         fields_end_bytes_ =
             add_storage_size(src_loc_tk, field.offset, field.size_bytes);

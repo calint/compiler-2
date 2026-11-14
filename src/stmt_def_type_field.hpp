@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <format>
 #include <optional>
 #include <ostream>
@@ -11,6 +10,7 @@
 #include "statement.hpp"
 #include "toc.hpp"
 #include "token.hpp"
+#include "type.hpp"
 
 // a field 'name [type][[size]]' of a type, its type resolved when parsed like
 // a parameter's, the default type when none is written
@@ -82,13 +82,14 @@ class stmt_def_type_field final : public statement {
     // class methods
     //
 
-    [[nodiscard]] auto array_count() const -> std::optional<size_t> {
+    [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
+
+    // an array of the written size, or not an array
+    [[nodiscard]] auto shape() const -> array_shape {
         if (not size_) {
-            return std::nullopt;
+            return {};
         }
 
-        return size_->array_size();
+        return array_shape::array(size_->array_size());
     }
-
-    [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 };

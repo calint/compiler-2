@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 424 (2026-11-14, bug hunt: arrays and structured types,
+    element and field addressing three levels deep, the bounds and overlap
+    checks, the array built-ins, whole copies and comparisons; design: how
+    a type is represented and asked about, 'src/type.hpp' and its users;
+    readability: a newcomer explains the 40 longest functions from their
+    names, comments and the docs)
+    => done, design: 'type::add_field' takes the 'array_shape' of the
+       field ('stmt_def_type_field::shape' replaces 'array_count') and
+       takes the size from 'array_shape::value_size_bytes'; 15 lines
+       added, 19 removed; nothing larger found, eight ideas weighed and
+       left
+    => readability: four comments, 'emit_report_line_routine' ('rsp' is
+       the end of the text), 'assembler::optimize_jump' (what it does and
+       returns), 'assembler_rv32i::encode_instruction' (a header),
+       'add_loop_names' ("length" for "size"); 36 functions needed nothing
+    => bug hunt: no defect; about 23000 generated programs in 770000
+       builds against a model of the storage on the four targets with 13
+       option lists, 2158 self-checking programs of two sweeps, 172
+       rejections, asan clean, 12 seeded mutants all caught
+    => no listing or message differs over 2524 cases
 [x] easy: round 423 (2026-11-14, bug hunt: the passes on the emitted
     lines, jumps, reloads, copies, retests, far jumps and the image
     layout; design: how a name is resolved and declared; readability: a

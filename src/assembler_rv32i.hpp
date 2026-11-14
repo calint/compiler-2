@@ -1598,6 +1598,7 @@ class assembler_rv32i final : public assembler {
         return encoding | imm_11_0 | register_fields(rd, rs1, zero_register_);
     }
 
+    // the words of 'ins' at 'address', 'line_index' resolves 'Nf' and 'Nb'
     [[nodiscard]] static auto
     encode_instruction(const instruction& ins, const size_t line_index,
                        const int64_t address, const symbol_table& symbols)

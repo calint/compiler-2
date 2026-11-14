@@ -701,7 +701,8 @@ class assembler {
         return index;
     }
 
-    // 'run_end' is the end of the run of line 'index'
+    // one change of 'optimize_jumps' at the jump of line 'index', false when
+    // none applies; 'run_end' is the end of the run of line 'index'
     [[nodiscard]] auto
     optimize_jump(const size_t index, const size_t run_end,
                   const std::unordered_map<std::string_view, size_t>& labels)

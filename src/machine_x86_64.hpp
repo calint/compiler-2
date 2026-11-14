@@ -819,7 +819,7 @@ class machine_x86_64 final : public machine {
         assembler_.comment(1, "print line number to stderr");
         assembler_.instruction(1, op::mov, "rax", syscall_write_);
         assembler_.instruction(1, op::mov, "rsi", "rdi");
-        // the length is 'rsp', the end of the digits, minus the first digit
+        // the length is 'rsp', the end of the text, minus the first digit
         assembler_.instruction(1, op::mov, "rdx", "rsp");
         assembler_.instruction(1, op::sub, "rdx", "rdi");
         assembler_.instruction(1, op::mov, "rdi", stderr_descriptor_);

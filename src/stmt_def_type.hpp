@@ -98,8 +98,7 @@ class type_fields final {
         // note: the constructor checked the names
 
         for (const stmt_def_type_field& fld : fields_) {
-            tp.add_field(fld.tok(), fld.name(), fld.get_type(),
-                         fld.array_count());
+            tp.add_field(fld.tok(), fld.name(), fld.get_type(), fld.shape());
         }
     }
 

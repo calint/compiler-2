@@ -155,6 +155,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 424, a hunt of arrays and structured types and a walk
+    of the 40 longest functions) with '--checks=lower' alone
+    'array_copy(a, b, n)' of a run-time count and constant starts tests
+    the sign of the count twice ('bulk_operands::range_of' ignores
+    'count_lower_checked' in its last branch; the flag of
+    'machine::bounds_range' is named 'start_lower_checked'); 'foo a, {}
+    {' says "expected a count before '{'" while '{}' is the count of
+    'array_copy(a, b, {})' and an index; 'w[i].items[j] = {1, 2}' lowers
+    the scaled operand again for every part on rv32i and stores a scalar
+    and its padding separately on both targets
 [ ] easy: (round 423, a hunt of the passes on the emitted lines and a
     learner's walk of the tutorial) 'assembler::copy_end' gives up when
     the source of a copy is written, also when no read of the copy

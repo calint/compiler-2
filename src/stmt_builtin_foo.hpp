@@ -143,9 +143,9 @@ class stmt_builtin_foo final : public statement {
     }
 
   private:
-    // 'e' is the element, 'i' the counter and 'n' the array size, declared
+    // 'e' is the element, 'i' the counter and 'n' the array length, declared
     // at the array and placed as 'element' and 'counter' say (the parse
-    // declares the names only); 'n' is a constant when the size is known,
+    // declares the names only); 'n' is a constant when the length is known,
     // else a read-only variable that is never read at run time, see
     // 'ident_info::is_length_unknown'
     auto add_loop_names(toc& tc, const ident_info& array_info,
