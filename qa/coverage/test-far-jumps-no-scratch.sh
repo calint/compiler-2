@@ -22,7 +22,7 @@ trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BIN="$SCRIPT_DIR/../../baz"
 
-for tool in llvm-mc ld.lld qemu-riscv32 python3; do
+for tool in llvm-mc llvm-objcopy ld.lld qemu-riscv32 python3; do
     command -v "$tool" >/dev/null || {
         echo "Required tool not found: $tool" >&2
         exit 1

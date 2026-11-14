@@ -29,8 +29,10 @@
 # A case expects 'NNN.TARGET.out' instead of 'NNN.out' when that file exists.
 # For the output of a compile (COMPERR, LISTING) TARGET is the target of the
 # compiler, rv32i also for rv32i-qemu and rv32i-fpga; for the output of a run
-# it is the target of the run, else that of the compiler. A program judged by
-# its output (DIFF, DIFFINP, DIFFINP2, DIFFPY) must exit 0.
+# it is the target of the run, else that of the compiler. A 'DIFFNOPT' case
+# has one 'NNN.TARGET.diff' for each target of a run, e.g.
+# '0006.rv32i-qemu.diff'. A program judged by its output (DIFF, DIFFINP,
+# DIFFINP2, DIFFPY) must exit 0.
 #
 # A case inside 'if [[ $MACHINE ... ]]' runs only for those targets (x86_64,
 # rv32i, rv32i-qemu, rv32i-fpga), e.g. a 'RUN' whose exit code differs by
@@ -56,7 +58,7 @@ SRC=0004 && EXP=0 && RUN
 SRC=0005 && EXP=0 && RUN
 
 # jump optimization patterns, the optimized output is compared with --nopt in
-# 0006.x86_64.diff and 0006.rv32i.diff
+# the '0006.TARGET.diff' of each target
 SRC=0006 && EXP=0 && DIFFNOPT
 
 # negated comparison
@@ -8012,3 +8014,10 @@ SRC=3454 && COMPERR
 # program started without one of them does not reach the image with 'read' or
 # 'write', and a panic does not print into it
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=3470 && SDCARD=1M DIFFPY; fi
+
+# a character that looks like a space or like nothing and is no space of
+# Unicode is escaped in a message: the braille blank, a variation selector
+# and a format character
+SRC=3480 && COMPERR
+SRC=3481 && COMPERR
+SRC=3482 && COMPERR

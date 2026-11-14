@@ -1,7 +1,10 @@
 #!/bin/bash
 # checks the command line of the compiler: option values that are accepted or
 # rejected (the exit code is the expectation), the target selection, the
-# binary name, and the '--nopt', '--reproduce-source' and '--versions' behavior
+# binary name, and the '--nopt', '--reproduce-source' and '--versions' behavior;
+# also what a case of 'cases.sh' cannot express, e.g. a comment, a report line
+# or an instruction that a listing must have, and programs that are compiled
+# but not run; needs 'nasm', 'ld' and 'llvm-mc'
 #
 # usage: test-cli.sh
 set -eE

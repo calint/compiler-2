@@ -25,7 +25,9 @@
 # compiler
 #
 # scenarios: arith (i8 .. i64), widen (mixed widths), arrays (nested arrays and
-# records), calls (recursion and array parameters), deep (unbounded recursion)
+# records), calls (recursion and array parameters), deep (unbounded recursion),
+# indexes, shifts, params, contexts and narrowing, each described above its
+# class
 #
 # usage: [FUZZ_CHECKS=noub,-overflow] fuzz-ub.py [count] [seed] [scenario]
 # the checks can be changed to see that the fuzzer catches a missing one

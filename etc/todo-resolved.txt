@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 426 (2026-11-14, bug hunt: the lexical layer, tokens,
+    literals, comments, line ends, includes, error positions and broken
+    sources; design: how registers are handed out and given back;
+    readability: a newcomer walks the build and test scripts and what
+    describes them)
+    => done, defect: a message showed raw a character that looks like a
+       space or like nothing, 'var' U+2800 'x' read "'var x' is not a
+       valid name" (the class of round 257), also the variation selectors
+       and others; the table of 'is_escaped_code_point' was a hand-picked
+       list and now follows one rule, the spaces of Unicode other than
+       ' ', the braille blank and 'Default_Ignorable_Code_Point', 21
+       ranges for 15; nothing accepted changes; tests 3480 to 3482, docs
+       1.9 item 4 and the front page
+    => bug hunt otherwise: about 226000 generated programs against a
+       model of the lexer on x86_64 and rv32i, 2 million byte mutations
+       of the tests (500000 on asan), 30910 token-by-position sources,
+       9040 literals at the limits, 20 seeded mutants, 19 caught and one
+       equivalent
+    => design: 'machine::release_named_register' is
+       'release_backend_register', the pair of 'reserve_backend_register',
+       without the site both callers passed alike; a probe build found
+       every suspected dead path reached; nothing larger found
+    => readability: the headers of 'test-coverage.sh' ('UPDATE=1',
+       'VERSIONS', 'MACHINE'), 'cases.sh' (the '.TARGET.diff' files),
+       'test-cli.sh', 'perf.sh' and 'fuzz-ub.py' (10 scenarios, 5 were
+       listed) say what the scripts do; 'llvm-objdump' is in the
+       requirements; 'test-far-jumps-no-scratch.sh' checks for the
+       'llvm-objcopy' it uses
 [x] easy: round 425 (2026-11-14, bug hunt: the input and output
     built-ins and constant data, 'read', 'write', the sector calls,
     'exit', strings, 'dat' and 'let'; design: how the parser decides what

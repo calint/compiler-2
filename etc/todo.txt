@@ -155,6 +155,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 426, a hunt of the lexical layer and a walk of the
+    scripts) 'void' is a reserved built-in type name ("'void' is a
+    built-in type") that the docs do not list among the reserved names;
+    U+FFF9 to U+FFFB, U+070F, U+13430 to U+1343F, U+16FE4 and U+1D159 are
+    shown raw in a message, outside the rule of 'is_escaped_code_point';
+    the unary operators of a constant apply at 64 bits, so 'p(- ~
+    -2147483649)' into an 'i32' is accepted and 'p(- - ~2147483647)'
+    rejected, both -2147483648; the fit of a call argument is reported
+    at the parse and that of a 'var' initializer at the compile, so a
+    later lexical error comes first; the failure messages of
+    'test-coverage.sh' name paths relative to 'qa/coverage'
+    ("tests/out"), which do not resolve from the root; 'test-coverage.sh',
+    'test-cli.sh' and the two far jump scripts reach files through an
+    absolute '$SCRIPT_DIR'; 'etc/tools.txt' has no 'llvm-objdump' line
+    (with the round 393 item)
 [ ] easy: (round 425, a hunt of the input and output built-ins and a
     walk of the parser's dispatch) the -9 of a descriptor that is not
     served equals '-EBADF' of linux, so a 'read' that also served 1 or a
@@ -277,7 +292,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
 [ ] easy: (round 415, a walk of the registers of an expression) two words
     for one step and one word for two: the listing says "free", the code
     'free_held_registers', 'held_registers::release',
-    'release_named_register' and 'pop_allocation'; "held" is allocated
+    'release_backend_register' and 'pop_allocation'; "held" is allocated
     ('held_registers', the report) and allocated or protected
     ('machine::is_any_held', "unavailable" in 'register_pool'); "frame" is
     a call level of the register trace and the storage of a noinline call

@@ -192,28 +192,36 @@ class compile_error final : public std::exception {
 // a character that a terminal reads as a control or that looks like a space
 // or like nothing is escaped as the control bytes are, e.g. U+009B starts a
 // control sequence, the em space U+2003 makes 'var\xe2\x80\x83x' read
-// 'var x', U+202E reverses the rest of the line
+// 'var x', U+202E reverses the rest of the line; the ranges are the spaces
+// of Unicode other than ' ', the braille blank and the characters Unicode
+// ignores by default ('Default_Ignorable_Code_Point')
 [[nodiscard]] inline auto is_escaped_code_point(const uint32_t code_point)
     -> bool {
 
     // first and last code point of each range
-    constexpr std::array<std::pair<uint32_t, uint32_t>, 15> escaped{
+    constexpr std::array<std::pair<uint32_t, uint32_t>, 21> escaped{
         {
             {0x80, 0xa0},       // C1 controls, no-break space
             {0xad, 0xad},       // soft hyphen
+            {0x34f, 0x34f},     // combining grapheme joiner
             {0x61c, 0x61c},     // arabic letter mark
             {0x115f, 0x1160},   // hangul fillers
             {0x1680, 0x1680},   // ogham space mark
-            {0x180e, 0x180e},   // mongolian vowel separator
+            {0x17b4, 0x17b5},   // khmer inherent vowels
+            {0x180b, 0x180f},   // mongolian variation selectors, separator
             {0x2000, 0x200f},   // spaces, zero width, direction marks
             {0x2028, 0x202f},   // line separators, bidi, narrow no-break
-            {0x205f, 0x2064},   // math space, word joiner, invisible operators
-            {0x2066, 0x2069},   // bidi isolates
+            {0x205f, 0x206f},   // math space, word joiner, bidi isolates
+            {0x2800, 0x2800},   // braille blank
             {0x3000, 0x3000},   // ideographic space
             {0x3164, 0x3164},   // hangul filler
+            {0xfe00, 0xfe0f},   // variation selectors
             {0xfeff, 0xfeff},   // zero width no-break space
             {0xffa0, 0xffa0},   // halfwidth hangul filler
-            {0xe0000, 0xe007f}, // tags
+            {0xfff0, 0xfff8},   // unassigned, ignorable
+            {0x1bca0, 0x1bca3}, // shorthand format controls
+            {0x1d173, 0x1d17a}, // musical format controls
+            {0xe0000, 0xe0fff}, // tags, variation selectors
         },
     };
 

@@ -1,0 +1,4 @@
+
+3481.baz:4:9: 'x\xef\xb8\x8f' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    var x\xef\xb8\x8f = 1
+        ^~~~~~~~~~~~~

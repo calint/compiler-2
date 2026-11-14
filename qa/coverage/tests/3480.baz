@@ -1,0 +1,5 @@
+# the braille blank looks like a space and is escaped in a message
+
+func main() {
+    var⠀x = 1
+}

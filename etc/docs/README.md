@@ -16,8 +16,8 @@ For a reviewer:
    'qa/coverage/test-cli.sh'; 'qa/coverage/test-all.sh' runs every test on
    every target with a coverage and sanitizer build, many times slower, see
    its header and AGENTS.md "Tests" (needs nasm, ld, llvm-mc, llvm-objcopy,
-   ld.lld, llvm-profdata, llvm-cov, qemu-riscv32, qemu-system-riscv32, g++
-   and python3); a four-digit number in this document, e.g. (1711), is the
+   llvm-objdump, ld.lld, llvm-profdata, llvm-cov, qemu-riscv32,
+   qemu-system-riscv32, g++ and python3); a four-digit number in this document, e.g. (1711), is the
    test 'qa/coverage/tests/1711.baz'
 5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/cppcheck.sh',
    'qa/lint/check-all.sh' (the design rules), 'qa/lint/format-source.sh',
@@ -739,9 +739,10 @@ e.g. the register use at the failure that 'machine::register_error' adds.
    is rejected when it is loaded ('tokenizer::assert_source_well_formed').
 4. A message stays on its line and is valid UTF-8: a control byte, a byte
    outside a whole UTF-8 character or a character that looks like a space or
-   like nothing (the spaces other than ' ', soft hyphen, zero width, filler,
-   tag and bidi characters) of the message, the quoted source line, a file
-   name, also in a run-time panic, is shown as '\xNN' ('printable',
+   like nothing (the spaces other than ' ', the braille blank and what
+   Unicode ignores by default: soft hyphen, zero width, variation selector,
+   filler, tag and bidi characters) of the message, the quoted source line,
+   a file name, also in a run-time panic, is shown as '\xNN' ('printable',
    'is_escaped_code_point').
 
 ## 2. Generic types: how 'type' with parameters becomes real types

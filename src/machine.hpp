@@ -1367,7 +1367,7 @@ class machine {
     auto end_noinline_body() -> void {
         assert(state_.registers.scratch_count() == 0);
 
-        release_named_register({token{}, 0}, frame_base_register());
+        release_backend_register(frame_base_register());
 
         assembler& output{output_.get()};
 
@@ -1395,7 +1395,7 @@ class machine {
     // balanced, runs the passes of 'assembler::optimize' over the output,
     // then the target's last steps; called once at the end of the compile pass
     auto finish() -> void {
-        release_named_register({token{}, 0}, variables_base_register());
+        release_backend_register(variables_base_register());
 
         // every operation freed what it allocated
         assert(state_.registers.is_empty());
@@ -2665,13 +2665,14 @@ class machine {
         return index ? uint32_t{1} << *index : 0;
     }
 
-    auto release_named_register(const emit_site site,
-                                const std::string_view register_name) -> void {
+    // frees a register of 'reserve_backend_register'
+    auto release_backend_register(const std::string_view register_name)
+        -> void {
 
-        assert(state_.registers.top().holder !=
-               register_pool::holder_kind::scratch);
+        assert(state_.registers.top().holder ==
+               register_pool::holder_kind::backend);
 
-        pop_allocation(site, pool_index(register_name));
+        pop_allocation({token{}, 0}, pool_index(register_name));
     }
 
     // the failure of 'handler' reports its line, e.g. not a frame overflow,

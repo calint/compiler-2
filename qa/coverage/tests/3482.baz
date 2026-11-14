@@ -1,0 +1,6 @@
+# a format character that Unicode ignores by default is escaped in a
+# message, also one of four bytes
+
+func main() {
+    var x⁪y󠄀 = 1
+}

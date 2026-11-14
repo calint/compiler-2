@@ -11,9 +11,12 @@
 #           uart, and rv32i-fpga in the fpga emulator
 #   report  merge the profiles into 'report/' and remove them
 #
-# 'UPDATE=1' writes the output of each case as its expected '.out' file
+# 'UPDATE=1' writes the output of each case as the expected file it would be
+# compared with ('.out', '.diff' or the kind of a listing); for a new
+# 'NNN.TARGET.out' create the file first, else 'NNN.out' is written
 # 'VERSIONS=first', 'last' or 'nested' compiles with that '--versions' and runs
-# only the cases that run the program, see 'test-versions.sh'
+# only the cases that run the program, except the '--nopt' diffs, see
+# 'test-versions.sh'
 
 set -e
 
@@ -389,7 +392,8 @@ DIFFINP2() {
 }
 
 # the script of the case runs the program with the command in
-# 'PROGRAM_COMMAND_LINES', one argument per line
+# 'PROGRAM_COMMAND_LINES', one argument per line, and reads the target of the
+# run from 'MACHINE'
 DIFFPY() {
     echo -n "$SRC: "
     compile_and_build

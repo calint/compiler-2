@@ -1,0 +1,4 @@
+
+3482.baz:5:9: 'x\xe2\x81\xaay\xf3\xa0\x84\x80' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    var x\xe2\x81\xaay\xf3\xa0\x84\x80 = 1
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

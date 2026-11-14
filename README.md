@@ -94,9 +94,9 @@ the binary image itself.
   line feed and a byte order mark are rejected; strings and comments take
   any other byte, a message shows a control byte, a byte outside a UTF-8
   character or the bytes of a character that is invisible or looks like a
-  space (the spaces other than ` `, soft hyphen, zero width, filler, tag and
-  bidi characters) as `\xNN`; a message starts with `FILE:LINE:COLUMN`, the
-  column counts bytes from 1
+  space (the spaces other than ` `, the braille blank, soft hyphen, zero
+  width, variation selector, filler, tag and bidi characters) as `\xNN`; a
+  message starts with `FILE:LINE:COLUMN`, the column counts bytes from 1
 * built-in functions: `array_copy`, `array_length`, `arrays_equal`, `read`,
   `write`, `sector_read`, `sector_write`, `exit`, `int`, `i8`, `i16`, `i32`, `i64`
 * read and write sectors from and to file on `x86_64` and `rv32i`, the file
@@ -110,11 +110,11 @@ the binary image itself.
 
 * requirements: `clang++` 23 or later (tested with 23.1), `nasm`, `ld`,
   `llvm-mc`, `ld.lld`, `qemu-riscv32`, `qemu-system-riscv32`, `g++` (C++23)
-  for the fpga emulator of `rv32i-fpga`; the tests need `python3` and
-  `llvm-objcopy`, the coverage report `llvm-profdata` and `llvm-cov`, the
-  tests of the emulator (`fpga-emulator/qa/test.sh`) `riscv64-elf-g++` with
-  its `objcopy` and `objdump`; the versions last used are in
-  [`etc/tools.txt`](etc/tools.txt)
+  for the fpga emulator of `rv32i-fpga`; the tests need `python3`,
+  `llvm-objcopy` and `llvm-objdump`, the coverage report `llvm-profdata` and
+  `llvm-cov`, the tests of the emulator (`fpga-emulator/qa/test.sh`)
+  `riscv64-elf-g++` with its `objcopy` and `objdump`; the versions last used
+  are in [`etc/tools.txt`](etc/tools.txt)
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
 * [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs
@@ -267,10 +267,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9504           7715          27364
+C/C++ Header                    64           9504           7718          27370
 C++                              1            228            116            860
 -------------------------------------------------------------------------------
-SUM:                            65           9732           7831          28224
+SUM:                            65           9732           7834          28230
 -------------------------------------------------------------------------------
 ```
 

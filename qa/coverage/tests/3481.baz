@@ -1,0 +1,5 @@
+# a variation selector shows as nothing and is escaped in a message
+
+func main() {
+    var x️ = 1
+}
