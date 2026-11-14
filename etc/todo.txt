@@ -155,6 +155,26 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 432, a walk of 'src/stmt_call.hpp') names and texts
+    left:
+    1. three names for one 'places.at(i)': 'arg_place', 'written' and
+       'passed'
+    2. "written" means a type written in the source ('is_written_type',
+       'written_type_arguments') and storage that is assigned
+       ('is_written')
+    3. "reference" means 'shared_storage_check::reference' and a
+       binding that keeps a computed address ('bind_reference',
+       'is_indexed_reference')
+    4. 'noinline_call::populate_frame': "the check must not change a
+       register that is free but used by the call" reads against the
+       "still allocated" of the line before
+    5. the header says "in reading order", yet about 600 lines of
+       'generic_call' come before 'call_site', 'inline_call' and
+       'noinline_call'; nothing says they can be skipped at first
+[ ] easy: (round 432, bug hunt of compile-time evaluation)
+    'qa/fuzz/fuzz-exprs.py' has no 'int' type and no call inside a
+    nested conversion, so it does not reach two types of one size on
+    rv32i (the defect of round 432)
 [ ] easy: (round 431, a walk of the accessor path) names and texts
     left:
     1. 'path_step' of 'access_path.hpp' sits beside 'prefix_step' and

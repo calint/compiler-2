@@ -176,7 +176,8 @@ class stmt_identifier;
 //   every node     'compile', 'source_to', 'tok', 'trace_assignment'
 //                  (control flow); 'visit_operands': overridden by every
 //                  value and by every node whose 'trace_assignment' checks
-//                  its reads with 'assert_result_not_read', a leaf lists none;
+//                  its reads with 'assert_result_set_before_read', a leaf
+//                  lists none;
 //                  'visit_reads' and 'visit_call_effects' walk the
 //                  operands, 'stmt_identifier' adds its own read,
 //                  'stmt_call' what its callee reads and writes,
@@ -270,7 +271,7 @@ class statement {
     // definite assignment: checks the reads of the result and records its
     // assignments
     virtual auto trace_assignment(assignment_flow& flow) const -> void {
-        assert_result_not_read(flow);
+        assert_result_set_before_read(flow);
     }
 
     // reports what the bodies of the calls in this node read and write, in
@@ -298,7 +299,8 @@ class statement {
 
     // definite assignment: throws if the result is read outside of the
     // bytes assigned so far ('stmt_identifier.hpp')
-    auto assert_result_not_read(const assignment_flow& flow) const -> void;
+    auto assert_result_set_before_read(const assignment_flow& flow) const
+        -> void;
 
     // the path of names, fields and indexes this node is, the operand path
     // without unary ops, e.g. 'p.x' or 'a[i]', not '-x'; a constant or a

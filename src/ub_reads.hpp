@@ -43,9 +43,9 @@ using operand_visitor = std::function_ref<void(const node_operand& operand)>;
 using read_visitor = std::function_ref<void(const stmt_identifier& read)>;
 
 // what the body of a called function does to storage its caller names too: a
-// global it reads or writes, or an argument it writes through a 'mut'
-// parameter, e.g. the 'gx' that 'gw()' writes or the 'i' of 'h(i)'; the
-// storage is resolved, a caller's local of the same name does not shadow it
+// global or a part of an argument it reads or writes, e.g. the 'gx' that
+// 'gw()' writes or the 'i' of 'h(i)'; the storage is resolved, a caller's
+// local of the same name does not shadow it
 struct call_effect {
     // the call, where an error points
     token call_tk;

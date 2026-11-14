@@ -45,7 +45,7 @@
 //   'assert_not_whole_array', 'make_scalar_ident_info', 'as_place'
 //                            what a value names when it is a place
 //   'statement::visit_call_effects', 'visit_operand_reads',
-//   'statement::visit_reads', 'statement::assert_result_not_read',
+//   'statement::visit_reads', 'statement::assert_result_set_before_read',
 //   'statement::bare_path'
 //                            the operand walks of 'statement', defined here
 //                            because they need 'stmt_identifier'
@@ -754,6 +754,9 @@ class stmt_identifier final : public statement {
         return method_->name_tk;
     }
 
+    // the root is the result of the function the path was parsed in
+    [[nodiscard]] auto names_result() const -> bool { return names_result_; }
+
     // the operand of what 'info' resolves this statement to, the registers of
     // a computed address go into 'held'
     [[nodiscard]] auto operand_of(compile_toc& tc, const ident_info& info,
@@ -1385,7 +1388,8 @@ inline auto statement::visit_reads(const read_visitor reader) const -> void {
     });
 }
 
-inline auto statement::assert_result_not_read(const assignment_flow& flow) const
+inline auto
+statement::assert_result_set_before_read(const assignment_flow& flow) const
     -> void {
 
     visit_reads([&flow](const stmt_identifier& read) -> void {

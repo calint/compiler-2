@@ -294,8 +294,13 @@ class stmt_builtin_convert final : public statement {
     [[nodiscard]] auto plan_at_type(const destination& target) const
         -> const type* {
 
+        // note: widths as the checks see them, so the 'int' of
+        //       'i32(int(a ^ f()))' keeps a register of its type on rv32i
+
         // e.g. the 'i16' of 'i8(i16(a * (a >> 1)))' is narrowed after it
-        if (target.type_ref().size_bytes() < get_type().size_bytes()) {
+        if (target.type_ref().check_width_bytes() <
+            get_type().check_width_bytes()) {
+
             return &get_type();
         }
 

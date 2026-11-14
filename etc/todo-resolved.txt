@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 432 (2026-11-15, bug hunt: compile-time against
+    run-time evaluation, every operator and integer type at the edge
+    values, constants against variables, inlined against noinline, the
+    targets, '--nopt' and '--versions'; design: how the rules of reads,
+    writes and definite assignment are implemented; readability: a
+    newcomer reads 'src/stmt_call.hpp' whole and predicts 58 programs)
+    => defect, fixed: the compiler aborted (exit 134) on the rv32i
+       targets on 'i32(int(k ^ f(k)))' with 'f' noinline returning
+       'int', and on 'i32(int(k ^ array_length(a)))' of an unsized
+       parameter; 'stmt_builtin_convert::plan_at_type' compared sizes
+       in bytes, 'int' and 'i32' are both 4 on rv32i, so the list of
+       the inner 'int' was computed in the 'i32' target, which takes no
+       'int' call result; it compares the widths as the checks see
+       them, as its caller 'plan_scratch_type' does; test 3540; one
+       more 'mv' on rv32i for the pattern where the target is a
+       register; no listing of an existing case differs
+    => bug hunt otherwise: no difference of result or verdict in 35000
+       programs in 5 spellings, 5500 programs of constant against
+       run-time ranges and indexes, 52756 programs of the operators at
+       18 edge values per operand; 11 seeded mutants, 10 caught by the
+       generators, the unwrapped folded quotient only by a hand case,
+       now test 3541
+    => design: 'stmt_call::record_uses_of_call' asks the path
+       ('stmt_identifier::names_result') instead of the scopes again;
+       'assert_result_set_before_read' for 'assert_result_not_read' (a
+       read of bytes that are set is accepted); the comment of
+       'call_effect' includes what a body only reads; 49 points probed
+       and all reached; twelve ideas weighed and left
+    => readability: the table above 'stmt_call::argument_places' gave
+       'point{1, 2}' as an instance argument, which a plain call
+       rejects; it gives '{1, 2}' as docs 4.2
 [x] easy: round 431 (2026-11-14, bug hunt: the rules of reads and
     writes, docs chapter 3, 4.2 and 8.3; design: how the built-in
     statements are compiled; readability: a newcomer walks the path of

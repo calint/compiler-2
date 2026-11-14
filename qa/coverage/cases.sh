@@ -8039,3 +8039,13 @@ SRC=3510 && EXP=0 && RUN
 # a generic noinline function with an array parameter gets a body for each
 # array length of its instance
 SRC=3530 && EXP=12 && RUN
+
+# an 'int' conversion of a narrower list inside an 'i32' conversion computes
+# the list in a register of type 'int', which takes the 'int' result of a call
+# or the 'array_length' of an unsized parameter in it, also on rv32i where
+# 'int' and 'i32' have the same size
+SRC=3540 && EXP=20 && RUN
+
+# without the division check the minimum divided by -1 wraps to the minimum,
+# folded as at run time, and the next division reads the wrapped value
+SRC=3541 && EXP=6 && OPTS="--checks=upper,lower" RUN

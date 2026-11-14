@@ -1,0 +1,13 @@
+func noinline f(a i8) res int { res = a + 1 }
+
+func g(a i8) res int { res = a + 1 }
+
+func length_of(a i8[], k i8) res i32 { res = i32(int(k ^ array_length(a))) }
+
+func main() {
+    var k = i8(3)
+    var b = i8[5]
+    var x = i32(int(k ^ f(k)))
+    var y = i32(-int(k + g(k)))
+    exit(x - y + length_of(b, k))
+}

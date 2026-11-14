@@ -2243,7 +2243,7 @@ class stmt_call final : public statement {
     //   argument        example         inlined body gets  noinline body
     //   place           'p', 'a[i]'     the name, or the   its address
     //                                   computed address
-    //   instance        'point{1, 2}',  a temporary        a temporary
+    //   instance        '{1, 2}',       a temporary        a temporary
     //                   'mk(1, 2)'
     //   value           'x + 1',        a constant, a      a temporary
     //                   '-a[i]', '-x',  register, or the
@@ -2753,7 +2753,7 @@ class stmt_call final : public statement {
             //       call may be bound to a register
 
             if (passed and not param.is_read_only() and
-                tc.scopes().names_result(passed->ident->tok().text())) {
+                passed->ident->names_result()) {
 
                 tc.record_result_passed_as_mut();
             }

@@ -1928,10 +1928,10 @@ for the same reason three headers define members of an earlier class:
 'tokenizer.hpp' the 'compile_error' of a tokenizer, 'register_report.hpp'
 'machine::register_error' and 'machine::register_peak_report', and
 'stmt_identifier.hpp' the operand walks of 'statement' ('visit_reads',
-'visit_call_effects', 'assert_result_not_read') and 'statement::bare_path'. A
-forward declaration of a class used only by reference or pointer is the
-opaque-pointer pattern and is also allowed, e.g. 'stmt_def_dat' and
-'stmt_def_func' in 'toc.hpp'.
+'visit_call_effects', 'assert_result_set_before_read') and
+'statement::bare_path'. A forward declaration of a class used only by
+reference or pointer is the opaque-pointer pattern and is also allowed, e.g.
+'stmt_def_dat' and 'stmt_def_func' in 'toc.hpp'.
 
 Rejected: a translation unit per header, each cycle between the node
 classes would need an interface of its own.

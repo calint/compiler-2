@@ -450,7 +450,7 @@ class stmt_def_const final : public statement {
     // a constant reads and writes nothing at run time, the elements of a
     // condition after the one that decides it hold the rule like a 'var'
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        initializer_.assert_result_not_read(flow);
+        initializer_.assert_result_set_before_read(flow);
     }
 };
 

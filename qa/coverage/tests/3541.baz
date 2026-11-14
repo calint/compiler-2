@@ -1,0 +1,7 @@
+func main() {
+    var a = i8(-128) / i8(-1) / i8(2)
+    var m = i8(-128)
+    var n = i8(-1)
+    var b = m / n / i8(2)
+    exit(a - b + 70 + a)
+}

@@ -133,10 +133,10 @@ class stmt_builtin_foo final : public statement {
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        ident_.assert_result_not_read(flow);
+        ident_.assert_result_set_before_read(flow);
 
         if (count_) {
-            count_->count.assert_result_not_read(flow);
+            count_->count.assert_result_set_before_read(flow);
         }
 
         flow.trace_loop(code_, loop_end::also_when_done);

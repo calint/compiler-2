@@ -62,7 +62,7 @@ class stmt_builtin_exit final : public statement {
     // the program ends here, so this path never returns and cannot leave the
     // result unset
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        assert_result_not_read(flow);
+        assert_result_set_before_read(flow);
         flow.end_path();
     }
 

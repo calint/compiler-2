@@ -60,7 +60,7 @@ class stmt_if final : public statement {
 
         // the condition is read before the branch code runs
         auto trace_assignment(assignment_flow& flow) const -> void {
-            condition.assert_result_not_read(flow);
+            condition.assert_result_set_before_read(flow);
             code.trace_assignment(flow);
         }
 
