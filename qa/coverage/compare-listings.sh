@@ -31,7 +31,7 @@ cd "$(dirname "$0")"
 
 TESTS=$(realpath tests)
 # the options of a case without its own, as in 'test-coverage.sh'
-DEFAULT_OPTIONS="--vars=0x40000 --checks=upper,lower,line"
+DEFAULT_OPTS="--vars=0x40000 --checks=upper,lower,line"
 
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -40,7 +40,7 @@ trap 'rm -rf "$WORK"' EXIT
 # 'if' on the target, a commented-out one is not compiled
 grep -vE '^ *#' cases.sh | grep -oE 'SRC=[0-9]+[^;]*' | while read -r line; do
     src=$(sed -E 's/^SRC=([0-9]+).*/\1/' <<<"$line")
-    options=$DEFAULT_OPTIONS
+    options=$DEFAULT_OPTS
     if [[ "$line" =~ OPTS=\"([^\"]*)\" ]]; then
         options=${BASH_REMATCH[1]}
     fi

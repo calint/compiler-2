@@ -8,7 +8,8 @@
 #
 # usage: test-cli.sh
 set -eE
-# names the failed command; those under 'set +e' fail on purpose
+# names the failed command; one in a command substitution, where '-e' is off,
+# may fail on purpose, e.g. a 'grep -c' that counts 0
 trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -50,12 +51,10 @@ fail() {
 
 CLI() {
     echo -n "cli $1: "
-    set +e
+    local exit_code=0
     # note: '%p' since cases share their first argument, e.g. '--checks=noub'
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-$1-%p.profraw" "$BIN" "$1" "${@:3}" >/dev/null 2>err
-    local exit_code=$?
-    set -e
-
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-$1-%p.profraw" "$BIN" "$1" "${@:3}" >/dev/null 2>err ||
+        exit_code=$?
     if [[ $exit_code -eq "$2" ]]; then
         echo ok
     else
@@ -413,7 +412,7 @@ CLI_FILE_ERRORS() {
 
 CLI_REGISTER_REPORT() {
     echo -n "cli --report=registers: "
-    "$BIN" 0829.baz >/dev/null 2>err && fail
+    expect_exit_1 "$BIN" 0829.baz >/dev/null 2>err
     grep -Fq "register use at the failure" err
     "$BIN" 0825.baz >gen.s 2>err
     "$BIN" --report=registers 0825.baz >out 2>err
@@ -460,18 +459,18 @@ CLI_SOURCE_LINE_ENDS() {
     [[ ! -s err ]]
     # the source line of an error does not show the carriage return
     sed 's/$/\r/' 0830.baz >gen-crlf.baz
-    "$BIN" gen-crlf.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-crlf.baz >gen.s 2>err
     grep -Fq "is not a number" err
     grep -q $'\r' err && fail
     # a tab stays a tab in front of the mark
     sed 's/^    /\t/' 0830.baz >gen-tab.baz
-    "$BIN" gen-tab.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-tab.baz >gen.s 2>err
     grep -q $'^\t   ^$' err
     # a carriage return without a line feed is rejected, also in a
     # character literal, and shown escaped
     printf "func main() {\r\n    var c = '\r'\r\n    exit(c)\r\n}\r\n" \
         >gen-crlf.baz
-    "$BIN" gen-crlf.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-crlf.baz >gen.s 2>err
     grep -Fq "a carriage return is not followed by a line feed" err
     grep -Fq "var c = '\\x0d'" err
     rm -f gen-crlf.baz gen-tab.baz
@@ -485,13 +484,13 @@ CLI_ERROR_LINE_BYTES() {
     echo -n "cli error line with invalid UTF-8 and DEL: "
     printf 'func main() {\n    var s = "\xc3A\xc3\xc3\xf8\x7f\xc3\xa9" + y\n}\n' \
         >gen-bytes.baz
-    "$BIN" gen-bytes.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-bytes.baz >gen.s 2>err
     grep -Fq '\x7f' err
     grep -Fq '"\xc3A\xc3\xc3\xf8\x7f' err
     grep -Fxq '            ^~~~~~~~~~~~~~~~~~~~~~~~' err
     # a DEL in a name is neither a letter nor a digit
     printf 'func main() {\n    var a\x7f = 1\n}\n' >gen-bytes.baz
-    "$BIN" gen-bytes.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-bytes.baz >gen.s 2>err
     grep -Fq "'a\\x7f' is not a valid name" err
     rm -f gen-bytes.baz
     echo ok
@@ -588,7 +587,7 @@ CLI_COMMENT_LOCATIONS() {
     printf 'func three() res {\n    res = nope\n}\n' >gen-abs-lib.baz
     printf 'include "%s/include/../gen-abs-lib.baz"\n\nfunc main() {\n    exit(three())\n}\n' \
         "$PWD" >gen-abs-main.baz
-    "$BIN" gen-abs-main.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-abs-main.baz >gen.s 2>err
     grep -Fq "$PWD/gen-abs-lib.baz:2:11:" err
     rm -f gen-abs-lib.baz gen-abs-main.baz gen-abs-panic.baz
     echo ok
@@ -599,7 +598,7 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     local name=$'gen\nname.baz'
     # a message escapes the line end of the name
     cp 1517.baz "$name"
-    "$BIN" "$name" >gen.s 2>err && fail
+    expect_exit_1 "$BIN" "$name" >gen.s 2>err
     grep -Fq 'gen\x0aname.baz:4:15:' err
     # the comments and the panic message of the listing stay on their lines
     printf 'func main() {\n    var a = i8[2]\n    var i = 3\n    a[i] = 1\n}\n' >"$name"
@@ -607,7 +606,9 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     nasm -w+error -f elf64 gen.s -o gen.o
     # the panic message escapes the line end like the messages do
     ld -s -T "$SCRIPT_DIR/../../baz.ld" -o gen gen.o
-    ./gen >out 2>&1 || true
+    local exit_code=0
+    ./gen >out 2>&1 || exit_code=$?
+    [[ $exit_code -eq 255 ]]
     grep -Fq 'panic: bounds at gen\x0aname.baz:4' out
     "$BIN" --target=rv32i --bin=gen-rv32i.bin --checks=upper,line "$name" >gen.s 2>err
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
@@ -651,7 +652,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     printf 'func f() res {\n    res = nope\n}\n' >gen-link-dir/gen-c.baz
     printf 'include "gen-link-dir/gen-a.baz"\n\nfunc main() {\n    exit(f())\n}\n' \
         >gen-main.baz
-    "$BIN" gen-main.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-main.baz >gen.s 2>err
     grep -Fq 'gen-link-dir/gen-c.baz:2:11:' err
     # also after a link: the error names 'gen-link-dir/sub/gen-d.baz', not
     # 'gen-link/../sub/gen-d.baz'
@@ -659,7 +660,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     printf 'func f() res {\n    res = nope\n}\n' >gen-link-dir/sub/gen-d.baz
     printf 'include "gen-link/gen-b.baz"\n\nfunc main() {\n    exit(f())\n}\n' \
         >gen-main.baz
-    "$BIN" gen-main.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-main.baz >gen.s 2>err
     grep -Fq 'gen-link-dir/sub/gen-d.baz:2:11:' err
     # the includes of a file reached by a '..' after a link are relative to
     # the directory it was opened from, also where a file of that name next
@@ -690,7 +691,7 @@ CLI_INCLUDE_THROUGH_LINK() {
     "$BIN" gen-main.baz >gen.s 2>err
     # a path through a file names no file, as the file system says
     printf 'include "gen-lib.baz/../gen-lib.baz"\n' >gen-main.baz
-    "$BIN" gen-main.baz >gen.s 2>err && fail
+    expect_exit_1 "$BIN" gen-main.baz >gen.s 2>err
     grep -Fq "cannot open file 'gen-lib.baz/../gen-lib.baz'" err
     # the file system resolves the link also where a directory above the
     # working directory cannot be searched
@@ -700,10 +701,8 @@ CLI_INCLUDE_THROUGH_LINK() {
         >gen-perm/dir/main.baz
     printf 'func four() res {\n    res = 4\n}\n' >gen-perm/dir/lib.baz
     printf 'func three() res {\n    res = 3\n}\n' >gen-perm/dir/sub/lib.baz
-    set +e
-    (cd gen-perm/dir && chmod a-x .. && "$BIN" main.baz >gen.s 2>err)
-    exit_code=$?
-    set -e
+    local exit_code=0
+    (cd gen-perm/dir && chmod a-x .. && "$BIN" main.baz >gen.s 2>err) || exit_code=$?
     chmod a+x gen-perm
     [[ $exit_code -eq 0 ]]
     # the listing names the file opened, not 'lib.baz' as a lexical '..' does
@@ -718,10 +717,8 @@ CLI_ADDRESS_RANGE() {
     local target
     for target in rv32i rv32i-qemu rv32i-fpga; do
         printf 'dat big = i8[3000000000]\nfunc main(){\n    exit(0)\n}\n' >gen-range.baz
-        set +e
-        baz_at "$target" gen-range.baz >gen.s 2>err
-        local exit_code=$?
-        set -e
+        local exit_code=0
+        baz_at "$target" gen-range.baz >gen.s 2>err || exit_code=$?
         # the bare-metal targets reject it for their device memory, linux
         # accepts it
         if [[ $target != rv32i ]]; then
@@ -854,7 +851,7 @@ CLI_FPGA_MEMORY() {
     expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0x1000 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack of 65536 B, give a smaller --stack" err
     # it is an option error, reported before the source is read
-    "$BIN" --target=rv32i-fpga --memory=0x1000 missing.baz >gen.s 2>err || true
+    expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x1000 missing.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack" err
     # a stack larger than the memory is rejected before a stack check of a
     # 'noinline' call is generated with it
@@ -881,7 +878,7 @@ CLI_FPGA_MEMORY() {
         [[ ! -s gen.s ]]
     done
     # the target rejects a memory that reaches its devices
-    "$BIN" --target=rv32i-fpga --memory=0x100000000 0418.baz >gen.s 2>err || true
+    expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x100000000 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4294967296 B exceeds the 4294963200 B below the device addresses" err
     # the largest memory below the devices is accepted
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 0418.baz >gen.s 2>err
@@ -933,7 +930,7 @@ CLI_VARS_RANGE() {
     grep -Fq "use --help for usage information" err
     # the variables stay below the end, so the whole address space is too
     # large too
-    "$BIN" --vars=0x100000000 --target=rv32i 0418.baz >gen.s 2>err || true
+    expect_exit_1 "$BIN" --vars=0x100000000 --target=rv32i 0418.baz >gen.s 2>err
     grep -Fq "invalid --vars: 4294967296 B reaches the 4294967296 B that the target addresses" err
     echo ok
 }
@@ -1047,22 +1044,22 @@ CLI_OPTION_MESSAGES() {
         grep -Fq "error: invalid ${arg%%=*}: " err
     done
     # each names what it lists
-    "$BIN" --checks=x 0015.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" --checks=x 0015.baz >/dev/null 2>err
     grep -Fq "supported checks are: " err
     grep -Fq ", noub, each with a '+' or '-' prefix" err
-    "$BIN" --target=x 0015.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" --target=x 0015.baz >/dev/null 2>err
     grep -Fq "', supported targets are: x86_64, rv32i" err
-    "$BIN" --report=x 0015.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" --report=x 0015.baz >/dev/null 2>err
     grep -Fq "', supported reports are: registers" err
-    "$BIN" --versions=x 0015.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" --versions=x 0015.baz >/dev/null 2>err
     grep -Fq "', supported values are: smaller, nested, first, last" err
-    "$BIN" --vars=17 0015.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" --vars=17 0015.baz >/dev/null 2>err
     grep -Fq "error: invalid --vars: '17' is not a multiple of 16" err
-    "$BIN" --bin= 0015.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" --bin= 0015.baz >/dev/null 2>err
     grep -Fq "error: invalid --bin: empty file name" err
-    "$BIN" -x 0015.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" -x 0015.baz >/dev/null 2>err
     grep -Fq "error: unknown option: '-x'" err
-    "$BIN" 0015.baz 0418.baz >/dev/null 2>err || true
+    expect_exit_1 "$BIN" 0015.baz 0418.baz >/dev/null 2>err
     grep -Fq "error: more than one source file: '0015.baz' and '0418.baz'" err
     echo ok
 }
@@ -1086,9 +1083,9 @@ CLI_TARGET_OPTIONS() {
         grep -Eq "^error: invalid --(stack|memory|sdcard): target '[^']+' does not read it, the targets that do are: " err
     done
     grep -Fq "error: invalid --sdcard: target 'rv32i-qemu' does not read it, the targets that do are: x86_64, rv32i" err
-    "$BIN" --stack=0x10000 0418.baz 2>err >/dev/null || true
+    expect_exit_1 "$BIN" --stack=0x10000 0418.baz 2>err >/dev/null
     grep -Fq "the targets that do are: rv32i-qemu, rv32i-fpga" err
-    "$BIN" --memory=0x100000 0418.baz 2>err >/dev/null || true
+    expect_exit_1 "$BIN" --memory=0x100000 0418.baz 2>err >/dev/null
     grep -Fq "the targets that do are: rv32i-fpga" err
     # the targets that read them accept them, 1048 calls the sector functions
     "$BIN" --sdcard=other.img 1048.baz >gen.s 2>err
@@ -1101,70 +1098,6 @@ CLI_TARGET_OPTIONS() {
     echo ok
 }
 
-CLI -h 0
-CLI --vars=65536 0 --help
-CLI --vars=0x10000 0 --help
-CLI --vars= 1 --help
-CLI --vars=0 1 --help
-CLI --vars=-16 1 --help
-CLI --vars=17 1 --help
-CLI --vars=16junk 1 --help
-CLI --vars=18446744073709551616 1 --help
-# more than the target addresses
-CLI --vars=0x8000000000000000 1 0418.baz
-CLI --vars=0x800000000000 1 0418.baz
-CLI --vars=0x7ffffffffff0 0 0418.baz
-CLI --stack=65536 0 --help
-CLI --stack=0x10000 0 --help
-CLI --stack= 1 --help
-CLI --stack=0 1 --help
-CLI --stack=17 1 --help
-CLI --stack=16junk 1 --help
-CLI --no-reproduce 1 --help
-CLI --checks=frame 0 0015.baz
-CLI --checks=upper,lower,line,frame 0 0015.baz
-CLI --checks=noub 0 0015.baz
-CLI --checks=+division 0 0015.baz
-CLI --checks=noub,-division 0 0015.baz
-CLI --checks=-noub 0 0015.baz
-CLI --checks=+ 1 0015.baz
-# the option is accepted, the compile is rejected by the source
-CLI --checks=upper 1 0930.baz
-grep -Fq "may share storage with the result destination" err
-CLI --checks=noub 1 0930.baz
-grep -Fq "may share storage with the result destination" err
-CLI --checks=unknown 1 --help
-CLI --target=x86_64 0 --help
-CLI --target=rv32i 0 --help
-CLI --target=rv32i-qemu 0 --help
-CLI --target= 1 --help
-CLI --target=unknown 1 --help
-CLI --bin= 1 --help
-CLI --bin=gen-rv32i.bin 0 --help
-CLI --sdcard= 1 --help
-CLI --sdcard=other.img 0 --help
-CLI --report=registers 0 0015.baz
-CLI --report=unknown 1 --help
-CLI --report=registers,unknown 1 --help
-CLI --report= 0 0015.baz
-CLI --report=registers, 0 0015.baz
-CLI --report=registers,registers 0 0015.baz
-CLI --versions=smaller 0 0015.baz
-CLI --versions=first 0 0015.baz
-CLI --versions=last 0 0015.baz
-CLI --versions= 1 --help
-CLI --versions=unknown 1 --help
-CLI -x 1 --help
-CLI 0015.baz 1 0418.baz
-CLI 0015.baz 0 --nopt
-CLI_TARGETS
-CLI_BINARY_NAME
-CLI_REPRODUCE_SOURCE
-CLI_JUMP_OPTIMIZATIONS
-CLI_RELOADS
-CLI_RETESTS
-CLI_SHARED_BASE_COPY
-CLI_ROUTINE_INDENT
 CLI_KEYWORD_NAMES() {
     echo -n "cli keywords as names: "
     # every keyword of 'token.hpp' is rejected as the name of a variable
@@ -1247,6 +1180,70 @@ CLI_NESTED_TYPE_CHAIN() {
     echo ok
 }
 
+CLI -h 0
+CLI --vars=65536 0 --help
+CLI --vars=0x10000 0 --help
+CLI --vars= 1 --help
+CLI --vars=0 1 --help
+CLI --vars=-16 1 --help
+CLI --vars=17 1 --help
+CLI --vars=16junk 1 --help
+CLI --vars=18446744073709551616 1 --help
+# more than the target addresses
+CLI --vars=0x8000000000000000 1 0418.baz
+CLI --vars=0x800000000000 1 0418.baz
+CLI --vars=0x7ffffffffff0 0 0418.baz
+CLI --stack=65536 0 --help
+CLI --stack=0x10000 0 --help
+CLI --stack= 1 --help
+CLI --stack=0 1 --help
+CLI --stack=17 1 --help
+CLI --stack=16junk 1 --help
+CLI --no-reproduce 1 --help
+CLI --checks=frame 0 0015.baz
+CLI --checks=upper,lower,line,frame 0 0015.baz
+CLI --checks=noub 0 0015.baz
+CLI --checks=+division 0 0015.baz
+CLI --checks=noub,-division 0 0015.baz
+CLI --checks=-noub 0 0015.baz
+CLI --checks=+ 1 0015.baz
+# the option is accepted, the compile is rejected by the source
+CLI --checks=upper 1 0930.baz
+grep -Fq "may share storage with the result destination" err
+CLI --checks=noub 1 0930.baz
+grep -Fq "may share storage with the result destination" err
+CLI --checks=unknown 1 --help
+CLI --target=x86_64 0 --help
+CLI --target=rv32i 0 --help
+CLI --target=rv32i-qemu 0 --help
+CLI --target= 1 --help
+CLI --target=unknown 1 --help
+CLI --bin= 1 --help
+CLI --bin=gen-rv32i.bin 0 --help
+CLI --sdcard= 1 --help
+CLI --sdcard=other.img 0 --help
+CLI --report=registers 0 0015.baz
+CLI --report=unknown 1 --help
+CLI --report=registers,unknown 1 --help
+CLI --report= 0 0015.baz
+CLI --report=registers, 0 0015.baz
+CLI --report=registers,registers 0 0015.baz
+CLI --versions=smaller 0 0015.baz
+CLI --versions=first 0 0015.baz
+CLI --versions=last 0 0015.baz
+CLI --versions= 1 --help
+CLI --versions=unknown 1 --help
+CLI -x 1 --help
+CLI 0015.baz 1 0418.baz
+CLI 0015.baz 0 --nopt
+CLI_TARGETS
+CLI_BINARY_NAME
+CLI_REPRODUCE_SOURCE
+CLI_JUMP_OPTIMIZATIONS
+CLI_RELOADS
+CLI_RETESTS
+CLI_SHARED_BASE_COPY
+CLI_ROUTINE_INDENT
 CLI_CHECKS_NOUB
 CLI_CHECKS_LIST
 CLI_FILE_ERRORS

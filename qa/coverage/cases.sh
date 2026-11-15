@@ -26,6 +26,9 @@
 #   SDCARD=SIZE  the sd card image of this case, sparse, e.g. 1M; without it
 #                an empty image
 #
+# These and 'EXP' apply to one case: the helper clears them, so a case that
+# judges an exit code and sets no 'EXP' fails.
+#
 # A case expects 'NNN.TARGET.out' instead of 'NNN.out' when that file exists.
 # For the output of a compile (COMPERR, LISTING) TARGET is the target of the
 # compiler, rv32i also for rv32i-qemu and rv32i-fpga; for the output of a run

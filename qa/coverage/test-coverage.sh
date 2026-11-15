@@ -26,7 +26,7 @@ cd "$SCRIPT_DIR"
 BIN="$SCRIPT_DIR/../../baz"
 MACHINE=x86_64
 # the options of a case without its own, also in 'compare-listings.sh'
-OPTS="--vars=0x40000 --checks=upper,lower,line"
+DEFAULT_OPTS="--vars=0x40000 --checks=upper,lower,line"
 # also with the options of a case: every source is reproduced exactly
 REPRODUCE="--reproduce-source"
 # the version of the same code that is kept, empty for the default
@@ -165,7 +165,7 @@ rm -f gen.s out err
 ulimit -c 0
 
 echo $SEP
-echo "running: $BIN --target=$MACHINE $OPTS $REPRODUCE $VERSION_OPTS"
+echo "running: $BIN --target=$MACHINE $DEFAULT_OPTS $REPRODUCE $VERSION_OPTS"
 echo $SEP
 
 export UBSAN_OPTIONS="print_stacktrace=1"
@@ -260,7 +260,7 @@ compile_case() {
 # also makes the sd card image of the case, see 'make_sdcard'
 compile_and_build() {
     # shellcheck disable=SC2086 # the options are words
-    compile_case gen.s "$MACHINE" $OPTS $REPRODUCE $VERSION_OPTS
+    compile_case gen.s "$MACHINE" $CASE_OPTS $REPRODUCE $VERSION_OPTS
     assemble_and_link
     make_sdcard
 }
@@ -269,7 +269,7 @@ compile_and_build() {
 compile_expect_error() {
     local exit_code=0
     # shellcheck disable=SC2086 # the options are words
-    "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $OPTS $REPRODUCE >gen.s 2>out || exit_code=$?
+    "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$MACHINE" "${IMAGE_OPTS[@]}" $CASE_OPTS $REPRODUCE >gen.s 2>out || exit_code=$?
     if [[ $exit_code -ne 1 ]]; then
         echo "FAILED. expected compiler exit 1 got $exit_code"
         exit 1
@@ -319,6 +319,10 @@ expected_compile_output() {
 expect_exit() {
     local expected=$1
     local exit_code=$2
+    if [[ -z $expected ]]; then
+        echo "FAILED. the case sets no 'EXP'"
+        exit 1
+    fi
     if [[ $exit_code -ne $expected ]]; then
         echo "FAILED. expected $expected got $exit_code"
         exit 1
@@ -334,37 +338,48 @@ skipped_with_versions() {
     echo skipped
 }
 
-# the sd card image 'sdcard.img' of the case, a sparse file of the size of the
-# prefix 'SDCARD', e.g. 'SDCARD=5G', empty without it; the emulator opens the
-# image also for the cases that do not use it
+# the sd card image 'sdcard.img' of the case, a sparse file of the size of its
+# 'SDCARD', e.g. 'SDCARD=5G', empty without it; the emulator opens the image
+# also for the cases that do not use it
 make_sdcard() {
     rm -f sdcard.img
-    truncate -s "${SDCARD:-0}" sdcard.img
+    truncate -s "$CASE_SDCARD" sdcard.img
+}
+
+# prints the name of the case and moves its variables 'EXP', 'OPTS' and
+# 'SDCARD' to 'CASE_EXP', 'CASE_OPTS' and 'CASE_SDCARD'; clearing them keeps
+# one set with '&&' instead of as a prefix out of the next case
+begin_case() {
+    echo -n "$SRC: "
+    CASE_EXP=${EXP-}
+    CASE_OPTS=${OPTS-$DEFAULT_OPTS}
+    CASE_SDCARD=${SDCARD:-0}
+    unset EXP OPTS SDCARD
 }
 
 # the helpers of the cases, see 'cases.sh'; a program judged by its output
 # must exit 0
 
 RUN() {
-    echo -n "$SRC: "
+    begin_case
     compile_and_build
     local exit_code=0
     execute_program 2>err || exit_code=$?
-    expect_exit "$EXP" $exit_code
+    expect_exit "$CASE_EXP" $exit_code
     echo ok
 }
 
 RUN_ERR() {
-    echo -n "$SRC: "
+    begin_case
     compile_and_build
     local exit_code=0
     execute_program_errors_to_out || exit_code=$?
-    expect_exit "$EXP" $exit_code
+    expect_exit "$CASE_EXP" $exit_code
     check_output "$(expected_run_output)"
 }
 
 DIFF() {
-    echo -n "$SRC: "
+    begin_case
     compile_and_build
     local exit_code=0
     execute_program >out || exit_code=$?
@@ -373,7 +388,7 @@ DIFF() {
 }
 
 DIFFINP() {
-    echo -n "$SRC: "
+    begin_case
     compile_and_build
     local exit_code=0
     execute_program <"$SRC.in" >out || exit_code=$?
@@ -382,7 +397,7 @@ DIFFINP() {
 }
 
 DIFFINP2() {
-    echo -n "$SRC: "
+    begin_case
     compile_and_build
     program_command
     local exit_code=0
@@ -395,7 +410,7 @@ DIFFINP2() {
 # 'PROGRAM_COMMAND_LINES', one argument per line, and reads the target of the
 # run from 'MACHINE'
 DIFFPY() {
-    echo -n "$SRC: "
+    begin_case
     compile_and_build
     program_command
     local exit_code=0
@@ -406,18 +421,18 @@ DIFFPY() {
 }
 
 DIFFNOPT() {
-    echo -n "$SRC: "
+    begin_case
     if skipped_with_versions; then
         return
     fi
     # shellcheck disable=SC2086 # the options are words
-    compile_case gen-nopt.s "$MACHINE" $OPTS --nopt
+    compile_case gen-nopt.s "$MACHINE" $CASE_OPTS --nopt
     compile_and_build
     local exit_code=0
     execute_program 2>err || exit_code=$?
     # 'diff' exits 1 when the listings differ, the expected case
     diff gen-nopt.s gen.s >out || true
-    expect_exit "$EXP" $exit_code
+    expect_exit "$CASE_EXP" $exit_code
     check_output "$SRC.$MACHINE.diff"
 }
 
@@ -425,7 +440,7 @@ DIFFNOPT() {
 # argument, compiled without the checks for the target of the compiler,
 # compared with 'NNN.TARGET.KIND'
 LISTING() {
-    echo -n "$SRC: "
+    begin_case
     local expected="$SRC.$COMPILER_MACHINE.$1"
     if skipped_with_versions; then
         return
@@ -445,7 +460,7 @@ LISTING() {
 
 # the program is not run, so the versions do not matter
 COMPERR() {
-    echo -n "$SRC: "
+    begin_case
     if skipped_with_versions; then
         return
     fi

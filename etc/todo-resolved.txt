@@ -1,6 +1,39 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 448 (2026-11-15, bug hunt: the stack and frames,
+    recursion through 'noinline', the frame and stack checks; design:
+    the test harness, can a test pass silently; readability: a
+    newcomer walks 'machine_rv32i.hpp')
+    => bug hunt: no defect; 2360 programs (record and int recursion,
+       helpers, calls inside expressions, deepest frames with up to 26
+       live values), about 230000 compiles and 225000 runs with the
+       thresholds of '--stack' and '--vars' searched on rv32i-fpga
+       under an emulator that faults between 'vars' end and the stack
+       limit, x86_64 relinked with a page guard; the verdict flips
+       once, rv32i-qemu and rv32i-fpga agree at the threshold, the
+       stack check has no slack; frame size reports match the code; 8
+       of 8 mutants caught; deep recursion with '--vars' beyond the
+       system stack ends with SIGSEGV as docs 8 item 4 says
+    => design, two silent passes fixed, each shown with a broken case
+       before and after: 'test-coverage.sh' kept 'EXP' from the case
+       before (a case without one was judged by the exit code of the
+       previous case) and an 'OPTS' written as a statement changed
+       every later case; 'begin_case' copies the variables of a case
+       and unsets them, a case without 'EXP' fails, the defaults are
+       'DEFAULT_OPTS'; 24 rejected compiles in 'test-cli.sh' accepted
+       any exit ('|| true', '&& fail'), they use 'expect_exit_1' and a
+       crash after the right message fails; 'set +e' blocks are
+       'exit_code=$?' as elsewhere, the ERR trap comment reworded; the
+       same verdicts on the suites; a shared 'targets.sh' needs
+       approval and smaller leftovers went to 'todo.txt'
+    => readability: seven comments in 'machine_rv32i.hpp' (the run-time
+       count entry points in the header, 'swaps_operands' and
+       'complements_less_than' ('bge' exists), the 'lui' that erases
+       the base, 'fail_if', 'shift_by_constant' only a left shift goes
+       to the top, 'load_bulk_addresses', 'store_operation_result');
+       177 functions, 11 programs, about 75 predictions, 6 wrong; dead
+       tails of run-time count walks went to 'todo.txt'
 [x] easy: round 447 (2026-11-15, bug hunt: aliasing, a source and a
     destination that are the same storage or overlap; design: how
     storage gets its addresses, 'storage_layout', frames, 'dat', the

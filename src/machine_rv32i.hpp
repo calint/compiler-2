@@ -51,6 +51,7 @@
 //                'emit_target_routines'
 //   memory       'zero', 'copy_block', 'memory_equal'
 //                through 'walk_known_size' for a known size,
+//                'copy_elements', 'equal_elements' through
 //                'walk_runtime_count' for a run-time count
 //                (see the note before 'local_label'); 'store_bytes' as
 //                immediates or a copy of a constant ('copy_constant')
@@ -2755,8 +2756,9 @@ class machine_rv32i : public machine {
                     dst_type.size_bits());
     }
 
-    // a check of one test branches to the handler; of more, the last passing
-    // test branches past the shared jump to the handler, the others to it
+    // a check of one test branches to the handler; of more, each failing test
+    // but the last branches to the shared jump to the handler, the last
+    // branches past it when it passes
     auto fail_if(const emit_site site, failure_tests& tests, const op failed,
                  const std::string_view rs1, const std::string_view rs2)
         -> void {
@@ -2875,7 +2877,8 @@ class machine_rv32i : public machine {
         address_of(site, bulk.pointer(slot), address);
     }
 
-    // borrowed pointers avoid a temporary address and final move for indexing
+    // each address is built in its pointer register when the emitter can, so
+    // an indexed address needs no temporary and no move
     auto load_bulk_addresses(const emit_site site, bulk_operation& bulk,
                              const address_emitter& first,
                              const address_emitter& second) -> void {
@@ -3142,8 +3145,8 @@ class machine_rv32i : public machine {
         address_of(site, end, past_end);
     }
 
-    // a narrow register shifts to the top and back, extending in one pair;
-    // the result needs no extension after it
+    // a narrow register shifted left goes to the top and back, extending in
+    // one pair; the result needs no extension after it
     auto shift_by_constant(const size_t indent,
                            const arithmetic_operator operation,
                            const operand& dst, const loaded_destination& loaded,
@@ -3321,6 +3324,8 @@ class machine_rv32i : public machine {
                  value.register_name(), lowered);
     }
 
+    // a memory 'dst' receives the low bits, a narrow register is extended
+    // when 'normalize' says the operation may have set bits outside its width
     auto store_operation_result(const size_t indent, const operand& dst,
                                 const operand& address, const operand& value,
                                 const bool normalize) -> void {
@@ -3945,8 +3950,8 @@ class machine_rv32i : public machine {
 
         const bool is_base{dst_name == address.base_register()};
 
-        // if the destination is the base register, loading the offset would
-        // erase the base value before the add
+        // if the destination is the base register, the 'lui' of the upper
+        // part would erase the base value before the add
         if (address.index_register().empty()) {
             return not is_base;
         }
@@ -4001,8 +4006,9 @@ class machine_rv32i : public machine {
         return threshold;
     }
 
-    // only 'slt' and 'blt' exist: 'x >= y' is the complement of 'x < y' and,
-    // with 'swaps_operands', 'x <= y' of 'y < x'
+    // '<' is the only signed test that sets a register ('slt'): 'x >= y' is
+    // the complement of 'x < y' and, with 'swaps_operands', 'x <= y' of
+    // 'y < x'
     [[nodiscard]] static auto
     complements_less_than(const comparison_operator operation) -> bool {
 
@@ -4411,8 +4417,8 @@ class machine_rv32i : public machine {
         return parts;
     }
 
-    // only 'slt' and 'blt' exist: 'x > y' is 'y < x' and 'x <= y' is the
-    // complement of 'y < x'
+    // no instruction tests '>' or '<=': 'x > y' is 'y < x' and 'x <= y' is
+    // 'y >= x', for 'slt' the complement of 'y < x'
     [[nodiscard]] static auto
     swaps_operands(const comparison_operator operation) -> bool {
 

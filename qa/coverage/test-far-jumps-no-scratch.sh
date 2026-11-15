@@ -16,7 +16,8 @@
 #
 # usage: test-far-jumps-no-scratch.sh
 set -eE
-# names the failed command; those under 'set +e' fail on purpose
+# names the failed command; one in a command substitution, where '-e' is off,
+# may fail on purpose, e.g. a 'grep -c' that counts 0
 trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -42,10 +43,8 @@ run_rv32i() {
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj "$1.s" \
         -o "$1.o"
     ld.lld -m elf32lriscv -e _start -o "$1" "$1.o"
-    set +e
-    timeout -k 1s 60s qemu-riscv32 "./$1" 2>err
-    status=$?
-    set -e
+    status=0
+    timeout -k 1s 60s qemu-riscv32 "./$1" 2>err || status=$?
 }
 
 # writes 'far.baz': 14 'foo' deep no register is free, so the jumps over and
