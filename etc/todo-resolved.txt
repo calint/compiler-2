@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 446 (2026-11-15, bug hunt: paths rooted at an address
+    a call computed, the change of round 445; design: the assembler
+    side, its passes and what 'machine' hands it; readability: a
+    newcomer walks 'expr_bool.hpp' and 'stmt_if.hpp')
+    => bug hunt: no defect; 7100 programs of nested records, arrays of
+       records, 'mut' and read-only methods, results and 'mut T[]'
+       parameters on paths with constant and run-time indices, inlined
+       and 'noinline', against a model in about 107000 builds on the
+       four targets with 7 option lists; 6500 programs with the same
+       listings in the builds of rounds 444 and 445; round 445 accepts
+       4 of 4000 x86_64 programs that round 444 rejected with "register
+       ... is needed here too" (a call result written at a run-time
+       index), not reduced; 4 of 5 mutants caught, the fifth changes
+       listings only
+    => design: the rules of the passes are each written once at the
+       right layer; three pure refactors: 'assembler_x86_64::is_reload'
+       without the width condition that excluded nothing (round 434
+       item 1), 'assembler_rv32i::add_section_directive' holds its
+       table as on x86_64 ('section_directive' gone), the local 'form'
+       that hid the enum is 'reach_form'; nine ideas weighed and left
+       (target pass virtuals, optional jump info, structured retest,
+       records written at write time, ...); no listing differs
+    => readability: eight text and name fixes in 'expr_bool.hpp' and the
+       docs (the whole-array examples, the shorthand copy of a stored
+       value, 'left_operand' is 'non_immediate_operand', 'if_true' as
+       in 'branch_targets'); 61 functions, 45 programs, 48 predictions,
+       6 wrong; the dead compare after a removed jump went to
+       'todo.txt'
 [x] easy: round 445 (2026-11-15, design: which paths are walked to
     an address; readability: the comments of 'generic_call')
     => design: an address a call computed is no longer a walked path:

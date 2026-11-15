@@ -155,6 +155,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 446, a walk of 'expr_bool.hpp') a comparison whose
+    jump the optimizer removes leaves its compare: in 'if a == 2 or
+    1 == 1' the list is known true, the jump of 'a == 2' goes to the
+    next line and is removed, 'cmp qword [rbp], 2' (rv32i 'lw', 'li')
+    stays as dead code; an optimization, not measured
 [ ] easy: (round 445, design of paths) 'stmt_identifier::load_address'
     allocates a scratch register for a held address although the
     caller's register could take it: 'foo d' in a noinline body emits
@@ -320,16 +325,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
     chapter 8 item 3, whose example is about targets, not checks; the
     docs could name the checks there
 [ ] easy: (round 434, a walk of the x86_64 backend)
-    1. 'assembler_x86_64::is_reload': the condition
-       'stored->size_bytes != 0' excludes nothing that occurs (equal
-       register names mean equal widths)
-    2. with 'noub', 'array_copy(a, b, n)' and 'arrays_equal(a, b, n)'
+    1. with 'noub', 'array_copy(a, b, n)' and 'arrays_equal(a, b, n)'
        of two arrays of one length emit 'cmp rcx, 8' and
        'ja baz_bounds_panic' twice in a row; the upper-bound sibling of
        the round 424 item on the sign of the count
-    3. an inlined 'i8(p)' of a register value emits 'mov r14b, r15b'
+    2. an inlined 'i8(p)' of a register value emits 'mov r14b, r15b'
        then 'movsx r14, r14b' where 'movsx r14, r15b' does
-    4. 'mov rdi, 1', 'mov rax, 60' and 'mov rax, 1' of the exits and
+    3. 'mov rdi, 1', 'mov rax, 60' and 'mov rax, 1' of the exits and
        handlers use the 7-byte form, 'mov edi, 1' is 5 bytes
 [p] medium: (round 433, bug hunt of 'int' beside the sized types) need
     approval: a verdict depends on '--checks', alike on every target:

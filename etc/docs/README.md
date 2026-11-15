@@ -587,7 +587,8 @@ src: operand           an operand read as it is stored; 'src: operand with
                        expression' one computed first
 ? a < b                a condition, then each element of it at its 'cmp'
                        label; 'shorthand:' an operand alone, tested as
-                       '!= 0'; ''and' inverted:' an element of a list that
+                       '!= 0', copied when it is not inverted and ends a
+                       stored value; ''and' inverted:' an element of a list that
                        the 'not's before its parentheses invert, compiled
                        inverted and joined by the 'and' or 'or' named, e.g.
                        'a == 3' of 'not (a == 3 or b == 4)'; 'const eval to
@@ -1725,8 +1726,8 @@ w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
 
 A path in the body starts at that address, the operand its root resolves to:
 a field adds its offset ('ident_info::field'), that of 'x' for 'self.x', and
-only a path with an index is walked by 'compile_lea'. The registers
-stay allocated until the body is compiled. On rv32i the body may instead use the
+only a path with an index is walked by 'compile_lea'. The registers stay
+allocated until the body is compiled. On rv32i the body may instead use the
 address folded into one register, whichever is shorter (5.1).
 
 ### 6.6 The bases

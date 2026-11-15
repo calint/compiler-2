@@ -233,8 +233,8 @@ class expr_bool_op final : public statement {
 
         x.label(tc.indent(), tc.unique_label(tok(), "cmp"));
 
-        // a constant has the element's 'not's applied, the list inversion is
-        // left
+        // 'constant_value' applies the element's 'not's, the inversion of the
+        // list is applied here
         if (const std::optional<bool> constant{constant_value(tc)}) {
             return compile_constant(tc, *constant != inverted, action);
         }
@@ -347,8 +347,8 @@ class expr_bool_op final : public statement {
             return false;
         }
 
-        // a whole array is compared only as memory, with an array, e.g. not
-        // the 'ps' of 'if ps', 'ps < q', 'ps == 1' or 'ps == p'
+        // a whole array is compared only with an array, e.g. not the 'ps' of
+        // 'ps == p'; 'assert_number_side' rejects it in 'ps < q' or 'ps == 1'
         if (is_whole_array(lhs_) != is_whole_array(cmp.rhs)) {
             assert_not_whole_array(lhs_);
             assert_not_whole_array(cmp.rhs);
@@ -382,8 +382,8 @@ class expr_bool_op final : public statement {
         return " ";
     }
 
-    // a comparison whose sides do not both fold, the sides are classified
-    // once
+    // a comparison whose sides do not both fold, of memory or of numbers as
+    // the parse classified it ('classify_operands')
     auto compile_comparison(compile_toc& tc, const comparison& cmp,
                             const machine::comparison_action& action) const
         -> void {
@@ -498,7 +498,8 @@ class expr_bool_op final : public statement {
         }
     }
 
-    // the operand alone, compared with 0, when it does not fold
+    // the operand alone when it does not fold: compared with 0, or copied
+    // when only stored ('is_bool_copy')
     auto compile_shorthand(compile_toc& tc,
                            const machine::comparison_action& action) const
         -> void {
@@ -539,7 +540,7 @@ class expr_bool_op final : public statement {
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand left{left_operand(tc, lhs, held)};
+        const operand left{non_immediate_operand(tc, lhs, held)};
         const operand right{right_operand(tc, rhs, held)};
 
         x.compare_and_branch({tok(), tc.indent()}, left, right, action);
@@ -851,13 +852,25 @@ class expr_bool_op final : public statement {
                            not stored->info.type_ref().is_builtin());
     }
 
-    // the left operand is no immediate: a variable where it is stored, else a
-    // scratch register; a constant left side was mirrored onto the right
-    // unless it is typed and does not fit it
-    [[nodiscard]] static auto left_operand(compile_toc& tc,
-                                           const comparison_side& side,
-                                           machine::held_registers& held)
-        -> operand {
+    // memory is compared, so a constant has nothing to compare
+    [[nodiscard]] static auto
+    make_memory_operand_info(const toc& tc, const stmt_identifier& identifier)
+        -> ident_info {
+
+        ident_info info{make_ident_info(tc, identifier)};
+
+        // note: 'is_memory_operand' rejected constants
+        assert(not info.is_const());
+
+        return info;
+    }
+
+    // a side read as the left one is, which is no immediate: a variable where
+    // it is stored, else a scratch register; a constant left side was
+    // mirrored onto the right unless it is typed and does not fit it
+    [[nodiscard]] static auto
+    non_immediate_operand(compile_toc& tc, const comparison_side& side,
+                          machine::held_registers& held) -> operand {
 
         const expr_arith& expr{*side.node};
 
@@ -880,19 +893,6 @@ class expr_bool_op final : public statement {
                                             tc.overflow_check(), held);
     }
 
-    // memory is compared, so a constant has nothing to compare
-    [[nodiscard]] static auto
-    make_memory_operand_info(const toc& tc, const stmt_identifier& identifier)
-        -> ident_info {
-
-        ident_info info{make_ident_info(tc, identifier)};
-
-        // note: 'is_memory_operand' rejected constants
-        assert(not info.is_const());
-
-        return info;
-    }
-
     // the right operand may be an immediate, a side that does not fold is
     // read like a left one; an untyped constant is compared as written, the
     // caller checks that it fits the left side
@@ -902,7 +902,7 @@ class expr_bool_op final : public statement {
         -> operand {
 
         if (not side.folded) {
-            return left_operand(tc, side, held);
+            return non_immediate_operand(tc, side, held);
         }
 
         const expr_arith& expr{*side.node};
@@ -974,7 +974,7 @@ class expr_bool_op final : public statement {
             return action.destination;
         }
 
-        return left_operand(tc, condition, held);
+        return non_immediate_operand(tc, condition, held);
     }
 };
 
@@ -1333,8 +1333,8 @@ class expr_bool final : public statement {
                  const bool outer_inverted, const operand& dst) const
         -> std::optional<bool> {
 
-        // the element of a list that is only that element comments the same
-        // source and also how it is joined and inverted
+        // a list of one element outside parentheses has the source of that
+        // element, whose comment also shows how it is joined and inverted
         // note: only a group in parentheses has 'not's of its own
         const bool is_only_element{
             bools_.size() == 1 and not parens_.is_enclosed(),
@@ -1496,25 +1496,26 @@ class expr_bool final : public statement {
 
     // a constant last element decides the list only if all earlier elements
     // were constants or it short-circuits the list
-    [[nodiscard]] auto resolve_last_constant(
-        compile_toc& tc, const bool const_eval,
-        const std::string_view jmp_to_if_true, const bool inverted,
-        const bool has_runtime_element) const -> std::optional<bool> {
+    [[nodiscard]] auto
+    resolve_last_constant(compile_toc& tc, const bool const_eval,
+                          const std::string_view if_true, const bool inverted,
+                          const bool has_runtime_element) const
+        -> std::optional<bool> {
 
         if (not has_runtime_element or is_short_circuit(const_eval, inverted)) {
             return const_eval;
         }
 
-        // a constant false has already branched to false, a stored value has
-        // no branch
-        if (not const_eval or jmp_to_if_true.empty()) {
+        // a constant false has already branched to 'if_false', a stored value
+        // has no branch
+        if (not const_eval or if_true.empty()) {
             return std::nullopt;
         }
 
         machine& x{tc.machine()};
 
         // a constant true emits no branch of its own
-        x.branch(tc.indent(), jmp_to_if_true);
+        x.branch(tc.indent(), if_true);
 
         return std::nullopt;
     }

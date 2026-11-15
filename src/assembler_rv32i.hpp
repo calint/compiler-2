@@ -939,7 +939,19 @@ class assembler_rv32i final : public assembler {
     //
 
     auto add_section_directive(const section which) -> void override {
-        add_text(std::string{section_directive(which)});
+        // indexed by 'section'
+        constexpr auto directives{
+            std::to_array<std::string_view>({
+                ".text",
+                ".section .rodata",
+                ".data",
+                ".bss",
+            }),
+        };
+
+        static_assert(directives.size() == section_count_);
+
+        add_text(std::string{directives.at(section_index(which))});
     }
 
     // note: the reads of 'copied' up to the instruction that writes it take
@@ -2131,14 +2143,14 @@ class assembler_rv32i final : public assembler {
                 static_cast<int64_t>(source_offset),
         };
 
-        const jump_reach form{reach(l)};
+        const jump_reach reach_form{reach(l)};
 
-        if (form == jump_reach::branch) {
+        if (reach_form == jump_reach::branch) {
             return fits(distance, branch_min_, branch_max_);
         }
 
         // the distance counts from the 'jal', which follows the skip
-        if (form == jump_reach::jal) {
+        if (reach_form == jump_reach::jal) {
             const int64_t skip_bytes{
                 static_cast<int64_t>(skip_size_bytes(*l.jump)),
             };
@@ -2191,24 +2203,6 @@ class assembler_rv32i final : public assembler {
         }
 
         return replaced;
-    }
-
-    [[nodiscard]] static auto section_directive(const section which)
-        -> std::string_view {
-
-        // indexed by 'section'
-        constexpr auto directives{
-            std::to_array<std::string_view>({
-                ".text",
-                ".section .rodata",
-                ".data",
-                ".bss",
-            }),
-        };
-
-        static_assert(directives.size() == section_count_);
-
-        return directives.at(section_index(which));
     }
 
     [[nodiscard]] static auto section_index(const section which) -> size_t {
@@ -2294,16 +2288,16 @@ class assembler_rv32i final : public assembler {
     static auto write_long_jump(std::ostream& os, const std::string_view indent,
                                 const line& l) -> void {
 
-        const jump_reach form{reach(l)};
+        const jump_reach reach_form{reach(l)};
 
-        if (form == jump_reach::far) {
+        if (reach_form == jump_reach::far) {
             std::println(os, "{}jump {}, {}", indent, l.jump->target,
                          l.jump->scratch);
 
             return;
         }
 
-        if (form == jump_reach::borrowed) {
+        if (reach_form == jump_reach::borrowed) {
             const std::string_view borrowed{
                 register_names.at(borrowed_register_),
             };
