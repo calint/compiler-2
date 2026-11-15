@@ -539,7 +539,8 @@ struct generic_call {
     // defined before the generic function or an argument of the generic type
     // of a method, e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)'
     // called on a 'cell<i8>'; none when it is declared with a type parameter
-    // of the function, which a call gives
+    // of the function, which a call gives, or with a name that is no type
+    // there, which the instance rejects
     [[nodiscard]] static auto
     fixed_param_type(parse_toc& tc, const generic_func_info& generic,
                      const generic_signature_param& param) -> const type* {

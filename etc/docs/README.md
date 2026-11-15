@@ -1723,8 +1723,9 @@ w.rooms[i].items[j].set(8)            func mut item.set(v) { self.x = v }
     mov qword [r15 + r14 + 8], 8      'self.x'
 ```
 
-A path in the body starts at that address, the operand its root resolves to, and
-'compile_lea' adds only the rest, the offset of 'x' for 'self.x'. The registers
+A path in the body starts at that address, the operand its root resolves to:
+a field adds its offset ('ident_info::field'), that of 'x' for 'self.x', and
+only a path with an index is walked by 'compile_lea'. The registers
 stay allocated until the body is compiled. On rv32i the body may instead use the
 address folded into one register, whichever is shorter (5.1).
 
@@ -1779,8 +1780,9 @@ path_address::fold_indexed_address    the second index
 stmt_identifier::compile_checked_index
                                       the bounds check and the '+ c' of 6.4
                                       (_impl)
-stmt_identifier::operand_of           an operand without a path to walk is
-                                      the storage of the name
+stmt_identifier::operand_of           a path without an index or an address
+                                      in a slot is not walked, its operand
+                                      is what the name resolves to
 machine_x86_64::lower_address, machine_rv32i::lower_address
                                       what the target encodes
 ```

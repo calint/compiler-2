@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 445 (2026-11-15, design: which paths are walked to
+    an address; readability: the comments of 'generic_call')
+    => design: an address a call computed is no longer a walked path:
+       'stmt_identifier::has_computed_address' is true only for an
+       index or an address held in a slot, its operand is what the
+       name resolves to and the resolve steps its fields; the helper
+       moved to the private part beside 'is_exact_access'; docs 6.5
+       paragraph of 'compile_lea' and the table row of 'operand_of';
+       no listing differs (2547 cases); the scratch register of a
+       held address went to 'todo.txt' (an optimization)
+    => readability: 'generic_call::fixed_param_type' also returns none
+       for a name that is no type at the definition
+    => bug hunt: interrupted with the session; round 446 hunts this
+       change
 [x] easy: round 444 (2026-11-15, bug hunt: the rules of generics
     sentence by sentence, docs 1.3, 2.3 to 2.10, 57 sentences with
     programs on and beside each rule, the verdict, the first error,

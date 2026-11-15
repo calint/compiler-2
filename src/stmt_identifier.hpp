@@ -686,20 +686,11 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
 
-    // the address of what 'info' resolves this statement to is computed, not
-    // the storage of a name: an indexed access (a constant index takes no
-    // register), an address held in a slot or an address a call computed
-    [[nodiscard]] auto has_computed_address(const ident_info& info) const
-        -> bool {
-
-        return is_indexed() or info.holds_address() or
-               info.is_address_by_call();
-    }
-
     // 'info' at the address of what it resolves this statement to: as it is
-    // for the storage of a name, else at the address computed here
-    // ('ident_info::at_address'), e.g. '[rbp + r14 * 4 + 205]'; the
-    // registers of a computed address go into 'held'
+    // for the storage of a name or an address a call computed, else at the
+    // address computed here ('ident_info::at_address'), e.g.
+    // '[rbp + r14 * 4 + 205]'; the registers of a computed address go into
+    // 'held'
     [[nodiscard]] auto info_at_address(compile_toc& tc, const ident_info& info,
                                        machine::held_registers& held) const
         -> ident_info {
@@ -1057,6 +1048,17 @@ class stmt_identifier final : public statement {
                 .is_last{i == elems_.size() - 1},
             });
         }
+    }
+
+    // the address of what 'info' resolves this statement to is computed by
+    // the walk of the path: an indexed access (a constant index takes no
+    // register) or an address held in a slot; otherwise it is the operand of
+    // 'info', also at an address a call computed, whose fields the resolve
+    // stepped
+    [[nodiscard]] auto has_computed_address(const ident_info& info) const
+        -> bool {
+
+        return is_indexed() or info.holds_address();
     }
 
     // false when a run-time index leaves the element unknown
