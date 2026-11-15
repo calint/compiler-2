@@ -532,6 +532,11 @@ class machine_rv32i : public machine {
         assert_scalar(lhs.type_ref());
         assert_scalar(rhs.type_ref());
 
+        // note: the left side is not an immediate, so only the right side is
+        //       read from 'zero'
+
+        assert(not lhs.is_immediate());
+
         const comparison_operator operation{action.operation};
 
         // a branch compares registers, a boolean result can use an immediate
@@ -1184,8 +1189,8 @@ class machine_rv32i : public machine {
             };
 
             multiply_by_shifts_and_adds(
-                site, product, factor,
-                static_cast<uint32_t>(factor_info.multiplier), width_bits);
+                site, product, static_cast<uint32_t>(factor_info.multiplier),
+                width_bits);
 
             return;
         }
@@ -2095,11 +2100,12 @@ class machine_rv32i : public machine {
         }
 
         // an operand the comparison loaded into a scratch register is ours to
-        // overwrite after it, 'zero' stands for a zero or an immediate
-        if (not lhs.is_register() and left.register_name() != "zero") {
+        // overwrite after it
+        if (not lhs.is_register()) {
             return left;
         }
 
+        // 'zero' stands for a zero or an immediate right side
         if (not rhs.is_register() and right.register_name() != "zero") {
             return right;
         }
@@ -2794,8 +2800,11 @@ class machine_rv32i : public machine {
     // variables and frames start word aligned so a direct offset from their
     // base has a known position within a word
     [[nodiscard]] auto is_word_based(const operand& address) const -> bool {
+        // note: the operations that ask lower the same operand as an address
+        assert(address.is_memory());
+
         // an index register holds a value unknown at compile time
-        if (not address.is_memory() or not address.index_register().empty()) {
+        if (not address.index_register().empty()) {
             return false;
         }
 
@@ -3063,11 +3072,10 @@ class machine_rv32i : public machine {
     // for the additions while the result changes
     auto multiply_by_shifts_and_adds(const emit_site site,
                                      const operand& product,
-                                     const operand& factor,
                                      const uint32_t multiplier,
                                      const size_t bits) -> void {
 
-        const operation_scope scope{*this, product, factor};
+        const operation_scope scope{*this, product};
 
         // the original value stays here until the last add or sub, which
         // writes the result in its place so no copy is needed
@@ -3333,9 +3341,7 @@ class machine_rv32i : public machine {
         if (lowered.displacement() + static_cast<int64_t>(size_bytes) - 1 >
             assembler_rv32i::immediate_max) {
 
-            const operand pointer{alloc_word_register(site)};
-
-            address_of(site, pointer, lowered);
+            const operand pointer{load_pointer(site, lowered)};
 
             lowered = memory_at(pointer);
         }

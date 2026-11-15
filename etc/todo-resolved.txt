@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 440 (2026-11-15, bug hunt: calls and how an argument
+    reaches its parameter, aimed first at 'info_at_address' of round
+    438, places by address, temporaries, results, recursion, the
+    shared storage rule; design: the private helpers inside the rv32i
+    backend; readability: a newcomer walks 'token.hpp',
+    'tokenizer.hpp', 'source_files.hpp', 'compile_error.hpp',
+    'stmt_include.hpp' and 'stmt_def_dat.hpp')
+    => bug hunt: no defect; 10200 programs and 201000 builds against a
+       python model that also records which cells two names reach,
+       inlined, all noinline and mixed, on the four targets; 7 seeded
+       mutants, 5 caught, one equivalent, one caught only by a hand
+       program
+    => design: four pure refactors in 'machine_rv32i.hpp' after 164
+       probe points over the three rv32i suites: 'is_word_based'
+       asserts a memory operand, 'comparison_result_register' no
+       longer tests a left 'zero' ('compare_and_branch' asserts the
+       left side is no immediate), 'unrolled_address' calls
+       'load_pointer', 'multiply_by_shifts_and_adds' loses the
+       parameter 'factor'; no listing differs; fifteen ideas weighed
+       and left
+    => readability: three comments ('token::escape::size' counts
+       bytes, the example of 'tokenizer::skip_enclosed' is a type
+       argument list, 'source_locations::source_of' returns the text
+       of the file); 147 functions, 180 programs, 170 predictions, 9
+       wrong
 [x] easy: round 439 (2026-11-15, bug hunt: the numbers the compiler
     reports, the footer of a listing, '--report=registers' with its
     tables, the report at a failure, '--vars', '--stack' and

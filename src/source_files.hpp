@@ -307,6 +307,7 @@ class source_locations final {
         return files_.get().relative_name(file_ix);
     }
 
+    // the text of the file of the token
     [[nodiscard]] auto source_of(const token& src_loc_tk) const
         -> std::string_view {
 

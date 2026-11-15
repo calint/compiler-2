@@ -191,7 +191,7 @@ class token final {
   public:
     // what a backslash in string or character text starts, see 'escape_at'
     struct escape {
-        // the characters after the backslash
+        // the bytes after the backslash
         size_t size{};
         // empty for a continuation or an unsupported escape
         std::optional<char> decoded;
@@ -328,8 +328,8 @@ class token final {
 
     // the escape whose backslash is at 'backslash_index' of 'text': a line
     // continuation, a backslash before a line end, or a character escape,
-    // decoded unless unsupported; 'size' counts the characters after the
-    // backslash, e.g. 3 for '\x41' and 2 for a crlf continuation
+    // decoded unless unsupported; 'size' counts the bytes after the
+    // backslash, e.g. 3 for '\x41' and 2 for a crlf continuation or '\é'
     [[nodiscard]] static auto escape_at(const std::string_view text,
                                         const size_t backslash_index)
         -> escape {

@@ -295,7 +295,7 @@ class tokenizer final {
     }
 
     // skips from the 'open' that is next to the 'close' that ends it, e.g.
-    // the '[2 * n]' of 'i8[2 * n]{}'; false when no 'close' ends it
+    // the '<i32, i8>' of 'conv<i32, i8>(y)'; false when no 'close' ends it
     [[nodiscard]] auto skip_enclosed(const char open, const char close)
         -> bool {
 
