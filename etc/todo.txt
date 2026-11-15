@@ -155,6 +155,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 444, bug hunt of the generics rules) the docs are
+    silent on
+    1. 'var c = k + make(2)' says "cannot deduce" while
+       'c = k + make(2)' deduces; 2.10.2 item 2 only names
+       'var m = make(2)'
+    2. 'if make() {...}', 'b = not make()' and 'b = (make())' say
+       "cannot deduce"; only a call that is the whole assigned value
+       takes a 'bool' destination; a 'bool' parameter, field or
+       element does
+    3. in a method of 'buf<n>' the 'n' of a 'foo' hides the constant
+       parameter silently, 'var n' at body level is rejected
+[ ] easy: (round 444, design of generics) the message for 'f(3, 2)'
+    with a 'bool' parameter says "'3' of type 'i64'" on x86_64 and
+    "of type 'int'" on rv32i (see the round 433 item on messages that
+    name the default type)
 [ ] easy: (round 443, bug hunt of names)
     1. a constant parameter named like a type: 'type n { x }' then
        'type buf<n> { a i8[n], q n }' is accepted, 'q n' is the type

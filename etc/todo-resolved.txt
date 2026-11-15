@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 444 (2026-11-15, bug hunt: the rules of generics
+    sentence by sentence, docs 1.3, 2.3 to 2.10, 57 sentences with
+    programs on and beside each rule, the verdict, the first error,
+    its location and its frames; design: how a generic becomes an
+    instance and where the scope of an instance is built;
+    readability: a newcomer walks 'machine.hpp')
+    => bug hunt: no defect; 374 scripted programs in 1402 runs, 190
+       more by hand, 6000 token mutations without an abort; 13 seeded
+       mutants, all caught (4 after cases were added); two docs
+       sentences corrected: 1.3 a body-level name that repeats a
+       constant of the generic instance is rejected too (test 2263),
+       2.4 the count of the arguments of a base is checked at the
+       definition, without an alias (test 1054)
+    => design: the type parameters, the receiver and the visibility
+       point are bound only inside 'parse_toc::generic_scope'; two
+       pure refactors: 'toc::add_generic_const' is the one place that
+       declares a constant parameter ('generic_scope::add_const' and
+       'stmt_def_func::add_constants' call it),
+       'func_instantiator::instantiate_func' asks 'funcs().has' for
+       an existing instance (the generic half of 'is_func' had 0 of
+       5081 hits); no listing differs; eleven ideas weighed and left
+    => readability: two comments in 'machine.hpp'
+       ('equality_request' serves instances too, the example of
+       'register_index_of'); 150 functions, 27 programs, 132
+       predictions, 8 wrong
 [x] easy: round 443 (2026-11-15, bug hunt: names, what a name means
     where several things could carry it, 16 hiders by 11 victims by
     57 uses and the generic parameters, each program against a twin

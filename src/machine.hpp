@@ -573,8 +573,8 @@ class machine {
   protected:
     using section = assembler::section;
 
-    // the result of a comparison of two arrays, 'alignment' is the alignment
-    // known for both
+    // the result of a comparison of two arrays or two instances, 'alignment'
+    // is the alignment known for both
     struct equality_request {
         size_t alignment{};
         operand dst;
@@ -1746,7 +1746,7 @@ class machine {
 
     // the index of the register 'name' in any of its sizes, below the 32 bits
     // of a mask of 'register_pool', empty for text that names no register,
-    // e.g. a label
+    // e.g. the empty index name of a memory operand without an index
     [[nodiscard]] virtual auto
     register_index_of(const std::string_view name) const
         -> std::optional<size_t> = 0;

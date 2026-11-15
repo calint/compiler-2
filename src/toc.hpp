@@ -2311,9 +2311,9 @@ struct toc_tables final {
 // a function body, this base, which holds what both phases do
 //
 //   both           'add_var' and 'add_const' (placed and commented only by
-//                  'compile_toc'), 'resolve_declared', 'storage_of',
-//                  'use_at', 'overflow_check' without a destination,
-//                  'get_main_or_throw'
+//                  'compile_toc'), 'add_generic_const', 'resolve_declared',
+//                  'storage_of', 'use_at', 'overflow_check' without a
+//                  destination, 'get_main_or_throw'
 //   tables         'builtins', 'checks', 'funcs', 'generics', 'machine',
 //                  'scopes', 'types'
 //
@@ -2345,6 +2345,13 @@ class toc {
     //
     // class methods
     //
+
+    // a constant parameter of a generic instance in the innermost scope:
+    // untyped and located at its parameter, e.g. 'capacity' is 8
+    auto add_generic_const(const generic_arg& arg) -> void {
+        add_const(arg.param_tk, arg.param_tk.text(),
+                  folded_value::untyped(arg.constant()));
+    }
 
     [[nodiscard]] auto builtins() const -> const builtin_roles& {
         return tables().builtins;
@@ -2589,7 +2596,7 @@ class parse_toc final : public toc {
                 if (arg.is_type()) {
                     tc_.tables().types.add_param(arg.param_tk, arg.type_ref());
                 } else {
-                    add_const(arg.param_tk, arg.constant());
+                    add_const(arg);
                 }
             }
         }
@@ -2615,13 +2622,12 @@ class parse_toc final : public toc {
         }
 
       private:
-        auto add_const(const token& param_tk, const int64_t value) -> void {
+        auto add_const(const generic_arg& arg) -> void {
             if (not constants_block_) {
                 constants_block_.emplace(tc_, scope::block());
             }
 
-            tc_.add_const(param_tk, param_tk.text(),
-                          folded_value::untyped(value));
+            tc_.add_generic_const(arg);
         }
     };
 

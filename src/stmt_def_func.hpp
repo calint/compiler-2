@@ -743,8 +743,7 @@ class stmt_def_func final : public statement {
                 continue;
             }
 
-            tc.add_const(arg.param_tk, arg.param_tk.text(),
-                         folded_value::untyped(arg.constant()));
+            tc.add_generic_const(arg);
         }
     }
 
@@ -1420,7 +1419,8 @@ class func_instantiator final {
             generic_func_instance_name(generic_name, type_args),
         };
 
-        if (tc.is_func(name)) {
+        // note: an instance is a function, no generic one has its name
+        if (tc.funcs().has(name)) {
             return name;
         }
 

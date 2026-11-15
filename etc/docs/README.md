@@ -260,8 +260,9 @@ function from the innermost outwards, then the root scope that holds the
 globals; the first scope that declares the name decides. A scope
 declares a variable or a constant of a name, not both, a second declaration is
 rejected. The body of a function is the block above its scope, a name declared
-there that repeats a parameter or the result is rejected, a deeper block or a
-'foo' may hide it ('definition_checks::assert_not_hiding_signature'). In a
+there that repeats a parameter, the result or a constant of the generic
+instance is rejected, a deeper block or a 'foo' may hide it
+('definition_checks::assert_not_hiding_signature', test 2263). In a
 function scope a parameter hides a constant of the generic instance, which is
 the context of the definition. A generic parameter hides a global of its name,
 a type, a generic type, a function, a generic function, a variable or a
@@ -824,10 +825,11 @@ type text<capacity> = list<i8, capacity>
 ```
 
 This specializes a generic type without repeating its fields. The base must
-already be a generic type. Its arguments are kept as written, because they may
-name parameters ('capacity') that have no value yet; they are resolved when an
-alias gives the values. The type has no fields of its own: its fields are
-those of the base.
+already be a generic type and the count of its arguments must match, both
+checked here, without an alias (1054). Its arguments are kept as written,
+because they may name parameters ('capacity') that have no value yet; they are
+resolved when an alias gives the values. The type has no fields of its own:
+its fields are those of the base.
 
 ### 2.5 Alias
 
