@@ -1782,8 +1782,9 @@ stmt_identifier::compile_checked_index
                                       the bounds check and the '+ c' of 6.4
                                       (_impl)
 stmt_identifier::operand_of           a path without an index or an address
-                                      in a slot is not walked, its operand
-                                      is what the name resolves to
+                                      in a slot is not walked
+                                      ('needs_compile_lea'), its operand is
+                                      what the name resolves to
 machine_x86_64::lower_address, machine_rv32i::lower_address
                                       what the target encodes
 ```

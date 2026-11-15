@@ -1334,8 +1334,9 @@ class inline_call final {
         if (arg_place) {
             const stmt_identifier& ident{*arg_place->ident};
 
-            // an indexed argument keeps its computed address, e.g.
-            // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
+            // an argument with an index or an address held in a slot keeps
+            // the address computed here, e.g. '[rbp + r14 * 4 + 205]',
+            // '[r15 + r14]' or simply '[r15]'
             // note: the address registers stay allocated until the inlined
             //       body is compiled
             const ident_info bound{

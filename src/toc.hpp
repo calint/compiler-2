@@ -1394,6 +1394,12 @@ class storage_layout final {
         size_t next_offset_bytes{};
     };
 
+    // the base register and the displacement of an operand at storage
+    struct storage_address {
+        std::string_view base_register;
+        int64_t offset{};
+    };
+
     std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<scope_stack> scopes_;
     std::reference_wrapper<const data_table> data_;
@@ -1464,21 +1470,22 @@ class storage_layout final {
         assert(sum_storage_size(dats_and_vars_size_bytes(),
                                 allocated_size_bytes) < x.max_storage_bytes());
 
-        in_storage& stored{std::get<in_storage>(var.placement)};
-
         const size_t offset_bytes{next_offset_bytes + padding_bytes};
 
-        if (location.is_in_frame) {
-            stored.offset = address_offset(offset_bytes);
-            stored.base_register = x.frame_base_register();
+        const storage_address address{
+            address_at(location.is_in_frame, offset_bytes),
+        };
 
+        in_storage& stored{std::get<in_storage>(var.placement)};
+        stored.offset = address.offset;
+        stored.base_register = address.base_register;
+
+        if (location.is_in_frame) {
             // note: the frame is within the data and variables checked above
 
             max_frame_size_bytes_ = std::max(
                 sum_storage_size(next_offset_bytes, allocated_size_bytes),
                 max_frame_size_bytes_);
-        } else {
-            stored.offset = offset_from_variables_base(offset_bytes);
         }
 
         scopes_.get().back().add_storage_bytes(allocated_size_bytes);
@@ -1525,20 +1532,20 @@ class storage_layout final {
 
         const size_t frame_alignment{x.address_size_bytes()};
 
+        // note: no built-in type is wider than an address
+        //       ('toc::get_type_or_throw'), so no type is aligned past it
+
         const storage_location location{find_storage_location()};
 
         const size_t aligned_offset_bytes{
             align_storage_size(location.next_offset_bytes, frame_alignment),
         };
 
-        if (location.is_in_frame) {
-            return operand::mem(x.frame_base_register(), {}, 1,
-                                address_offset(aligned_offset_bytes),
-                                x.default_type());
-        }
+        const storage_address address{
+            address_at(location.is_in_frame, aligned_offset_bytes),
+        };
 
-        return operand::mem(x.variables_base_register(), {}, 1,
-                            offset_from_variables_base(aligned_offset_bytes),
+        return operand::mem(address.base_register, {}, 1, address.offset,
                             x.default_type());
     }
 
@@ -1550,7 +1557,7 @@ class storage_layout final {
     }
 
     // the storage of the dat 'var' is where the data table placed it, before
-    // the variables; its offset is set, the scopes hold none of its bytes
+    // the variables; its storage is set, the scopes hold none of its bytes
     auto place_dat(const token& src_loc_tk, var_info& var) const -> void {
         const placed_dat& dat{data_.get().get_dat(var.name)};
 
@@ -1560,8 +1567,11 @@ class storage_layout final {
         assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <
                x.max_storage_bytes());
 
-        std::get<in_storage>(var.placement).offset =
-            offset_from_variables_base(dat.offset_bytes);
+        const storage_address address{variables_address(dat.offset_bytes)};
+
+        in_storage& stored{std::get<in_storage>(var.placement)};
+        stored.offset = address.offset;
+        stored.base_register = address.base_register;
     }
 
     auto restore_peaks(const peaks& saved) -> void {
@@ -1597,6 +1607,24 @@ class storage_layout final {
     }
 
   private:
+    // the storage 'offset_bytes' past the base of the frame or, outside a
+    // frame, past the label 'dat'
+    [[nodiscard]] auto address_at(const bool is_in_frame,
+                                  const size_t offset_bytes) const
+        -> storage_address {
+
+        if (not is_in_frame) {
+            return variables_address(offset_bytes);
+        }
+
+        const ::machine& x{machine_.get()};
+
+        return {
+            .base_register{x.frame_base_register()},
+            .offset{address_offset(offset_bytes)},
+        };
+    }
+
     // the 'dat' that makes the data and variables reach what the target
     // addresses is the error, not the end of the build
     auto assert_total_fits_target(const token& src_loc_tk,
@@ -1664,34 +1692,6 @@ class storage_layout final {
         };
     }
 
-    // the operand offset of storage 'offset_from_dat' bytes past the label
-    // 'dat': the variables base is 'dat' unless the target puts it past the
-    // label 'vars', which makes the dats negative and the variables start
-    // below the base
-    [[nodiscard]] auto
-    offset_from_variables_base(const size_t offset_from_dat) const -> int64_t {
-
-        const int64_t offset{address_offset(offset_from_dat)};
-
-        const ::machine& x{machine_.get()};
-
-        const std::optional<size_t> past_vars_bytes{
-            x.variables_base_past_vars_bytes(),
-        };
-
-        if (not past_vars_bytes) {
-            return offset;
-        }
-
-        const size_t shift_bytes{
-            sum_storage_size(vars_start_bytes(), *past_vars_bytes),
-        };
-
-        const int64_t shift{address_offset(shift_bytes)};
-
-        return add_address_offset(offset, -shift);
-    }
-
     // bytes of variables, without the dats and the padding after them
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
         size_t total_bytes{};
@@ -1702,6 +1702,40 @@ class storage_layout final {
         }
 
         return total_bytes;
+    }
+
+    // the storage 'offset_from_dat' bytes past the label 'dat': the
+    // variables base is 'dat' unless the target puts it past the label
+    // 'vars', which makes the dats negative and the variables start below
+    // the base
+    [[nodiscard]] auto variables_address(const size_t offset_from_dat) const
+        -> storage_address {
+
+        const int64_t offset{address_offset(offset_from_dat)};
+
+        const ::machine& x{machine_.get()};
+
+        const std::optional<size_t> past_vars_bytes{
+            x.variables_base_past_vars_bytes(),
+        };
+
+        if (not past_vars_bytes) {
+            return {
+                .base_register{x.variables_base_register()},
+                .offset{offset},
+            };
+        }
+
+        const size_t shift_bytes{
+            sum_storage_size(vars_start_bytes(), *past_vars_bytes),
+        };
+
+        const int64_t shift{address_offset(shift_bytes)};
+
+        return {
+            .base_register{x.variables_base_register()},
+            .offset{add_address_offset(offset, -shift)},
+        };
     }
 
     // the variables start after the dats and the padding that aligns them;
@@ -2016,7 +2050,7 @@ class ident_resolver final {
     //
 
     // the memory of a variable placed at 'placement', in storage from its own
-    // base or else from 'base_register'
+    // base, from 'base_register' before the storage is placed (the parse)
     [[nodiscard]] static auto memory_at(const var_placement& placement,
                                         const std::string_view base_register,
                                         const type& value_type) -> operand {

@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 447 (2026-11-15, bug hunt: aliasing, a source and a
+    destination that are the same storage or overlap; design: how
+    storage gets its addresses, 'storage_layout', frames, 'dat', the
+    alignments of the options; readability: a newcomer walks
+    'stmt_identifier.hpp')
+    => bug hunt: no defect; 5000 programs against a byte model of the
+       layout with value semantics and the overlap panic, inlined,
+       'noinline' and mixed, about 94500 builds on the four targets;
+       about 50 directed cases in 10 builds each; the rejections are
+       the alias and order rules of docs 8.1, alike on every build; 6
+       of 6 mutants caught (overlap checks, 'access_path::overlaps',
+       'destination_is_clobbered_before_read', 'may_share')
+    => design: one owner for the base and offset of a placed variable,
+       'storage_layout::address_at' and 'variables_address' (the choice
+       was made in 'allocate_var', 'next_frame_address' and
+       'place_dat'); a variable outside a frame gets its base register
+       at placement, the resolver's fallback stays for the parse only;
+       a note on why a frame is aligned only to the address size; the
+       '--stack' and '--memory' alignments come from
+       'machine_rv32i::stack_alignment' and 'assembler_rv32i::lui_shift'
+       instead of constants in 'main.cpp'; no listing differs; five
+       ideas left (the reason for the '--vars' multiple of 16 is not
+       written anywhere)
+    => readability: 'has_computed_address' is 'needs_compile_lea' (it
+       is false for an address a call computed); the comments of
+       'info_at_address', 'compile_lea' (the register of an address
+       held in a slot goes into 'held'), the class header (only an
+       index or a held address is walked), 'assert_constant_range' and
+       a place argument in 'stmt_call' corrected; docs 6.8; 62
+       functions, 5 programs, 31 predictions, 2 wrong
 [x] easy: round 446 (2026-11-15, bug hunt: paths rooted at an address
     a call computed, the change of round 445; design: the assembler
     side, its passes and what 'machine' hands it; readability: a

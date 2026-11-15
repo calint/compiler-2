@@ -128,9 +128,9 @@ struct constant_range {
     std::string_view array_name;
 };
 
-// a constant range is known to be negative or to pass the end of the array,
-// e.g. 5 in 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time one is left to
-// the bounds check at run time; 'max_storage_bytes' is the target's
+// a constant range is not negative and does not pass the end of the array,
+// unlike the 5 of 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time one is
+// left to the bounds check at run time; 'max_storage_bytes' is the target's
 inline auto assert_constant_range(const ident_info& array_info,
                                   const constant_range& range,
                                   const size_t max_storage_bytes) -> void {
@@ -220,9 +220,10 @@ struct lea_request {
 // ('as_place') when it reaches storage: a variable, a field or an element; the
 // parse resolves the type and the bytes of the root variable that the path
 // reaches ('accessed_bytes_', the whole array after a run-time index), the
-// compile resolves the root again in the current scopes, steps the fields and
-// builds one memory operand ('compile_lea', see 'etc/docs/README.md' chapter
-// 6); a path that names a constant has no storage
+// compile resolves the root again in the current scopes and steps the fields;
+// a path with an index or an address held in a slot is then walked into one
+// memory operand ('compile_lea', see 'etc/docs/README.md' chapter 6); a path
+// that names a constant has no storage
 class stmt_identifier final : public statement {
     // what an indexed path reaches: the element, or from it to the end of
     // the array, e.g. the 'g[1]' of 'array_copy(s, g[1], 3)'
@@ -289,9 +290,8 @@ class stmt_identifier final : public statement {
 
         // the address after the index of 'cur_elem', a constant index, which
         // the caller checked, goes into the displacement and any other one
-        // into an index register
-        // 'is_range' when the index starts a range, 'start_register' then
-        // receives a run-time index
+        // into an index register; 'is_range' when the index starts a range,
+        // 'start_register' then receives a run-time index
         [[nodiscard]] auto
         indexed_element(const ident_elem& cur_elem,
                         std::optional<int64_t> constant_index,
@@ -598,8 +598,9 @@ class stmt_identifier final : public statement {
                                         in_quotes(tok().text()))};
     }
 
-    // the memory operand of this identifier, e.g. 'rbp + 4 * r15 + 248',
-    // 'held' receives the scratch registers of the indexing
+    // the memory operand of this identifier, e.g. '[rbp + r15 * 4 + 248]',
+    // 'held' receives the scratch registers of the indexes and of an address
+    // loaded from a slot
     [[nodiscard]] auto compile_lea(compile_toc& tc,
                                    machine::held_registers& held,
                                    const lea_request& request) const
@@ -687,15 +688,14 @@ class stmt_identifier final : public statement {
         -> std::optional<int64_t>;
 
     // 'info' at the address of what it resolves this statement to: as it is
-    // for the storage of a name or an address a call computed, else at the
-    // address computed here ('ident_info::at_address'), e.g.
-    // '[rbp + r14 * 4 + 205]'; the registers of a computed address go into
-    // 'held'
+    // when its operand is that address ('needs_compile_lea'), else at the
+    // address 'compile_lea' computes ('ident_info::at_address'), e.g.
+    // '[rbp + r14 * 4 + 205]', whose registers go into 'held'
     [[nodiscard]] auto info_at_address(compile_toc& tc, const ident_info& info,
                                        machine::held_registers& held) const
         -> ident_info {
 
-        if (not has_computed_address(info)) {
+        if (not needs_compile_lea(info)) {
             return info;
         }
 
@@ -771,7 +771,7 @@ class stmt_identifier final : public statement {
                                   machine::held_registers& held) const
         -> operand {
 
-        if (not has_computed_address(info)) {
+        if (not needs_compile_lea(info)) {
             return info.operand();
         }
 
@@ -1050,17 +1050,6 @@ class stmt_identifier final : public statement {
         }
     }
 
-    // the address of what 'info' resolves this statement to is computed by
-    // the walk of the path: an indexed access (a constant index takes no
-    // register) or an address held in a slot; otherwise it is the operand of
-    // 'info', also at an address a call computed, whose fields the resolve
-    // stepped
-    [[nodiscard]] auto has_computed_address(const ident_info& info) const
-        -> bool {
-
-        return is_indexed() or info.holds_address();
-    }
-
     // false when a run-time index leaves the element unknown
     [[nodiscard]] auto is_exact_access() const -> bool {
         return not access_path_.has_run_time_index();
@@ -1100,6 +1089,14 @@ class stmt_identifier final : public statement {
         };
 
         narrow_accessed_bytes(fld.offset, field_end - fld.offset);
+    }
+
+    // the operand of what 'info' resolves this statement to is walked by
+    // 'compile_lea': an index (a constant one takes no register) or an
+    // address held in a slot; otherwise it is the operand of 'info', whose
+    // fields the resolve stepped, also from an address a call computed
+    [[nodiscard]] auto needs_compile_lea(const ident_info& info) const -> bool {
+        return is_indexed() or info.holds_address();
     }
 
     // a path element with an optional '[index]', 'fld' the field it names

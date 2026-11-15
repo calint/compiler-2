@@ -1011,6 +1011,11 @@ class machine_rv32i : public machine {
         return helper_save_bytes + line_digits_bytes_;
     }
 
+    // '--stack' is a multiple of it, so 'sp' starts aligned
+    [[nodiscard]] static auto stack_alignment() -> size_t {
+        return stack_alignment_;
+    }
+
   protected:
     // a target that differs from 'rv32i_target' passes its own table
     machine_rv32i(const builtin_type_set& builtins, const source_files& files,

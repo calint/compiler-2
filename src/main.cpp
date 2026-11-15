@@ -54,14 +54,13 @@ constexpr std::string_view baz_version{"unknown"};
 
 namespace {
 // the sizes of '--vars', '--stack' and '--memory' are multiples of their
-// alignment, the stack one keeps sp 16-byte aligned and the memory one is what
-// a 'lui' loads
+// alignment, the stack one is 'machine_rv32i::stack_alignment' and the memory
+// one is what a 'lui' loads, so the stack top is one 'lui'
 constexpr size_t default_vars_size_bytes{0x10000};
 constexpr size_t vars_alignment{16};
 constexpr size_t default_stack_size_bytes{0x10000};
-constexpr size_t stack_alignment{16};
 constexpr size_t default_memory_size_bytes{0x800000};
-constexpr size_t memory_alignment{4096};
+constexpr size_t memory_alignment{size_t{1} << assembler_rv32i::lui_shift};
 constexpr std::string_view default_sd_card_file_name{"sdcard.img"};
 constexpr std::string_view default_src_file_name{"prog.baz"};
 
@@ -268,9 +267,10 @@ examples:
 [[nodiscard]] auto help_text(const char* const program_name) -> std::string {
     return std::format(
         usage_format, program_name, vars_alignment, default_vars_size_bytes,
-        stack_alignment, default_stack_size_bytes, memory_alignment,
-        default_memory_size_bytes, machine_rv32i::leaf_stack_bytes(),
-        default_sd_card_file_name, default_src_file_name);
+        machine_rv32i::stack_alignment(), default_stack_size_bytes,
+        memory_alignment, default_memory_size_bytes,
+        machine_rv32i::leaf_stack_bytes(), default_sd_card_file_name,
+        default_src_file_name);
 }
 
 // the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
@@ -596,7 +596,8 @@ auto apply_vars(const std::string_view value, options& opts) -> void {
 }
 
 auto apply_stack(const std::string_view value, options& opts) -> void {
-    opts.stack_size_bytes = parse_size_bytes(value, "--stack", stack_alignment);
+    opts.stack_size_bytes =
+        parse_size_bytes(value, "--stack", machine_rv32i::stack_alignment());
 }
 
 auto apply_memory(const std::string_view value, options& opts) -> void {

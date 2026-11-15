@@ -79,10 +79,10 @@ struct folded_value {
 // e.g. a global or a local 'var', in storage at an offset from a base
 // register
 struct in_storage {
-    // from the base register, set when the storage is allocated
+    // the base register and the offset from it, set when the storage is
+    // placed ('storage_layout'); empty before, at the parse, where the name
+    // is resolved with the variables base
     int64_t offset{};
-    // the base of the frame that holds the storage, empty for the base the
-    // name is resolved with, e.g. the variables base
     std::string_view base_register;
     // the storage holds the address of the variable, e.g. a parameter of a
     // noinline body

@@ -155,6 +155,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[p] easy: (round 447, bug hunt of aliasing) need approval: a new
+    fuzzer 'qa/fuzz/fuzz-alias.py', a byte model of the layout with
+    value semantics and the overlap panic (copies, partial writes,
+    'mut' arguments, results, 'foo' over the written array, changed
+    index variables); 5000 programs found nothing, 6 of 6 mutants
+    caught; kept in the session scratchpad as 'keep-alias-gen2.py'
+[ ] easy: (round 447, design of storage addresses) 'main.cpp' asks
+    '--vars' to be a multiple of 16 ('vars_alignment'); no code or
+    docs say why: tie it to the rule that needs it or relax it
 [ ] easy: (round 446, a walk of 'expr_bool.hpp') a comparison whose
     jump the optimizer removes leaves its compare: in 'if a == 2 or
     1 == 1' the list is known true, the jump of 'a == 2' goes to the
@@ -221,9 +230,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
 [ ] easy: (round 441, a walk of 'ident_info.hpp') the names
     'var_address::by_call' and 'is_address_by_call' are not exact for
     a destination address that an assignment computed; "computed"
-    would collide with 'stmt_identifier::has_computed_address',
-    which since round 445 means a path that is walked (an index or an
-    address in a slot), not an address a call computed
+    no longer collides: round 447 renamed the walked-path predicate
+    'stmt_identifier::has_computed_address' to 'needs_compile_lea'
 [ ] easy: (round 440, bug hunt of calls) a mutant where
     'call_site::has_result_temporary' is false for an inlined call
     passed 550 generated programs; a hand program catches it: an
