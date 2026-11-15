@@ -53,8 +53,8 @@ class bulk_operands final {
     // the arguments: 'copy_elements' and 'equal_elements' of the machine call
     // them, a known size gets both addresses from 'both_addresses' before
     // 'copy_block' or 'memory_equal'; a range is checked after the count,
-    // or after the second address when the count is constant, so a later
-    // argument runs first, e.g. the call of 'array_copy(a[k], b[f()], 4)'
+    // or after the second address when the count is constant, so the later
+    // arguments run before it, e.g. the call of 'array_copy(a[k], b[f()], 4)'
     class argument_emitters final {
         // a run-time start, held in a register from before the walk of its
         // address until the walk has returned and the ranges are checked
@@ -135,7 +135,7 @@ class bulk_operands final {
         }
 
         // a constant count checks the ranges once the second address is
-        // built, where a run-time count is computed
+        // built, a run-time count once it is computed ('count')
         [[nodiscard]] auto second() -> machine::address_emitter {
             return address_of(operands_.second(), starts_.at(1),
                               constant_count_.has_value());
@@ -289,12 +289,13 @@ class bulk_operands final {
                                                 array_count),
             };
 
-            // the walk of the address checked a run-time start
+            // the walk of the address checked a run-time start, the flag of
+            // the count needs a range with a count ('machine::check_bounds')
             if (range and start) {
                 range->start_lower_checked = true;
 
                 range->count_lower_checked =
-                    count_lower_checked and count_register.has_value();
+                    count_lower_checked and range->count.has_value();
             }
 
             return range;

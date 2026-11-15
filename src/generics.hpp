@@ -480,6 +480,7 @@ struct generic_signature_param {
     // default type
     std::string type_name;
     bool is_array{};
+    bool is_mut{};
 };
 
 // what a generic function or a method of a generic type declares, read once

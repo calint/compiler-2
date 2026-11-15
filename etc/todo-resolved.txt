@@ -1,6 +1,77 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 452 (2026-11-16, bug hunt: the error walk of round
+    451 in calls that deduce; design: deduction in calls to generic
+    functions, after three rounds of patches to its error walk;
+    readability: a newcomer walks 'bulk_operands.hpp',
+    'stmt_builtin_io.hpp' and 'machine::bounds_range')
+    => design: one walk left to right instead of a lookahead deduction
+       and an error walk that imitated the call: a call that deduces
+       gets a 'generic_call' from 'stmt_call::resolve_callee', the
+       call's own 'parse_arguments' parses each argument in order at
+       'generic_call::param_type' (a fixed type, a type parameter
+       known, the deducing argument read ahead for its type, the
+       destination for one in 'res'), an argument whose type is not
+       known is parsed at the type it shows or without one, and after
+       the ')' 'instantiate' makes the instance or says "cannot
+       deduce"; written '<...>' calls are as before
+       ('written_instance'); gone: 'deduced_type_arguments' and its
+       helpers, the error walk, 'skip_argument', 'skip_to_argument',
+       'opens_type_arguments', 'tokenizer::skip_argument_part';
+       'generic_signature_param' records 'mut'; 'stmt_call.hpp' 3104 ->
+       2889 lines, about 137 lines of code fewer in 'src'; no listing
+       differs (2562 cases), no expected file changes, compile time the
+       same; errors after an argument that told nothing come in the
+       call's order ('same(1, zz)' says "'zz' not found"); the items of
+       rounds 419, 450 and 451 are done; the checks that need the callee
+       ('check_arguments') still run after the instance: 'f(300, {})'
+       says "cannot deduce", in 'todo.txt'; docs 2.10.2, 2.10.4, 2.11
+    => bug hunt: no regression of round 451 in 9000 error calls against
+       the build of round 448 and the twins and 1500 programs; a mutant
+       the suite missed (a type parameter declared later deduced from
+       the destination) got test 4300
+    => readability: 'bounds_range::range' is private ('of_range' is the
+       way in), four comments and a parameter 'start' in
+       'bulk_operands.hpp' and 'stmt_builtin_io.hpp', docs 7.14 (io
+       checks its range once, after the start); 52 functions, 5
+       programs, 24 predictions, 2 wrong; two code size items in
+       'todo.txt'
+[x] easy: low priority (round 419 AA, a hunt of generics): the lookahead
+    of a deduced call skips the arguments before the deciding one as text
+    and takes a '<' before a type as the start of type arguments
+    ('generic_call::opens_type_arguments', test 3330); a type argument
+    that a local variable hides is not seen as one, e.g. 'var point = 1'
+    and 'last(tag<point, i32>({}), z, w)' of 'func last<T type>(c i8, b
+    i16, a T)' ends the first argument at the ',' and takes 'T' from 'z';
+    written 'last<i32>(...)' it is accepted
+    => not done: the exact rule is the token before the '<' (a generic
+       function or a method), for a method that needs the type of its
+       receiver, which the text does not give; the trial parse of the item
+       above removes the lookahead
+    => done (2026-11-16, round 452): the deduced call parses its arguments left to
+       right ('stmt_call::parse_arguments' with 'generic_call::param_type'),
+       the text skip of the arguments before the deducing one is gone
+[x] easy: (round 451, bug hunt of generic calls) the error walk does
+    not check a 'mut' argument as the call does: 'f({1, 2}, 3)' and
+    'f(point{1, 2}, 3)' for 'func f<T type>(a mut point, b T)' say
+    "cannot deduce 'T'" and "write '{...}'", the twin says "not a
+    variable" for both; needs 'generic_signature_param' to record
+    'mut'
+    => done (2026-11-16, round 452): the error walk is gone, the call's own parse
+       reads 'mut' ('generic_signature_param::is_mut'); both say
+       "cannot deduce 'T'" now: the 'mut' check is in 'check_arguments',
+       after the instance (see the round 452 item in 'etc/todo.txt')
+[x] easy: (round 450, bug hunt of generic call errors) an error inside
+    a deducing argument is reported before the arguments before it:
+    'f(zz, arr)' for 'func f<T type>(a, b T)' with 'arr' an 'i8[4]'
+    says "array 'arr' must be indexed" where the twin says "'zz' not
+    found" (also 'x.zz', 'arr[', 'k[0]'); 'argument_type' builds a
+    'stmt_identifier' that throws; the fix seen, catching that error
+    to walk the arguments before it and rethrowing, is control flow by
+    exception, not done
+    => done (2026-11-16, round 452): the arguments before the deducing one are
+       parsed before it is read ahead, 'f(zz, arr)' says "'zz' not found"
 [x] easy: round 451 (2026-11-16, bug hunt: accepted programs and
     verdicts of generic calls after rounds 449 and 450; design: the
     built-in statements and functions as a family; readability: a

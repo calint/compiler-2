@@ -990,15 +990,12 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
 1. The argument for the parameter declared with it (2.10.1, item 1). For
    'same(a T, b T)' that is the first argument; the second is not looked at.
 
-   The argument is not parsed yet: it is parsed with the type its parameter
-   has in the instance, so the instance must be known first (2.10.4,
-   item 2).
-   Instead the argument is read ahead as text, and the arguments before it
-   are skipped as text: a ',' inside brackets ends none, nor does one inside
-   written type arguments, e.g. that of 'conv<i32, i8>(y)' (3330); there a
-   '<' before a type that a ',' or the '>' follows starts type arguments, a
-   type being no operand of a comparison. Only an argument whose type shows
-   in its text tells the type:
+   The call parses its arguments left to right, each at the type of its
+   parameter (2.10.4, item 2); the arguments before the deducing one are
+   parsed already, at types known without it. The deducing argument is
+   parsed at the type it gives, so it is read ahead as text when the walk
+   reaches it, and only an argument whose type shows in its text tells the
+   type:
 
    1. a variable, a field, an element or a typed constant that is the
       whole argument
@@ -1046,10 +1043,11 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    (2190), a value that hides a type before '{' (2191) and a method called
    on its type (2192).
 
-   A missing argument is rejected: 'same()' gives "expected argument 1
-   ('a')"; the arguments before it are checked first, in order, as in
-   item 3, e.g. "'zz' not found" for 'last(zz, z)' of 'func last<T type>(c
-   i8, b i16, a T)' (3362).
+   A missing argument is rejected as in any call: 'same()' gives "expected
+   argument 1 ('a')"; the arguments before it come first, e.g. "'zz' not
+   found" for 'last(zz, z)' of 'func last<T type>(c i8, b i16, a T)'
+   (3362), and a ',' inside written type arguments ends no argument, e.g.
+   that of 'conv<i32, i8>(y)' (3330).
 
 2. The destination, when the result is declared with it (2.10.1, item 2):
    the type the call is assigned to, also when the call is an element of a
@@ -1075,24 +1073,27 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    what follows it is reported as after any other, e.g. "expected '=='" for
    'b = make() = true' (3450 to 3452).
 
-3. If neither tells the type, the arguments up to the one that told
-   nothing, all of them and a surplus one for a result, are checked in
-   order as in a call without type parameters, each at the type of its
-   parameter, whose name is read as the instance reads it, not as the code
-   around the call would (4000, 4001), at the type another argument deduces
-   for its type parameter, also one declared later, whose deducing argument
-   is read when the walk reaches it, so an error before it comes first
-   (4200, 4220, 4221, 4260, 4262), or at the type it tells when that type
-   parameter is not deduced (3363 to 3365, 3368); a deducing argument names
-   the type of its literal as in the call (4261); a '{...}' or '[...]' there,
-   whose type is not known, is
-   skipped, then the token after it is checked unless it continues the
-   argument (4201, 4223, 4224); a deducing argument after them is not read
-   (4222). So their own errors win,
-   e.g. "function 'exit' has no result" for 'show(exit(1))', "'zz' not
-   found" for 'f(zz, 1)' of 'func f<A type>(b, a A)' and "'make' takes 1
-   argument" for 'make(2, 3)' (2249); otherwise the call is rejected and asks
-   for the type arguments to be written:
+3. If neither tells the type, the type parameter is not deduced and the
+   walk goes on: every argument is parsed in order as in a call without type
+   parameters, at the type of its parameter, whose name is read as the
+   instance reads it, not as the code around the call would (4000, 4001),
+   or at the type another argument deduced, also for a type parameter
+   declared later (4200, 4220, 4221, 4260, 4262, 4300); a deducing argument
+   names the type of its literal as in the call (4261). An argument whose
+   parameter has no known type is parsed at the type it tells (3363 to
+   3365, 3368), else without a type like the initializer of a 'var'; a
+   '{...}' or '[...]' there is skipped, one that is continued or reached
+   into is not, its error would depend on that type (4201, 4222 to 4224).
+   After the ')' the instance is made, and the first type parameter in the
+   order declared that is not deduced is reported. So the errors of the
+   arguments, of the delimiters and of a surplus argument win, in the order
+   of the call, e.g. "function 'exit' has no result" for 'show(exit(1))',
+   "'zz' not found" for 'same(1, zz)' and for 'f(zz, 1)' of 'func f<A
+   type>(b, a A)', and "'make' takes 1 argument" for 'make(2, 3)' (2249);
+   the checks of the arguments that need the callee, e.g. that a 'mut'
+   argument is a variable or that a constant fits, come after the instance
+   is made. Otherwise the call is rejected and asks for the type arguments
+   to be written:
 
    ```text
    example.baz:15:13: cannot deduce 'T' of generic function 'make', write
@@ -1139,9 +1140,11 @@ example.baz:13:13: instantiated by 'make<name>'
 #### 2.10.4 Order rules
 
 1. A generic function is defined before a call names it.
-2. The type arguments are fixed before the arguments are parsed, so an
-   argument is parsed with the type its parameter has in the instance. This
-   is why deduction looks ahead instead of parsing the argument first.
+2. The type argument of a parameter is fixed before its argument is
+   parsed, so an argument is parsed with the type its parameter has in the
+   instance. This is why a deducing argument is read ahead instead of
+   parsed first; written type arguments make the instance before the
+   arguments, deduced ones after them.
 3. The body sees the names defined before the generic function, like a
    plain body, also when a call after them instantiates it. Methods,
    constructors and instances of generic functions are reached through
@@ -1158,9 +1161,10 @@ generic_registry (generics.hpp)       the generic definitions, kept as text,
 type_instantiator (stmt_def_type.hpp) a generic type instance from an alias
 func_instantiator::define             a generic function, a method of a
   (stmt_def_func.hpp)                 generic type, kept as text
-generic_call::parse (stmt_call.hpp)   the type arguments of a call, written
-                                      or deduced from the arguments, then
-                                      the instance they name
+generic_call (stmt_call.hpp)          the type arguments of a call, written
+                                      or deduced from the arguments while
+                                      'stmt_call' parses them, then the
+                                      instance they name
 func_instantiator::instantiate_func,  the instance of a generic function, the
   instantiate_methods                 methods of a type instance (one with
   (stmt_def_func.hpp)                 type parameters of its own becomes a
@@ -2062,8 +2066,10 @@ the parse and the width at the compile.
 ### 7.14 The range of a bulk operation is checked after its count
 
 'array_copy', 'arrays_equal', 'read', 'write' and the sector functions emit
-their arguments in the order of the source: the arrays or the buffer, then
-the count. The range from a start needs the count, so the check is split. The
+their arguments in the order of the source. The io functions take the start
+last and check the range once it is computed ('stmt_builtin_io::check_range').
+The bulk functions take each start before the count: the arrays, then the
+count. The range from a start needs the count, so the check is split. The
 address walk checks a run-time start as '0 <= start <= length' and copies it
 into a register the caller allocated before the walk
 ('lea_request::start_register'); after the count, or after the second address

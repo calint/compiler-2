@@ -230,8 +230,8 @@ class stmt_builtin_io final : public statement {
     }
 
     // the buffer is an array, not an element ('builtin_arguments' took an
-    // array path), the sector size and the constant range need the types at
-    // compile time
+    // array path); the sector size and the constant range need the types,
+    // 'assert_buffer' checks them at compile time
     auto assert_buffer_path() const -> void {
         const stmt_identifier& buffer{buffer_path()};
 
@@ -324,9 +324,8 @@ class stmt_builtin_io final : public statement {
 
         const std::optional<size_t> array_len{buffer_info.array_len()};
 
-        // note: an unsized array parameter has no length in the check of a
-        //       function without its calls and in the bodies it checks with
-        //       the length unknown, the code is discarded, see
+        // note: an unknown length is the check of a function without its
+        //       calls or a body it checks, the code is discarded, see
         //       'ident_info::is_length_unknown'
 
         if (not array_len) {
@@ -499,15 +498,14 @@ class stmt_builtin_io final : public statement {
     auto move_to_constant_start(compile_toc& tc, const operand& buffer_reg,
                                 const operand& count,
                                 const ident_info& buffer_info,
-                                const size_t start_count) const -> void {
+                                const size_t start) const -> void {
 
         const type& default_type{tc.builtins().default_type()};
 
-        check_range(tc, operand::imm(start_count, default_type), count,
-                    buffer_info);
+        check_range(tc, operand::imm(start, default_type), count, buffer_info);
 
         const size_t offset_bytes{
-            start_count * buffer_info.type_ref().size_bytes(),
+            start * buffer_info.type_ref().size_bytes(),
         };
 
         if (offset_bytes == 0) {

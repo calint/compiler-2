@@ -323,21 +323,6 @@ class machine {
             return range(start, count, array_count);
         }
 
-        [[nodiscard]] static auto range(const operand& start,
-                                        const operand& count,
-                                        const size_t array_count)
-            -> bounds_range {
-
-            return {
-                .checked{start},
-                .count{count},
-                .start_lower_checked{},
-                .count_lower_checked{},
-                .array_count{array_count},
-                .allow_end{true},
-            };
-        }
-
         // a count or a start that may reach 'limit', the array count less
         // the constant other part of its range, e.g. a count alone
         [[nodiscard]] static auto up_to(const operand& value,
@@ -357,6 +342,22 @@ class machine {
         //
         // statics
         //
+
+        // a run-time start and a run-time count
+        [[nodiscard]] static auto range(const operand& start,
+                                        const operand& count,
+                                        const size_t array_count)
+            -> bounds_range {
+
+            return {
+                .checked{start},
+                .count{count},
+                .start_lower_checked{},
+                .count_lower_checked{},
+                .array_count{array_count},
+                .allow_end{true},
+            };
+        }
 
         // the elements past the constant part of a range
         [[nodiscard]] static auto remaining_count(const operand& constant_part,

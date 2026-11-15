@@ -1,0 +1,14 @@
+# a call that tells no type deduces a type parameter declared after the one it
+# cannot deduce from the destination when the walk reaches its deducing
+# argument, which tells nothing: 'b' is at 'point', so '{1, 2, 3}' is the error
+
+type point {x, y}
+
+func f<T type, U type>(a U, b U, c T) res U {
+    res = a
+}
+
+func main() {
+    var p = point
+    p = f({1, 2}, {1, 2, 3}, {})
+}

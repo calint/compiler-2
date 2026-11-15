@@ -77,18 +77,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     changes the language: 'f(a + 1)' would deduce where it is rejected
     today (README 2.10.2); see also "generic deduction by a trial parse"
     below
-[ ] easy: low priority (round 419 AA, a hunt of generics): the lookahead
-    of a deduced call skips the arguments before the deciding one as text
-    and takes a '<' before a type as the start of type arguments
-    ('generic_call::opens_type_arguments', test 3330); a type argument
-    that a local variable hides is not seen as one, e.g. 'var point = 1'
-    and 'last(tag<point, i32>({}), z, w)' of 'func last<T type>(c i8, b
-    i16, a T)' ends the first argument at the ',' and takes 'T' from 'z';
-    written 'last<i32>(...)' it is accepted
-    => not done: the exact rule is the token before the '<' (a generic
-       function or a method), for a method that needs the type of its
-       receiver, which the text does not give; the trial parse of the item
-       above removes the lookahead
 [p] medium: need approval (round 396): the counter of a 'foo' always in
     memory: today it is in a register, or in memory on x86_64 when 6 or
     more scratch registers are in use; that choice carries
@@ -155,20 +143,26 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
-[ ] easy: (round 451, bug hunt of generic calls) the error walk does
-    not check a 'mut' argument as the call does: 'f({1, 2}, 3)' and
-    'f(point{1, 2}, 3)' for 'func f<T type>(a mut point, b T)' say
-    "cannot deduce 'T'" and "write '{...}'", the twin says "not a
-    variable" for both; needs 'generic_signature_param' to record
-    'mut'
-[ ] easy: (round 450, bug hunt of generic call errors) an error inside
-    a deducing argument is reported before the arguments before it:
-    'f(zz, arr)' for 'func f<T type>(a, b T)' with 'arr' an 'i8[4]'
-    says "array 'arr' must be indexed" where the twin says "'zz' not
-    found" (also 'x.zz', 'arr[', 'k[0]'); 'argument_type' builds a
-    'stmt_identifier' that throws; the fix seen, catching that error
-    to walk the arguments before it and rethrowing, is control flow by
-    exception, not done
+    => the larger alternative is done (round 452): one walk left to
+       right, the text skip and the error walk are gone; the trial
+       parse of the deducing argument stays a language decision
+[ ] easy: (round 452, a walk of the bulk and io built-ins) with
+    '--checks=lower' alone 'array_copy(a, b, n)' tests the sign of 'n'
+    twice, once per array: 'count_lower_checked' applies only to a range
+    with a count (a run-time start), 'up_to(count)' of a constant start
+    has no field for it, against the note of 'check_ranges'; a sector
+    function over an 'i32' buffer emits 'li a2, 128' and 'slli a2, a2,
+    2' where 'li a2, 512' does
+[ ] easy: (round 452, design of generic deduction) the checks of an
+    argument that need the callee ('check_arguments': a 'mut' argument
+    is a variable, a constant fits, a named type matches) run after the
+    instance, so a call that cannot deduce says "cannot deduce" first:
+    'f(300, {})' for 'func f<T type>(a i8, b T)' where 'f<i8>(300, {})'
+    says "constant '300' does not fit 'i8'"; running them per argument
+    in the walk needs the parameter as name, type, 'mut' and array, which
+    'generic_signature_param' lacks for an array ('a T[]' keeps no
+    type), and the receiver check needs the callee name; it would also
+    change the order of errors of plain calls ('f(300, zz)')
 [p] easy: (round 450, a walk of 'parse_statement.hpp') need approval:
     'if x return g()' is 'if x return' and then the statement 'g()',
     which always runs ('if x == 2 return exit(3)' exits 3 whatever

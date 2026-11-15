@@ -8140,6 +8140,10 @@ SRC=4263 && COMPERR
 SRC=4264 && COMPERR
 SRC=4265 && COMPERR
 
+# a type parameter declared after the one not deduced takes the destination
+# when the walk reaches its deducing argument, which tells nothing
+SRC=4300 && COMPERR
+
 # the mirror of 4000: an argument that is wrong at the global type its
 # parameter names is rejected for itself, the type parameter of that name in
 # the function that calls does not accept it

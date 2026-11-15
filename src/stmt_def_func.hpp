@@ -1741,6 +1741,7 @@ class stmt_def_func_generic final : public statement {
                         : "",
                 },
                 .is_array{param.is_array()},
+                .is_mut{param.mut_tk.has_value()},
             });
         }
 

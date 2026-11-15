@@ -150,103 +150,255 @@ parse_array_param_argument(parse_toc& tc, tokenizer& tz,
 // written, e.g. 'tz.to<name>()', or deduced from the arguments, e.g. 'f(x)' of
 // 'func f<T type>(s T)', see 'etc/docs/README.md' section 2.10
 //
-// 'parse' reads '<...>' with 'written_type_arguments' or, without '<',
-// deduces the types with 'deduced_type_arguments', which looks ahead at the
-// arguments with 'argument_type' and 'value_type'; then the instance is made
-struct generic_call {
-  private:
-    // the type arguments of a call without '<...>' and the arguments they
-    // were taken from
-    struct deduction {
-        std::vector<generic_arg> type_args;
-        std::vector<size_t> deducing_args;
-    };
-
-  public:
-    // the name of the instance
-    std::string func_name;
-    // e.g. '<', 'name' and '>' in 'tz.to<name>()', empty when deduced
-    std::vector<token> generic_tks;
+// 'written_instance' reads '<...>' and makes the instance before the
+// arguments are parsed. without '<' the call deduces: 'stmt_call' parses the
+// arguments left to right, each at its 'param_type', which deduces a type
+// parameter at its deducing argument from the type that argument tells
+// ('argument_type', 'value_type') or from the destination; 'instantiate'
+// makes the instance after the arguments
+class generic_call {
+    // e.g. 'to' of 'tz.to()', the errors of the deduction are located at it
+    token name_tk_;
+    // e.g. 'tokenizer.to'
+    std::string generic_name_;
+    // kept by 'generic_table', a body defines no generic function
+    const generic_func_info* generic_{};
+    // one per type parameter, null until deduced; a type parameter that the
+    // result is declared with starts as the type the call is assigned to,
+    // e.g. 'x.f = tz.to()'
+    std::vector<const type*> deduced_;
     // the arguments a type was deduced from, counted without a receiver, e.g.
     // 0 for 'take(point{3, 4})', a literal there names its type
-    std::vector<size_t> deducing_args;
+    std::vector<size_t> deducing_args_;
+
+  public:
+    // the instance that a call with '<...>' names
+    struct written {
+        std::string func_name;
+        // e.g. '<', 'name' and '>' in 'tz.to<name>()'
+        std::vector<token> generic_tks;
+    };
+
+    // a call without '<', 'name_tk' is the name as written and
+    // 'generic_name' the generic function, e.g. 'to' and 'tokenizer.to'; a
+    // type parameter that the result is declared with is the destination's
+    // unless its deducing argument tells it
+    generic_call(const parse_toc& tc, const token& name_tk,
+                 const std::string_view generic_name,
+                 const type* const expected_type)
+        : name_tk_{name_tk}, generic_name_{generic_name},
+          generic_{&tc.generics().get_func(generic_name)} {
+
+        for (const token& param_tk : generic_->signature.type_param_tks) {
+            const generic_deduction source{
+                generic_->signature.deduction(param_tk.text()),
+            };
+
+            deduced_.push_back(source.is_result ? expected_type : nullptr);
+        }
+    }
+
+    [[nodiscard]] auto generic_name() const -> std::string_view {
+        return generic_name_;
+    }
+
+    // the instance named by the deduced types, made once; a type parameter
+    // still not deduced, e.g. the 'T' of 'var m = make(2)', is "cannot
+    // deduce". after the arguments
+    [[nodiscard]] auto instantiate(parse_toc& tc) const -> std::string {
+        const std::span<const token> param_tks{
+            generic_->signature.type_param_tks,
+        };
+
+        std::vector<generic_arg> type_args;
+        type_args.reserve(param_tks.size());
+
+        for (const auto [param_tk, arg_type] :
+             std::views::zip(param_tks, deduced_)) {
+
+            if (arg_type == nullptr) {
+                throw_cannot_deduce(param_tk);
+            }
+
+            type_args.push_back({
+                .param_tk{param_tk},
+                .value{arg_type},
+            });
+        }
+
+        return func_instantiator::instantiate_func(tc, name_tk_, generic_name_,
+                                                   type_args);
+    }
+
+    // a type was deduced from the argument at 'index'
+    [[nodiscard]] auto is_deducing_argument(const size_t index) const -> bool {
+        return std::ranges::contains(deducing_args_, index);
+    }
+
+    // e.g. 'x U' of '(x U)', counted without a receiver
+    [[nodiscard]] auto param(const size_t index) const
+        -> const generic_signature_param& {
+
+        return generic_->signature.params.at(index);
+    }
+
+    [[nodiscard]] auto param_count() const -> size_t {
+        return generic_->signature.params.size();
+    }
+
+    // the type the argument at 'index', which is at 'tz', is parsed at, the
+    // type of its parameter in the instance; the deducing argument of a type
+    // parameter, the first declared with it, deduces it when it tells a type
+    // ('argument_type'), none for a literal or an expression, else the
+    // destination stays, see the constructor; null when not known: a type
+    // parameter not deduced, which 'instantiate' reports, or a name that is
+    // no type there, which the instance rejects
+    [[nodiscard]] auto param_type(parse_toc& tc, const tokenizer& tz,
+                                  const size_t index) -> const type* {
+
+        const generic_signature_param& p{param(index)};
+
+        const std::span<const token> type_param_tks{
+            generic_->signature.type_param_tks,
+        };
+
+        const auto param_tk{
+            std::ranges::find(type_param_tks, p.type_name, &token::text),
+        };
+
+        if (param_tk == type_param_tks.end()) {
+            return fixed_param_type(tc, p);
+        }
+
+        const type*& arg_type{
+            deduced_.at(static_cast<size_t>(param_tk - type_param_tks.begin())),
+        };
+
+        // e.g. the 'b' of 'same(a, b)', 'a' told 'T' or nothing
+        if (generic_->signature.deduction(p.type_name).param_index != index) {
+            return arg_type;
+        }
+
+        tokenizer scan{tz};
+
+        if (const type* const told_type{argument_type(tc, scan)};
+            told_type != nullptr) {
+
+            deducing_args_.push_back(index);
+            arg_type = told_type;
+        }
+
+        return arg_type;
+    }
+
+    // the argument at 'tz' of a parameter whose type 'param_type' does not
+    // know, parsed as in a call without type parameters as far as no type is
+    // needed: at the type it tells, else without a type like the initializer
+    // of a 'var'. a literal that takes its type from the parameter, e.g.
+    // '{1, 2}', is skipped unchecked; the error of one that is not whole,
+    // e.g. '{1, 2} + 1', depends on that type, so the instance is made
+    // there, which reports the type not known. 'tz' ends after the argument
+    // note: the parse records nothing that outlives the error that follows
+    auto parse_untyped_argument(parse_toc& tc, tokenizer& tz) const -> void {
+        tokenizer scan{tz};
+
+        // e.g. 'point{1, 2}', which parses only at a type
+        if (const type* const told_type{argument_type(tc, scan)};
+            told_type != nullptr) {
+
+            std::ignore = expr_any{tc, tz, *told_type, literal_typing::written};
+            return;
+        }
+
+        const char next{tz.peek_char_after_whitespace()};
+
+        if (next != '{' and next != '[') {
+            std::ignore = expr_bool{tc, tz.next_whitespace_token(), tz};
+            return;
+        }
+
+        const char close{next == '{' ? '}' : ']'};
+
+        // e.g. '{1, 2' without its closer, '{1, 2}.x' or '{1, 2} + 1'
+        if (not tz.skip_enclosed(next, close) or is_reached_into(tz) or
+            continues_expression(tz)) {
+
+            std::ignore = instantiate(tc);
+
+            // note: a type parameter not deduced is "cannot deduce" and a
+            //       parameter type name that is no type is rejected by the
+            //       instance
+
+            std::unreachable();
+        }
+    }
 
     //
     // statics
     //
 
-    // 'tz' is after the name and before the '<' or the '('
-    // note: 'name_tk' is the name as written and 'generic_name' the generic
-    //       function, e.g. 'to' and 'tokenizer.to'
+    // reads '<...>' and makes the instance it names, 'tz' is at the '<'
     [[nodiscard]] static auto
-    parse(parse_toc& tc, tokenizer& tz, const token& name_tk,
-          const std::string_view generic_name, const type* const expected_type)
-        -> generic_call {
+    written_instance(parse_toc& tc, tokenizer& tz, const token& name_tk,
+                     const std::string_view generic_name) -> written {
 
-        // e.g. not the '<=' of 'p.get <= 3', which the deduction reports
-        const std::optional<token> open_tk{
-            tz.is_type_args_next() ? tz.accept_char_token('<') : std::nullopt,
+        const token open_tk{tz.seen_char_token('<')};
+
+        const generic_arg_tokens args{
+            generic_arg_tokens::parse(tz, open_tk, false),
         };
 
-        std::vector<generic_arg> type_args;
-        std::vector<token> generic_tks;
-        std::vector<size_t> deducing_args;
-
-        if (not open_tk) {
-            deduction deduced{
-                deduced_type_arguments(tc, tz, name_tk, generic_name,
-                                       expected_type),
-            };
-
-            type_args = std::move(deduced.type_args);
-            deducing_args = std::move(deduced.deducing_args);
-        } else {
-            const generic_arg_tokens args{
-                generic_arg_tokens::parse(tz, *open_tk, false),
-            };
-
-            type_args =
-                written_type_arguments(tc, name_tk, generic_name, args.arg_tks);
-
-            generic_tks = args.list_tks;
-        }
+        const std::vector<generic_arg> type_args{
+            written_type_arguments(tc, name_tk, generic_name, args.arg_tks),
+        };
 
         return {
             .func_name{
                 func_instantiator::instantiate_func(tc, name_tk, generic_name,
                                                     type_args),
             },
-            .generic_tks{std::move(generic_tks)},
-            .deducing_args{std::move(deducing_args)},
+            .generic_tks{args.list_tks},
         };
     }
 
   private:
+    // the type that 'param' has in every instance: the default type, a type
+    // defined before the generic function or an argument of the generic type
+    // of a method, e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)'
+    // called on a 'cell<i8>'; none for a name that is no type there, which
+    // the instance rejects
+    [[nodiscard]] auto fixed_param_type(parse_toc& tc,
+                                        const generic_signature_param& p) const
+        -> const type* {
+
+        const std::string_view name{p.type_name};
+
+        if (name.empty()) {
+            return &tc.builtins().default_type();
+        }
+
+        // the name is read as the instance reads it, not as the call would,
+        // e.g. not as a type parameter of the function that calls
+        parse_toc::generic_scope definition{tc, generic_->definition};
+
+        if (generic_->receiver) {
+            definition.add_receiver(*generic_->receiver);
+        }
+
+        return tc.types().has(name) ? &tc.types().get(name) : nullptr;
+    }
+
+    [[noreturn]] auto throw_cannot_deduce(const token& param_tk) const -> void {
+        throw compile_error{
+            name_tk_, std::format("cannot deduce {} of generic function {}, "
+                                  "write '{}<...>'",
+                                  in_quotes(param_tk.text()),
+                                  in_quotes(generic_name_), name_tk_.text())};
+    }
+
     //
     // statics
     //
-
-    // the type that the deducing argument at 'index', which is there at
-    // 'tz', tells for the type parameter that 'source' describes, steps 1 and
-    // 2 of 'deduced_type_arguments', null when neither tells it; an argument
-    // that tells it is added to 'deduced'
-    [[nodiscard]] static auto
-    argument_deduced_type(parse_toc& tc, const tokenizer& tz,
-                          const size_t index, const generic_deduction& source,
-                          const type* const expected_type, deduction& deduced)
-        -> const type* {
-
-        tokenizer scan{tz};
-
-        if (const type* const arg_type{argument_type(tc, scan)};
-            arg_type != nullptr) {
-
-            deduced.deducing_args.push_back(index);
-            return arg_type;
-        }
-
-        return source.is_result ? expected_type : nullptr;
-    }
 
     // the type of the argument at 'tz' when it is a variable, a field, an
     // element or a typed constant, or the value it makes names its type:
@@ -299,173 +451,6 @@ struct generic_call {
         return named_argument_type(tc, ident);
     }
 
-    // the argument at 'index', which is there, is reported as in a call
-    // without type parameters: parsed as the array of an array parameter, at
-    // the type of its parameter, also one deduced in 'deduced', or, for a
-    // parameter declared with a type parameter not deduced yet, at the type
-    // it tells, else without a type like the initializer of a 'var'; a token
-    // after it that is not a delimiter is reported as there too. 'tz' is at
-    // the argument, it ends after it
-    // note: the parse records nothing that outlives the error that follows
-    static auto assert_argument_valid(parse_toc& tc, tokenizer& tz,
-                                      const generic_func_info& generic,
-                                      const type* const expected_type,
-                                      deduction& deduced, const size_t index)
-        -> void {
-
-        const std::span<const generic_signature_param> params{
-            generic.signature.params,
-        };
-
-        const generic_signature_param& param{params.at(index)};
-
-        if (param.is_array) {
-            std::ignore =
-                parse_array_param_argument(tc, tz, param.name_tk.text());
-
-            assert_delimiter_after(tz, params, index);
-
-            return;
-        }
-
-        deduce_from_argument(tc, tz, generic, expected_type, deduced, index);
-
-        // the parameter is the destination of its argument, as in the call,
-        // e.g. the 'g(1)' of 'f(g(1), 1)' for 'func g<T type>(a) res T'; a
-        // deducing argument names the type of its literal
-        if (const type* const param_type{
-                param_type_at(tc, generic, deduced.type_args, param),
-            };
-            param_type != nullptr) {
-
-            const literal_typing typing{
-                std::ranges::contains(deduced.deducing_args, index)
-                    ? literal_typing::written
-                    : literal_typing::from_destination,
-            };
-
-            std::ignore = expr_any{tc, tz, *param_type, typing};
-
-            assert_delimiter_after(tz, params, index);
-
-            return;
-        }
-
-        tokenizer scan{tz};
-
-        // e.g. 'point{1, 2}' of 'g(point{1, 2})', which parses only at a
-        // type, or the 'i8(x' that lacks its ')'
-        if (const type* const told_type{argument_type(tc, scan)};
-            told_type != nullptr) {
-
-            std::ignore = expr_any{tc, tz, *told_type, literal_typing::written};
-
-            assert_delimiter_after(tz, params, index);
-
-            return;
-        }
-
-        const char next{tz.peek_char_after_whitespace()};
-
-        // a literal that takes its type from the parameter, e.g. '{1, 2}', is
-        // skipped unchecked, its type is not known here; one without its
-        // closer is reported by the parse of the instance; one reached into
-        // or continued, e.g. '{1, 2} + 1', is skipped whole, its error names
-        // the type
-        if (next == '{' or next == '[') {
-            const char close{next == '{' ? '}' : ']'};
-
-            if (not tz.skip_enclosed(next, close)) {
-                return;
-            }
-
-            if (is_reached_into(tz) or continues_expression(tz)) {
-                skip_argument(tc, tz);
-                return;
-            }
-
-            assert_delimiter_after(tz, params, index);
-
-            return;
-        }
-
-        std::ignore = expr_bool{tc, tz.next_whitespace_token(), tz};
-
-        assert_delimiter_after(tz, params, index);
-    }
-
-    // the arguments up to and including the one at 'param_index', or all and
-    // no surplus one when it is none, reported as in a call without type
-    // parameters, in the order the call parses them: the first that is
-    // missing, e.g. 'b' of 'f(1)' for 'func f<T type>(a, b, x T)', or not
-    // valid. 'tz' is after the '(', 'deduced' the type arguments known
-    static auto assert_arguments_valid_up_to(
-        parse_toc& tc, const tokenizer& tz, const std::string_view generic_name,
-        const generic_func_info& generic, const type* const expected_type,
-        deduction& deduced, const std::optional<size_t> param_index) -> void {
-
-        const std::span<const generic_signature_param> params{
-            generic.signature.params,
-        };
-
-        const size_t checked_count{
-            param_index ? *param_index + 1 : params.size(),
-        };
-
-        tokenizer at_argument{tz};
-
-        for (size_t i{}; i < checked_count; ++i) {
-            const char next{at_argument.peek_char_after_whitespace()};
-
-            // e.g. 'f()', or the list ends after the argument before
-            if (i == 0 ? next == ')' : next != ',') {
-                throw compile_error{
-                    at_argument,
-                    missing_argument_text(i + 1, params.at(i).name_tk.text())};
-            }
-
-            if (i != 0) {
-                const token delimiter_tk{at_argument.seen_char_token(',')};
-
-                // e.g. 'f(1,)', reported before the argument it lacks
-                at_argument.assert_no_trailing_delimiter(delimiter_tk, ')',
-                                                         "a call");
-            }
-
-            assert_argument_valid(tc, at_argument, generic, expected_type,
-                                  deduced, i);
-        }
-
-        if (not param_index) {
-            assert_no_surplus_argument(at_argument, generic_name,
-                                       params.size());
-        }
-    }
-
-    // 'tz' is after the argument at 'index', a ',' or the ')' follows, e.g.
-    // not the '2' of 'f(1 2)'
-    static auto assert_delimiter_after(
-        const tokenizer& tz,
-        const std::span<const generic_signature_param> params,
-        const size_t index) -> void {
-
-        const char delimiter{tz.peek_char_after_whitespace()};
-
-        if (delimiter == ',' or delimiter == ')') {
-            return;
-        }
-
-        const size_t next_index{index + 1};
-
-        if (next_index == params.size()) {
-            throw compile_error{tz, std::string{missing_close_paren_text}};
-        }
-
-        throw compile_error{
-            tz, missing_delimiter_text(next_index + 1,
-                                       params.at(next_index).name_tk.text())};
-    }
-
     // e.g. 'point.at(1, 2)', not the method 'point.m()' or 'point.zz(1)',
     // which the parse of the argument reports; 'tk' is the type and 'tz' is
     // after it
@@ -496,283 +481,6 @@ struct generic_call {
         };
 
         return is_constructor ? &result_type : nullptr;
-    }
-
-    // the type parameter not deduced yet whose deducing argument is the one
-    // at 'index' is deduced from it at 'tz' as the call deduces it, so the
-    // arguments after it are at its type, e.g. 'U' from the 'x' of
-    // 'f(x, true, 3)' for 'func f<T type, U type>(a U, b U, c T)'
-    static auto deduce_from_argument(parse_toc& tc, const tokenizer& tz,
-                                     const generic_func_info& generic,
-                                     const type* const expected_type,
-                                     deduction& deduced, const size_t index)
-        -> void {
-
-        const std::string_view name{
-            generic.signature.params.at(index).type_name,
-        };
-
-        const auto param_tk{
-            std::ranges::find(generic.signature.type_param_tks, name,
-                              &token::text),
-        };
-
-        // e.g. a parameter of a type defined before the generic function
-        if (param_tk == generic.signature.type_param_tks.end()) {
-            return;
-        }
-
-        const bool is_deduced{
-            std::ranges::contains(deduced.type_args, name,
-                                  [](const generic_arg& a) -> std::string_view {
-                                      return a.param_tk.text();
-                                  }),
-        };
-
-        const generic_deduction source{generic.signature.deduction(name)};
-
-        if (is_deduced or source.param_index != index) {
-            return;
-        }
-
-        const type* const arg_type{
-            argument_deduced_type(tc, tz, index, source, expected_type,
-                                  deduced),
-        };
-
-        if (arg_type == nullptr) {
-            return;
-        }
-
-        deduced.type_args.push_back({
-            .param_tk{*param_tk},
-            .value{arg_type},
-        });
-    }
-
-    // the type of the type parameter that 'source' describes, steps 1 and 2
-    // of 'deduced_type_arguments', null when neither tells it; an argument
-    // that tells it is added to 'deduced'. 'tz' is after the '('
-    [[nodiscard]] static auto deduced_type(parse_toc& tc, const tokenizer& tz,
-                                           const generic_deduction& source,
-                                           const type* const expected_type,
-                                           deduction& deduced) -> const type* {
-
-        if (not source.param_index) {
-            return source.is_result ? expected_type : nullptr;
-        }
-
-        tokenizer arg_tz{tz};
-
-        // e.g. 'f()' or the 'b' of 'f(1)' for 'func f<T type>(a, b T)'
-        const size_t reached{
-            skip_to_argument(tc, arg_tz, *source.param_index),
-        };
-
-        const bool is_argument_missing{
-            reached != *source.param_index or
-                arg_tz.peek_char_after_whitespace() == ')',
-        };
-
-        if (is_argument_missing) {
-            return nullptr;
-        }
-
-        return argument_deduced_type(tc, arg_tz, *source.param_index, source,
-                                     expected_type, deduced);
-    }
-
-    // the type arguments of 'f(x)' for 'func f<T type>(s T)', for each type
-    // parameter in this order:
-    //   1. the type that the deducing argument tells ('argument_type'), none
-    //      for a literal or an expression
-    //   2. otherwise, unless that argument is missing, the type the call is
-    //      assigned to, when the result is declared with the type parameter
-    //   3. otherwise the arguments up to the deducing one, or all and a
-    //      surplus one for a result, are reported as in a call without type
-    //      parameters ('assert_arguments_valid_up_to'), then "cannot deduce";
-    //      the walk reads the deducing argument of a type parameter declared
-    //      later when it reaches it, an error before it comes first
-    [[nodiscard]] static auto
-    deduced_type_arguments(parse_toc& tc, const tokenizer& tz,
-                           const token& name_tk,
-                           const std::string_view generic_name,
-                           const type* const expected_type) -> deduction {
-
-        const generic_func_info& generic{tc.generics().get_func(generic_name)};
-
-        // the arguments are looked at ahead, the call reads them later
-        tokenizer scan{tz};
-
-        // note: a function is a call here only before its '('
-        //       ('classify_term'), a method at its name, e.g. 'p.get'
-
-        if (not scan.accept_char_token('(')) {
-            throw compile_error{name_tk, "expected '(' after method name"};
-        }
-
-        deduction deduced{};
-
-        for (const token& param_tk : generic.signature.type_param_tks) {
-            const generic_deduction source{
-                generic.signature.deduction(param_tk.text()),
-            };
-
-            const type* const arg_type{
-                deduced_type(tc, scan, source, expected_type, deduced),
-            };
-
-            if (arg_type == nullptr) {
-                // e.g. the 'zz' of 'f(zz, 1)' for 'func f<A type>(b, a A)' or
-                // the 'point' of 'show(point)', reported as in a call without
-                // type parameters
-                assert_arguments_valid_up_to(tc, scan, generic_name, generic,
-                                             expected_type, deduced,
-                                             source.param_index);
-
-                throw compile_error{
-                    name_tk,
-                    std::format("cannot deduce {} of generic function {}, "
-                                "write '{}<...>'",
-                                in_quotes(param_tk.text()),
-                                in_quotes(generic_name), name_tk.text())};
-            }
-
-            deduced.type_args.push_back({
-                .param_tk{param_tk},
-                .value{arg_type},
-            });
-        }
-
-        return deduced;
-    }
-
-    // the type that 'param' has in every instance: the default type, a type
-    // defined before the generic function or an argument of the generic type
-    // of a method, e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)'
-    // called on a 'cell<i8>'; none when it is declared with a type parameter
-    // of the function, which a call gives, or with a name that is no type
-    // there, which the instance rejects
-    [[nodiscard]] static auto
-    fixed_param_type(parse_toc& tc, const generic_func_info& generic,
-                     const generic_signature_param& param) -> const type* {
-
-        const std::string_view name{param.type_name};
-
-        if (name.empty()) {
-            return &tc.builtins().default_type();
-        }
-
-        if (std::ranges::contains(generic.signature.type_param_tks, name,
-                                  &token::text)) {
-
-            return nullptr;
-        }
-
-        // the name is read as the instance reads it, not as the call would,
-        // e.g. not as a type parameter of the function that calls
-        parse_toc::generic_scope definition{tc, generic.definition};
-
-        if (generic.receiver) {
-            definition.add_receiver(*generic.receiver);
-        }
-
-        return tc.types().has(name) ? &tc.types().get(name) : nullptr;
-    }
-
-    // a '<' before a type that a ',' or the '>' follows starts type
-    // arguments, e.g. the '<' of 'conv<i32, i8>(y)', not that of 'a < b' or
-    // of 'a < i8(b)'. 'tz' is at the '<'
-    // note: a type is no operand of a comparison; a name that a value hides
-    //       is the value, as in 'classify_term'
-    [[nodiscard]] static auto opens_type_arguments(const parse_toc& tc,
-                                                   const tokenizer& tz)
-        -> bool {
-
-        tokenizer after{tz};
-        std::ignore = after.seen_char_token('<');
-
-        const token arg_tk{after.next_token()};
-        const char next{after.peek_char_after_whitespace()};
-
-        if (next != ',' and next != '>') {
-            return false;
-        }
-
-        const std::string_view name{arg_tk.text()};
-
-        return tc.types().has(name) and not tc.scopes().lookup(name).is_value();
-    }
-
-    // the type of 'param' in the instance as far as it is known: its
-    // 'fixed_param_type' or the type argument in 'deduced' of the type
-    // parameter it is declared with, e.g. 'point' for the 'b' of
-    // 'f(x, {1, 2})' for 'func f<T type>(a T, b T)' with 'x' a 'point'
-    [[nodiscard]] static auto
-    param_type_at(parse_toc& tc, const generic_func_info& generic,
-                  const std::span<const generic_arg> deduced,
-                  const generic_signature_param& param) -> const type* {
-
-        const auto arg{
-            std::ranges::find(deduced, param.type_name,
-                              [](const generic_arg& a) -> std::string_view {
-                                  return a.param_tk.text();
-                              }),
-        };
-
-        if (arg == deduced.end()) {
-            return fixed_param_type(tc, generic, param);
-        }
-
-        return std::get<const type*>(arg->value);
-    }
-
-    // skips an argument up to the ',' or ')' that ends it; the ',' of written
-    // type arguments ends none, e.g. that of 'conv<i32, i8>(y)'
-    static auto skip_argument(const parse_toc& tc, tokenizer& tz) -> void {
-        while (true) {
-            tz.skip_argument_part();
-
-            if (tz.peek_char_after_whitespace() != '<') {
-                return;
-            }
-
-            if (tz.is_type_args_next() and opens_type_arguments(tc, tz)) {
-                std::ignore = tz.skip_enclosed('<', '>');
-            } else {
-                std::ignore = tz.seen_operator();
-            }
-        }
-    }
-
-    // moves 'tz' from after the '(' to the argument at 'index' and returns
-    // 'index'; when the list ends before it, 'tz' is after the argument where
-    // it ends and that argument's index is returned, at an argument that is
-    // not there 'tz' stays before its ','
-    [[nodiscard]] static auto skip_to_argument(const parse_toc& tc,
-                                               tokenizer& tz,
-                                               const size_t index) -> size_t {
-
-        for (size_t i{}; i < index; ++i) {
-            // e.g. the ',' of 'f(,)', the parse of the argument it lacks
-            // reports it, not a trailing ','
-            if (tz.peek_char_after_whitespace() == ',') {
-                return i;
-            }
-
-            skip_argument(tc, tz);
-
-            const std::optional<token> delimiter_tk{tz.accept_char_token(',')};
-
-            if (not delimiter_tk) {
-                return i;
-            }
-
-            // e.g. 'f(1,)', reported before the argument it lacks
-            tz.assert_no_trailing_delimiter(*delimiter_tk, ')', "a call");
-        }
-
-        return index;
     }
 
     // the type of a 'bool' literal, an instance literal, a constructor call or
@@ -2189,18 +1897,19 @@ class stmt_call final : public statement {
 
         assert_call_in_func(tc, tok());
 
-        const std::vector<size_t> deducing_args{
+        std::optional<generic_call> deduction{
             resolve_callee(tc, tz, tk.text(), expected_type),
         };
 
         // note: a call of 'main' can only be in 'main' or after it, in a
-        //       function that nothing calls, since names are defined before use
+        //       function that nothing calls, since names are defined before
+        //       use; 'main' is not generic
 
-        if (callee().name() == reserved_names::main) {
+        if (tk.is_text(reserved_names::main)) {
             throw compile_error{tok(), "'main' cannot be called"};
         }
 
-        parse_arguments(tc, tz, "function name", deducing_args);
+        parse_arguments(tc, tz, "function name", std::move(deduction));
     }
 
     // e.g. 'lst.add(x)' calls 'list.add' with 'lst' as 'self'
@@ -2226,14 +1935,14 @@ class stmt_call final : public statement {
             throw_not_generic(tok(), "method", name);
         }
 
-        const std::vector<size_t> deducing_args{
+        std::optional<generic_call> deduction{
             resolve_callee(tc, tz, name, expected_type),
         };
 
         // the receiver is the first argument
         args_.push_back(path_argument(std::move(receiver)));
 
-        parse_arguments(tc, tz, "method name", deducing_args);
+        parse_arguments(tc, tz, "method name", std::move(deduction));
     }
 
     // e.g. 'point.at(1, 2)' calls the constructor 'point.at', 'tz' is after
@@ -2251,7 +1960,7 @@ class stmt_call final : public statement {
                               callee().name());
         }
 
-        parse_arguments(tc, tz, "constructor name", {});
+        parse_arguments(tc, tz, "constructor name", std::nullopt);
     }
 
     //
@@ -2722,94 +2431,154 @@ class stmt_call final : public statement {
         return result;
     }
 
-    // e.g. 'a' and 'b + 1' of 'f(a, b + 1)'
-    auto parse_argument(parse_toc& tc, tokenizer& tz, const size_t arg_index,
-                        const stmt_def_func_param& param,
-                        const std::span<const size_t> deducing_args) -> void {
+    // e.g. 'a' and 'b + 1' of 'f(a, b + 1)', the argument at 'arg_index',
+    // counted without a receiver, of a known callee
+    auto parse_argument(parse_toc& tc, tokenizer& tz, const size_t arg_index)
+        -> void {
 
-        // e.g. the 'bs' of 'f(bs)' for 'gs bool[]', a path as the array of a
-        // built-in, not a value of the element type, which for a 'bool' is a
-        // condition that rejects a whole array
+        const stmt_def_func_param& param{
+            callee().params().at(first_argument_index() + arg_index),
+        };
+
         if (param.is_array()) {
-            stmt_identifier array{
-                parse_array_param_argument(tc, tz, param.name()),
-            };
-
-            args_.push_back(path_argument(std::move(array)));
-
+            parse_array_argument(tc, tz, param.name());
             return;
         }
 
-        // a 'mut' argument names its type, so 'f(pt{1, 2})' is rejected as
-        // not a variable rather than for the type it writes
-        const bool is_written_type{
-            std::ranges::contains(deducing_args, arg_index) or
-                not param.is_read_only(),
-        };
-
-        args_.emplace_back(tc, tz, param.get_type(),
-                           is_written_type ? literal_typing::written
-                                           : literal_typing::from_destination);
+        parse_typed_argument(tc, tz, param.get_type(),
+                             not param.is_read_only());
     }
 
     // from the '(' on, 'what' names the callee; a method receiver is already
-    // in 'args_', the parameter gives the type of a literal argument unless
-    // its type was deduced from it, see 'generic_call::deducing_args'
+    // in 'args_'; a call that deduces its type arguments, 'deduction', makes
+    // its callee after the arguments
     auto parse_arguments(parse_toc& tc, tokenizer& tz,
                          const std::string_view what,
-                         const std::span<const size_t> deducing_args) -> void {
+                         std::optional<generic_call> deduction) -> void {
 
-        assert_callee_body_parsed(tc);
-
-        // the type is the result type of the callee, resolved before, so an
-        // unknown callee is reported before a missing '('
-        set_type(callee().result_type());
+        if (not deduction) {
+            take_callee(tc);
+        }
 
         read_open_paren(tz, what);
 
-        const std::span<const stmt_def_func_param> params{callee().params()};
-        const size_t first{args_.size()};
+        // counted without a receiver
+        const size_t arg_count{
+            deduction ? deduction->param_count()
+                      : callee().params().size() - first_argument_index(),
+        };
 
-        args_.reserve(params.size());
+        args_.reserve(first_argument_index() + arg_count);
 
-        for (size_t i{first}; i < params.size(); ++i) {
-            const stmt_def_func_param& param{params.at(i)};
-
-            // counted without a receiver, like 'deducing_args'
-            const size_t arg_index{i - first_argument_index()};
+        for (size_t i{}; i < arg_count; ++i) {
+            const std::string_view param_name{
+                deduction
+                    ? std::string_view{deduction->param(i).name_tk.text()}
+                    : callee().params().at(first_argument_index() + i).name(),
+            };
 
             // otherwise the missing argument is reported as a parse error of
             // the parameter's type
             // e.g. 'f()' of 'func f(x)'
             if (tz.peek_char_after_whitespace() == ')') {
-                throw compile_error{
-                    tz, missing_argument_text(arg_index + 1, param.name())};
+                throw compile_error{tz,
+                                    missing_argument_text(i + 1, param_name)};
             }
 
-            if (i != first) {
-                read_argument_delimiter(tz, arg_index, param);
+            if (i != 0) {
+                read_argument_delimiter(tz, i, param_name);
             }
 
-            parse_argument(tc, tz, arg_index, param, deducing_args);
+            if (deduction) {
+                parse_deduced_argument(tc, tz, i, *deduction);
+            } else {
+                parse_argument(tc, tz, i);
+            }
         }
 
-        assert_no_surplus_argument(tz, callee().name(),
-                                   params.size() - first_argument_index());
+        assert_no_surplus_argument(
+            tz, deduction ? deduction->generic_name() : callee().name(),
+            arg_count);
 
         // e.g. 'f(a, b' lacks it
         close_paren_tk_ = tz.expect_char_token(')', missing_close_paren_text);
+
+        if (deduction) {
+            func_ = &tc.get_func_or_throw(tok(), deduction->instantiate(tc));
+
+            // note: an argument without a type is of a type parameter not
+            //       deduced or of a parameter the instance rejected
+
+            assert(args_.size() == callee().params().size());
+
+            take_callee(tc);
+        }
 
         assert_result_not_accessed(tz);
 
         check_arguments(tc);
     }
 
+    // e.g. the 'bs' of 'f(bs)' for 'gs bool[]', a path as the array of a
+    // built-in, not a value of the element type, which for a 'bool' is a
+    // condition that rejects a whole array
+    auto parse_array_argument(parse_toc& tc, tokenizer& tz,
+                              const std::string_view param_name) -> void {
+
+        stmt_identifier array{parse_array_param_argument(tc, tz, param_name)};
+
+        args_.push_back(path_argument(std::move(array)));
+    }
+
+    // the argument at 'arg_index', counted without a receiver, of a call that
+    // deduces its type arguments, at the type 'deduction' gives its parameter
+    auto parse_deduced_argument(parse_toc& tc, tokenizer& tz,
+                                const size_t arg_index, generic_call& deduction)
+        -> void {
+
+        const generic_signature_param& param{deduction.param(arg_index)};
+
+        if (param.is_array) {
+            parse_array_argument(tc, tz, param.name_tk.text());
+            return;
+        }
+
+        const type* const param_type{
+            deduction.param_type(tc, tz, arg_index),
+        };
+
+        // e.g. the '1' of 'f(1, 2)' for 'func f<T type>(a T, b T)', 'T' is
+        // not deduced, the instance reports it after the arguments
+        if (param_type == nullptr) {
+            deduction.parse_untyped_argument(tc, tz);
+            return;
+        }
+
+        // a deducing argument names the type of its literal, it told it
+        parse_typed_argument(tc, tz, *param_type,
+                             param.is_mut or
+                                 deduction.is_deducing_argument(arg_index));
+    }
+
+    // e.g. 'b + 1' of 'f(a, b + 1)'; a literal takes the type of its
+    // parameter unless 'is_written_type', e.g. of a 'mut' argument, which
+    // names its type, so 'f(pt{1, 2})' is rejected as not a variable rather
+    // than for the type it writes
+    auto parse_typed_argument(parse_toc& tc, tokenizer& tz,
+                              const type& param_type,
+                              const bool is_written_type) -> void {
+
+        args_.emplace_back(tc, tz, param_type,
+                           is_written_type ? literal_typing::written
+                                           : literal_typing::from_destination);
+    }
+
     // e.g. the ',' of 'f(a, b)'
     auto read_argument_delimiter(tokenizer& tz, const size_t arg_index,
-                                 const stmt_def_func_param& param) -> void {
+                                 const std::string_view param_name) -> void {
 
         const std::string message{
-            missing_delimiter_text(arg_index + 1, param.name()),
+            missing_delimiter_text(arg_index + 1, param_name),
         };
 
         const token delimiter_tk{tz.expect_char_token(',', message)};
@@ -2863,27 +2632,33 @@ class stmt_call final : public statement {
 
     // the name is read, a generic function has its type arguments before the
     // '(', e.g. 'convert<i8>(x)', and the callee is the instance they name;
-    // an unknown callee is an error here; returns
-    // 'generic_call::deducing_args'
+    // an unknown callee is an error here; without them, e.g. 'convert(x)',
+    // the call deduces them from the arguments, the callee is made after
+    // them and the deduction is returned
     [[nodiscard]] auto resolve_callee(parse_toc& tc, tokenizer& tz,
                                       const std::string_view name,
                                       const type* const expected_type)
-        -> std::vector<size_t> {
+        -> std::optional<generic_call> {
 
         if (not tc.generics().has_func(name)) {
             func_ = &tc.get_func_or_throw(tok(), name);
-            return {};
+            return std::nullopt;
         }
 
-        generic_call generic{
-            generic_call::parse(tc, tz, tok(), name, expected_type),
+        // e.g. not the '<=' of 'p.get <= 3', which the '(' expected reports
+        if (not tz.is_type_args_next()) {
+            return generic_call{tc, tok(), name, expected_type};
+        }
+
+        generic_call::written instance{
+            generic_call::written_instance(tc, tz, tok(), name),
         };
 
-        generic_tks_ = std::move(generic.generic_tks);
+        generic_tks_ = std::move(instance.generic_tks);
 
-        func_ = &tc.get_func_or_throw(tok(), generic.func_name);
+        func_ = &tc.get_func_or_throw(tok(), instance.func_name);
 
-        return std::move(generic.deducing_args);
+        return std::nullopt;
     }
 
     // what 'inline_call' and 'noinline_call' need of this call
@@ -2926,6 +2701,16 @@ class stmt_call final : public statement {
         for (const token& t : generic_tks_) {
             t.source_to(os);
         }
+    }
+
+    // the callee is known: its body is parsed and the call has its result
+    // type
+    auto take_callee(const toc& tc) -> void {
+        assert_callee_body_parsed(tc);
+
+        // the type is the result type of the callee, resolved before, so an
+        // unknown callee is reported before a missing '('
+        set_type(callee().result_type());
     }
 
     // 'what' names the argument at 'index', 'hint' says how to make it
