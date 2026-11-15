@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 439 (2026-11-15, bug hunt: the numbers the compiler
+    reports, the footer of a listing, '--report=registers' with its
+    tables, the report at a failure, '--vars', '--stack' and
+    '--memory'; design: the driver, 'main.cpp' and 'program.hpp', how
+    an option travels and who owns each phase; readability: a newcomer
+    walks 'constant_arith.hpp', 'constant_parser.hpp', 'unary_ops.hpp',
+    'ub_order.hpp', 'ub_assigned.hpp', 'ub_reads.hpp' and
+    'parse_lookahead.hpp')
+    => bug hunt: no defect; a checker replays each listing and
+       recomputes 15 kinds of numbers, 16 sweeps over the tests and 28
+       over 1000 generated programs on the four targets, 366 failure
+       reports; 18 seeded mutants, 17 caught, one equivalent
+    => design: nothing to apply in the sources; an instrumented build
+       shows no case of the driver that input cannot reach; docs
+       chapter 9 says the usage names the targets also in the lines of
+       '--stack', '--memory', '--bin', '--sdcard' and the 'stack'
+       check; thirteen ideas weighed and left
+    => readability: one comment line in 'parse_lookahead.hpp' (a
+       literal as an operand of a comparison is rejected where it is
+       parsed); docs 1.6.1 says 'src: negated operand' appears only
+       without the overflow check; 80 functions, 171 programs, 255
+       predictions, 6 wrong
 [x] easy: round 438 (2026-11-15, bug hunt: integer arithmetic and
     comparisons, every operator at every width, constant folding
     against run time, typed constants as comparison sides, stored and

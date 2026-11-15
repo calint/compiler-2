@@ -420,6 +420,7 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
 // e.g. 'i8[2]{1, 2}' or '[2] + 1', not '[2]{1, 2} == a'; 'tz' is after the
 // type name of a typed literal
 // note: a literal that does not end is parsed as a whole, which reports it
+// note: a literal that is such an operand is rejected where it is parsed
 [[nodiscard]] inline auto is_literal_value(const tokenizer& tz) -> bool {
     tokenizer after_literal{tz};
 

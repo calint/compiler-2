@@ -575,7 +575,8 @@ bind x -> 3            a parameter of an inlined body names its argument
 src: operand           an operand read as it is stored; 'src: operand with
                        unary ops' its '-' and '~' applied in a register;
                        'src: negated operand' a '-b' read as it is stored,
-                       the add or subtract swapped; 'src: folded constant' a
+                       the add or subtract swapped (only without the
+                       overflow check); 'src: folded constant' a
                        value known at compile time, with the source of the
                        constants merged into it, e.g. '+ 3 + 5'; 'src:
                        expression' one computed first
@@ -2302,8 +2303,10 @@ outside 'src' included:
   the registers), and those of 'assembler' (the directives and what the
   passes of 'optimize' ask); in 'main.cpp' the
   include of its header, its row in 'target_names' (name, backend, image,
-  the options it reads) and its line in 'usage_format', which
-  'etc/readme/make.sh' pastes into 'README.md'; chapter 8, what depends on
+  the options it reads) and its line in 'usage_format', where the lines of
+  '--stack', '--memory', '--bin', '--sdcard' and the 'stack' check also name
+  the targets that read them; 'etc/readme/make.sh' pastes the usage into
+  'README.md'; chapter 8, what depends on
   the target, and the targets of 'run.sh' in 'etc/readme/README.1.md';
   outside: the lists of targets of 'run.sh' (with a run script such as
   'run-rv32i-qemu.sh' for a device), 'qa/coverage/test-coverage.sh' (also
