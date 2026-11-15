@@ -1,0 +1,11 @@
+# a call that tells no type deduces a type parameter declared after the one
+# it cannot deduce from its deducing argument, which names the type of its
+# literal: 'b' is at 'point', so '{1, 2, 3}' is the error
+
+type point {x, y}
+
+func f<T type, U type>(a U, b U, c T) {}
+
+func main() {
+    f(point{1, 2}, {1, 2, 3}, 3)
+}

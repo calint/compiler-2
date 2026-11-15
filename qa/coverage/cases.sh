@@ -8126,6 +8126,20 @@ SRC=4224 && COMPERR
 # 'mut' parameter, which rejects it as not a variable
 SRC=4240 && COMPERR
 
+# a call that tells no type reads the deducing argument of a type parameter
+# declared after the one not deduced when it reaches it, and parses a deducing
+# argument as the call does, its literal names its type
+SRC=4260 && COMPERR
+SRC=4261 && COMPERR
+SRC=4262 && COMPERR
+
+# a type parameter is deduced only from its deducing argument, not from a later
+# argument declared with it, and from the destination only when the result is
+# declared with it
+SRC=4263 && COMPERR
+SRC=4264 && COMPERR
+SRC=4265 && COMPERR
+
 # the mirror of 4000: an argument that is wrong at the global type its
 # parameter names is rejected for itself, the type parameter of that name in
 # the function that calls does not accept it

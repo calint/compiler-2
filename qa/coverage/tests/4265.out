@@ -1,0 +1,4 @@
+
+4265.baz:11:9: cannot deduce 'T' of generic function 'f', write 'f<...>'
+    r = f(arr)
+        ^

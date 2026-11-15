@@ -898,6 +898,7 @@ class assembler_rv32i final : public assembler {
                one_instruction_bytes;
     }
 
+    // '%lo', the low 12 bits sign-extended
     [[nodiscard]] static auto lower_part(const int64_t value) -> int32_t {
         constexpr int32_t low_range{4096};
 
@@ -1175,7 +1176,7 @@ class assembler_rv32i final : public assembler {
         return std::nullopt;
     }
 
-    // the forms 'write_line' writes for the jump's grown size
+    // the words of the form 'write_line' writes for the jump's grown size
     [[nodiscard]] auto encode_jump(const line& l, const size_t line_index,
                                    const int64_t address,
                                    const symbol_table& symbols) const
@@ -1229,6 +1230,7 @@ class assembler_rv32i final : public assembler {
             return encode_jump(l, line_index, address, symbols);
         }
 
+        // the code of a label's line is its landing
         if (not l.label.empty()) {
             return landing_words();
         }
@@ -1240,6 +1242,7 @@ class assembler_rv32i final : public assembler {
         return encode_instruction(*ins, line_index, address, symbols);
     }
 
+    // grows each jump that does not reach its target, true when one grew
     [[nodiscard]] auto grow_out_of_reach(
         const std::unordered_map<std::string_view, size_t>& labels) -> bool {
 
@@ -1252,7 +1255,8 @@ class assembler_rv32i final : public assembler {
                 continue;
             }
 
-            // asserted, an unknown offset would leave the jump unchecked
+            // 'destination' asserts that the label exists, an unknown offset
+            // would leave the jump unchecked
             const size_t target{destination(labels, *l.jump)};
 
             const size_t target_offset{label_offset(image, target)};
@@ -2018,8 +2022,8 @@ class assembler_rv32i final : public assembler {
             };
         }
 
-        // e.g. 2048 is 'addi 1' and 'slli 11': llvm loads a small value
-        // shifted left so, as it compresses better, and the image must equal
+        // e.g. 2048 is 'addi 1' and 'slli 11': llvm loads a small value and
+        // shifts it left, which compresses better, and the image must equal
         // what llvm assembles from the listing
         const uint32_t bits{static_cast<uint32_t>(value)};
         const int shift{std::countr_zero(bits)};
@@ -2055,6 +2059,8 @@ class assembler_rv32i final : public assembler {
         return {upper, encode_immediate(addi_encoding, rd, rd, lower)};
     }
 
+    // the jump of 'reach_form' without the skip of a conditional, also a 'j',
+    // 'distance' from its first instruction
     [[nodiscard]] static auto long_jump(const jump_reach reach_form,
                                         const jump_info& jump,
                                         const int64_t distance)

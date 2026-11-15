@@ -1,0 +1,12 @@
+# a call that tells no type reads the deducing argument of a type parameter
+# declared after the one it cannot deduce when the walk reaches it: the 'zz'
+# before it is the error, not the field 'zz' of 'x.zz'
+
+type point {x, y}
+
+func f<T type, U type>(a, b U, c T) {}
+
+func main() {
+    var x = point
+    f(zz, x.zz, 1)
+}

@@ -559,7 +559,7 @@ baz_NAME       a failure handler, and a routine of the x86_64 runtime,
 .Lbaz_NAME     a routine of the rv32i runtime; numbered, a jump target
                inside one operation, e.g. '.Lbaz_equal.0' on x86_64 ('1:'
                named by '1b' on rv32i), and on rv32i '.Lbaz_jump.0' the
-               skip of a branch grown to a far jump
+               skip of a grown branch
 .convert_loop  the digit loop of the x86_64 routine that writes a line
                number
 ```
@@ -1080,9 +1080,12 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    order as in a call without type parameters, each at the type of its
    parameter, whose name is read as the instance reads it, not as the code
    around the call would (4000, 4001), at the type another argument deduces
-   for its type parameter, also one declared later (4200, 4220, 4221), or
-   at the type it tells when that type parameter is not deduced (3363 to
-   3365, 3368); a '{...}' or '[...]' there, whose type is not known, is
+   for its type parameter, also one declared later, whose deducing argument
+   is read when the walk reaches it, so an error before it comes first
+   (4200, 4220, 4221, 4260, 4262), or at the type it tells when that type
+   parameter is not deduced (3363 to 3365, 3368); a deducing argument names
+   the type of its literal as in the call (4261); a '{...}' or '[...]' there,
+   whose type is not known, is
    skipped, then the token after it is checked unless it continues the
    argument (4201, 4223, 4224); a deducing argument after them is not read
    (4222). So their own errors win,

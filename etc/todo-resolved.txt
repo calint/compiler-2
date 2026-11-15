@@ -1,6 +1,46 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 451 (2026-11-16, bug hunt: accepted programs and
+    verdicts of generic calls after rounds 449 and 450; design: the
+    built-in statements and functions as a family; readability: a
+    newcomer walks 'assembler_rv32i.hpp')
+    => bug hunt: two message regressions of rounds 449 and 450, fixed:
+       reading every deducing argument before the walk put the error of
+       a later one first ('f(zz, x.zz, 1)' for 'func f<T type, U
+       type>(a, b U, c T)' said "field 'zz' not found" where round 448
+       and the twin say "'zz' not found"), and the walk parsed a
+       deducing argument at its destination where the call parses it
+       as written ('f(point{1, 2}, 3)' said "write '{...}'" instead of
+       "cannot deduce 'T'"); 'deduced_type_arguments' is the loop of
+       round 448 again, the walk deduces a type parameter when it
+       reaches its deducing argument ('deduce_from_argument',
+       'argument_deduced_type' shared with 'deduced_type') and parses
+       it as written; docs 2.10.2; tests 4260 to 4262, and 4263 to 4265
+       for three mutants the suite missed; no verdict differs from
+       round 448 in 3000 programs at most destinations (1641 accepted
+       run alike on x86_64 and rv32i-fpga and as their twins), 3000
+       error calls, 85 directed ones; open in 'todo.txt': the order of
+       errors when the deducing argument comes before, 'mut'
+       parameters in the walk
+    => checks: all steps clean; the listings differ only for tests
+       4260 to 4262; fuzz seed 451001 found the doubling of the round
+       226 user decision (an inlined call twice per level, 18 GB), noted
+       in its item
+    => design: one shape for the built-ins ('builtin_arguments',
+       'bulk_operands', the catalog of 'reserved_names'); the run-time
+       bounds range from a start and a count was chosen twice
+       ('bulk_operands' 'range_of' and the two start paths of
+       'stmt_builtin_io', each with its asserts): one
+       'machine::bounds_range::of_range' with the assert once in
+       'remaining_count', io has one 'check_range'; +30 lines for one
+       rule instead of two; no listing differs; seven ideas left
+    => readability: seven comments in 'assembler_rv32i.hpp'
+       ('lower_part' is sign-extended, 'long_jump' is also a plain
+       'j', the landing of a label line, what 'grow_out_of_reach'
+       returns, 'load_immediate'); docs 1.6.1 and the label table of
+       'toc.hpp': '.Lbaz_jump.N' is the skip of any grown branch; 128
+       functions, 3 programs, 128 predictions, 7 wrong
 [x] easy: round 450 (2026-11-15, bug hunt: the errors of calls that
     deduce their type arguments against their twins without type
     parameters; design: how an expression gets its type; readability:

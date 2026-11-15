@@ -1,0 +1,12 @@
+# a type parameter that only an array parameter is declared with is told
+# neither by an argument nor by the destination
+
+func f<T type>(a T[]) res i8 {
+    res = 1
+}
+
+func main() {
+    var arr = i8[4]
+    var r = i8
+    r = f(arr)
+}

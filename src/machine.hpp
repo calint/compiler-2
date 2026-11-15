@@ -301,6 +301,28 @@ class machine {
             };
         }
 
+        // the check of 'count' elements from 'start', each a register or an
+        // immediate when constant, none when both are constant
+        [[nodiscard]] static auto of_range(const operand& start,
+                                           const operand& count,
+                                           const size_t array_count)
+            -> std::optional<bounds_range> {
+
+            if (start.is_immediate() and count.is_immediate()) {
+                return std::nullopt;
+            }
+
+            if (count.is_immediate()) {
+                return up_to(start, remaining_count(count, array_count));
+            }
+
+            if (start.is_immediate()) {
+                return up_to(count, remaining_count(start, array_count));
+            }
+
+            return range(start, count, array_count);
+        }
+
         [[nodiscard]] static auto range(const operand& start,
                                         const operand& count,
                                         const size_t array_count)
@@ -329,6 +351,26 @@ class machine {
                 .array_count{limit},
                 .allow_end{true},
             };
+        }
+
+      private:
+        //
+        // statics
+        //
+
+        // the elements past the constant part of a range
+        [[nodiscard]] static auto remaining_count(const operand& constant_part,
+                                                  const size_t array_count)
+            -> size_t {
+
+            const int64_t value{constant_part.immediate()};
+
+            // note: a constant start or count is at most the length, rejected
+            //       at compile time otherwise
+
+            assert(value >= 0 and std::cmp_less_equal(value, array_count));
+
+            return array_count - static_cast<size_t>(value);
         }
     };
 

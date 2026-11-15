@@ -226,6 +226,28 @@ struct generic_call {
     // statics
     //
 
+    // the type that the deducing argument at 'index', which is there at
+    // 'tz', tells for the type parameter that 'source' describes, steps 1 and
+    // 2 of 'deduced_type_arguments', null when neither tells it; an argument
+    // that tells it is added to 'deduced'
+    [[nodiscard]] static auto
+    argument_deduced_type(parse_toc& tc, const tokenizer& tz,
+                          const size_t index, const generic_deduction& source,
+                          const type* const expected_type, deduction& deduced)
+        -> const type* {
+
+        tokenizer scan{tz};
+
+        if (const type* const arg_type{argument_type(tc, scan)};
+            arg_type != nullptr) {
+
+            deduced.deducing_args.push_back(index);
+            return arg_type;
+        }
+
+        return source.is_result ? expected_type : nullptr;
+    }
+
     // the type of the argument at 'tz' when it is a variable, a field, an
     // element or a typed constant, or the value it makes names its type:
     // 'point{1, 2}', 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an
@@ -285,11 +307,11 @@ struct generic_call {
     // after it that is not a delimiter is reported as there too. 'tz' is at
     // the argument, it ends after it
     // note: the parse records nothing that outlives the error that follows
-    static auto
-    assert_argument_valid(parse_toc& tc, tokenizer& tz,
-                          const generic_func_info& generic,
-                          const std::span<const generic_arg> deduced,
-                          const size_t index) -> void {
+    static auto assert_argument_valid(parse_toc& tc, tokenizer& tz,
+                                      const generic_func_info& generic,
+                                      const type* const expected_type,
+                                      deduction& deduced, const size_t index)
+        -> void {
 
         const std::span<const generic_signature_param> params{
             generic.signature.params,
@@ -306,15 +328,23 @@ struct generic_call {
             return;
         }
 
+        deduce_from_argument(tc, tz, generic, expected_type, deduced, index);
+
         // the parameter is the destination of its argument, as in the call,
-        // e.g. the 'g(1)' of 'f(g(1), 1)' for 'func g<T type>(a) res T'
+        // e.g. the 'g(1)' of 'f(g(1), 1)' for 'func g<T type>(a) res T'; a
+        // deducing argument names the type of its literal
         if (const type* const param_type{
-                param_type_at(tc, generic, deduced, param),
+                param_type_at(tc, generic, deduced.type_args, param),
             };
             param_type != nullptr) {
 
-            std::ignore =
-                expr_any{tc, tz, *param_type, literal_typing::from_destination};
+            const literal_typing typing{
+                std::ranges::contains(deduced.deducing_args, index)
+                    ? literal_typing::written
+                    : literal_typing::from_destination,
+            };
+
+            std::ignore = expr_any{tc, tz, *param_type, typing};
 
             assert_delimiter_after(tz, params, index);
 
@@ -371,9 +401,8 @@ struct generic_call {
     // valid. 'tz' is after the '(', 'deduced' the type arguments known
     static auto assert_arguments_valid_up_to(
         parse_toc& tc, const tokenizer& tz, const std::string_view generic_name,
-        const generic_func_info& generic,
-        const std::span<const generic_arg> deduced,
-        const std::optional<size_t> param_index) -> void {
+        const generic_func_info& generic, const type* const expected_type,
+        deduction& deduced, const std::optional<size_t> param_index) -> void {
 
         const std::span<const generic_signature_param> params{
             generic.signature.params,
@@ -403,7 +432,8 @@ struct generic_call {
                                                          "a call");
             }
 
-            assert_argument_valid(tc, at_argument, generic, deduced, i);
+            assert_argument_valid(tc, at_argument, generic, expected_type,
+                                  deduced, i);
         }
 
         if (not param_index) {
@@ -468,6 +498,58 @@ struct generic_call {
         return is_constructor ? &result_type : nullptr;
     }
 
+    // the type parameter not deduced yet whose deducing argument is the one
+    // at 'index' is deduced from it at 'tz' as the call deduces it, so the
+    // arguments after it are at its type, e.g. 'U' from the 'x' of
+    // 'f(x, true, 3)' for 'func f<T type, U type>(a U, b U, c T)'
+    static auto deduce_from_argument(parse_toc& tc, const tokenizer& tz,
+                                     const generic_func_info& generic,
+                                     const type* const expected_type,
+                                     deduction& deduced, const size_t index)
+        -> void {
+
+        const std::string_view name{
+            generic.signature.params.at(index).type_name,
+        };
+
+        const auto param_tk{
+            std::ranges::find(generic.signature.type_param_tks, name,
+                              &token::text),
+        };
+
+        // e.g. a parameter of a type defined before the generic function
+        if (param_tk == generic.signature.type_param_tks.end()) {
+            return;
+        }
+
+        const bool is_deduced{
+            std::ranges::contains(deduced.type_args, name,
+                                  [](const generic_arg& a) -> std::string_view {
+                                      return a.param_tk.text();
+                                  }),
+        };
+
+        const generic_deduction source{generic.signature.deduction(name)};
+
+        if (is_deduced or source.param_index != index) {
+            return;
+        }
+
+        const type* const arg_type{
+            argument_deduced_type(tc, tz, index, source, expected_type,
+                                  deduced),
+        };
+
+        if (arg_type == nullptr) {
+            return;
+        }
+
+        deduced.type_args.push_back({
+            .param_tk{*param_tk},
+            .value{arg_type},
+        });
+    }
+
     // the type of the type parameter that 'source' describes, steps 1 and 2
     // of 'deduced_type_arguments', null when neither tells it; an argument
     // that tells it is added to 'deduced'. 'tz' is after the '('
@@ -496,27 +578,21 @@ struct generic_call {
             return nullptr;
         }
 
-        if (const type* const arg_type{argument_type(tc, arg_tz)};
-            arg_type != nullptr) {
-
-            deduced.deducing_args.push_back(*source.param_index);
-            return arg_type;
-        }
-
-        return source.is_result ? expected_type : nullptr;
+        return argument_deduced_type(tc, arg_tz, *source.param_index, source,
+                                     expected_type, deduced);
     }
 
-    // the type arguments of 'f(x)' for 'func f<T type>(s T)', each:
+    // the type arguments of 'f(x)' for 'func f<T type>(s T)', for each type
+    // parameter in this order:
     //   1. the type that the deducing argument tells ('argument_type'), none
     //      for a literal or an expression
     //   2. otherwise, unless that argument is missing, the type the call is
     //      assigned to, when the result is declared with the type parameter
-    //   3. otherwise, for the first type parameter told by neither, the
-    //      arguments up to its deducing one, or all and a surplus one for a
-    //      result, are reported as in a call without type parameters, at the
-    //      types the others deduce ('assert_arguments_valid_up_to'), then
-    //      "cannot deduce"; a deducing argument after that range is not read,
-    //      an error in the range comes first
+    //   3. otherwise the arguments up to the deducing one, or all and a
+    //      surplus one for a result, are reported as in a call without type
+    //      parameters ('assert_arguments_valid_up_to'), then "cannot deduce";
+    //      the walk reads the deducing argument of a type parameter declared
+    //      later when it reaches it, an error before it comes first
     [[nodiscard]] static auto
     deduced_type_arguments(parse_toc& tc, const tokenizer& tz,
                            const token& name_tk,
@@ -536,33 +612,30 @@ struct generic_call {
         }
 
         deduction deduced{};
-        const token* undeduced_tk{};
-        generic_deduction undeduced_source{};
 
         for (const token& param_tk : generic.signature.type_param_tks) {
             const generic_deduction source{
                 generic.signature.deduction(param_tk.text()),
             };
 
-            // e.g. 'U' of 'f({}, 1, x)' for 'func f<T type, U type>(a T, b,
-            // c U)', the error walk does not reach 'x'
-            if (undeduced_tk != nullptr and
-                is_argument_after(source, undeduced_source)) {
-
-                continue;
-            }
-
             const type* const arg_type{
                 deduced_type(tc, scan, source, expected_type, deduced),
             };
 
             if (arg_type == nullptr) {
-                if (undeduced_tk == nullptr) {
-                    undeduced_tk = &param_tk;
-                    undeduced_source = source;
-                }
+                // e.g. the 'zz' of 'f(zz, 1)' for 'func f<A type>(b, a A)' or
+                // the 'point' of 'show(point)', reported as in a call without
+                // type parameters
+                assert_arguments_valid_up_to(tc, scan, generic_name, generic,
+                                             expected_type, deduced,
+                                             source.param_index);
 
-                continue;
+                throw compile_error{
+                    name_tk,
+                    std::format("cannot deduce {} of generic function {}, "
+                                "write '{}<...>'",
+                                in_quotes(param_tk.text()),
+                                in_quotes(generic_name), name_tk.text())};
             }
 
             deduced.type_args.push_back({
@@ -571,22 +644,7 @@ struct generic_call {
             });
         }
 
-        if (undeduced_tk == nullptr) {
-            return deduced;
-        }
-
-        // e.g. the 'zz' of 'f(zz, 1)' for 'func f<A type>(b, a A)' or the
-        // 'point' of 'show(point)', reported as in a call without type
-        // parameters
-        assert_arguments_valid_up_to(tc, scan, generic_name, generic,
-                                     deduced.type_args,
-                                     undeduced_source.param_index);
-
-        throw compile_error{
-            name_tk, std::format("cannot deduce {} of generic function {}, "
-                                 "write '{}<...>'",
-                                 in_quotes(undeduced_tk->text()),
-                                 in_quotes(generic_name), name_tk.text())};
+        return deduced;
     }
 
     // the type that 'param' has in every instance: the default type, a type
@@ -620,19 +678,6 @@ struct generic_call {
         }
 
         return tc.types().has(name) ? &tc.types().get(name) : nullptr;
-    }
-
-    // the deducing argument of 'source' comes after that of 'first', e.g. 'b'
-    // after 'a' of 'f(a, b)'; false when either has none, e.g. for 'res T'
-    [[nodiscard]] static auto is_argument_after(const generic_deduction& source,
-                                                const generic_deduction& first)
-        -> bool {
-
-        if (not first.param_index or not source.param_index) {
-            return false;
-        }
-
-        return *source.param_index > *first.param_index;
     }
 
     // a '<' before a type that a ',' or the '>' follows starts type

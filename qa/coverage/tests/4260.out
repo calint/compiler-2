@@ -1,0 +1,4 @@
+
+4260.baz:11:7: 'zz' not found
+    f(zz, x.zz, 1)
+      ^~

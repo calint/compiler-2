@@ -1,0 +1,12 @@
+# a call that tells no type deduces a type parameter only from its deducing
+# argument, not from a later argument declared with it: the '1' tells nothing,
+# so '{1, 2, 3}' is skipped and 'T' is the error
+
+type point {x, y}
+
+func f<T type, U type>(a U, b U, c U, d T) {}
+
+func main() {
+    var x = point
+    f(1, x, {1, 2, 3}, 3)
+}

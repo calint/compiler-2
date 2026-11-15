@@ -263,56 +263,41 @@ class bulk_operands final {
                  const bool count_lower_checked) const
             -> std::optional<machine::bounds_range> {
 
-            // note: a constant start with a constant count was checked at
-            //       compile time
-
-            if (not count_register and not start) {
-                return std::nullopt;
-            }
-
-            if (not count_register) {
-                // note: a constant count is at most the length, rejected at
-                //       compile time otherwise
-
-                assert(constant_count_ and *constant_count_ >= 0 and
-                       std::cmp_less_equal(*constant_count_, array_count));
-
-                machine::bounds_range range{
-                    machine::bounds_range::up_to(
-                        *start,
-                        array_count - static_cast<size_t>(*constant_count_)),
-                };
-
-                range.start_lower_checked = true;
-
-                return range;
-            }
-
-            if (start) {
-                machine::bounds_range range{
-                    machine::bounds_range::range(*start, *count_register,
-                                                 array_count),
-                };
-
-                range.start_lower_checked = true;
-                range.count_lower_checked = count_lower_checked;
-
-                return range;
-            }
+            const type& default_type{tc_.builtins().default_type()};
 
             const std::optional<int64_t> constant_start{
                 array.constant_start_index(tc_),
             };
 
-            // note: a constant start is at most the length, rejected at
-            //       compile time otherwise
+            // note: a start is held unless it is constant ('address_of'), a
+            //       count is in a register unless it is constant
 
-            assert(constant_start and *constant_start >= 0 and
-                   std::cmp_less_equal(*constant_start, array_count));
+            assert(start or constant_start);
+            assert(count_register or constant_count_);
 
-            return machine::bounds_range::up_to(
-                *count_register,
-                array_count - static_cast<size_t>(*constant_start));
+            const operand start_operand{
+                start ? *start : operand::imm(*constant_start, default_type),
+            };
+
+            const operand count_operand{
+                count_register ? *count_register
+                               : operand::imm(*constant_count_, default_type),
+            };
+
+            std::optional<machine::bounds_range> range{
+                machine::bounds_range::of_range(start_operand, count_operand,
+                                                array_count),
+            };
+
+            // the walk of the address checked a run-time start
+            if (range and start) {
+                range->start_lower_checked = true;
+
+                range->count_lower_checked =
+                    count_lower_checked and count_register.has_value();
+            }
+
+            return range;
         }
 
         // the address of 'array' passed to 'use' while the registers of its

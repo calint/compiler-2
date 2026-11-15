@@ -1,0 +1,11 @@
+# a type parameter that only a parameter is declared with takes no type from
+# the destination: the result is an 'i8', not a 'T', so '1' tells nothing
+
+func f<T type>(a T) res i8 {
+    res = 1
+}
+
+func main() {
+    var r = i8
+    r = f(1)
+}

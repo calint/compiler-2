@@ -155,6 +155,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 451, bug hunt of generic calls) the error walk does
+    not check a 'mut' argument as the call does: 'f({1, 2}, 3)' and
+    'f(point{1, 2}, 3)' for 'func f<T type>(a mut point, b T)' say
+    "cannot deduce 'T'" and "write '{...}'", the twin says "not a
+    variable" for both; needs 'generic_signature_param' to record
+    'mut'
 [ ] easy: (round 450, bug hunt of generic call errors) an error inside
     a deducing argument is reported before the arguments before it:
     'f(zz, arr)' for 'func f<T type>(a, b T)' with 'arr' an 'i8[4]'
@@ -986,6 +992,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
        and entered as 'r(a, 40)': k 16 takes 2.6 s and 619 MB, k 20 42 s and
        10.6 GB, k 40 ends in "internal error: std::bad_alloc"; the message
        of the limit would advise to declare the function 'noinline'
+    => round 451, 'fuzz-mutate.py' seed 451001 index 6790: test 2911
+       with 'r(n - 1, a)' called twice, 'r(49, a)', killed at about 18
+       GB in 26 s ('--versions=nested') and 152 s ('first'), alike in
+       the build of round 448
 [ ] medium: user decision (round 224 UB1): a typed 'let' passed as a
     generic constant loses its type, 'let K = i8(127)' and 'type B =
     buf<K>' make 'N + 1' 128 at the default type inside the instance where

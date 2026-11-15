@@ -1,0 +1,11 @@
+# a call that tells no type parses a deducing argument as the call does:
+# 'point{1, 2}' tells 'U' and names the type of its literal, so 'T' is the
+# error, not the 'point' written before the '{'
+
+type point {x, y}
+
+func f<U type, T type>(a U, b T) {}
+
+func main() {
+    f(point{1, 2}, 3)
+}

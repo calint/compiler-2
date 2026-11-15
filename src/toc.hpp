@@ -3401,7 +3401,7 @@ class compile_toc final : public toc {
     //   .Lbaz_NAME     a routine of the rv32i runtime, e.g. '.Lbaz_divide';
     //                  numbered, a jump target inside one operation, e.g.
     //                  '.Lbaz_equal.0' (x86_64), on rv32i '.Lbaz_jump.0' the
-    //                  skip of a branch grown to a far jump
+    //                  skip of a grown branch
     //
     // e.g. 'if.7.5.36.13' is the 'if' at 7:5 inlined by the call at 36:13;
     // inside a noinline body for array lengths the lengths follow the
