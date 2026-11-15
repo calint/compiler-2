@@ -2691,10 +2691,12 @@ class parse_toc final : public toc {
     // declares the variable 'var' that names it, the compile declares it again
     // with 'compile_toc::add_var'
     auto add_dat(const stmt_def_dat& dat, const var_info& var) -> void {
-        toc_tables& t{tables()};
+        // note: declared first, a name declared twice is reported before the
+        //       size of the data
 
-        // note: a name declared twice is reported before where it is declared
-        t.definitions.assert_name_free(var.src_loc_tk, "variable", var.name);
+        add_var(var, var_kind::dat);
+
+        toc_tables& t{tables()};
 
         // note: a 'dat' in a block is rejected when it is parsed
         assert(t.scopes.is_at_root());
@@ -2709,8 +2711,6 @@ class parse_toc final : public toc {
         // the dats reach no further than the target addresses, 'place_dat'
         // asserts it at the compile
         t.storage.assert_dats_and_vars_fit_target(var.src_loc_tk);
-
-        add_var(var, var_kind::dat);
     }
 
     auto add_func(std::string name, func_info info) -> void {

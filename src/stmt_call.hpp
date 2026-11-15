@@ -279,14 +279,17 @@ struct generic_call {
 
     // the argument at 'index', which is there, is reported as in a call
     // without type parameters: parsed as the array of an array parameter, at
-    // the type of its parameter or, for a parameter declared with a type
-    // parameter, at the type it tells, else without a type like the
-    // initializer of a 'var'; a token after it that is not a delimiter is
-    // reported as there too. 'tz' is at the argument, it ends after it
+    // the type of its parameter, also one deduced in 'deduced', or, for a
+    // parameter declared with a type parameter not deduced yet, at the type
+    // it tells, else without a type like the initializer of a 'var'; a token
+    // after it that is not a delimiter is reported as there too. 'tz' is at
+    // the argument, it ends after it
     // note: the parse records nothing that outlives the error that follows
-    static auto assert_argument_valid(parse_toc& tc, tokenizer& tz,
-                                      const generic_func_info& generic,
-                                      const size_t index) -> void {
+    static auto
+    assert_argument_valid(parse_toc& tc, tokenizer& tz,
+                          const generic_func_info& generic,
+                          const std::span<const generic_arg> deduced,
+                          const size_t index) -> void {
 
         const std::span<const generic_signature_param> params{
             generic.signature.params,
@@ -305,7 +308,9 @@ struct generic_call {
 
         // the parameter is the destination of its argument, as in the call,
         // e.g. the 'g(1)' of 'f(g(1), 1)' for 'func g<T type>(a) res T'
-        if (const type* const param_type{fixed_param_type(tc, generic, param)};
+        if (const type* const param_type{
+                param_type_at(tc, generic, deduced, param),
+            };
             param_type != nullptr) {
 
             std::ignore =
@@ -332,9 +337,16 @@ struct generic_call {
 
         const char next{tz.peek_char_after_whitespace()};
 
-        // a literal that takes its type from the parameter, e.g. '{1, 2}'
+        // a literal that takes its type from the parameter, e.g. '{1, 2}', is
+        // skipped unchecked, its type is not known here; one without its
+        // closer is reported by the parse of the instance
         if (next == '{' or next == '[') {
-            skip_argument(tc, tz);
+            const char close{next == '{' ? '}' : ']'};
+
+            if (tz.skip_enclosed(next, close)) {
+                assert_delimiter_after(tz, params, index);
+            }
+
             return;
         }
 
@@ -347,10 +359,11 @@ struct generic_call {
     // no surplus one when it is none, reported as in a call without type
     // parameters, in the order the call parses them: the first that is
     // missing, e.g. 'b' of 'f(1)' for 'func f<T type>(a, b, x T)', or not
-    // valid. 'tz' is after the '('
+    // valid. 'tz' is after the '(', 'deduced' the type arguments known
     static auto assert_arguments_valid_up_to(
         parse_toc& tc, const tokenizer& tz, const std::string_view generic_name,
         const generic_func_info& generic,
+        const std::span<const generic_arg> deduced,
         const std::optional<size_t> param_index) -> void {
 
         const std::span<const generic_signature_param> params{
@@ -381,7 +394,7 @@ struct generic_call {
                                                          "a call");
             }
 
-            assert_argument_valid(tc, at_argument, generic, i);
+            assert_argument_valid(tc, at_argument, generic, deduced, i);
         }
 
         if (not param_index) {
@@ -516,6 +529,7 @@ struct generic_call {
                 // the 'point' of 'show(point)', reported as in a call without
                 // type parameters
                 assert_arguments_valid_up_to(tc, scan, generic_name, generic,
+                                             deduced.type_args,
                                              source.param_index);
 
                 throw compile_error{
@@ -590,6 +604,29 @@ struct generic_call {
         const std::string_view name{arg_tk.text()};
 
         return tc.types().has(name) and not tc.scopes().lookup(name).is_value();
+    }
+
+    // the type of 'param' in the instance as far as it is known: its
+    // 'fixed_param_type' or the type argument in 'deduced' of the type
+    // parameter it is declared with, e.g. 'point' for the 'b' of
+    // 'f(x, {1, 2})' for 'func f<T type>(a T, b T)' with 'x' a 'point'
+    [[nodiscard]] static auto
+    param_type_at(parse_toc& tc, const generic_func_info& generic,
+                  const std::span<const generic_arg> deduced,
+                  const generic_signature_param& param) -> const type* {
+
+        const auto arg{
+            std::ranges::find(deduced, param.type_name,
+                              [](const generic_arg& a) -> std::string_view {
+                                  return a.param_tk.text();
+                              }),
+        };
+
+        if (arg == deduced.end()) {
+            return fixed_param_type(tc, generic, param);
+        }
+
+        return std::get<const type*>(arg->value);
     }
 
     // skips an argument up to the ',' or ')' that ends it; the ',' of written
@@ -1361,7 +1398,8 @@ class inline_call final {
         return bind_expression(tc, arg, param, held);
     }
 
-    // a constant lets the inlined body be decided at compile time
+    // a constant when the value folds, which lets the inlined body be decided
+    // at compile time, else a register that holds the value
     [[nodiscard]] static auto bind_expression(compile_toc& tc,
                                               const expr_any& arg,
                                               const stmt_def_func_param& param,
@@ -1588,8 +1626,8 @@ class noinline_call final {
 
         machine& x{tc.machine()};
 
-        // the address in a register is loaded after the registers are saved,
-        // a register that holds a value of the caller is not lost
+        // the receiver address is loaded after the allocated registers are
+        // saved, so a value of the caller in the receiver register is not lost
         x.call_function({call_.tk, tc.indent()}, call_.func->name(),
                         call_.func->body_label(array_lengths), frame_address,
                         receiver_address);
@@ -2336,7 +2374,8 @@ class stmt_call final : public statement {
                         in_quotes(callee().name()))};
     }
 
-    // the function 'name' is a method and the receiver is a value
+    // the function 'name' is a method, not a constructor, and the receiver is
+    // not a whole array
     auto assert_method_receiver(const parse_toc& tc,
                                 const stmt_identifier& receiver,
                                 const std::string_view name) const -> void {
@@ -2561,6 +2600,7 @@ class stmt_call final : public statement {
         return method_dot_tk_.has_value();
     }
 
+    // 'param_index' is none for the result destination
     [[nodiscard]] auto make_reference(const toc& tc,
                                       const std::optional<size_t> param_index,
                                       const token& tk, std::string text,

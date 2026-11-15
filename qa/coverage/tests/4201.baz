@@ -1,0 +1,12 @@
+# an argument literal before the type it takes is deduced is skipped to its
+# closer, a token after it that is not a delimiter is reported there, as in a
+# call without type parameters
+
+type point {x, y}
+
+func f<T type, U type>(a U, b T, c U) {}
+
+func main() {
+    var x = point
+    f({1, 2} 3, x, x)
+}

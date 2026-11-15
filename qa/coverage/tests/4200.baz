@@ -1,0 +1,12 @@
+# a call that tells no type reports an argument declared with a type parameter
+# already deduced at that type, as a call without type parameters: 'b' is at
+# 'point', so the '+' after '{1, 2}' is the error, not a missing argument
+
+type point {x, y}
+
+func f<T type, U type>(a T, b T, c U) {}
+
+func main() {
+    var x = point
+    f(x, {1, 2} + 1, 3)
+}

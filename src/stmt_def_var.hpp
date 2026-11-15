@@ -227,15 +227,11 @@ class initializer_declaration final {
 
         const term_kind tm{classify_term(tc, tk, tz)};
 
-        // an instance literal that a comparison or a connective continues is
-        // an operand, rejected below, e.g. 'var b = point{1, 2} == p'
-        if (is_instance_value(tm, tz)) {
-            set_type(tc.get_type_or_throw(tk));
-            return;
-        }
-
-        // e.g. 'var x = i8' is 'i8(0)'
-        if (is_bare_builtin_type(tm, tz)) {
+        // the type named first is the type, e.g. 'var p = point{1, 2}' or
+        // 'var x = i8', which is 'i8(0)'; an instance literal that a
+        // comparison or a connective continues is an operand, rejected below,
+        // e.g. 'var b = point{1, 2} == p'
+        if (is_instance_value(tm, tz) or is_bare_builtin_type(tm, tz)) {
             set_type(tc.get_type_or_throw(tk));
             return;
         }

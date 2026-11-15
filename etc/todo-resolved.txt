@@ -1,6 +1,40 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 449 (2026-11-15, bug hunt: programs of several source
+    files, includes and the locations of errors; design: declarations
+    from the parse to storage and initializer; readability: a newcomer
+    walks 'stmt_call.hpp')
+    => readability walk found a wrong message, fixed: a call that tells
+       no type checked an argument declared with a type parameter
+       without a type even when that type parameter was deduced from
+       an argument before it, and skipped a '{...}' or '[...]' literal
+       up to the next ',' or ')': 'f(x, {1, 2} 3)' for 'func f<T type,
+       U type>(a T, b T, c U)' said "expected argument 3" at the ')'
+       where 'h(x, {1, 2} 3)' says "expected ',' before argument 3" at
+       the '3' (also '{1, 2} + 1', '.x', '[1, 2] 3', an unclosed
+       literal, "cannot deduce" for one more argument); the error walk
+       takes the type arguments deduced so far
+       ('generic_call::param_type_at') and a literal it skips ends at
+       its closer, then the delimiter is checked; 11 variants give the
+       message of the call without type parameters; tests 4200, 4201
+    => readability otherwise: five comments in 'stmt_call.hpp'
+       ('bind_expression', the receiver register of
+       'compile_with_arguments', 'assert_method_receiver',
+       'make_reference'); 118 functions, 69 programs, about 95
+       predictions, 4 wrong
+    => design: two pure refactors: 'parse_toc::add_dat' checks a
+       redeclared name once ('declare_var'), 'deduce_from_initializer'
+       has one branch for an instance literal and a bare built-in type;
+       each initializer form takes one path; five ideas left
+    => bug hunt: no defect; 570 random include graphs on four targets
+       from three working directories (asan too), 4200 byte mutations,
+       every listing location comment of the suite points at source,
+       about 120 directed cases (links, cycles, devices, odd names,
+       CRLF, BOM); 6 of 7 mutants caught, the seventh by test 0897
+    => checks: listings differ only for tests 4200 and 4201 (their
+       messages); fuzz seed 449001 found only the known
+       '--versions=nested' doubling of test 1698
 [x] easy: round 448 (2026-11-15, bug hunt: the stack and frames,
     recursion through 'noinline', the frame and stack checks; design:
     the test harness, can a test pass silently; readability: a

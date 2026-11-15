@@ -1,0 +1,4 @@
+
+4200.baz:11:10: an instance of 'point' is not a number
+    f(x, {1, 2} + 1, 3)
+         ^

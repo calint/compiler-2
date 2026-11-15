@@ -8104,6 +8104,12 @@ SRC=3961 && EXP=4 && RUN
 SRC=4000 && COMPERR
 SRC=4001 && COMPERR
 
+# a call that tells no type reports an argument at the type arguments deduced
+# before it, and what follows a literal it skips, as a call without type
+# parameters
+SRC=4200 && COMPERR
+SRC=4201 && COMPERR
+
 # the mirror of 4000: an argument that is wrong at the global type its
 # parameter names is rejected for itself, the type parameter of that name in
 # the function that calls does not accept it
