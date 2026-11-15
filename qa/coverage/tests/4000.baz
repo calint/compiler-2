@@ -1,0 +1,22 @@
+# a call that tells no type checks each argument at the type its parameter has
+# in the generic function, not at what the name is where the call is: 'V' of
+# 'pick' is the type defined before it, not the type parameter 'V' of 'outer',
+# so '{1, 2}' is valid and the call asks for its type argument
+
+type V {
+    x i8,
+    y i8,
+}
+
+func pick<T type>(a V, t T) res T {
+    res = t
+}
+
+func outer<V type>(q V) res V {
+    res = q
+    var z = pick({1, 2}, 5)
+}
+
+func main() {
+    exit(outer(i8(3)))
+}

@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 443 (2026-11-15, bug hunt: names, what a name means
+    where several things could carry it, 16 hiders by 11 victims by
+    57 uses and the generic parameters, each program against a twin
+    with the victim renamed; design: the ways the parser asks "what is
+    this name here" against the one lookup of docs 1.3; readability:
+    a newcomer walks the built-in statements, 'stmt_loop_jump.hpp'
+    and 'stmt_return.hpp')
+    => bug hunt and design, the same defect found by both, fixed: a
+       call that tells no type checked an argument at what the type
+       name of its parameter means where the call stands, not where
+       the generic function is defined: 'func last<T type>(b pq, a T)'
+       called as 'last(gp, 1)' inside 'func outer<pq type>' said
+       "expected type 'i8', got 'pq'" at the valid 'gp' instead of
+       "cannot deduce 'T'" (docs 2.10.2 item 3, 2.10.4 item 3); only
+       the message of a rejected call was wrong.
+       'generic_call::fixed_param_type' opens a 'generic_scope' at the
+       definition and adds the receiver, as an instance does, the
+       hand loop over the receiver's arguments is gone; tests 4000,
+       4001, 3981. 117600 cases and 350000 builds, no wrong meaning
+       in an accepted program; 8 seeded mutants, all caught
+    => design: 'scope_stack::lookup' answers the type parameter rule
+       itself (it holds the 'type_table'), the three guards written
+       by hand are gone ('constant_value_of' of round 442,
+       'opens_type_arguments', 'classify_term'), 'get_func_or_throw'
+       and the resolver get the rule without asking; same result on
+       the suites and 6100 generated programs, a mutant without the
+       rule fails test 3940; docs 1.3; eight ideas weighed and left
+    => readability: three comments ('compile_argument' example,
+       'plan_at_type' returns null when the target is as wide,
+       'stmt_builtin_foo::parse_code' only a type parameter is in the
+       way); 81 functions, 140 programs, 221 predictions, 7 wrong
 [x] easy: round 442 (2026-11-15, bug hunt: generics and methods,
     instance naming, deduction, generic types with levels of bases,
     methods with type parameters of their own, each program also

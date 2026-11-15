@@ -1,0 +1,7 @@
+
+3981.baz:12:18: expected type 'pq', got 'i8'
+    var q = last(x, 1)
+                 ^
+3981.baz:17:10: instantiated by 'outer<i8>'
+    exit(outer(i8(3)))
+         ^~~~~

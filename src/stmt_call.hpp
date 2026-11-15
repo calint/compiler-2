@@ -536,12 +536,12 @@ struct generic_call {
     }
 
     // the type that 'param' has in every instance: the default type, a type
-    // defined before the call or an argument of the generic type of a method,
-    // e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)' called on a
-    // 'cell<i8>'; none when it is declared with a type parameter of the
-    // function, which a call gives
+    // defined before the generic function or an argument of the generic type
+    // of a method, e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)'
+    // called on a 'cell<i8>'; none when it is declared with a type parameter
+    // of the function, which a call gives
     [[nodiscard]] static auto
-    fixed_param_type(const parse_toc& tc, const generic_func_info& generic,
+    fixed_param_type(parse_toc& tc, const generic_func_info& generic,
                      const generic_signature_param& param) -> const type* {
 
         const std::string_view name{param.type_name};
@@ -556,12 +556,12 @@ struct generic_call {
             return nullptr;
         }
 
+        // the name is read as the instance reads it, not as the call would,
+        // e.g. not as a type parameter of the function that calls
+        parse_toc::generic_scope definition{tc, generic.definition};
+
         if (generic.receiver) {
-            for (const generic_arg& arg : generic.receiver->args) {
-                if (arg.param_tk.is_text(name)) {
-                    return arg.is_type() ? &arg.type_ref() : nullptr;
-                }
-            }
+            definition.add_receiver(*generic.receiver);
         }
 
         return tc.types().has(name) ? &tc.types().get(name) : nullptr;
@@ -587,10 +587,6 @@ struct generic_call {
         }
 
         const std::string_view name{arg_tk.text()};
-
-        if (tc.type_param_named(name) != nullptr) {
-            return true;
-        }
 
         return tc.types().has(name) and not tc.scopes().lookup(name).is_value();
     }

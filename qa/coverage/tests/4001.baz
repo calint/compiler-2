@@ -1,0 +1,19 @@
+# a call that tells no type checks each argument at the type its parameter has
+# in the instance: in a method the generic type names its instance, so the
+# argument for 'o cell' is checked as a 'c8' and its own error wins
+
+type cell<V type> {
+    v V,
+}
+
+func cell.put<T type>(o cell, t T) res T {
+    res = t
+}
+
+type c8 = cell<i8>
+
+func main() {
+    var c = c8{1}
+    var r = c.put({3, 4}, 5)
+    exit(r)
+}

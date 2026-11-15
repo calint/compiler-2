@@ -1,0 +1,18 @@
+# an argument of a call that tells no type is checked at the type its
+# parameter has where the generic function is defined, the global 'pq', not at
+# the type parameter 'pq' of the instance the call is in
+
+type pq { x, y }
+
+func last<T type>(b pq, a T) res T {
+    res = a
+}
+
+func outer<pq type>(x pq) res pq {
+    var q = last(x, 1)
+    res = x
+}
+
+func main() {
+    exit(outer(i8(3)))
+}

@@ -1,0 +1,7 @@
+
+4000.baz:17:13: cannot deduce 'T' of generic function 'pick', write 'pick<...>'
+    var z = pick({1, 2}, 5)
+            ^~~~
+4000.baz:21:10: instantiated by 'outer<i8>'
+    exit(outer(i8(3)))
+         ^~~~~

@@ -8094,3 +8094,14 @@ SRC=3960 && EXP=3 && RUN
 # an 'else if' after a branch condition that never returns is not reached,
 # also one whose condition folds to true, nor is the code after the 'if'
 SRC=3961 && EXP=4 && RUN
+
+# a call that tells no type checks each argument at the type its parameter has
+# in the generic function: a type parameter of the function that calls does
+# not name it, and in a method the generic type names its instance
+SRC=4000 && COMPERR
+SRC=4001 && COMPERR
+
+# the mirror of 4000: an argument that is wrong at the global type its
+# parameter names is rejected for itself, the type parameter of that name in
+# the function that calls does not accept it
+SRC=3981 && COMPERR

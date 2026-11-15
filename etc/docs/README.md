@@ -254,9 +254,10 @@ Invariants the code relies on:
 
 'toc_tables' keeps a stack of scopes ('scope_stack'): blocks, loops, 'foo'
 loops and functions. What a name means is decided by one rule,
-'scope_stack::lookup': the scopes of the innermost function from the
-innermost outwards, then the root scope that holds the globals; the first
-scope that declares the name decides. A scope
+'scope_stack::lookup': a type parameter of the generic instance being parsed
+names no value; any other name is looked for in the scopes of the innermost
+function from the innermost outwards, then the root scope that holds the
+globals; the first scope that declares the name decides. A scope
 declares a variable or a constant of a name, not both, a second declaration is
 rejected. The body of a function is the block above its scope, a name declared
 there that repeats a parameter or the result is rejected, a deeper block or a
@@ -265,10 +266,11 @@ function scope a parameter hides a constant of the generic instance, which is
 the context of the definition. A generic parameter hides a global of its name,
 a type, a generic type, a function, a generic function, a variable or a
 constant, defined before or after it: a constant parameter is a constant of
-the instance scope, a type parameter wins in the type table and in the parser
+the instance scope, a type parameter wins in the type table, in the lookup,
+which gives no value for it, and over a function in the parser
 ('type_param_named'), e.g. 'T(5)' in 'func f<T type>()' converts also when a
 function 'T' exists, and as a generic argument it is the type also after
-'let T = 5' ('parse_toc::constant_value_of', tests 3940, 3941). A local
+'let T = 5' (tests 3940, 3941). A local
 cannot be named like a type parameter. Every
 question about a name asks this lookup: the resolver ('ident_resolver'), the
 aliasing check, and the lookaheads of the parser, where a variable, a
@@ -1073,8 +1075,10 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
 3. If neither tells the type, the arguments up to the one that told
    nothing, all of them and a surplus one for a result, are checked in
    order as in a call without type parameters, each at the type of its
-   parameter, or at the type it tells when the parameter is declared with a
-   type parameter (3363 to 3365, 3368), so their own errors win,
+   parameter, whose name is read as the instance reads it, not as the code
+   around the call would (4000, 4001), or at the type it tells when the
+   parameter is declared with a type parameter (3363 to 3365, 3368), so
+   their own errors win,
    e.g. "function 'exit' has no result" for 'show(exit(1))', "'zz' not
    found" for 'f(zz, 1)' of 'func f<A type>(b, a A)' and "'make' takes 1
    argument" for 'make(2, 3)' (2249); otherwise the call is rejected and asks

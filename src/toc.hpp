@@ -991,6 +991,8 @@ class scope_stack final {
     std::vector<scope> scopes_;
     size_t max_scope_count_{};
     std::reference_wrapper<const definition_order> order_;
+    // a type parameter names no value, see 'lookup'
+    std::reference_wrapper<const type_table> types_;
     // the definition of each global variable, data and constant, see
     // 'definition_order'
     std::map<std::string, size_t, std::less<>> global_definitions_;
@@ -1007,7 +1009,8 @@ class scope_stack final {
         func_reach func;
     };
 
-    explicit scope_stack(const definition_order& order) : order_{order} {}
+    scope_stack(const definition_order& order, const type_table& types)
+        : order_{order}, types_{types} {}
 
     [[nodiscard]] auto all() const -> const std::vector<scope>& {
         return scopes_;
@@ -1122,12 +1125,18 @@ class scope_stack final {
     }
 
     // what 'name' means in the innermost scope, the one rule of what a name
-    // means: the scopes of the innermost function from the innermost out,
-    // then the root scope. a scope declares a variable or a constant of a
-    // name, not both; in a function scope a parameter hides a constant of the
-    // generic instance, which is the context of the definition
+    // means: a type parameter of the instance being parsed names no value;
+    // any other name the scopes of the innermost function from the innermost
+    // out, then the root scope. a scope declares a variable or a constant of
+    // a name, not both; in a function scope a parameter hides a constant of
+    // the generic instance, which is the context of the definition
     [[nodiscard]] auto lookup(const std::string_view name) const
         -> name_meaning {
+
+        // e.g. the 'U' of 'func f<U type>()' after 'let U = 5'
+        if (types_.get().is_type_param(name)) {
+            return {};
+        }
 
         // the root is checked after the loop, where the order of the
         // definitions applies
@@ -2256,8 +2265,8 @@ struct toc_tables final {
     // 'builtin_types' are the types of the language, shared with the machine
     toc_tables(::machine& backend_in, const builtin_type_set& builtin_types,
                const source_files& files, const size_t vars_capacity_bytes)
-        : backend{backend_in}, locations{files}, scopes{order}, funcs{order},
-          generics{order}, types{order},
+        : backend{backend_in}, locations{files}, types{order},
+          scopes{order, types}, funcs{order}, generics{order},
           definitions{scopes, funcs, types, generics, locations},
           builtins{backend_in, builtin_types},
           resolver{scopes, backend_in, funcs, generics, builtins},
@@ -2283,11 +2292,12 @@ struct toc_tables final {
     source_locations locations;
     // before the tables, which refer to it
     definition_order order;
+    // before the scopes, which refer to it
+    type_table types;
     scope_stack scopes;
     data_table data;
     function_table funcs;
     generic_registry generics;
-    type_table types;
     definition_checks definitions;
     builtin_roles builtins;
     ident_resolver resolver;
@@ -2777,11 +2787,6 @@ class parse_toc final : public toc {
         // a broken number, as in a value
         if (tk.is_number()) {
             throw_unparsed_number(tk, tk.text());
-        }
-
-        // a type parameter hides a constant of its name, e.g. 'let U = 5'
-        if (type_param_named(tk.text()) != nullptr) {
-            return std::nullopt;
         }
 
         return scopes().const_value(tk.text());

@@ -280,10 +280,8 @@ enum class term_kind : uint8_t {
     const bool is_type_param{tc.type_param_named(text) != nullptr};
 
     // e.g. 'let point = 3' makes 'point' in 'point + 1' the constant, not the
-    // type
-    const bool is_hidden{
-        not is_type_param and tc.scopes().lookup(text).is_value(),
-    };
+    // type; a type parameter names no value
+    const bool is_hidden{tc.scopes().lookup(text).is_value()};
 
     // a keyword before '(' is not a call, e.g. 'not (a == 2)'
     // note: 'self' is the one keyword that names a value

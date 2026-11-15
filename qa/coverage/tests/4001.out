@@ -1,0 +1,4 @@
+
+4001.baz:17:23: too many fields for type 'c8'
+    var r = c.put({3, 4}, 5)
+                      ^

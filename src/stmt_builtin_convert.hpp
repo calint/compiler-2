@@ -157,7 +157,7 @@ class stmt_builtin_convert final : public statement {
 
     // the arithmetic of the argument wraps, 'uops' apply to the converted
     // value as the target checks them; the argument is an operand, so a
-    // narrower call result widens into a wider register, e.g. 'i16((g()))'
+    // narrower call result widens into a wider register, e.g. 'i16(g())'
     auto compile_argument(compile_toc& tc, const destination& target,
                           const unary_ops& uops) const -> void {
 
@@ -297,7 +297,8 @@ class stmt_builtin_convert final : public statement {
         return true;
     }
 
-    // the argument is computed at the width of the type
+    // the argument is computed at the width of the type; null when the target
+    // is as wide as the type, see 'plan_scratch_type'
     [[nodiscard]] auto plan_at_type(const destination& target) const
         -> const type* {
 

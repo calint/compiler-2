@@ -343,6 +343,7 @@ class stmt_builtin_foo final : public statement {
 
         const ident_info array_info{make_ident_info(tc, ident_)};
 
+        // note: only a type parameter is in the way, a variable is hidden
         tc.assert_loop_names_free(tok());
 
         const parse_toc::scope_entry foo{
