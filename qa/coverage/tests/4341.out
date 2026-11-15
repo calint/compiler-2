@@ -1,0 +1,4 @@
+
+4341.baz:11:8: cannot deduce 'T' of generic function 'same', write 'same<...>'
+    if same(1, point{1, 2}) exit(1)
+       ^~~~

@@ -1,0 +1,4 @@
+
+4360.baz:4:6: 'mut' requires a method 'type.name'
+func mut f() res foo {
+     ^~~

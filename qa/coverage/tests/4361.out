@@ -1,0 +1,4 @@
+
+4361.baz:4:11: result 'a' is also the name of a parameter, use another name
+func f(a) a foo {
+          ^

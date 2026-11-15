@@ -1,0 +1,15 @@
+# a variable before '{' tells no type, the type parameter keeps the type of
+# the destination and the argument is rejected at it as with 'g<i8>'
+
+type point {x, y}
+
+func g<T type>(a T) res T {
+    res = a
+}
+
+func main() {
+    var p = point{1, 2}
+    var r = i8
+    r = g(p{1, 2})
+    exit(r)
+}

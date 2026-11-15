@@ -1,0 +1,4 @@
+
+4342.baz:13:11: expected type 'i8', got 'point'
+    r = g(p{1, 2})
+          ^

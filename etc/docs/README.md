@@ -993,9 +993,9 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    The call parses its arguments left to right, each at the type of its
    parameter (2.10.4, item 2); the arguments before the deducing one are
    parsed already, at types known without it. The deducing argument is
-   parsed at the type it gives, so it is read ahead as text when the walk
-   reaches it, and only an argument whose type shows in its text tells the
-   type:
+   parsed at the type it gives, so when the parse reaches it, it is read
+   ahead for that type ('generic_call::argument_type') and then parsed at
+   it; only an argument whose type shows in its text tells the type:
 
    1. a variable, a field, an element or a typed constant that is the
       whole argument
@@ -1074,7 +1074,7 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    'b = make() = true' (3450 to 3452).
 
 3. If neither tells the type, the type parameter is not deduced and the
-   walk goes on: every argument is parsed in order as in a call without type
+   parse goes on: every argument is parsed in order as in a call without type
    parameters, at the type of its parameter, whose name is read as the
    instance reads it, not as the code around the call would (4000, 4001),
    or at the type another argument deduced, also for a type parameter

@@ -1,6 +1,39 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 453 (2026-11-16, bug hunt: the one walk of round 452
+    in calls that deduce; design: function definitions and bodies;
+    readability: a newcomer walks the generic call code after the
+    redesign)
+    => bug hunt: no defect; no accepted program differs in verdict,
+       listing or run from the builds of rounds 448 and 451 (4600
+       programs with twins, about 290 directed cases), 24500 mutations
+       of generic programs end with 0 or 1; three mutants the suite
+       missed got tests 4340 to 4342; documented and kept: a nested call
+       whose parameter type is not known yet says its own "cannot
+       deduce" before a later argument's error, and a deduced call
+       reports argument errors before errors in the instance body while
+       a written one does the opposite (2.10.4 item 2)
+    => checks: all steps clean; listings differ only for tests 4360 to
+       4362; fuzz seed 453001 found only the known doubling of test
+       1698 under '--versions=nested' and 'last'
+    => design: the signature rules had two owners in different orders
+       ('stmt_def_func::parse_signature' and 'parse_result',
+       'stmt_def_func_generic::read_signature'); one
+       'func_head::assert_signature' checks the result named apart from
+       the parameters, 'self' only as the result of a constructor and
+       'mut' with a receiver, 'assert_constructor_signature' is gone;
+       the error furthest left comes first: 'func mut f() res foo'
+       reports the 'mut', 'func f(a) a foo' the result name, 'func f<a
+       type>(a) a' the type parameter; tests 4360 to 4362; the
+       bindings of an inlined body are added in the scope of its
+       constants as in a frame; inlined and noinline bodies share one
+       path; six ideas left
+    => readability: the comments of 'generic_call', 'instantiate',
+       'parse_arguments', 'resolve_callee' and the class headers say the
+       instance comes after the arguments; docs 2.10.2 no longer
+       describes the removed text skip; no removed name is left; 16
+       functions, 59 programs and predictions, 3 wrong (language rules)
 [x] easy: round 452 (2026-11-16, bug hunt: the error walk of round
     451 in calls that deduce; design: deduction in calls to generic
     functions, after three rounds of patches to its error walk;

@@ -8141,8 +8141,23 @@ SRC=4264 && COMPERR
 SRC=4265 && COMPERR
 
 # a type parameter declared after the one not deduced takes the destination
-# when the walk reaches its deducing argument, which tells nothing
+# when the parse reaches its deducing argument, which tells nothing
 SRC=4300 && COMPERR
+
+# a literal that names its type at a 'mut' parameter is not a variable
+SRC=4340 && COMPERR
+
+# an argument of a parameter with no known type is parsed at the type it tells
+SRC=4341 && COMPERR
+
+# a variable before '{' tells no type, the destination stays
+SRC=4342 && COMPERR
+
+# the rules of a signature that need no types are checked before the type of
+# the result is resolved, so the first error is reported
+SRC=4360 && COMPERR
+SRC=4361 && COMPERR
+SRC=4362 && COMPERR
 
 # the mirror of 4000: an argument that is wrong at the global type its
 # parameter names is rejected for itself, the type parameter of that name in

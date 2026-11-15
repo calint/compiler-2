@@ -1,0 +1,7 @@
+# the rules of a signature are checked before the type of its result is
+# resolved, so the first error is reported: the result named like a parameter
+
+func f(a) a foo {
+}
+
+func main() {}

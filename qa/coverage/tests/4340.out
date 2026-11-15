@@ -1,0 +1,4 @@
+
+4340.baz:13:10: 'point{1, 2}', which is not a variable, cannot be passed to a 'mut' parameter
+    f(k, point{1, 2})
+         ^~~~~

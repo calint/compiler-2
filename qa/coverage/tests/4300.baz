@@ -1,5 +1,5 @@
 # a call that tells no type deduces a type parameter declared after the one it
-# cannot deduce from the destination when the walk reaches its deducing
+# cannot deduce from the destination when the parse reaches its deducing
 # argument, which tells nothing: 'b' is at 'point', so '{1, 2, 3}' is the error
 
 type point {x, y}

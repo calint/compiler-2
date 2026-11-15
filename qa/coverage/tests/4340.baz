@@ -1,0 +1,14 @@
+# a call that deduces its type arguments passes a literal that names its type
+# to a 'mut' parameter of a known type as a call without type parameters does:
+# rejected as not a variable, not for the type it writes
+
+type point {x, y}
+
+func f<T type>(a T, p mut point) {
+    p.x = 1
+}
+
+func main() {
+    var k = i8(3)
+    f(k, point{1, 2})
+}

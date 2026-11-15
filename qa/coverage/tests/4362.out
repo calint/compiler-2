@@ -1,0 +1,4 @@
+
+4362.baz:4:8: generic parameter 'a' is also the name of the parameter at 4:16, use another name
+func f<a type>(a) a {
+       ^

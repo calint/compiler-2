@@ -154,8 +154,10 @@ parse_array_param_argument(parse_toc& tc, tokenizer& tz,
 // arguments are parsed. without '<' the call deduces: 'stmt_call' parses the
 // arguments left to right, each at its 'param_type', which deduces a type
 // parameter at its deducing argument from the type that argument tells
-// ('argument_type', 'value_type') or from the destination; 'instantiate'
-// makes the instance after the arguments
+// ('argument_type', 'value_type') or from the destination, and gives a
+// parameter of a fixed type that type ('fixed_param_type'); an argument
+// whose type is not known is read by 'parse_untyped_argument';
+// 'instantiate' makes the instance after the arguments
 class generic_call {
     // e.g. 'to' of 'tz.to()', the errors of the deduction are located at it
     token name_tk_;
@@ -202,9 +204,9 @@ class generic_call {
         return generic_name_;
     }
 
-    // the instance named by the deduced types, made once; a type parameter
-    // still not deduced, e.g. the 'T' of 'var m = make(2)', is "cannot
-    // deduce". after the arguments
+    // after the arguments, the instance named by the deduced types, an
+    // existing one is reused; a type parameter still not deduced, e.g. the
+    // 'T' of 'var m = make(2)', is "cannot deduce"
     [[nodiscard]] auto instantiate(parse_toc& tc) const -> std::string {
         const std::span<const token> param_tks{
             generic_->signature.type_param_tks,
@@ -1855,11 +1857,12 @@ class shared_storage_check final {
 // parsing, in the constructors: the call is in a function
 // ('assert_call_in_func', first as for a built-in), the kind of the callee
 // ('assert_method_receiver', 'constructor_func'), the callee
-// ('resolve_callee', a generic function through 'generic_call'), then from
-// the '(' the arguments ('parse_arguments', an array one read by
+// ('resolve_callee', a generic function through 'generic_call', whose
+// instance is made after the arguments when they deduce its type arguments),
+// then from the '(' the arguments ('parse_arguments', an array one read by
 // 'parse_array_param_argument'), each checked in its order by
-// 'check_arguments' ('assert_argument_writable', 'assert_argument_type'), then
-// 'record_uses_of_call'
+// 'check_arguments' ('assert_argument_writable', 'assert_argument_type'),
+// then 'record_uses_of_call'
 //
 // compiling, in 'compile': the checks made before the inlined and noinline
 // paths split ('assert_call_accepted'), then 'inline_call' or 'noinline_call'
@@ -2506,8 +2509,9 @@ class stmt_call final : public statement {
         if (deduction) {
             func_ = &tc.get_func_or_throw(tok(), deduction->instantiate(tc));
 
-            // note: an argument without a type is of a type parameter not
-            //       deduced or of a parameter the instance rejected
+            // note: an argument parsed without a type is not in 'args_', its
+            //       parameter has a type parameter not deduced or a type the
+            //       instance rejected, both thrown above
 
             assert(args_.size() == callee().params().size());
 
@@ -2631,10 +2635,10 @@ class stmt_call final : public statement {
     }
 
     // the name is read, a generic function has its type arguments before the
-    // '(', e.g. 'convert<i8>(x)', and the callee is the instance they name;
-    // an unknown callee is an error here; without them, e.g. 'convert(x)',
-    // the call deduces them from the arguments, the callee is made after
-    // them and the deduction is returned
+    // '(', e.g. 'make<i8>(2)', and the callee is the instance they name; an
+    // unknown callee is an error here; without them, e.g. 'same(s, t)', the
+    // call deduces them from the arguments, the callee is made after them
+    // and the deduction is returned
     [[nodiscard]] auto resolve_callee(parse_toc& tc, tokenizer& tz,
                                       const std::string_view name,
                                       const type* const expected_type)

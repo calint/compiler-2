@@ -1,0 +1,7 @@
+# a generic parameter named like a parameter is reported at the generic
+# parameter, before the result named like the parameter
+
+func f<a type>(a) a {
+}
+
+func main() {}

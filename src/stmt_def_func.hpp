@@ -88,37 +88,6 @@ struct func_head {
     // none until it is read, e.g. after 'list.add' of 'func list.add('
     std::optional<token> open_paren_tk;
 
-    // a constructor builds an instance of its receiver type, e.g. 'func
-    // point.at(x, y) self'; one spelling, the type is named before the '.'
-    auto assert_constructor_result(const token& self_tk,
-                                   const std::optional<token>& type_tk) const
-        -> void {
-
-        if (not is_type_member()) {
-            throw compile_error{
-                self_tk, "result 'self' requires a constructor 'type.name'"};
-        }
-
-        if (type_tk) {
-            throw compile_error{
-                *type_tk, "result 'self' has the type of the constructor"};
-        }
-    }
-
-    // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
-    auto assert_mut_has_receiver(const bool is_constructor) const -> void {
-        if (not mut_tk or (is_type_member() and not is_constructor)) {
-            return;
-        }
-
-        if (is_constructor) {
-            throw compile_error{
-                *mut_tk, "a constructor builds 'self', 'mut' is not needed"};
-        }
-
-        throw compile_error{*mut_tk, "'mut' requires a method 'type.name'"};
-    }
-
     // e.g. 'func f<T type> {' has no '(' after its name; reported at the
     // name, the next token can be on a later line
     auto assert_open_paren() const -> void {
@@ -132,6 +101,27 @@ struct func_head {
         }
 
         throw compile_error{name_tk, "expected '(' after function name"};
+    }
+
+    // the rules of the signature 'params' and 'result' after this head that
+    // need no types, checked for every kind of definition: the result is
+    // named apart from the parameters, 'self' is the result of a constructor
+    // and 'mut' needs a receiver
+    auto assert_signature(const stmt_def_func_param::syntax_list& params,
+                          const std::optional<func_result>& result) const
+        -> void {
+
+        if (result) {
+            params.assert_result_not_named_like_param(result->name_tk);
+        }
+
+        const bool is_constructor{result and result->is_self()};
+
+        if (is_constructor) {
+            assert_constructor_result(result->name_tk, result->type_tk);
+        }
+
+        assert_mut_has_receiver(is_constructor);
     }
 
     // kept as text, its instances are the functions
@@ -195,6 +185,46 @@ struct func_head {
     }
 
   private:
+    // a constructor builds an instance of its receiver type, e.g. 'func
+    // point.at(x, y) self'; one spelling, the type is named before the '.'
+    auto assert_constructor_result(const token& self_tk,
+                                   const std::optional<token>& type_tk) const
+        -> void {
+
+        if (not is_type_member()) {
+            throw compile_error{
+                self_tk, "result 'self' requires a constructor 'type.name'"};
+        }
+
+        if (type_tk) {
+            throw compile_error{
+                *type_tk, "result 'self' has the type of the constructor"};
+        }
+
+        // a constructor is called as 'point.at(...)', there is no place for
+        // type arguments
+        if (not type_param_tks.empty()) {
+            throw compile_error{self_tk,
+                                std::format("constructor {} cannot have type "
+                                            "parameters",
+                                            in_quotes(name))};
+        }
+    }
+
+    // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
+    auto assert_mut_has_receiver(const bool is_constructor) const -> void {
+        if (not mut_tk or (is_type_member() and not is_constructor)) {
+            return;
+        }
+
+        if (is_constructor) {
+            throw compile_error{
+                *mut_tk, "a constructor builds 'self', 'mut' is not needed"};
+        }
+
+        throw compile_error{*mut_tk, "'mut' requires a method 'type.name'"};
+    }
+
     // 'name_tk' is a modifier, a word follows it, not the '(', '.' or '<'
     // after a name
     [[nodiscard]] auto is_name_next(const tokenizer& tz) const -> bool {
@@ -594,32 +624,32 @@ class stmt_def_func final : public statement {
             const compile_toc::indent_scope names{tc, tc.indent() + 1};
 
             add_constants(tc);
-        }
 
-        const auto add_binding{
-            [&](const param_binding& binding) -> void {
-                const ident_info& bound{binding.info};
+            const auto add_binding{
+                [&](const param_binding& binding) -> void {
+                    const ident_info& bound{binding.info};
 
-                // with the address the call computed when it did
-                if (bound.is_address_by_call()) {
-                    x.comment({call_tk, tc.indent() + 1},
-                              "bind {} -> {} (address: {})", binding.from,
-                              binding.text, bound.operand().address_text());
-                } else {
-                    x.comment({call_tk, tc.indent() + 1}, "bind {} -> {}",
-                              binding.from, binding.text);
-                }
+                    // with the address the call computed when it did
+                    if (bound.is_address_by_call()) {
+                        x.comment({call_tk, tc.indent()},
+                                  "bind {} -> {} (address: {})", binding.from,
+                                  binding.text, bound.operand().address_text());
+                    } else {
+                        x.comment({call_tk, tc.indent()}, "bind {} -> {}",
+                                  binding.from, binding.text);
+                    }
 
-                tc.add_binding(binding);
-            },
-        };
+                    tc.add_binding(binding);
+                },
+            };
 
-        if (result) {
-            add_binding(*result);
-        }
+            if (result) {
+                add_binding(*result);
+            }
 
-        for (const param_binding& binding : arguments) {
-            add_binding(binding);
+            for (const param_binding& binding : arguments) {
+                add_binding(binding);
+            }
         }
 
         // the result reaches the destination through the binding of 'res',
@@ -1082,9 +1112,15 @@ class stmt_def_func final : public statement {
         close_paren_tk_ = list.close_paren_tk;
     }
 
-    // the result 'name [type]', without one the type is 'void'
-    auto parse_result(parse_toc& tc, tokenizer& tz) -> void {
+    // the result 'name [type]' after the parameters 'list', without one the
+    // type is 'void'
+    auto parse_result(parse_toc& tc,
+                      const stmt_def_func_param::syntax_list& list,
+                      tokenizer& tz) -> void {
+
         result_ = read_func_result(tc, tz);
+
+        head_.assert_signature(list, result_);
 
         if (not result_) {
             set_type(tc.builtins().void_type());
@@ -1094,7 +1130,6 @@ class stmt_def_func final : public statement {
         // 'self' names the value a constructor builds, e.g. 'func
         // point.at(x, y) self' builds a 'point'
         if (result_->is_self()) {
-            head_.assert_constructor_result(result_->name_tk, result_->type_tk);
             set_type(head_.receiver_type());
             return;
         }
@@ -1111,13 +1146,7 @@ class stmt_def_func final : public statement {
 
         parse_params(tc, list);
 
-        parse_result(tc, tz);
-
-        if (result_) {
-            list.assert_result_not_named_like_param(result_->name_tk);
-        }
-
-        head_.assert_mut_has_receiver(is_constructor());
+        parse_result(tc, list, tz);
 
         // before the body, e.g. 'func main(x) { x = 1 }' is rejected for its
         // parameter, not for the write to it
@@ -1373,8 +1402,8 @@ class func_instantiator final {
         };
 
         if (not head.is_generic_type_method()) {
-            // note: the definition checked the type parameters and that it is
-            //       no constructor, see 'assert_generic_signature'
+            // note: the definition checked that a constructor has no type
+            //       parameters, see 'func_head::assert_signature'
 
             assert(not signature.is_constructor());
 
@@ -1608,32 +1637,9 @@ class stmt_def_func_generic final : public statement {
         }
     }
 
-    // a constructor has a receiver and no type parameters
-    static auto assert_constructor_signature(const func_head& head,
-                                             const generic_signature& signature)
-        -> void {
-
-        assert(signature.result);
-
-        head.assert_constructor_result(signature.result->name_tk,
-                                       signature.result->type_tk);
-
-        // a constructor is called as 'point.at(...)', there is no place for
-        // type arguments
-        if (signature.type_param_tks.empty()) {
-            return;
-        }
-
-        throw compile_error{
-            signature.result->name_tk,
-            std::format("constructor {} cannot have type parameters",
-                        in_quotes(head.name))};
-    }
-
     // the rules of a generic definition, checked once whether or not an
     // instance is made: the type parameters name no built-in and are named
-    // apart from the signature, so are those of the generic type of a method,
-    // a constructor has a receiver and no type parameters
+    // apart from the signature, so are those of the generic type of a method
     static auto assert_generic_signature(const parse_toc& tc,
                                          const func_head& head,
                                          const generic_signature& signature)
@@ -1647,12 +1653,6 @@ class stmt_def_func_generic final : public statement {
         if (head.is_generic_type_method()) {
             assert_names_apart_from_receiver_params(tc, head, signature);
         }
-
-        if (not signature.is_constructor()) {
-            return;
-        }
-
-        assert_constructor_signature(head, signature);
     }
 
     // the parameters and the result of a method of a generic type are named
@@ -1747,12 +1747,8 @@ class stmt_def_func_generic final : public statement {
 
         signature.result = read_func_result(tc, tz);
 
-        if (signature.result) {
-            list.assert_result_not_named_like_param(signature.result->name_tk);
-        }
-
         assert_generic_signature(tc, head, signature);
-        head.assert_mut_has_receiver(signature.is_constructor());
+        head.assert_signature(list, signature.result);
 
         // the body reads the '{'
         if (tz.peek_char_after_whitespace() != '{') {
