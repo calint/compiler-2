@@ -1938,7 +1938,7 @@ Rejected: passing the tables one by one, every signature would carry the
 ones its callees need; one context with a run-time phase, each method of one
 phase asserted it at run time and a declaration branched on it.
 
-Cost: 'toc.hpp' holds about 4k lines; 'toc' has 14 public methods,
+Cost: 'toc.hpp' holds about 4k lines; 'toc' has 15 public methods,
 'parse_toc' 27 and 'compile_toc' 29, grouped by the maps above the classes;
 a node can reach every table its phase reads through its context. A function
 that both phases run takes the base, so it cannot ask for what only one phase

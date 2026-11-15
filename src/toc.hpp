@@ -1126,10 +1126,11 @@ class scope_stack final {
 
     // what 'name' means in the innermost scope, the one rule of what a name
     // means: a type parameter of the instance being parsed names no value;
-    // any other name the scopes of the innermost function from the innermost
-    // out, then the root scope. a scope declares a variable or a constant of
-    // a name, not both; in a function scope a parameter hides a constant of
-    // the generic instance, which is the context of the definition
+    // any other name is looked for in the scopes of the innermost function
+    // from the innermost out, then in the root scope. a scope declares a
+    // variable or a constant of a name, not both; in a function scope a
+    // parameter hides a constant of the generic instance, which is the
+    // context of the definition
     [[nodiscard]] auto lookup(const std::string_view name) const
         -> name_meaning {
 
@@ -1567,7 +1568,7 @@ class storage_layout final {
         assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <
                x.max_storage_bytes());
 
-        const storage_address address{variables_address(dat.offset_bytes)};
+        const storage_address address{address_past_dat(dat.offset_bytes)};
 
         in_storage& stored{std::get<in_storage>(var.placement)};
         stored.offset = address.offset;
@@ -1614,7 +1615,7 @@ class storage_layout final {
         -> storage_address {
 
         if (not is_in_frame) {
-            return variables_address(offset_bytes);
+            return address_past_dat(offset_bytes);
         }
 
         const ::machine& x{machine_.get()};
@@ -1622,6 +1623,40 @@ class storage_layout final {
         return {
             .base_register{x.frame_base_register()},
             .offset{address_offset(offset_bytes)},
+        };
+    }
+
+    // the storage 'offset_from_dat' bytes past the label 'dat': the
+    // variables base is 'dat' unless the target puts it past the label
+    // 'vars', which makes the dats negative and the variables start below
+    // the base
+    [[nodiscard]] auto address_past_dat(const size_t offset_from_dat) const
+        -> storage_address {
+
+        const int64_t offset{address_offset(offset_from_dat)};
+
+        const ::machine& x{machine_.get()};
+
+        const std::optional<size_t> past_vars_bytes{
+            x.variables_base_past_vars_bytes(),
+        };
+
+        if (not past_vars_bytes) {
+            return {
+                .base_register{x.variables_base_register()},
+                .offset{offset},
+            };
+        }
+
+        const size_t shift_bytes{
+            sum_storage_size(vars_start_bytes(), *past_vars_bytes),
+        };
+
+        const int64_t shift{address_offset(shift_bytes)};
+
+        return {
+            .base_register{x.variables_base_register()},
+            .offset{add_address_offset(offset, -shift)},
         };
     }
 
@@ -1704,40 +1739,6 @@ class storage_layout final {
         return total_bytes;
     }
 
-    // the storage 'offset_from_dat' bytes past the label 'dat': the
-    // variables base is 'dat' unless the target puts it past the label
-    // 'vars', which makes the dats negative and the variables start below
-    // the base
-    [[nodiscard]] auto variables_address(const size_t offset_from_dat) const
-        -> storage_address {
-
-        const int64_t offset{address_offset(offset_from_dat)};
-
-        const ::machine& x{machine_.get()};
-
-        const std::optional<size_t> past_vars_bytes{
-            x.variables_base_past_vars_bytes(),
-        };
-
-        if (not past_vars_bytes) {
-            return {
-                .base_register{x.variables_base_register()},
-                .offset{offset},
-            };
-        }
-
-        const size_t shift_bytes{
-            sum_storage_size(vars_start_bytes(), *past_vars_bytes),
-        };
-
-        const int64_t shift{address_offset(shift_bytes)};
-
-        return {
-            .base_register{x.variables_base_register()},
-            .offset{add_address_offset(offset, -shift)},
-        };
-    }
-
     // the variables start after the dats and the padding that aligns them;
     // every dat is placed by the parse, so this is fixed while compiling
     [[nodiscard]] auto vars_start_bytes() const -> size_t {
@@ -1771,7 +1772,7 @@ class storage_layout final {
     }
 };
 
-// the types the front end needs by role: the builtin ones and the ones the
+// the types the front end needs by role: the built-in ones and the ones the
 // machine decides
 class builtin_roles final {
     std::reference_wrapper<const ::machine> machine_;
@@ -2922,7 +2923,7 @@ class parse_toc final : public toc {
         return funcs().has(name) or generics().has_func(name);
     }
 
-    // the variable declared last in this scope, e.g. a 'let' variable once
+    // 'name' is a variable of the innermost scope, e.g. a 'let' variable once
     // its initializer is parsed
     auto make_var_read_only(const std::string_view name,
                             const read_only_cause cause) -> void {
@@ -3110,9 +3111,9 @@ struct usage_statistics {
 // compile adds here is the same each time: a constant is kept once by its
 // bytes ('add_read_only_constant'), a noinline body once
 // ('add_noinline_body'), the scopes and their variables are popped
-// ('scope_entry'); the peaks ('compile_state') and the constant count are
-// put back after a dry run and a version ('version_scope') and set with the
-// constants to those of the kept version by 'emit_most_efficient'
+// ('scope_entry'); the peaks and the reach ('compile_state') and the constant
+// count are put back after a dry run and a version ('version_scope') and set
+// with the constants to those of the kept version by 'emit_most_efficient'
 //
 // the modes a node does not see, each set by one function and read elsewhere:
 //
@@ -3175,6 +3176,17 @@ class compile_toc final : public toc {
         ~version_scope() {
             tc_.restore_compile_state(start_state_);
             tc_.tables().data.resize_constants(start_constant_count_);
+        }
+
+        // the state compiled to and the constants added since the scope
+        // began, taken out of the table, given back by a kept version
+        [[nodiscard]] auto take_end() -> version_end {
+            data_table& table{tc_.tables().data};
+
+            return {
+                .state{tc_.compile_state_now()},
+                .constants{table.take_constants_after(start_constant_count_)},
+            };
         }
     };
 
@@ -3329,9 +3341,7 @@ class compile_toc final : public toc {
     }
 
     // a body is emitted once per array lengths, for a call that is
-    // compiled for real; a call in a dry run asks for a body to check, with
-    // a length unknown where the check of a function without its calls
-    // passes on an unsized array parameter
+    // compiled for real; a call in a dry run asks for a body to check
     auto add_noinline_body(const stmt_def_func& func,
                            std::vector<std::optional<size_t>> array_lengths,
                            const token& call_tk, std::string call_source)
@@ -3480,8 +3490,6 @@ class compile_toc final : public toc {
                              const std::function_ref<void()> emit_second)
         -> void {
 
-        const size_t start_constant_count{data().constant_count()};
-
         // note: a version that fails is not kept, so the kept one has its end
         version_end first_end{};
         version_end second_end{};
@@ -3489,14 +3497,11 @@ class compile_toc final : public toc {
         const auto compile_from_start{
             [&](const std::function_ref<void()> emit,
                 version_end& end) -> void {
-                const version_scope version{*this};
+                version_scope version{*this};
 
                 emit();
 
-                end.state = compile_state_now();
-
-                end.constants =
-                    tables().data.take_constants_after(start_constant_count);
+                end = version.take_end();
             },
         };
 

@@ -946,6 +946,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejections of generated programs are "rdx/rax holds a scratch value",
     which a push and pop around the division as on rv32i would accept
     (about 40 lines; touches the decision of 2026-10-23)
+    => round 454, whole programs against a model: 51 of 179 programs
+       that rv32i-fpga accepts with 'noub' are rejected on x86_64 (20
+       "register rdx is always used by the operation", e.g. 'write(1, s,
+       a % 4)', 19 "rdx holds a value computed at", 7 the same for 'rax',
+       3 'rcx', 2 out of scratch registers)
 [ ] easy: user decision (round 258 WH): a failed '--reproduce-source' writes
     'diff.baz' in the working directory without checking the name, so
     compiling 'diff.baz' from its directory overwrites it (only through a
