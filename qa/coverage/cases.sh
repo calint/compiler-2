@@ -8073,3 +8073,7 @@ SRC=3552 && COMPERR
 # inlined recursion that no constant ends, also one level deeper, inside a
 # recursion that it expands
 SRC=3800 && EXP=2 && RUN
+
+# a stored comparison, a negation, a complement and an increment of variables
+# past 2 GiB lower the address through a scratch register
+if [[ $MACHINE == x86_64 ]]; then SRC=3920 && EXP=10 && OPTS="--vars=0x80000100" RUN; fi

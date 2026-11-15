@@ -177,8 +177,8 @@ enum class var_address : uint8_t {
     storage,
     // the storage that holds the address of the variable, see 'in_storage'
     held,
-    // an address an inlined call computed, e.g. '[rbp + r15 * 8 + 16]' for
-    // the argument 'rooms[i]'
+    // an address computed for an argument of a call or for a destination,
+    // e.g. '[rbp + r15 * 8 + 16]' for the argument 'rooms[i]'
     by_call,
 };
 

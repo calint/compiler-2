@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 441 (2026-11-15, bug hunt: text and data, string and
+    character literals, strings as values, 'dat' definitions, 'read'
+    and 'write', 'sector_read' and 'sector_write', their bounds and
+    order; design: the private helpers inside the x86_64 backend;
+    readability: a newcomer walks 'expr_any.hpp', 'expr_type.hpp',
+    'expr_type_impl.hpp', 'ident_info.hpp' and 'statement.hpp')
+    => bug hunt: no defect; 29000 programs and 167000 runs against a
+       model, byte exact output, exit code and card, on the four
+       targets; 13800 expressions as a 'dat' against the same over
+       variables; 10 seeded mutants, 9 caught, one equivalent
+    => design: four pure refactors in 'machine_x86_64.hpp' after 150
+       probe counters over the suite and ten fuzzers: 'address_of'
+       drops a term that 'qword_register' asserts, 'divide' asserts
+       that the divisor does not read a register 'dst' (0 of 130000
+       divisions; an expression whose operand reads its destination
+       is computed in a scratch register), 'store_condition' drops a
+       resize to one byte, 'to_address' asserts a memory operand; no
+       listing differs; test 3920 reaches the address lowering of a
+       stored comparison and the unary instructions past 2 GiB;
+       thirteen ideas weighed and left
+    => readability: two comments ('var_address::by_call' is also the
+       address of a destination, 'expr_type::plan_writes' zeroes the
+       padding before each field); 183 functions, 170 programs, 183
+       predictions, 11 wrong
 [x] easy: round 440 (2026-11-15, bug hunt: calls and how an argument
     reaches its parameter, aimed first at 'info_at_address' of round
     438, places by address, temporaries, results, recursion, the

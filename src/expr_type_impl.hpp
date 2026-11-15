@@ -226,8 +226,8 @@ inline auto expr_type::source_to(std::ostream& os) const -> void {
     close_brace_tk_.source_to(os);
 }
 
-// e.g. '{1, 2}' writes the fields in order, then zeroes the unlisted fields
-// and the padding
+// e.g. '{1, 2}' writes the fields in order, each after the padding before
+// it is zeroed, then zeroes the unlisted fields and the padding at the end
 inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
                                    write_plan& plan) const -> void {
 

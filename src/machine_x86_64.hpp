@@ -224,9 +224,7 @@ class machine_x86_64 final : public machine {
 
         // an address held in a register is stored as it is, e.g. that of a
         // parameter of a noinline body passed on to a call
-        if (address.index_register().empty() and address.displacement() == 0 and
-            register_index_of(address.base_register()).has_value()) {
-
+        if (address.index_register().empty() and address.displacement() == 0) {
             mov(site, dst, qword_register(address.base_register()));
             return;
         }
@@ -365,11 +363,16 @@ class machine_x86_64 final : public machine {
         // note: a register 'dst' receives the result after the division
 
         const bool consumed{
-            dst.is_register() and dst.type_ref().size_bytes() == size_qword_ and
-                (registers_mask(divisor) & registers_mask(dst)) == 0,
+            dst.is_register() and dst.type_ref().size_bytes() == size_qword_,
         };
 
         if (consumed) {
+            // note: an expression whose operand reads its destination is
+            //       computed in a scratch register, so the divisor does not
+            //       read 'dst'
+
+            assert((registers_mask(divisor) & registers_mask(dst)) == 0);
+
             assembler_.move_consumed(site.indent, "rax", dst.register_name());
         } else {
             mov(site, qword_register("rax"), dst);
@@ -1704,8 +1707,7 @@ class machine_x86_64 final : public machine {
         assert(dst.type_ref().size_bytes() == size_byte_);
 
         const operation_scope scope{*this, dst};
-        const operand byte{sized_operand(dst, size_byte_)};
-        const operand lowered{lower_address(site, byte)};
+        const operand lowered{lower_address(site, dst)};
 
         assembler_.setcc(site.indent, cc, to_argument(lowered));
     }
@@ -1934,7 +1936,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] static auto to_address(const operand& value)
         -> assembler_x86_64::memory {
 
-        assert(not value.is_immediate());
+        assert(value.is_memory());
 
         return {
             .symbol{},

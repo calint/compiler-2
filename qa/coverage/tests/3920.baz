@@ -1,0 +1,16 @@
+# x86: a stored comparison and the unary instructions on variables past 2 GiB
+# lower the address through a scratch register
+
+func main() {
+    var pad = i8[0x80000000]
+    var a = 5
+    var b = 7
+    var less = a < b
+    a = -a
+    a = ~a
+    b = b + 1
+    b = b - 1
+    b = b - 1
+    if less exit(a + b)
+    exit(0)
+}

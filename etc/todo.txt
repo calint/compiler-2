@@ -155,6 +155,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 441, bug hunt of text and data)
+    1. an untyped constant list in a typed slot checks each operand at
+       the slot type: 'dat d = i8[1]{449 - 576}' is rejected although
+       the value is -127; same for 'var', consistent with docs 1.7
+    2. 'var c = s' of an unsized parameter 's i8[]' is rejected ("the
+       size of array 's' is not known") although a string assigned to
+       an unsized 'mut' parameter is sized per call
+[ ] easy: (round 441, a walk of 'ident_info.hpp') the names
+    'var_address::by_call' and 'is_address_by_call' are not exact for
+    a destination address that an assignment computed; "computed"
+    would collide with 'stmt_identifier::has_computed_address', the
+    wider set
 [ ] easy: (round 440, bug hunt of calls) a mutant where
     'call_site::has_result_temporary' is false for an inlined call
     passed 550 generated programs; a hand program catches it: an
