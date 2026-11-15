@@ -389,6 +389,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
        then 'movsx r14, r14b' where 'movsx r14, r15b' does
     3. 'mov rdi, 1', 'mov rax, 60' and 'mov rax, 1' of the exits and
        handlers use the 7-byte form, 'mov edi, 1' is 5 bytes
+    4. (round 456) 'baz_read' emits 'cmp rdi, 0' where 'test rdi, rdi'
+       is shorter, 'baz_report_line' 'xor rdx, rdx' where 'xor edx, edx'
+       is
 [p] medium: (round 433, bug hunt of 'int' beside the sized types) need
     approval: a verdict depends on '--checks', alike on every target:
     'v = -int(same(v))' (also '~', and 'v = -i32(f(v))' of an 'i32'
@@ -984,6 +987,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected too, e.g. 's(g + 0, w())', 's(-g, w())', 's(r(g), w())', while
     'g + 0 + w()' is accepted; such operands are computed at their place, so
     only bare paths need the check
+    => round 456 prototype: in 'assert_not_written_later' skip an
+       earlier operand that is neither a bare path nor an index-only
+       place (4 lines); no verdict of the 2554 tests changes; accepted
+       then with the left-to-right result on x86_64 and rv32i under
+       every '--versions': 's(g + 0, w())', 's(-g, w())', 's(r(g),
+       w())' inlined and 'noinline', 's(id(g), w())', 's({g.x, g.y},
+       w())', 'r(g) > w()'; also 'p.get() < p.bump()'; the proof for
+       every node kind is still to do
 [ ] medium: user decision (round 226 UF1): inlined calls that double per
     level have no limit, each limit bounds only one path (64 calls of a
     name, 256 scopes), e.g. 'func r(v mut, n)' calling 'r(v, n - 1)' twice

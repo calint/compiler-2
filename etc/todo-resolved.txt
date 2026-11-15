@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 456 (2026-11-16, bug hunt: loops and 'foo'; design: the
+    no-UB layer, 'ub_reads', 'ub_order', 'ub_assigned'; readability: a
+    newcomer walks 'machine_x86_64.hpp' and 'assembler_x86_64.hpp')
+    => bug hunt: no defect; a loop-heavy generator ('loop' with the step
+       at the top or the end, 'break', 'continue' and 'return' in a
+       chosen round, 'foo' over every element kind and over field and
+       indexed paths with counts 0, 1, n - 1, n, past the length and at
+       run time, writes through 'e'); 3000 programs in about 37700 runs
+       on the four targets, inlined and 'noinline', every '--versions';
+       about 60 directed programs on 4 targets by 5 option sets; 9 of 12
+       mutants caught, three give the same results
+    => design: no code change; each rule has one owner, a value written
+       in parts is checked and emitted from one 'write_plan', the callee
+       effects come from 'visit_callee_effects'; operand lists are kept
+       in step with 'compile' by review and tests (docs 3.1); the
+       prototype of the round 229 and 250 user decision (an earlier
+       computed operand is evaluated at its place) changes no verdict
+       of the suite and its accepted probes give the left-to-right
+       result, measured into that item
+    => readability: 'emit_through_register' keeps the low part of a
+       wider source, 'emit_target_call', 'divide', 'branch_to_failure'
+       and 'emit_report_line_routine' reworded, docs 1.2 item 3: the
+       three passes run with '--nopt' too; 134 functions, 11 programs,
+       60 predictions, 4 wrong; two byte size items in 'todo.txt'
 [x] easy: round 455 (2026-11-16, bug hunt: bool values and conditions;
     design: how registers are handed out, held and given back;
     readability: a newcomer walks 'expr_arith.hpp')
