@@ -1,0 +1,16 @@
+# a call that tells no type reports a call of a generic function in an
+# argument at the type of a type parameter declared after the one it cannot
+# deduce: 'g({1, 2, 3})' deduces 'point' from its destination 'b'
+
+type point {x, y}
+
+func g<T type>(a T) res T {
+    res = a
+}
+
+func f<T type, U type>(a U, b U, c T) {}
+
+func main() {
+    var x = point
+    f(x, g({1, 2, 3}), 3)
+}

@@ -1,6 +1,44 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 450 (2026-11-15, bug hunt: the errors of calls that
+    deduce their type arguments against their twins without type
+    parameters; design: how an expression gets its type; readability:
+    a newcomer walks 'parse_statement.hpp' and 'parse_lookahead.hpp')
+    => bug hunt found two defects of round 449, fixed: the error walk
+       knew only the type parameters declared before the one not
+       deduced ('f(x, 1, 3)' for 'func f<T type, U type>(a U, b U, c T)'
+       said "cannot deduce 'T'" where the twin 'f<i32, point>' says
+       "expected type 'point'" at '1'); 'deduced_type_arguments' deduces
+       every type parameter it can ('deduced_type'), skips a deducing
+       argument after the range of the walk ('is_argument_after'), then
+       walks; and a skipped '{...}' or '[...]' that is continued or
+       reached into ('{1, 2} + 1', '{1, 2}.x') reported a missing ','
+       where no twin does, it is skipped whole and "cannot deduce"
+       stays; docs 2.10.2 item 3; tests 4220 to 4224; 85 calls against
+       twins without type parameters on this build and that of round
+       448, every one matches or differs as the docs say, the 9
+       accepted run alike; 5 mutants caught; an error inside a deducing
+       argument before the earlier arguments went to 'todo.txt'
+    => checks: all steps clean; the listings differ only for the new
+       tests; the fuzzers up to 'fuzz-compiler' found nothing (seed
+       450001), the run was stopped for low memory in 'fuzz-mutate'
+    => design: 'literal_typing' had two jobs, whether a literal may
+       name its type and whether a generic call gets the destination
+       type for its result (only numbers and conditions did, an
+       instance always did); a generic call takes the type of its
+       destination at every destination, 'parse_arith_value' lost its
+       'typing' parameter: 'set(make())' for a 'mut i8' parameter says
+       "not a variable" as for a 'mut' of a user type, not "cannot
+       deduce"; test 4240; the listings differ only for it; four typing
+       paths, one rule each; three ideas left
+    => readability: seven comments and two docs steps (a constructor is
+       no statement call, a keyword no statement starts with, the call
+       after 'if x return' is the next statement, 'is_reached_into'
+       after any value, the reading order: 'parse_builtin' dispatches
+       the built-ins, 'classify_term' is asked by statements and
+       operands); 39 functions, 136 programs, 131 predictions, 8
+       wrong; 'if x return g()' went to 'todo.txt' for a decision
 [x] easy: round 449 (2026-11-15, bug hunt: programs of several source
     files, includes and the locations of errors; design: declarations
     from the parse to storage and initializer; readability: a newcomer

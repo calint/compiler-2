@@ -1,0 +1,4 @@
+
+4220.baz:11:10: expected type 'point', got 'bool'
+    f(x, true, 3)
+         ^~~~

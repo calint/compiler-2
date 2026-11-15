@@ -1,0 +1,4 @@
+
+4221.baz:15:19: too many fields for type 'point'
+    f(x, g({1, 2, 3}), 3)
+                  ^

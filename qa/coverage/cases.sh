@@ -8110,6 +8110,22 @@ SRC=4001 && COMPERR
 SRC=4200 && COMPERR
 SRC=4201 && COMPERR
 
+# a call that tells no type reports an argument at a type parameter deduced
+# from an argument before it, also one declared after the type parameter not
+# deduced, and reads no deducing argument after the arguments it reports
+SRC=4220 && COMPERR
+SRC=4221 && COMPERR
+SRC=4222 && COMPERR
+
+# a call that tells no type skips a literal that an operator continues or that
+# is reached into, its error depends on the type not deduced
+SRC=4223 && COMPERR
+SRC=4224 && COMPERR
+
+# a generic call takes the type of its destination for its result also at a
+# 'mut' parameter, which rejects it as not a variable
+SRC=4240 && COMPERR
+
 # the mirror of 4000: an argument that is wrong at the global type its
 # parameter names is rejected for itself, the type parameter of that name in
 # the function that calls does not accept it

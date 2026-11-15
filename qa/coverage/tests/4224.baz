@@ -1,0 +1,10 @@
+# a call that tells no type skips a literal that is reached into, its error
+# depends on the type not deduced: "cannot deduce", not a missing ','
+
+type point {x, y}
+
+func f<T type>(a T, b T) {}
+
+func main() {
+    f({1, 2}.x, 3)
+}

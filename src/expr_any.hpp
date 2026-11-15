@@ -1091,18 +1091,12 @@ class expr_any final : public statement {
         return tc.generics().has_func(name);
     }
 
-    // a number; a generic call in it takes the type of a known destination
-    // for its result, e.g. 'x = make()'
+    // a number; a generic call in it takes the type of the destination for
+    // its result, e.g. 'x = make()'
     [[nodiscard]] static auto parse_arith_value(parse_toc& tc, tokenizer& tz,
-                                                const type& tp,
-                                                const literal_typing typing)
-        -> expr_arith {
+                                                const type& tp) -> expr_arith {
 
-        const type* const destination_type{
-            typing == literal_typing::from_destination ? &tp : nullptr,
-        };
-
-        expr_arith value{tc, tz, expr_arith::options::plain(destination_type)};
+        expr_arith value{tc, tz, expr_arith::options::plain(&tp)};
 
         assert_number_kind(value, tp);
 
@@ -1237,17 +1231,15 @@ class expr_any final : public statement {
         tz.put_back_token(tk);
 
         if (not tp.is_bool()) {
-            return parse_arith_value(tc, tz, tp, typing);
+            return parse_arith_value(tc, tz, tp);
         }
 
-        // a generic call that is the whole value takes the type of a known
-        // destination for its result, e.g. 'b = make()'
-        const bool is_result_typed{
-            typing == literal_typing::from_destination and
-                is_whole_generic_call(tc, tz),
+        // a generic call that is the whole value takes the type of the
+        // destination for its result, e.g. 'b = make()', as in a number and
+        // an instance
+        const type* const result_type{
+            is_whole_generic_call(tc, tz) ? &tp : nullptr,
         };
-
-        const type* const result_type{is_result_typed ? &tp : nullptr};
 
         return parse_condition(tc, tz, result_type);
     }

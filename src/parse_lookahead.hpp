@@ -392,8 +392,9 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
     return &value_type;
 }
 
-// e.g. 'i8' in 'var x = i8' is 'i8(0)' and 'bool' in 'var b = bool' is 'false',
-// 'i8 + 1' or 'bool and true' continue an expression
+// a built-in type alone as a value, its zero, e.g. 'i8' in 'var x = i8' is
+// 'i8(0)' and 'bool' in 'var b = bool' is 'false', not 'i8 + 1' or
+// 'bool and true', which continue an expression
 [[nodiscard]] inline auto is_bare_builtin_type(const term_kind tm,
                                                const tokenizer& tz) -> bool {
 
@@ -435,8 +436,8 @@ builtin_value_type(const parse_toc& tc, const token& tk, const term_kind tm)
            is_literal_value(tz);
 }
 
-// a literal ends where 'tz' is and a field or an element of it is named, e.g.
-// the '.x' of 'pt{1, 2}.x' or the '[1]' of 'i8[]{1, 2}[1]'
+// a field or an element of the value that ends at 'tz' is named, e.g. the
+// '.x' of 'pt{1, 2}.x', 'f().x' or 'i8{}.x', or the '[1]' of 'i8[]{1, 2}[1]'
 [[nodiscard]] inline auto is_reached_into(const tokenizer& tz) -> bool {
     const char next{tz.peek_char_after_whitespace()};
     return next == '.' or next == '[';

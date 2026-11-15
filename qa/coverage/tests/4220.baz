@@ -1,0 +1,12 @@
+# a call that tells no type reports an argument at a type parameter declared
+# after the one it cannot deduce, deduced from an argument before: 'b' is at
+# 'point', the 'U' that 'x' tells, so 'true' is the error
+
+type point {x, y}
+
+func f<T type, U type>(a U, b U, c T) {}
+
+func main() {
+    var x = point
+    f(x, true, 3)
+}

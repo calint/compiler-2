@@ -1,0 +1,11 @@
+# a generic call takes the type of its destination for its result at every
+# destination: a 'mut' parameter of a built-in type rejects it as not a
+# variable, as one of a user type does, not as a call it cannot deduce
+
+func make<T type>() res T { res = {} }
+
+func set(p mut i8) { p = 1 }
+
+func main() {
+    set(make())
+}

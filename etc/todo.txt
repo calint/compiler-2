@@ -155,6 +155,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 450, bug hunt of generic call errors) an error inside
+    a deducing argument is reported before the arguments before it:
+    'f(zz, arr)' for 'func f<T type>(a, b T)' with 'arr' an 'i8[4]'
+    says "array 'arr' must be indexed" where the twin says "'zz' not
+    found" (also 'x.zz', 'arr[', 'k[0]'); 'argument_type' builds a
+    'stmt_identifier' that throws; the fix seen, catching that error
+    to walk the arguments before it and rethrowing, is control flow by
+    exception, not done
+[p] easy: (round 450, a walk of 'parse_statement.hpp') need approval:
+    'if x return g()' is 'if x return' and then the statement 'g()',
+    which always runs ('if x == 2 return exit(3)' exits 3 whatever
+    'x'); a reader from C reads it as returning 'g()'. proposed: reject
+    a call on the line of a 'return' without value, as
+    'assert_return_without_value' rejects a value there; changes
+    which programs are accepted
 [ ] easy: (round 449, bug hunt of several source files) docs do not
     say that a column counts bytes ('é' is 2) while the caret is placed
     by characters, so a double-width character puts the caret off by

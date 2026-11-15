@@ -1,0 +1,11 @@
+# a call that tells no type does not read a deducing argument after the
+# arguments it reports: 'arr' deduces 'U', the '3' after '{1, 2}' is the error
+
+type point {x, y}
+
+func f<T type, U type>(a T, b U) {}
+
+func main() {
+    var arr = i8[4]
+    f({1, 2} 3, arr)
+}

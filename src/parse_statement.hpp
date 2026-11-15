@@ -57,7 +57,7 @@
 // where a call of a built-in is parsed: in a value, or alone as a statement
 enum class builtin_place : uint8_t { value, statement };
 
-// the built-in function 'fn' where it stands, e.g. 'exit' has no value and
+// the built-in function 'fn' may stand at 'at', e.g. 'exit' has no value and
 // 'arrays_equal' is no statement
 inline auto assert_builtin_place(const token& tk,
                                  const reserved_names::builtin_function& fn,
@@ -163,7 +163,8 @@ inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
 }
 
 // e.g. the 'a' of 'return a', a value on the line of the 'return' that no
-// statement starts with, not the 'g()' of 'if x return g()'
+// statement starts with, not the 'g()' of 'if x return g()', which is the
+// statement after the 'if'
 inline auto assert_return_without_value(const tokenizer& tz,
                                         const token& return_tk) -> void {
 
@@ -202,7 +203,8 @@ inline auto assert_return_without_value(const tokenizer& tz,
     }
 }
 
-// a statement that starts with a keyword, null otherwise
+// a statement that starts with a keyword, null for a name or for a keyword no
+// statement starts with, e.g. 'mut'
 inline auto parse_keyword_statement(parse_toc& tc, tokenizer& tz,
                                     const token& tk)
     -> std::unique_ptr<statement> {
@@ -392,15 +394,15 @@ inline auto assert_not_compound_assignment(const tokenizer& tz,
                            in_quotes(written), in_quotes(example))};
 }
 
-// a statement that starts with a name: a call as in an expression, e.g.
-// 'f(x)', 'point.at(1, 2)' or 'lst.add(x)', otherwise an assignment
+// a statement that starts with a name: a call without a result, e.g. 'f(x)'
+// or 'lst.add(x)', otherwise an assignment
 inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
                                  const term_kind tm)
     -> std::unique_ptr<statement> {
 
-    // no destination: no type argument is deduced, and a result is
-    // discarded, rejected here like the result of a built-in; a statement
-    // starts at its name, no unary operator comes before it
+    // no destination: no type argument is deduced from it, and a result
+    // would be discarded, rejected below like the result of a built-in; a
+    // statement starts at its name, no unary operator comes before it
     call_or_identifier parsed{
         parse_call_or_identifier(tc, tz, tk, tm, unary_ops{}, nullptr),
     };

@@ -1,0 +1,4 @@
+
+4224.baz:9:5: cannot deduce 'T' of generic function 'f', write 'f<...>'
+    f({1, 2}.x, 3)
+    ^

@@ -1,0 +1,4 @@
+
+4240.baz:10:9: 'make()', which is not a variable, cannot be passed to a 'mut' parameter
+    set(make())
+        ^

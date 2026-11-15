@@ -114,7 +114,7 @@ read by its header comments and class maps first.
                                read: the node interface every statement has
 4. tokenizer.hpp, parse_lookahead.hpp
                                skim: the tokens and 'classify_term', which
-                               every parse step asks first
+                               the parse of a statement or an operand asks
 5. stmt_block.hpp, decouple.hpp, parse_statement.hpp
                                read: a block, the statement it parses next
                                and the definitions of the top level
@@ -140,7 +140,7 @@ read by its header comments and class maps first.
 10. stmt_builtin_*.hpp, bulk_operands.hpp
                                skim: the built-ins, conversion, io, array
                                copy, compare and length, exit, which
-                               'parse_statement' dispatches; their arguments
+                               'parse_builtin' dispatches; their arguments
                                are a 'builtin_arguments' (stmt_call.hpp,
                                before 'stmt_call')
 11. generics.hpp, stmt_def_func.hpp, stmt_def_func_param.hpp, stmt_call.hpp,
@@ -1079,9 +1079,13 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    nothing, all of them and a surplus one for a result, are checked in
    order as in a call without type parameters, each at the type of its
    parameter, whose name is read as the instance reads it, not as the code
-   around the call would (4000, 4001), or at the type it tells when the
-   parameter is declared with a type parameter (3363 to 3365, 3368), so
-   their own errors win,
+   around the call would (4000, 4001), at the type another argument deduces
+   for its type parameter, also one declared later (4200, 4220, 4221), or
+   at the type it tells when that type parameter is not deduced (3363 to
+   3365, 3368); a '{...}' or '[...]' there, whose type is not known, is
+   skipped, then the token after it is checked unless it continues the
+   argument (4201, 4223, 4224); a deducing argument after them is not read
+   (4222). So their own errors win,
    e.g. "function 'exit' has no result" for 'show(exit(1))', "'zz' not
    found" for 'f(zz, 1)' of 'func f<A type>(b, a A)' and "'make' takes 1
    argument" for 'make(2, 3)' (2249); otherwise the call is rejected and asks

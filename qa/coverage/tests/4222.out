@@ -1,0 +1,4 @@
+
+4222.baz:10:14: expected ',' before argument 2 ('b')
+    f({1, 2} 3, arr)
+             ^
