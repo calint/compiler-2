@@ -8068,3 +8068,8 @@ SRC=3551 && COMPERR
 # destination on every target, also on rv32i where 'int' and 'i32' have the
 # same size, so a destination that the call takes is rejected there too
 SRC=3552 && COMPERR
+
+# the check of a body without its call binds only the arguments of an
+# inlined recursion that no constant ends, also one level deeper, inside a
+# recursion that it expands
+SRC=3800 && EXP=2 && RUN

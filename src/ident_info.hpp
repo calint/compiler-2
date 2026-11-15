@@ -226,8 +226,8 @@ class ident_info final {
         return element;
     }
 
-    // the same storage at 'address', which an inlined call computed for an
-    // argument or a destination
+    // the same storage at 'address', computed for an argument of a call or
+    // for a destination
     [[nodiscard]] auto at_address(const ::operand& address) const
         -> ident_info {
 

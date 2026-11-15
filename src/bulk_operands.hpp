@@ -59,8 +59,8 @@ class bulk_operands final {
         // a run-time start, held in a register from before the walk of its
         // address until the walk has returned and the ranges are checked
         struct held_start {
-            // holds the register of the start, none for a constant start and
-            // once the start is freed
+            // holds the register of the start, none for a constant start,
+            // without a bounds check and once the start is freed
             std::optional<machine::held_registers> holder;
             bool is_walked{};
 
@@ -363,9 +363,9 @@ class bulk_operands final {
           first_role_{first_role}, second_role_{second_role},
           is_second_written_{use == second_use::written} {}
 
-    // the checks of the arguments in the order the statement reads: no
-    // argument is written by a later one, the element types match, a constant
-    // count is in bounds; returns the element type of both arrays
+    // the checks of the arguments in the order the statement reads: nothing
+    // an argument reads is written by a later one, the element types match, a
+    // constant count is in bounds; returns the element type of both arrays
     [[nodiscard]] auto check(const toc& tc) const -> const type& {
         // e.g. the 'a' of 'array_copy(a, b, f())' with 'f' writing 'a'
         assert_not_written_later(tc, *this, "argument");

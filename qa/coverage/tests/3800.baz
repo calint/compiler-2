@@ -1,0 +1,22 @@
+# the check of a body without its call expands the inlined recursion 'g(1)',
+# whose argument is a constant, and binds only the argument of the 'g(u)' it
+# reaches one level deeper, which no constant ends, so the function that
+# nothing calls is accepted
+
+var u = 2
+
+func g(k) res {
+    if k == 0 {
+        res = g(1)
+    } else {
+        if k == 2 {
+            res = 7
+        } else {
+            res = g(u)
+        }
+    }
+}
+
+func main() {
+    exit(u)
+}

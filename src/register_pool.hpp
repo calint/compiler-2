@@ -264,7 +264,13 @@ class register_trace final {
             static_cast<size_t>(std::ranges::count_if(live, is_listed)),
         };
 
-        if (held <= peak_.held) {
+        // note: the first snapshot is kept even with nothing listed, so a
+        //       build that holds no register still shows what the backend
+        //       holds
+
+        const bool is_first{peak_.allocations.empty()};
+
+        if (held <= peak_.held and not is_first) {
             return;
         }
 
@@ -340,6 +346,7 @@ class register_call_log final {
     // a call inlined counts where its frame ends, a call of a body of its own
     // where it is made; a callee is listed once it is called or holds a
     // register
+    // note: the frame of 'main' is 'inlined', so it is listed with one call
     [[nodiscard]] auto callees() const -> std::map<std::string, callee_use> {
         std::map<std::string, callee_use> uses;
 

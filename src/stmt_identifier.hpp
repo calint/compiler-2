@@ -696,6 +696,23 @@ class stmt_identifier final : public statement {
                info.is_address_by_call();
     }
 
+    // 'info' at the address of what it resolves this statement to: as it is
+    // for the storage of a name, else at the address computed here
+    // ('ident_info::at_address'), e.g. '[rbp + r14 * 4 + 205]'; the
+    // registers of a computed address go into 'held'
+    [[nodiscard]] auto info_at_address(compile_toc& tc, const ident_info& info,
+                                       machine::held_registers& held) const
+        -> ident_info {
+
+        if (not has_computed_address(info)) {
+            return info;
+        }
+
+        const operand address{compile_lea(tc, held, {})};
+
+        return info.at_address(address);
+    }
+
     [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
 
     [[nodiscard]] auto is_array_element() const -> bool {

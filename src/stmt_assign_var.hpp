@@ -10,7 +10,6 @@
 #include "expr_any.hpp"
 #include "ident_info.hpp"
 #include "machine.hpp"
-#include "operand.hpp"
 #include "stmt_identifier.hpp"
 #include "toc.hpp"
 #include "token.hpp"
@@ -78,15 +77,9 @@ class stmt_assign_var final : public statement {
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand address{
-            stmt_ident_.operand_of(tc, dst_info, held),
-        };
-
         // the destination is written at the address computed here
         const ident_info written{
-            stmt_ident_.has_computed_address(dst_info)
-                ? dst_info.at_address(address)
-                : dst_info,
+            stmt_ident_.info_at_address(tc, dst_info, held),
         };
 
         const destination var_dst{

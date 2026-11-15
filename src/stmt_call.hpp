@@ -66,10 +66,9 @@
 //                                'call_site::is_argument_temporary'
 //   'param_binding'              inlined: what the parameter stands for
 //                                ('inline_call::make_bindings')
-//   'noinline_call::noinline_arg'
-//                                noinline: the variable passed, or the
-//                                temporary that holds the value
-//                                ('noinline_call::compile_arguments',
+//   'ident_info'                 noinline: the variable passed, or the
+//                                temporary that holds the value, at its
+//                                address ('noinline_call::compile_arguments',
 //                                'call_site::make_argument_temporary')
 //   frame slot                   the address written to it
 //                                ('noinline_call::slot_address_of')
@@ -1338,12 +1337,15 @@ class inline_call final {
         if (arg_place) {
             const stmt_identifier& ident{*arg_place->ident};
 
-            // an indexed argument keeps its computed address
-            if (ident.has_computed_address(arg_place->info)) {
-                return bind_reference(tc, *arg_place, param, held);
-            }
+            // an indexed argument keeps its computed address, e.g.
+            // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
+            // note: the address registers stay allocated until the inlined
+            //       body is compiled
+            const ident_info bound{
+                ident.info_at_address(tc, arg_place->info, held),
+            };
 
-            return param_binding::make_name(param.name(), arg_place->info,
+            return param_binding::make_name(param.name(), bound,
                                             ident.path_text());
         }
 
@@ -1389,27 +1391,6 @@ class inline_call final {
 
         return param_binding::make_register(param.name(), reg,
                                             reg.register_name());
-    }
-
-    // an indexed argument keeps its computed address, e.g.
-    // '[rbp + r14 * 4 + 205]', '[r15 + r14]' or simply '[r15]'
-    [[nodiscard]] static auto bind_reference(compile_toc& tc,
-                                             const place& arg_place,
-                                             const stmt_def_func_param& param,
-                                             machine::held_registers& held)
-        -> param_binding {
-
-        const stmt_identifier& ident{*arg_place.ident};
-
-        // note: the address registers stay allocated until the inlined body is
-        //       compiled
-
-        const operand lea{
-            ident.compile_lea(tc, held, {}),
-        };
-
-        return param_binding::make_name(
-            param.name(), arg_place.info.at_address(lea), ident.path_text());
     }
 
     // the result name of the function refers to the destination
@@ -1481,17 +1462,6 @@ class inline_call final {
 //      receiver address the callee finds in a register) and the function is
 //      called
 class noinline_call final {
-    // what the call passes for an argument: the variable it names or a
-    // temporary of the current block that holds its value
-    // note: a place is passed by its address, any other argument in a
-    //       temporary
-    struct noinline_arg {
-        ident_info info;
-        // computed at the argument's position in the list, in a register held
-        // until the frame is written when the variable has a run-time index
-        operand address;
-    };
-
     call_site call_{};
 
   public:
@@ -1532,13 +1502,17 @@ class noinline_call final {
             in_quotes(statement::trimmed_source(arg)), in_quotes(param.name()));
     }
 
-    // what is passed for each argument, in their order; 'held' holds the
-    // address registers
+    // what is passed for each argument, in their order: the variable it
+    // names or a temporary of the current block that holds its value, at its
+    // address, which is computed at the argument's position in the list;
+    // 'held' holds the registers of an address with a run-time index
+    // note: a place is passed by its address, any other argument in a
+    //       temporary
     [[nodiscard]] auto compile_arguments(compile_toc& tc,
                                          machine::held_registers& held) const
-        -> std::vector<noinline_arg> {
+        -> std::vector<ident_info> {
 
-        std::vector<noinline_arg> arguments;
+        std::vector<ident_info> arguments;
 
         for (const auto [i, arg_place] :
              std::views::zip(std::views::iota(size_t{}), call_.places)) {
@@ -1549,10 +1523,7 @@ class noinline_call final {
                     call_.make_argument_temporary(tc, i),
                 };
 
-                arguments.push_back({
-                    .info{temporary.bound_info()},
-                    .address{temporary.operand()},
-                });
+                arguments.push_back(temporary.bound_info());
 
                 continue;
             }
@@ -1560,14 +1531,10 @@ class noinline_call final {
             // note: a noinline call passes every value in a temporary
             assert(arg_place);
 
-            const operand address{
-                arg_place->ident->operand_of(tc, arg_place->info, held),
-            };
+            const stmt_identifier& ident{*arg_place->ident};
 
-            arguments.push_back({
-                .info{arg_place->info},
-                .address{address},
-            });
+            arguments.push_back(
+                ident.info_at_address(tc, arg_place->info, held));
         }
 
         return arguments;
@@ -1582,7 +1549,7 @@ class noinline_call final {
 
         machine::held_registers held{x, {call_.tk, tc.indent()}};
 
-        const std::vector<noinline_arg> arguments{
+        const std::vector<ident_info> arguments{
             compile_arguments(tc, held),
         };
 
@@ -1592,7 +1559,7 @@ class noinline_call final {
     // 'held' holds the addresses of the arguments, freed once the frame is
     // written
     auto compile_with_arguments(compile_toc& tc, const destination& dst,
-                                const std::span<const noinline_arg> arguments,
+                                const std::span<const ident_info> arguments,
                                 machine::held_registers& held) const -> void {
 
         assert_call(dst, *call_.func, arguments);
@@ -1636,7 +1603,7 @@ class noinline_call final {
     // of 'write_frame_slots'
     [[nodiscard]] auto populate_frame(
         compile_toc& tc, const destination& dst,
-        const std::span<const noinline_arg> arguments,
+        const std::span<const ident_info> arguments,
         const operand& frame_address,
         const std::span<const std::optional<size_t>> array_lengths) const
         -> std::optional<operand> {
@@ -1660,7 +1627,7 @@ class noinline_call final {
     [[nodiscard]] auto
     write_frame_slots(compile_toc& tc, const operand& frame_address,
                       const destination& dst,
-                      const std::span<const noinline_arg> arguments) const
+                      const std::span<const ident_info> arguments) const
         -> std::optional<operand> {
 
         operand slot_address{frame_address};
@@ -1694,7 +1661,7 @@ class noinline_call final {
     // the body is compiled for the lengths of the array arguments
     [[nodiscard]] static auto
     array_argument_lengths(const stmt_def_func& func,
-                           const std::span<const noinline_arg> arguments)
+                           const std::span<const ident_info> arguments)
         -> std::vector<std::optional<size_t>> {
 
         std::vector<std::optional<size_t>> lengths;
@@ -1703,7 +1670,7 @@ class noinline_call final {
              std::views::zip(arguments, func.params())) {
 
             if (param.is_array()) {
-                lengths.push_back(argument.info.shape().length());
+                lengths.push_back(argument.array_len());
             }
         }
 
@@ -1712,7 +1679,7 @@ class noinline_call final {
 
     // the callee reaches the result and arguments through their addresses
     static auto assert_call(const destination& dst, const stmt_def_func& func,
-                            const std::span<const noinline_arg> arguments)
+                            const std::span<const ident_info> arguments)
         -> void {
 
         // note: 'stmt_call::compile' checked the result, a result in a
@@ -1730,10 +1697,8 @@ class noinline_call final {
 
         // a value without storage is passed in a temporary of the
         // parameter's type
-        for (const auto [argument, param] :
+        for (const auto [info, param] :
              std::views::zip(arguments, func.params())) {
-
-            const ident_info& info{argument.info};
 
             // note: a temporary is a variable
             assert(info.is_var());
@@ -1753,13 +1718,13 @@ class noinline_call final {
     // the destination for the result, the argument for a parameter
     [[nodiscard]] static auto
     slot_address_of(const destination& dst, const frame_slot& slot,
-                    const std::span<const noinline_arg> arguments) -> operand {
+                    const std::span<const ident_info> arguments) -> operand {
 
         if (not slot.param_index) {
             return dst.operand();
         }
 
-        return arguments.at(*slot.param_index).address;
+        return arguments.at(*slot.param_index).operand();
     }
 };
 

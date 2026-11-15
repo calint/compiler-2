@@ -445,6 +445,9 @@ CLI_REGISTER_REPORT() {
     grep -Fq "register use at the peak: 3 of 13 registers live" out
     "$BIN" --target=rv32i --report=registers 0001.baz >out 2>err
     grep -Fq "register use at the peak: 4 of 29 registers live" out
+    # also when no other register is held
+    "$BIN" --target=rv32i --report=registers 0136.baz >out 2>err
+    grep -Fq "register use at the peak: 0 of 29 registers live" out
     echo ok
 }
 

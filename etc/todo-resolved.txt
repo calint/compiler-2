@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 438 (2026-11-15, bug hunt: integer arithmetic and
+    comparisons, every operator at every width, constant folding
+    against run time, typed constants as comparison sides, stored and
+    branching conditions; design: how a call is compiled, inlined
+    against noinline; readability: a newcomer walks
+    'register_pool.hpp', 'register_report.hpp', 'operand.hpp',
+    'bulk_operands.hpp' and 'access_path.hpp')
+    => bug hunt: no defect; 53420 programs and 410000 builds against an
+       exact python model on the four targets, sweeps of 93000
+       comparisons, 141000 binary and 10000 unary statements at the
+       boundary values; 18 seeded mutants, 14 caught, 3 without a
+       change of behavior, one outside the area
+    => design: 'stmt_identifier::info_at_address' is the one answer to
+       "the place at its address" for 'stmt_assign_var::compile', the
+       inlined binding and the noinline argument;
+       'inline_call::bind_reference' and 'noinline_call::noinline_arg'
+       are gone, a passed argument is an 'ident_info' on both paths;
+       no listing differs; test 3800 reaches 'check_recursion' at a
+       deeper level with a call that does not nest alike; nine ideas
+       weighed and left
+    => readability: three comments ('bulk_operands::check',
+       'held_start::holder', 'register_call_log::callees'); 127
+       functions, 48 programs, 69 predictions, 5 wrong
+    => defect found by the walk and fixed: '--report=registers' on
+       rv32i said "0 of 30 registers live" for a build that holds no
+       register, the variables base not left out;
+       'register_trace::record_peak' keeps its first snapshot also
+       with nothing listed, so the total is 29; checked in
+       'CLI_REGISTER_REPORT' with test 0136; that line of the report
+       changes in 10 tests on the three rv32i targets, nothing else
 [x] easy: round 437 (2026-11-15, bug hunt: records and arrays of
     records, field paths, indexes and bounds checks, whole-record
     assignment, 'array_copy' and 'arrays_equal' with overlap and at
