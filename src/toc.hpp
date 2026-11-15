@@ -2779,6 +2779,11 @@ class parse_toc final : public toc {
             throw_unparsed_number(tk, tk.text());
         }
 
+        // a type parameter hides a constant of its name, e.g. 'let U = 5'
+        if (type_param_named(tk.text()) != nullptr) {
+            return std::nullopt;
+        }
+
         return scopes().const_value(tk.text());
     }
 

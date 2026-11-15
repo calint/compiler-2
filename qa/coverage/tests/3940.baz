@@ -1,0 +1,53 @@
+# a type parameter hides a global constant of its name also where it is
+# written as a generic argument: of a call, of a method call and of a base
+
+let U = 5
+let V = i8(6)
+
+type box<T type> {
+    v T,
+    n i8,
+}
+
+func same<T type>(a T) res T {
+    res = a
+}
+
+func box.as<T2 type>() res T2 {
+    res = T2(self.v)
+}
+
+# the base takes the type parameters 'U' and 'V'
+type pair<A type, B type> {
+    a A,
+    b B,
+}
+
+type both<U type, V type> = pair<U, V>
+type cell<U type> = box<U>
+
+func cell.get() res U {
+    res = same<U>(self.v)
+}
+
+type small = cell<i8>
+type mixed = both<i16, i8>
+
+func f<U type>(a U) res U {
+    res = same<U>(a)
+}
+
+func g<V type>(b small) res V {
+    res = b.as<V>()
+}
+
+func main() {
+    var s = small{3, 1}
+    var m = mixed{300, 2}
+
+    var x = f(i8(4))
+    var y = g<i16>(s)
+
+    # 4 + 3 + 3 + 44 + 2 + 5 + 6
+    exit(int(x) + y + s.get() + i8(m.a) + m.b + U + V)
+}

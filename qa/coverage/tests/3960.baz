@@ -1,0 +1,20 @@
+# a statement compiled in two versions that leaves on every path, here by
+# an inlined 'exit' in an arithmetic list, ends the path of the code after
+# it: in an inlined call that code is not compiled, so the index a constant
+# argument puts out of bounds is not rejected
+
+func die(n) res {
+    exit(n)
+}
+
+func pick(n) res {
+    var a = i32[4]
+    var x = 1
+    x = x + die(3) * 2
+    res = a[n] + x
+}
+
+func main() {
+    var r = pick(9)
+    exit(r)
+}

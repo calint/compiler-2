@@ -1,0 +1,7 @@
+
+3941.baz:11:30: generic parameter 'capacity' of 'list' needs a constant, got the type 'U'
+type wide<U type> = list<i8, U>
+                             ^
+3941.baz:12:6: instantiated by
+type name = wide<i16>
+     ^~~~

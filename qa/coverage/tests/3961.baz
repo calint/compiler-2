@@ -1,0 +1,24 @@
+# the condition of a branch that never returns, here an inlined 'exit',
+# leaves the 'else if' after it unreached, also one whose condition folds
+# to true, so the code after the 'if' is not reached: in an inlined call it
+# is not compiled and the index a constant argument puts out of bounds is
+# not rejected
+
+func die(n) res {
+    exit(n)
+}
+
+func pick(n) res {
+    var a = i32[4]
+    if die(4) == 1 {
+        res = 1
+    } else if n == 9 {
+        res = 2
+    }
+    res = a[n]
+}
+
+func main() {
+    var r = pick(9)
+    exit(r)
+}

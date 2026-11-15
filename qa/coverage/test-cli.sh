@@ -374,8 +374,9 @@ CLI_FILE_ERRORS() {
     expect_exit_1 "$BIN" --target=rv32i --bin=/dev/full 0015.baz >gen.s 2>err
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file '/dev/full'" err
-    # a message that cannot be written still exits with 1, the help too
+    # a help that cannot be written says so, also when larger than a block
     expect_exit_1 "$BIN" --help >/dev/full 2>err
+    grep -Fq "cannot write the help to stdout" err
     # the version is the tag and commit of the build, written like the help
     "$BIN" --version >gen.s 2>err
     grep -Eq '^baz [^ ]+$' gen.s

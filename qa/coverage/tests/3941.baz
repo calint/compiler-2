@@ -1,0 +1,17 @@
+# a type parameter named like a global constant is no constant: as the
+# argument of a constant parameter it is rejected, the global is not taken
+
+let U = 5
+
+type list<T type, capacity> {
+    items T[capacity],
+    len,
+}
+
+type wide<U type> = list<i8, U>
+type name = wide<i16>
+
+func main() {
+    var s = name
+    exit(array_length(s.items))
+}

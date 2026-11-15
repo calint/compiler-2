@@ -182,7 +182,7 @@ struct command_option {
 };
 
 // the text of '--help', which the readme usage section pastes; the format
-// arguments are listed in 'print_help'
+// arguments are listed in 'help_text'
 constexpr std::string_view usage_format{
     R"(usage: {0} [options] [file]
 compiles file (default: {9}) to assembly on stdout, rv32i targets also
@@ -265,12 +265,12 @@ examples:
   {0} --target=rv32i-qemu --bin=image.bin prog.baz > prog.s
 )"};
 
-auto print_help(const char* const program_name) -> void {
-    std::print(usage_format, program_name, vars_alignment,
-               default_vars_size_bytes, stack_alignment,
-               default_stack_size_bytes, memory_alignment,
-               default_memory_size_bytes, machine_rv32i::leaf_stack_bytes(),
-               default_sd_card_file_name, default_src_file_name);
+[[nodiscard]] auto help_text(const char* const program_name) -> std::string {
+    return std::format(
+        usage_format, program_name, vars_alignment, default_vars_size_bytes,
+        stack_alignment, default_stack_size_bytes, memory_alignment,
+        default_memory_size_bytes, machine_rv32i::leaf_stack_bytes(),
+        default_sd_card_file_name, default_src_file_name);
 }
 
 // the 'text' of each row of a table joined by ', ', e.g. 'upper, lower, line'
@@ -706,11 +706,24 @@ auto print_option_error(const std::string_view message) -> void {
     std::println(stderr, "use --help for usage information");
 }
 
-// 0 when 'what' written to stdout reached it, else 1 with a message
+// 0 when 'text', named 'what' in the message, reached stdout, else 1 with a
+// message
 // note: the flush reports a write that stdio buffered, e.g. to a closed
-//       stdout
-[[nodiscard]] auto flushed_stdout(const std::string_view what) -> int {
-    if (std::fflush(stdout) == 0) {
+//       stdout; a text larger than the buffer already fails in 'std::print',
+//       which throws
+[[nodiscard]] auto written_to_stdout(const std::string_view text,
+                                     const std::string_view what) -> int {
+
+    bool is_written{};
+
+    try {
+        std::print("{}", text);
+        is_written = std::fflush(stdout) == 0;
+    } catch (const std::system_error&) {
+        is_written = false;
+    }
+
+    if (is_written) {
         return 0;
     }
 
@@ -728,13 +741,12 @@ auto print_option_error(const std::string_view message) -> void {
             const std::string_view arg{argument};
 
             if (arg == "--help" or arg == "-h") {
-                print_help(args.at(0));
-                return flushed_stdout("the help");
+                return written_to_stdout(help_text(args.at(0)), "the help");
             }
 
             if (arg == "--version") {
-                std::println("baz {}", baz_version);
-                return flushed_stdout("the version");
+                return written_to_stdout(std::format("baz {}\n", baz_version),
+                                         "the version");
             }
 
             parse_option(arg, opts);

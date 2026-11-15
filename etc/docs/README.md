@@ -267,7 +267,9 @@ a type, a generic type, a function, a generic function, a variable or a
 constant, defined before or after it: a constant parameter is a constant of
 the instance scope, a type parameter wins in the type table and in the parser
 ('type_param_named'), e.g. 'T(5)' in 'func f<T type>()' converts also when a
-function 'T' exists. A local cannot be named like a type parameter. Every
+function 'T' exists, and as a generic argument it is the type also after
+'let T = 5' ('parse_toc::constant_value_of', tests 3940, 3941). A local
+cannot be named like a type parameter. Every
 question about a name asks this lookup: the resolver ('ident_resolver'), the
 aliasing check, and the lookaheads of the parser, where a variable, a
 parameter or a constant hides a type or a generic function of its name, e.g.
@@ -2266,7 +2268,9 @@ message, x86_64 stops with a signal.
   argument may make an inlined call reject what a noinline one accepts
   (1.5); no result changes. Ending the path there needs the reach of each
   exit of a condition and every operand list to stop at the call (bug hunt
-  round 14 B1-1, B1-2).
+  round 14 B1-1, B1-2). After an 'if' condition that never returns, the
+  bodies and the code after the 'if' are skipped, the conditions of its
+  'else if' branches are still compiled as reached.
 - The operating system and the emulators keep the low 8 bits of an exit
   code: an 'exit' code outside 0 to 255 that is a constant at the parse is
   rejected ('stmt_builtin_exit::assert_constant_code_fits'), any other one is

@@ -1,6 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 442 (2026-11-15, bug hunt: generics and methods,
+    instance naming, deduction, generic types with levels of bases,
+    methods with type parameters of their own, each program also
+    with every type argument written and monomorphized by hand;
+    design: the state 'toc.hpp' carries along a path, reach, scopes,
+    the dry run and versions, and who saves and restores it;
+    readability: a newcomer walks 'assembler.hpp', 'program.hpp' and
+    the driver part of 'main.cpp')
+    => bug hunt: one defect, fixed: a type parameter named like a
+       global constant defined before it was not the type where it
+       is written as a generic argument: 'let hg = 5' then
+       'func f<hg type>(a hg) res hg { res = id<hg>(a) }' was rejected
+       ("needs a type, got the constant 'hg'"), and
+       'type w<hg type> = vec<i8, hg>' built 'vec<i8, 5>'; docs 1.3
+       says the parameter hides a constant defined before or after
+       it. cause: 'parse_toc::constant_value_of' asked the scopes
+       without asking 'type_param_named' first; it now returns no
+       constant for a type parameter; tests 3940, 3941. 8000 programs
+       and 152000 builds, 116000 instance labels compared; 8 seeded
+       mutants, all caught
+    => design: nothing to apply in the sources; no user saves or
+       restores path state by hand; 37 probe counters over the suites;
+       tests 3960 and 3961 reach a kept version whose end reach
+       differs and an 'else if' that starts unreached (two mutants
+       passed the suite before); twelve ideas weighed and left
+    => readability: two comment lines ('assembler::next_instruction',
+       the stdout note in 'main.cpp'); 134 functions, 45 programs,
+       320 predictions, 10 wrong
+    => defect found by the walk and fixed: './baz --help >/dev/full'
+       ended with 1 and no message, the help is larger than the stdio
+       buffer and 'std::print' threw before the flush was asked;
+       'written_to_stdout' writes and flushes the help and the
+       version and reports either failure, 'print_help' is
+       'help_text'; 'test-cli.sh' expects the message
+    => docs 8.3: after an 'if' condition that never returns the
+       conditions of its 'else if' branches are still compiled as
+       reached (see the round 437 item in 'etc/todo.txt')
 [x] easy: round 441 (2026-11-15, bug hunt: text and data, string and
     character literals, strings as values, 'dat' definitions, 'read'
     and 'write', 'sector_read' and 'sector_write', their bounds and

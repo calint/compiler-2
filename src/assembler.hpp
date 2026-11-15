@@ -707,6 +707,7 @@ class assembler {
         return std::span{lines_}.subspan(run.first, run.end - run.first);
     }
 
+    // the first line with code at or after 'index', the line count when none;
     // labels, comments, other sections and removed lines emit no code
     [[nodiscard]] auto next_instruction(size_t index) const -> size_t {
         while (index < lines_.size() and lines_.at(index).code_size == 0) {

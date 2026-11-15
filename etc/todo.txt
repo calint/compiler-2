@@ -155,6 +155,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'fixed_param_type' and hands the parsed arguments to 'stmt_call',
     removes the text skip and the error walk and closes the round 419
     item, changes the order of errors and what is accepted
+[ ] easy: (round 442, a walk of 'assembler.hpp')
+    'assembler::remove_copies' walks each run from its last line to
+    its first, no comment says why; walking forward removes one more
+    copy in test 0072 on the three rv32i targets (921 -> 920
+    instructions), 3 of 2540 listings differ, the others are equal:
+    backward, 'mv t0, t1' is kept, then the earlier 'mv t1, a0'
+    folds into it and the new 'mv t0, a0' is not visited again;
+    compared by listings only, not run
 [ ] easy: (round 441, bug hunt of text and data)
     1. an untyped constant list in a typed slot checks each operand at
        the slot type: 'dat d = i8[1]{449 - 576}' is rejected although
@@ -221,6 +229,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
     ('stmt_block::compile_from' asks 'check_skipped'), the conditions
     are not ('compile_branch_at' runs right after 'begin_path(false)');
     dead instructions only, the result is correct
+    => round 442: not only dead instructions: in an inlined 'pick(9)',
+       'if die(4) == 1 {...} else if a[n] == 2 {...}' is rejected with
+       "index 9 is out of bounds", a noinline 'pick' accepts it (docs
+       8.3 now says so). tried: ending the chain in 'stmt_if::compile'
+       when the condition's end is not reached and handing the rest to
+       'check_skipped_from' aborts in 'assembler::destination', the
+       dead comparison still jumps to the label of the next branch;
+       the fix needs the comparison after a call that never returns
+       not to be emitted (the limit of docs 8.3) or the label kept
 [ ] easy: (round 436, a walk of 'stmt_def_func.hpp' and 'generics.hpp')
     1. the listing comment of a generic instance prints 'T' without
        the '<T type>' that declares it

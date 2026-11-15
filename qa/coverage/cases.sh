@@ -8077,3 +8077,20 @@ SRC=3800 && EXP=2 && RUN
 # a stored comparison, a negation, a complement and an increment of variables
 # past 2 GiB lower the address through a scratch register
 if [[ $MACHINE == x86_64 ]]; then SRC=3920 && EXP=10 && OPTS="--vars=0x80000100" RUN; fi
+
+# a type parameter hides a global constant of its name also where it is
+# written as a generic argument: of a call, of a method call and of a base
+SRC=3940 && EXP=67 && RUN
+
+# a type parameter named like a global constant is no constant: as the
+# argument of a constant parameter it is rejected, the global is not taken
+SRC=3941 && COMPERR
+
+# a statement compiled in two versions that leaves on every path, here by an
+# inlined 'exit' in an arithmetic list, ends the path of the code after it,
+# which an inlined call with a constant argument then does not compile
+SRC=3960 && EXP=3 && RUN
+
+# an 'else if' after a branch condition that never returns is not reached,
+# also one whose condition folds to true, nor is the code after the 'if'
+SRC=3961 && EXP=4 && RUN
