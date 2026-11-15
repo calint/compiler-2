@@ -228,7 +228,7 @@ class initializer_declaration final {
         const term_kind tm{classify_term(tc, tk, tz)};
 
         // an instance literal that a comparison or a connective continues is
-        // an operand, e.g. 'var b = point{1, 2} == p'
+        // an operand, rejected below, e.g. 'var b = point{1, 2} == p'
         if (is_instance_value(tm, tz)) {
             set_type(tc.get_type_or_throw(tk));
             return;
@@ -353,7 +353,7 @@ class initializer_declaration final {
 
     // the element type of a string, 'i8', or of an array literal, null when
     // the initializer is neither or a comparison or a connective continues
-    // the literal, e.g. 'var b = [2]{1, 2} == a'
+    // the literal, an operand that is rejected, e.g. 'var b = [2]{1, 2} == a'
     [[nodiscard]] static auto literal_element_type(const parse_toc& tc,
                                                    tokenizer& tz)
         -> const type* {

@@ -823,23 +823,6 @@ class expr_bool_op final : public statement {
                                              rhs.folded->value);
     }
 
-    // a side that folded as an immediate: a typed constant at its own type,
-    // e.g. 'i16(300) + 1' or -128 for '-i8(-128)', an untyped one at
-    // 'untyped_type', the type of the constant name or the default type for a
-    // list
-    [[nodiscard]] static auto immediate_of(const comparison_side& side,
-                                           const type& untyped_type)
-        -> operand {
-
-        assert(side.folded);
-
-        const type& value_type{
-            side.folded->is_typed() ? *side.folded->own_type : untyped_type,
-        };
-
-        return operand::imm(side.folded->value, value_type);
-    }
-
     // a 'bool' is 0 or 1 so it needs no comparison with 0; inversion and
     // branches keep the comparison which is shorter on x86
     // note: a shorthand is a 'bool' ('assert_boolean_operands'), which takes
@@ -878,9 +861,9 @@ class expr_bool_op final : public statement {
 
         const expr_arith& expr{*side.node};
 
-        // a computed value, the zero value '{}', which has no name, or a
-        // constant, which 'compile' folds into one copy of its type, e.g. the
-        // 'i16(300)' of 'i16(300) > b' with 'b' an 'i8'
+        // a computed value, or a constant, which 'compile' folds into one
+        // copy of its type, e.g. the 'i16(300)' of 'i16(300) > b' with 'b' an
+        // 'i8'
         const stmt_identifier* const ident{expr.operand_path()};
 
         if (ident == nullptr or side.folded) {
@@ -924,20 +907,22 @@ class expr_bool_op final : public statement {
 
         const expr_arith& expr{*side.node};
 
-        // a constant name or literal, else a list or the zero value '{}'
-        const stmt_identifier* const ident{expr.operand_path()};
+        // a list, not one constant name or literal
+        if (expr.is_computed()) {
+            machine& x{tc.machine()};
 
-        if (ident != nullptr) {
-            const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
-            return immediate_of(side, expr_info.type_ref());
+            x.comment({expr.tok(), tc.indent()}, "src: folded constant {}",
+                      in_quotes(trimmed_source(expr)));
         }
 
-        machine& x{tc.machine()};
+        // note: the first element decides the type of a side: a typed
+        //       constant has it, e.g. 'i16(300) + 1', an untyped one is read
+        //       at it
 
-        x.comment({expr.tok(), tc.indent()}, "src: folded constant {}",
-                  in_quotes(trimmed_source(expr)));
+        assert(not side.folded->is_typed() or
+               side.folded->own_type->is_same(expr.get_type()));
 
-        return immediate_of(side, tc.builtins().default_type());
+        return operand::imm(side.folded->value, expr.get_type());
     }
 
     // a side computed at run time in a register of its own type, so a

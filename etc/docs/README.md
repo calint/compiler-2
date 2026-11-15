@@ -669,11 +669,13 @@ narrows the result to its type; 'statement::fold_checked' adds the check of
 initializer is rejected where a computed one is. A constant reaches a
 destination only through the list that holds it ('expr_arith', the
 immediate by 'constant_operand'); the nodes in a list never emit one.
-A comparison side has its own rule ('expr_bool_op::right_operand',
-'immediate_of'): the backend compares at the width of the left side, so an
-untyped constant on the right is checked to fit it ('assert_sides_fit')
-and a typed one keeps its type; an untyped constant on the left is moved to
-the right, so '300 == s' of an 'i8' is rejected as 's == 300' is.
+A comparison side has its own rule ('expr_bool_op::right_operand'): the
+immediate has the type of its side, which is the own type of a typed
+constant; the backend compares at the width of the left side, so an
+untyped constant on the right is checked to fit it ('assert_sides_fit');
+a constant on the left that fits the right side is moved to the right
+('compile_comparison'), so '300 == s' of an 'i8' is rejected as 's == 300'
+is.
 
 The result: a typed constant and a variable of the same type and value get the
 same verdict and the same result; an overflow or zero divisor certain at

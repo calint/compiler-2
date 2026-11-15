@@ -218,13 +218,15 @@ class expr_any final : public statement {
     auto compile(compile_toc& tc, const destination& dst) const
         -> void override {
 
-        // note: an array literal is written by its assignment or definition
-        //       ('plan_writes'), the parse rejects one as an argument
+        // note: an array is written by its assignment or definition, as a
+        //       field by the plan of its instance ('plan_writes'); the parse
+        //       rejects an array literal as an argument, an array argument
+        //       is a path
 
-        assert(not is_array() or is_whole_array_copy());
+        assert(not is_array());
 
         write_plan plan;
-        plan_writes(tc, part_location{}, dst.array_len(), plan);
+        plan_writes(tc, part_location{}, std::nullopt, plan);
         emit_write_plan(tc, plan, dst);
     }
 

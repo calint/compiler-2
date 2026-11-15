@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 437 (2026-11-15, bug hunt: records and arrays of
+    records, field paths, indexes and bounds checks, whole-record
+    assignment, 'array_copy' and 'arrays_equal' with overlap and at
+    boundary sizes, padding, aggregates through calls; design: how an
+    expression is compiled, where an operand lives and where constants
+    fold; readability: a newcomer walks 'stmt_if.hpp',
+    'stmt_block.hpp', 'stmt_loop.hpp', 'stmt_def_var.hpp',
+    'stmt_assign_var.hpp', 'stmt_def_type.hpp' and
+    'stmt_def_type_field.hpp')
+    => bug hunt: no defect; 16700 programs and 152000 builds against a
+       python model on the four targets, a sweep of every count from 0
+       to 72 B for 7 element kinds; 9 seeded mutants, all caught
+    => design: 'expr_bool_op::right_operand' gives the immediate of a
+       folded side the type of the side ('immediate_of' and the name
+       lookup are gone; equal in 7970 of 7970 probe hits);
+       'expr_any::compile' asserts no array reaches it (0 of 18535
+       hits); the comments of 'left_operand' and 'right_operand' no
+       longer name the zero value '{}'; docs 1.7 says a typed constant
+       on the left is moved to the right too; no listing differs;
+       eleven ideas weighed and left
+    => readability: two comments in 'stmt_def_var.hpp' say that an
+       instance or array literal continued by a comparison is
+       rejected; 90 functions, 125 programs, 230 predictions, 8 wrong
 [x] easy: round 436 (2026-11-15, bug hunt: loops and what they carry
     across iterations, 'loop', 'break', 'continue', 'foo' with constant
     and run-time counts, the back edge, results of inlined calls kept in
