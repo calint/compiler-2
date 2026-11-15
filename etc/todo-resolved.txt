@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 455 (2026-11-16, bug hunt: bool values and conditions;
+    design: how registers are handed out, held and given back;
+    readability: a newcomer walks 'expr_arith.hpp')
+    => bug hunt: no defect; a generator with a model of 'and', 'or',
+       'not' to depth 3, short circuit with calls that print, write,
+       flip 'mut' bools or panic, bool storage of every kind, whole
+       arrays and records compared and copied, comparisons at i8 to
+       i64, inlined and 'noinline' functions with 'if' chains, 'loop'
+       and 'foo'; 8000 programs and about 131000 runs, 3000 i64
+       programs on x86_64, 1000 of 'fuzz-bools.py' with more
+       '--versions', about 30 directed cases; 6 of 7 mutants caught, the
+       seventh only emits dead code
+    => checks: all steps clean, no listing differs; the fuzzers up to
+       'fuzz-compiler' found nothing (seed 455001), the run was stopped
+       for low memory in 'fuzz-mutate'
+    => design: no code change; each allocation goes through
+       'push_allocation' and 'pop_allocation' under one owner
+       ('held_registers' for the front end, 'operation_scope' in the
+       backend, 'register_trace_scope' for the trace), the two hand
+       paired calls are put back by 'version_scope' on an error; the
+       two holders differ on purpose (what was added against a count);
+       the report reads the allocator's data; one misleading comment in
+       the destructor of 'operation_scope' fixed; six ideas left
+    => readability: five comments in 'expr_arith.hpp' ('plan_steps'
+       skips the passes under the overflow check, 'compile_stored_operand'
+       never sees a literal, 'assert_number' rejects a 'bool', the
+       listing names of 'compile_first_step', 'read_close'); 62
+       functions, 38 programs, 64 predictions, 4 wrong; two size items
+       in 'todo.txt'
 [x] easy: round 454 (2026-11-16, bug hunt: whole programs of ordinary
     size mixing every feature against a model; design: the versions
     mechanism, dry runs and what is put back; readability: a newcomer

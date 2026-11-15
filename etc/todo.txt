@@ -146,6 +146,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => the larger alternative is done (round 452): one walk left to
        right, the text skip and the error walk are gone; the trial
        parse of the deducing argument stays a language decision
+[ ] easy: (round 455, a walk of 'expr_arith.hpp') under the overflow
+    check 'plan_steps' skips every pass, but pass 2 (merging divisors)
+    changes no result that overflows (a divisor of -1 is never merged),
+    so 'a / 2 / 2' could be 'a / 4' with 'noub' too; under the division
+    check the backend tests a zero divisor that is the constant -1 ('a %
+    -1' on rv32i: 'beq a1, zero' after 'li a1, -1', 'machine::divide'
+    or its 'runtime_check'); optimizations, not measured
 [ ] easy: (round 452, a walk of the bulk and io built-ins) with
     '--checks=lower' alone 'array_copy(a, b, n)' tests the sign of 'n'
     twice, once per array: 'count_lower_checked' applies only to a range

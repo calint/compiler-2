@@ -678,8 +678,7 @@ class machine {
             assert(pool.allocations().size() >= saved_count_);
 
             while (pool.allocations().size() > saved_count_) {
-                // implicit releases need the allocation context for a balanced
-                // trace
+                // the comment of the free is at the site of the allocation
                 const register_pool::allocation entry{pool.top()};
 
                 machine_.pop_allocation({entry.src_loc_tk, entry.indent},

@@ -300,7 +300,7 @@ struct list_parens {
         return open_tk.has_value();
     }
 
-    // the ')' of an enclosed list is next: read it
+    // reads the ')' of an enclosed list when it is next
     [[nodiscard]] auto read_close(tokenizer& tz) -> bool {
         if (not is_enclosed()) {
             return false;
@@ -862,7 +862,8 @@ class expr_arith final : public statement {
 
         machine& x{tc.machine()};
 
-        // an identifier copies itself, anything else is computed into 'dst'
+        // a computed element names 'dst' in the listing, e.g. 'r15 = (a + b)'
+        // then '= expression'; a name copies itself
         if (element.is_computed()) {
             const std::string_view assign_text{
                 source_text(arithmetic_operator::assign),
@@ -1101,7 +1102,8 @@ class expr_arith final : public statement {
                              destination_type)));
     }
 
-    // the passes in order, the steps are ready to compile
+    // the steps ready to compile: those of 'make_steps', regrouped by the
+    // passes when the overflow check is off
     [[nodiscard]] auto plan_steps(const compile_toc& tc,
                                   const destination& dst) const
         -> std::vector<step> {
@@ -1182,8 +1184,8 @@ class expr_arith final : public statement {
     }
 
     // an operand of an operator is a number: an instance is not, and a
-    // stored 'bool' is 0 or 1, arithmetic would make other values, so it is
-    // converted
+    // stored 'bool' is 0 or 1, arithmetic would make other values, so the
+    // program converts it
     static auto assert_number(const statement& term) -> void {
         assert_not_whole_array(term);
 
@@ -1257,18 +1259,17 @@ class expr_arith final : public statement {
                      constant_operand(dst, value));
     }
 
-    // a name or a literal read in place, a register that holds the result
-    // of unary ops may be overwritten; 'a + -b' is 'a - b' and 'a - -b' is
-    // 'a + b'
+    // a name read in place, a register that holds the result of unary ops
+    // may be overwritten; 'a + -b' is 'a - b' and 'a - -b' is 'a + b'
     static auto compile_stored_operand(compile_toc& tc, const destination& dst,
                                        const step& s) -> void {
 
         const arithmetic_operator op{s.op};
         const statement& src{*s.element};
 
-        // note: a value that is not computed is a name or a literal, '{}' is a
-        //       whole value and folds before; the rewrite hides an overflow
-        //       of the negation, the check computes it
+        // note: a value that is not computed is a name or a literal, which
+        //       folds before as '{}' does; the rewrite hides an overflow of
+        //       the negation, the check computes it
 
         const bool is_negation_absorbed{
             arith_steps::is_additive(op) and
