@@ -403,8 +403,8 @@ class generic_trace final {
     }
 };
 
-// a method name as written, e.g. 'text.print' for the method 'print' of
-// 'text'
+// the name of the method 'method' of the type 'type_name', e.g. 'str.print'
+// for 'print' of 'str'; of a generic type as written, e.g. 'text.print'
 [[nodiscard]] inline auto method_name_of(const std::string_view type_name,
                                          const std::string_view method)
     -> std::string {

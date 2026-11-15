@@ -673,8 +673,9 @@ class stmt_def_func final : public statement {
         return std::format("size.{}", body_label(array_lengths));
     }
 
-    // the slots of a noinline call, each the address of what it names: the
-    // result, when there is one, then the parameters
+    // what a noinline call passes, each the address of what it names: the
+    // result, when there is one, then the parameters; the receiver's is
+    // passed in a register, the others in the slots of the frame
     [[nodiscard]] auto frame_slots() const -> std::vector<frame_slot> {
         std::vector<frame_slot> slots;
 
@@ -1161,7 +1162,8 @@ class stmt_def_func final : public statement {
         x.comment({head_.name_tk, indent}, "{}", signature);
     }
 
-    // the definition after its first token, without the body
+    // the definition after its first token, without the body and without
+    // the type parameters, which only an instance has
     auto source_signature_to(std::ostream& os) const -> void {
         token::source_to(os, head_.noinline_tk);
         token::source_to(os, head_.mut_tk);

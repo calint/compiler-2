@@ -688,7 +688,8 @@ The front end holds registers, the backend names and picks them
 1. A register has one of three holders: a scratch register, picked by
    'machine::alloc_scratch_register' in the order of the target
    ('target_description::scratch_registers'); a named register, fixed by an
-   instruction or the calling convention ('machine::alloc_named_register'),
+   instruction or the calling convention ('machine::alloc_named_register',
+   or 'machine::reserve_named_register' where no operand of it is needed),
    e.g. 'rcx' of a shift count on x86_64 or the argument registers of a
    system call; and the backend's own, the variables base and the frame base
    of a noinline body, which no source location asked for.

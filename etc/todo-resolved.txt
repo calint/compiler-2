@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 436 (2026-11-15, bug hunt: loops and what they carry
+    across iterations, 'loop', 'break', 'continue', 'foo' with constant
+    and run-time counts, the back edge, results of inlined calls kept in
+    a register across branches; design: the backend interface shared by
+    the two targets; readability: a newcomer walks 'stmt_def_func.hpp',
+    'stmt_def_func_param.hpp' and 'generics.hpp')
+    => bug hunt: no defect; 66000 programs and 563000 runs against a
+       python model, inlined and all noinline, on x86_64 and the rv32i
+       targets, with and without the checks, '--nopt' and '--versions';
+       5 seeded mutants, all caught
+    => design: nothing to apply in the sources; the 41 virtuals of
+       'machine' and the 14 of 'assembler' compared; docs 1.8 names
+       'machine::reserve_named_register' beside
+       'machine::alloc_named_register'
+    => readability: three comments fixed ('frame_slots' and
+       'source_signature_to' in 'stmt_def_func.hpp', 'method_name_of'
+       in 'generics.hpp'); 71 programs predicted, 6 wrong
+    => fuzzer: 'qa/fuzz/fuzz-compiler.py' lists "does not divide the
+       sector size" among the expected target differences, after a
+       false 'accept-diff' at seed 433001 (a field of type 'int' makes
+       a record 16 B on x86_64 and 12 B on rv32i)
 [x] easy: round 435 (2026-11-15, bug hunt: instruction selection of
     the rv32i backend at its edges, 12-bit immediates and
     displacements, the multiply and divide helpers, widths, bulk copies
