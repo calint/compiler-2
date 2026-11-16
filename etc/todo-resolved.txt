@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 459 (2026-11-16, bug hunt: user types; design: how
+    types are represented and queried; readability: a newcomer walks
+    'tokenizer.hpp', 'token.hpp' and 'stmt_builtin_convert.hpp')
+    => bug hunt: no defect; a model-based generator of types (fields of
+       every width, nested types, arrays of and in types, copies,
+       literals, compares, methods, 'mut' receivers, constructors,
+       results built field by field, aliasing-heavy arguments) run after
+       a call that fills the frame with -1: about 13000 programs on the
+       four targets with 'noub', '--nopt', '--versions=first' and
+       'last', inlined and 'noinline'; 6 of 7 mutants caught, the
+       missed one ('assert_read_not_written') is covered by
+       'fuzz-effects.py'; the generator as a fuzzer needs approval
+    => design: no change; nine candidates kept with reasons (the mirror
+       'is_narrower_than' reads with its comments, the two built-in
+       queries answer different questions, stored sizes carry the checked
+       product of the definition)
+    => readability: three comments in 'tokenizer.hpp' ('next_token' gives
+       no text at a delimiter, 'skip_to_close_paren' also stops at a
+       definition keyword, a backslash before a line end continues a
+       string literal); 98 functions, 5 predictions wrong, 2 already
+       answered by their comments
+    => checks: the fuzzers again report the known test 1698 doubling of
+       '--versions=nested' as a hang (round 412 item); the rest clean
 [x] easy: round 458 (2026-11-16, bug hunt: optimizations, results
     against '--nopt' and inlining; design: the backend interface,
     'machine.hpp'; readability: a newcomer walks 'stmt_def_type.hpp',

@@ -184,8 +184,9 @@ class tokenizer final {
         return peek_operator() == "<";
     }
 
-    // e.g. '  # note\n  x = 1' gives the token 'x' with the whitespace and
-    // comment before it
+    // a word or a literal with the whitespace around it, e.g. the 'x' of
+    // '  # note\n  x = 1' with the comment before it; no text at a delimiter
+    // or the end of the source ('token::is_none')
     [[nodiscard]] auto next_token() -> token {
         const std::string_view ws_before{next_whitespace()};
         const size_t at_line{at_line_};
@@ -307,7 +308,8 @@ class tokenizer final {
 
     // skips up to and including the ')' that closes a '(' that is already read
     // e.g. 'b, f(c)) + d', the ')' before ' + d'; stops at the end of the
-    // source or at a closer that does not close the last open bracket
+    // source, at a closer that does not close the last open bracket or at a
+    // keyword that starts a definition
     auto skip_to_close_paren() -> void {
         if (skip_to_unnested(")")) {
             std::ignore = seen_char_token(')');
@@ -571,7 +573,8 @@ class tokenizer final {
         };
 
         while (true) {
-            // a literal cannot span lines, the source is echoed in comments
+            // a literal is unterminated at a line end, the source is echoed in
+            // comments; a backslash before it continues a string, see below
             if (is_eos() or peek_char() == '\n') {
                 throw compile_error{open_quote_tk, std::string{unterminated}};
             }

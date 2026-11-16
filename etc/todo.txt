@@ -213,6 +213,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'mut' arguments, results, 'foo' over the written array, changed
     index variables); 5000 programs found nothing, 6 of 6 mutants
     caught; kept in the session scratchpad as 'keep-alias-gen2.py'
+[p] easy: (round 459, bug hunt of user types) need approval: a new
+    fuzzer 'qa/fuzz/fuzz-types.py' (model based, 'fl.judge'): types of
+    i8, i16, i32, bool, nested types and arrays, copies, literals,
+    compares, methods, constructors and results, run after a call that
+    fills the frame with -1 so a missed padding zero shows; what
+    'fuzz-methods.py' lacks (i32 fields only, no frame garbage);
+    13000 programs found nothing, 6 of 7 mutants caught (padding,
+    compare and copy bytes, storage sharing); kept in the session
+    scratchpad as 'keep-types-gen.py'
 [ ] easy: (round 447, design of storage addresses) 'main.cpp' asks
     '--vars' to be a multiple of 16 ('vars_alignment'); no code or
     docs say why: tie it to the rule that needs it or relax it
