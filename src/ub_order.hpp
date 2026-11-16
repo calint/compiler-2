@@ -24,7 +24,7 @@
 //                  a value written in parts reads no part written before it;
 //                  the order of the 'write_plan' steps, the plan the compile
 //                  emits ('expr_any::plan_writes'), walked by
-//                  'stmt_assign_var::assert_parts_not_clobbered'
+//                  'expr_any::assert_parts_not_clobbered'
 //   'reaches_destination'
 //                  an expression computed in its destination reads nothing of
 //                  it, else it is computed in a scratch register first

@@ -10,6 +10,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 457, bug hunt of conversions) rv32i sign-extends a narrow
+    register again after a unary op just before a byte store, which drops
+    the bits anyway (the second 'slli'/'srai' pair at 's = -i8(b)' of
+    2721); removing it is a backend optimization
 [p] easy: need approval (round 414, a hunt of names and scopes, 57000
     programs with a model of every name, no wrong resolution): a value
     that hides a type is rejected before '{' also where the braces are a

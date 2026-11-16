@@ -1,0 +1,10 @@
+# the signature rules are checked in source order: the 'mut' of a constructor
+# is reported before the type written for its result 'self'
+
+type point {x, y}
+
+func mut point.at() self point {
+}
+
+func main() {
+}

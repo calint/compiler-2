@@ -1,0 +1,20 @@
+# a conversion with unary ops into a destination of its type is made in a
+# register with the overflow check off as on, so a call in its argument does
+# not write the destination and 'x = -i8(g(x))' is accepted either way
+
+func g(p i8) res i8 {
+    res = ~p
+}
+
+func noinline h(p i8) res i8 {
+    res = p + 1
+}
+
+func main() {
+    var x = i8(5)
+    x = -i8(g(x))
+    x = ~i8(h(x))
+    x = -i8(-g(x))
+    x = i8(-i8(h(x)))
+    exit(-x)
+}

@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 457 (2026-11-16, bug hunt: widths and conversions;
+    design: assignment, how a value reaches its destination;
+    readability: a newcomer walks 'stmt_def_func.hpp')
+    => bug hunt: one defect; 'x = -i8(g(x))' was accepted with the
+       overflow check and rejected without it ("may share storage with
+       the result destination"), since a conversion with unary ops into a
+       destination of its type was made in a register only under the
+       check; fix: 'stmt_builtin_convert::is_made_at_type' makes it in a
+       register whatever the checks, a narrower destination (an outer
+       conversion's argument) keeps the ops with the argument, the
+       'tc' parameter and an 'assert' gone; tests 4520, 4521; 5 cases
+       change listing (1338, 1366, 2127, 2721, 2723), rv32i 1060 to 1088
+       bytes, x86_64 197 to 199 instructions; about 290000 runs of
+       directed and random conversion programs on the four targets,
+       'i64' on x86_64, 9 mutants caught
+    => design: one planner, 'expr_any::plan_writes'; the rule that the
+       parts of a value do not clobber what they read was checked in
+       'stmt_assign_var' only, so a plan could be emitted unchecked:
+       'expr_any::checked_plan' plans and checks, both emitters call
+       it, 'assert_parts_not_clobbered' moved into 'expr_any'; no
+       listing differs; four ideas left
+    => readability: four comments in 'stmt_def_func.hpp' (a method is
+       reached through its type but a call still comes after it,
+       'body_label', the assert of 'add_self_param', 'read_signature')
+       and 'is_generic_receiver' named; the walk found that round 453
+       did not report the error furthest left in every signature
+       ('func mut f(x) x' reported the result, 'func mut point.at()
+       self point' the constructor's type): 'func_head::assert_signature'
+       checks 'mut' first; tests 4560, 4561; 78 functions, 119 programs
+       and predictions, 7 wrong
 [x] easy: round 456 (2026-11-16, bug hunt: loops and 'foo'; design: the
     no-UB layer, 'ub_reads', 'ub_order', 'ub_assigned'; readability: a
     newcomer walks 'machine_x86_64.hpp' and 'assembler_x86_64.hpp')

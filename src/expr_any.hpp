@@ -24,6 +24,7 @@
 #include "operand.hpp"
 #include "parse_lookahead.hpp"
 #include "token.hpp"
+#include "ub_order.hpp"
 #include "ub_reads.hpp"
 
 // a value at the type of its destination, the types below in reading order:
@@ -225,8 +226,8 @@ class expr_any final : public statement {
 
         assert(not is_array());
 
-        write_plan plan;
-        plan_writes(tc, part_location{}, std::nullopt, plan);
+        const write_plan plan{checked_plan(tc, dst.storage(), std::nullopt)};
+
         emit_write_plan(tc, plan, dst);
     }
 
@@ -351,6 +352,20 @@ class expr_any final : public statement {
         for (const expr_any& e : elements()) {
             e.check_folded_conditions(tc);
         }
+    }
+
+    // the steps that write the value at a destination, 'dst' its storage when
+    // it has one; 'unsized_count' as for 'plan_writes'
+    // note: the plan that is checked is the plan that is emitted
+    [[nodiscard]] auto
+    checked_plan(const toc& tc, const std::optional<storage_path>& dst,
+                 const std::optional<size_t> unsized_count) const
+        -> write_plan {
+
+        write_plan plan;
+        plan_writes(tc, part_location{}, unsized_count, plan);
+        assert_parts_not_clobbered(tc, dst, plan);
+        return plan;
     }
 
     // compiles all but the trailing added constant of an arithmetic
@@ -905,6 +920,37 @@ class expr_any final : public statement {
             std::format("expected type {}, got 'bool', use '{}(...)'",
                         in_quotes(tp.name()), tp.name()),
         };
+    }
+
+    // the value is written part by part as 'plan' says, so a part must not
+    // read what is already written, e.g. the 'p.x' of 'p = {p.y, p.x}'
+    static auto
+    assert_parts_not_clobbered(const toc& tc,
+                               const std::optional<storage_path>& dst,
+                               const write_plan& plan) -> void {
+
+        // note: a value in a register is written as one part that no other
+        //       name reaches
+
+        if (not dst) {
+            return;
+        }
+
+        // the parts written by the steps before the current one
+        std::vector<storage_path> written;
+
+        for (const write_step& step : plan) {
+            if (const value_write* const value{
+                    std::get_if<value_write>(&step.action),
+                }) {
+
+                assert_written_not_reached(tc, *value->item, written);
+            }
+
+            for (const access_path& part : step.covered) {
+                written.push_back(dst->extended_by(part));
+            }
+        }
     }
 
     // a string fills only an 'i8' array, one of 'array_count' when known

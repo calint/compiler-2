@@ -1,8 +1,8 @@
 # a conversion computes its argument in the destination when it can: a list
 # narrower than the type in a destination as wide as the type, an argument
-# that keeps its low bits or has the type of the destination, and the unary
-# ops of a conversion as wide as its destination; the instructions of the
-# lines marked '# folds' are pinned
+# that keeps its low bits or has the type of the destination; the unary ops
+# of a conversion as wide as its destination apply in a register, see 4520;
+# the instructions of the lines marked '# folds' are pinned
 func main() {
     var a = i8(20)
     var b = i16(500)

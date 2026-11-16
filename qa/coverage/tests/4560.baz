@@ -1,0 +1,8 @@
+# the signature rules are checked in source order: the 'mut' of a function
+# that is no method is reported before the result named like a parameter
+
+func mut f(x) x {
+}
+
+func main() {
+}

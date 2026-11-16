@@ -106,22 +106,23 @@ struct func_head {
     // the rules of the signature 'params' and 'result' after this head that
     // need no types, checked for every kind of definition: the result is
     // named apart from the parameters, 'self' is the result of a constructor
-    // and 'mut' needs a receiver
+    // and 'mut' needs a receiver; in source order, so the error furthest left
+    // comes first
     auto assert_signature(const stmt_def_func_param::syntax_list& params,
                           const std::optional<func_result>& result) const
         -> void {
+
+        const bool is_constructor{result and result->is_self()};
+
+        assert_mut_has_receiver(is_constructor);
 
         if (result) {
             params.assert_result_not_named_like_param(result->name_tk);
         }
 
-        const bool is_constructor{result and result->is_self()};
-
         if (is_constructor) {
             assert_constructor_result(result->name_tk, result->type_tk);
         }
-
-        assert_mut_has_receiver(is_constructor);
     }
 
     // kept as text, its instances are the functions
@@ -134,8 +135,9 @@ struct func_head {
         return method and method->receiver_tp == nullptr;
     }
 
-    // reached through its type wherever it is defined, e.g. 'list.add' or
-    // the constructor 'point.at'
+    // a method or a constructor, e.g. 'list.add' or 'point.at', reached
+    // through its type, so it has no place in 'definition_order'; a call
+    // still comes after it
     [[nodiscard]] auto is_type_member() const -> bool {
         return method.has_value();
     }
@@ -243,9 +245,15 @@ struct func_head {
         // see 'method_part::receiver_tp'
         const type* receiver_tp{};
 
-        if (not tc.generics().has_type(name_tk.text()) or
-            tc.types().has(name_tk.text())) {
+        // note: where an instance reads the head again the name of the
+        //       generic type names a type
 
+        const bool is_generic_receiver{
+            tc.generics().has_type(name_tk.text()) and
+                not tc.types().has(name_tk.text()),
+        };
+
+        if (not is_generic_receiver) {
             receiver_tp = &tc.get_type_or_throw(name_tk);
 
             if (receiver_tp->is_builtin()) {
@@ -548,8 +556,8 @@ class stmt_def_func final : public statement {
                          instance_ ? instance_->name : std::string_view{});
     }
 
-    // 'func' is a keyword so no user name or internal label starts with 'func.'
-    // e.g. 'func.sum..len.4.8' for array lengths 4 and 8
+    // e.g. 'func.sum..len.4.8' for array lengths 4 and 8; 'func' is a
+    // keyword so no user name or internal label starts with 'func.'
     [[nodiscard]] auto body_label(
         const std::span<const std::optional<size_t>> array_lengths = {}) const
         -> std::string {
@@ -795,7 +803,7 @@ class stmt_def_func final : public statement {
 
     // located at the method name for diagnostics
     auto add_self_param() -> void {
-        // note: a method has its name after the '.'
+        // note: called for a method, see 'has_self_param'
         assert(head_.method);
 
         const token self_tk{
@@ -1714,10 +1722,10 @@ class stmt_def_func_generic final : public statement {
         }
     }
 
-    // the signature after the head, the '(' and the body must follow, else
+    // the signature after the '(' of the head; the body must follow, else
     // the skip of the body would take the next definition, e.g. 'func g'
     // after 'func f<T type>(x T)'; the types are resolved when an instance is
-    // parsed; 'tz' is after the '(' of the head
+    // parsed
     [[nodiscard]] static auto
     read_signature(const parse_toc& tc, const func_head& head, tokenizer& tz)
         -> generic_signature {

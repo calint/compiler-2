@@ -30,9 +30,9 @@
 // apply where the value is used, at the width D of the destination
 //
 // where the conversion's own unary ops apply ('is_made_at_type'): when D > T,
-// or D == T with ops under the overflow check, the value is made at T in the
-// destination register (a scratch one for memory), widened in place to D,
-// the ops applied at D; otherwise (D <= T) with the argument, at the width of
+// or D == T with ops, the value is made at T in the destination register (a
+// scratch one for memory), widened in place to D, the ops applied at D;
+// otherwise (D < T, or D == T without ops) with the argument, at the width of
 // its computation below
 //
 // where the argument is computed for a target 't' at most T wide,
@@ -89,7 +89,7 @@ class stmt_builtin_convert final : public statement {
         // at, e.g. the 'i16' 'b' of 'i8(a + b)' is narrowed to 'i8'
         argument().assert_not_narrowed(tc, width_type());
 
-        if (is_made_at_type(tc, dst)) {
+        if (is_made_at_type(dst)) {
             compile_at_type_register(tc, dst);
             return;
         }
@@ -273,10 +273,11 @@ class stmt_builtin_convert final : public statement {
     // a wider destination would compute the argument at its own width and
     // keep the bits that the conversion drops; the unary ops apply where the
     // value is used, e.g. 'w + -i8(v)' of a 'v' of -128 adds 128, and under
-    // the overflow check to the converted value
-    [[nodiscard]] auto is_made_at_type(const compile_toc& tc,
-                                       const destination& dst) const -> bool {
-
+    // the overflow check to the converted value; a destination of the type
+    // gets them in the register too, with the check on or off, so a call in
+    // the argument writes the same storage, e.g. not 'x' for the 'g(x)' of
+    // 'x = -i8(g(x))', which is then accepted either way
+    [[nodiscard]] auto is_made_at_type(const destination& dst) const -> bool {
         // note: widths as the checks see them, so a call in 'v = i32(f(v))'
         //       of an 'int' 'v' gets a register for its result on rv32i too
         //       and no target rejects it for sharing storage with 'v'
@@ -285,16 +286,13 @@ class stmt_builtin_convert final : public statement {
             return true;
         }
 
-        if (not tc.overflow_check(dst).enabled or get_unary_ops().is_empty()) {
+        if (get_unary_ops().is_empty()) {
             return false;
         }
 
-        // note: a narrower destination is only the argument of an outer
-        //       conversion, whose arithmetic wraps
-
-        assert(not dst.type_ref().is_narrower_than(get_type()));
-
-        return true;
+        // a narrower destination is only the argument of an outer conversion,
+        // whose arithmetic wraps, the ops apply with the argument
+        return not dst.type_ref().is_narrower_than(get_type());
     }
 
     // the argument is computed at the width of the type; null when the target

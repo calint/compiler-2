@@ -10,8 +10,8 @@
     mov byte [rbp + 6], r15b
 === 11:     s = -i8(b) # folds
     mov r15b, byte [rbp + 2]
+    neg r15b
     mov byte [rbp + 6], r15b
-    neg byte [rbp + 6]
 === 12:     r = i16(b / 3) # folds
     mov r15w, word [rbp + 2]
     mov word [rbp + 4], r15w

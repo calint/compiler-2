@@ -1,0 +1,18 @@
+# the program of 4520 with the overflow check on
+
+func g(p i8) res i8 {
+    res = ~p
+}
+
+func noinline h(p i8) res i8 {
+    res = p + 1
+}
+
+func main() {
+    var x = i8(5)
+    x = -i8(g(x))
+    x = ~i8(h(x))
+    x = -i8(-g(x))
+    x = i8(-i8(h(x)))
+    exit(-x)
+}

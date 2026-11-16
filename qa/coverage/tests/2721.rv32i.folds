@@ -16,9 +16,11 @@
     sb t0, -2026(s0)
 === 11:     s = -i8(b) # folds
     lh t0, -2030(s0)
-    sb t0, -2026(s0)
-    lb t0, -2026(s0)
+    slli t0, t0, 24
+    srai t0, t0, 24
     sub t0, zero, t0
+    slli t0, t0, 24
+    srai t0, t0, 24
     sb t0, -2026(s0)
 === 12:     r = i16(b / 3) # folds
     lh t0, -2030(s0)

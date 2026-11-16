@@ -8159,7 +8159,17 @@ SRC=4360 && COMPERR
 SRC=4361 && COMPERR
 SRC=4362 && COMPERR
 
+# the rules of a signature come in source order, the 'mut' before the result
+SRC=4560 && COMPERR
+SRC=4561 && COMPERR
+
 # the mirror of 4000: an argument that is wrong at the global type its
 # parameter names is rejected for itself, the type parameter of that name in
 # the function that calls does not accept it
 SRC=3981 && COMPERR
+
+# a conversion with unary ops into a destination of its type is made in a
+# register with the overflow check off as on, so a call in its argument does
+# not write the destination: accepted either way
+SRC=4520 && EXP=8 && RUN
+SRC=4521 && EXP=8 && OPTS="--checks=noub" RUN
