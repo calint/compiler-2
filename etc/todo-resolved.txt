@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 458 (2026-11-16, bug hunt: optimizations, results
+    against '--nopt' and inlining; design: the backend interface,
+    'machine.hpp'; readability: a newcomer walks 'stmt_def_type.hpp',
+    'stmt_def_var.hpp' and 'ident_info.hpp')
+    => bug hunt: no defect; a generator aimed at the peephole passes
+       (stores then loads, values across labels and loops, bools, helper
+       calls, globals) built each program inlined, 'noinline' and mixed
+       with '--nopt' and '--versions=last': about 1250 programs, up to 48
+       builds each, on the four targets; the repo fuzzers about 4750
+       programs; 30 mutants and 4 poisons of the rewrites, the survivors
+       guard code never emitted or are equivalent; left as they are: the
+       'symbol' and 'subtracted' comparisons of rv32i 'is_reload' (full
+       equality of the offset, cheaper to read than a note), the qword
+       size check of x86 'qword_load' and the 'zero' guard of the rv32i
+       reload (the device rule its note states)
+    => design: 'machine::store_boolean' removed, a second way to store a
+       constant with one caller; 'expr_bool' calls 'copy_value' with an
+       immediate as the other front-end code does; no listing differs;
+       the rest of the interface has no clear simplification
+    => readability: two comments in 'stmt_def_var.hpp' said a 'var' that
+       reads itself is rejected as uninitialized, it is rejected as read
+       in its own initializer ('scope::initializer'); the unused
+       'destination::array_len' removed; 97 functions, 2 predictions
+       wrong
+    => checks: the fuzzers report the known test 1698 doubling of
+       '--versions=nested' as a hang (a mutant of it, 73 to 120 s in the
+       sanitizer build), the round 412 item; the rest clean
 [x] easy: round 457 (2026-11-16, bug hunt: widths and conversions;
     design: assignment, how a value reaches its destination;
     readability: a newcomer walks 'stmt_def_func.hpp')

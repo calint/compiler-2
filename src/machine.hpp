@@ -168,7 +168,7 @@ struct target_description {
 //                  'register_view'
 //   operations     'add_subtract', 'multiply', 'divide', 'shift', 'bitwise',
 //                  'unary', 'zero', 'zero_padding', 'copy_value',
-//                  'store_bytes', 'address_of', 'scale_index', 'store_boolean';
+//                  'store_bytes', 'address_of', 'scale_index';
 //                  bulk by a constant size
 //                  'copy_block', 'memory_equal', by a run-time count
 //                  'copy_elements', 'equal_elements'
@@ -1619,13 +1619,6 @@ class machine {
             .max_scratch_registers{state_.max_scratch_registers},
             .instruction_count{output.instruction_count()},
         };
-    }
-
-    // a 'bool' is stored as 0 or 1
-    auto store_boolean(const emit_site site, const operand& dst,
-                       const bool value) -> void {
-
-        copy_value(site, dst, operand::imm(value ? 1 : 0, default_type()));
     }
 
     [[nodiscard]] auto variables_base_past_vars_bytes() const

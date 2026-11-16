@@ -38,8 +38,8 @@
 //
 
 // whether the name of a definition is visible in its initializer: a 'var' that
-// reads itself is rejected as uninitialized, a 'dat' may be named like its
-// type, e.g. 'dat point = point{1, 2}'
+// reads itself is rejected as read in its own initializer, a 'dat' may be
+// named like its type, e.g. 'dat point = point{1, 2}'
 enum class name_in_initializer : uint8_t { visible, hidden };
 
 // the type and the array size that an initializer gives a definition, e.g.
@@ -327,7 +327,8 @@ class initializer_declaration final {
     }
 
     // the variable is in scope while its initializer is parsed, so a read of
-    // it, e.g. 'var x = x + 1', resolves and is rejected as uninitialized
+    // it, e.g. 'var x = x + 1', resolves to it and is rejected
+    // ('scope::initializer'), not to an outer variable of that name
     auto with_placeholder(parse_toc& tc,
                           const std::function_ref<void()> parse) const -> void {
 

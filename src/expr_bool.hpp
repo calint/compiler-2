@@ -437,7 +437,9 @@ class expr_bool_op final : public statement {
 
         // note: a run-time element before it may have stored the other value
         if (not action.destination.is_empty()) {
-            x.store_boolean({tok(), tc.indent()}, action.destination, value);
+            const operand stored{operand::imm(value ? 1 : 0, x.default_type())};
+
+            x.copy_value({tok(), tc.indent()}, action.destination, stored);
         }
 
         if (value == action.branch_on_true and not action.target.empty()) {

@@ -430,10 +430,6 @@ class destination final {
     };
 
   public:
-    [[nodiscard]] auto array_len() const -> std::optional<size_t> {
-        return shape().length();
-    }
-
     // the argument of a conversion, whose arithmetic wraps, e.g. the '+' of
     // 'i8(a + b)'; a call in it builds destinations of its own, so its
     // arguments and body are checked as anywhere else
