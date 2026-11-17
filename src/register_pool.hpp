@@ -92,7 +92,8 @@ class register_pool final {
         unavailable_ |= mask;
     }
 
-    // forgets what 'protect' added since 'saved' was read by 'unavailable_mask'
+    // forgets what 'protect' added since 'saved' was read by
+    // 'unavailable_mask', once what was allocated since then is freed
     auto restore_unavailable(const uint32_t saved) -> void {
         unavailable_ = saved;
     }
@@ -113,7 +114,8 @@ class register_pool final {
         return unavailable_;
     }
 
-    // the protected registers of 'mask' may be allocated, none is allocated
+    // the protected registers of 'mask', none of which is allocated, may be
+    // allocated
     auto unprotect(const uint32_t mask) -> void {
         assert(std::ranges::none_of(
             allocations_, [&](const allocation& allocated) -> bool {
@@ -181,7 +183,8 @@ class register_trace final {
         }
     }
 
-    // the frame that allocations belong to
+    // the frame that allocations belong to, 0 before the first frame, which
+    // the report names 'global initializers'
     [[nodiscard]] auto current_frame() const -> size_t {
         return frames_.empty() ? 0 : frames_.size() - 1;
     }

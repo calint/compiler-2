@@ -1,7 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 467 (2026-11-17, bug hunt: code versions; design: the
+[x] easy: round 468 (2026-11-17, bug hunt: arrays and indexing; design:
+    how compile errors are built and located, 'compile_error.hpp',
+    'source_files.hpp'; readability: a newcomer walks
+    'register_pool.hpp' and 'register_report.hpp')
+    => bug hunt: no defect; a model generator of arrays of every width
+       and of padded records in 'var', 'dat' and fields, paths, indexes
+       of every width through calls and conversions, out-of-range values,
+       bulk built-ins, 'foo' and array parameters: about 4800 programs,
+       32000 runs on the targets with up to 8 option lists; 70 sort
+       programs; 82 out-of-range contexts; 'fuzz-ub.py' 150; 12 of 12
+       mutants of the index and range checks caught
+    => design: 'print_located' in 'main.cpp' prints a location, its text
+       and its source line for the error, the call frames and the
+       include chain, which each did it themselves; every location goes
+       through 'located_in_text'; no listing or error changes (2574
+       cases); six ideas kept with reasons (the two 'compile_error'
+       constructors, 'file_level', the two 'where', 'for_message' and
+       'for_listing', the 'throw_*' helpers, 'located_in_text' counting
+       lines)
+    => readability: five comments ('restore_unavailable' once what was
+       allocated since is freed, 'unprotect' states its precondition,
+       'current_frame' is 0 before the first frame, 'candidates' are the
+       frames whose callers hold registers, 'descending' keeps ties in
+       name order); 56 functions, 2 predictions wrong
+[x] easy: round 467(2026-11-17, bug hunt: code versions; design: the
     parser's structure, 'parse_statement.hpp', 'parse_lookahead.hpp';
     readability: a newcomer walks 'expr_type.hpp' and the small
     built-ins)

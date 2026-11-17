@@ -918,40 +918,45 @@ auto print_source_line(const std::string_view src, const size_t start_index,
     std::println(stderr, "{}\n{}{}", printable_line(line), padding, mark);
 }
 
+// 'text' after the location of 'where', then its source line
+auto print_located(const source_files& files, const source_span& where,
+                   const std::string_view text) -> void {
+
+    const source_locations locations{files};
+    const std::string_view src{files.text(where.file_ix)};
+    const source_span shown{located_in_text(src, where)};
+
+    std::println(stderr, "{}: {}", locations.for_error(shown), text);
+
+    print_source_line(src, shown.start_index, shown.end_index);
+}
+
 // the inlined calls and generic instances the error was found through,
 // innermost first
 auto print_call_frames(const source_files& files,
                        const std::span<const compile_error::call_frame> frames)
     -> void {
 
-    const source_locations locations{files};
-
     for (const compile_error::call_frame& frame : frames) {
         const source_span& where{frame.where};
         const std::string_view src{files.text(where.file_ix)};
 
+        std::string text{frame.reason};
+
         // the source line shows a call or an alias that is the whole line
-        if (frame.text == trimmed_line_at(src, where.start_index)) {
-            std::println(stderr, "{}: {}", locations.for_error(where),
-                         frame.reason);
-        } else {
-            std::println(stderr, "{}: {} {}", locations.for_error(where),
-                         frame.reason, in_quotes(printable(frame.text)));
+        if (frame.text != trimmed_line_at(src, where.start_index)) {
+            text = std::format("{} {}", frame.reason,
+                               in_quotes(printable(frame.text)));
         }
 
-        print_source_line(src, where.start_index, where.end_index);
+        print_located(files, where, text);
     }
 }
 
 // the includes that loaded the file 'file_ix', the last one in the main file
 auto print_include_chain(const source_files& files, size_t file_ix) -> void {
-    const source_locations locations{files};
-
     while (const std::optional<source_span>& at{files.included_at(file_ix)}) {
-        std::println(stderr, "{}: included from", locations.for_error(*at));
-
-        print_source_line(files.text(at->file_ix), at->start_index,
-                          at->end_index);
+        print_located(files, *at, "included from");
 
         file_ix = at->file_ix;
     }
@@ -963,21 +968,16 @@ auto print_source_error(const source_files& files,
                         const std::optional<source_span>& where,
                         const std::string_view message) -> void {
 
+    std::println(stderr);
+
     if (not where) {
-        std::println(stderr, "\n{}: {}", printable(files.name(0)),
+        std::println(stderr, "{}: {}", printable(files.name(0)),
                      printable(message));
 
         return;
     }
 
-    const source_locations locations{files};
-    const std::string_view src{files.text(where->file_ix)};
-    const source_span shown{located_in_text(src, *where)};
-
-    std::println(stderr, "\n{}: {}", locations.for_error(shown),
-                 printable(message));
-
-    print_source_line(src, shown.start_index, shown.end_index);
+    print_located(files, *where, printable(message));
 }
 
 // the message of the error at its source line, the inlined calls and generic

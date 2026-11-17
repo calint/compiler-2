@@ -98,8 +98,8 @@ struct register_use_report final {
         return text;
     }
 
-    // the frames below the first with registers held above them: what they
-    // and what is below them hold, and what the call of them would save
+    // the frames whose callers hold registers: what they and the frames
+    // below them hold, and what the call of them would save
     [[nodiscard]] auto candidates() const -> std::vector<candidate> {
         std::vector<candidate> found;
         size_t saved{};
@@ -449,7 +449,8 @@ class register_reporter final {
     // statics
     //
 
-    // the entries ordered by the member 'peak', the highest first
+    // the entries ordered by the member 'peak', the highest first, ties in
+    // the order of their names
     template <typename use_t>
     [[nodiscard]] static auto
     descending(const std::map<std::string, use_t>& entries,
