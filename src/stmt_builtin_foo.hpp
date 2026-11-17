@@ -255,8 +255,9 @@ class stmt_builtin_foo final : public statement {
         x.comment({tok(), tc.indent()}, "foo {}", header);
     }
 
-    // a count register is checked against the array size like the count of
-    // 'array_copy', a constant count is checked at compile time
+    // what the counter runs up to: the array length without a count; a
+    // constant count is checked against the length at compile time, a count
+    // in a register like the count of 'array_copy'
     [[nodiscard]] auto compile_limit(compile_toc& tc, const size_t array_len,
                                      machine::held_registers& held) const
         -> operand {
@@ -306,8 +307,8 @@ class stmt_builtin_foo final : public statement {
         return reg_count;
     }
 
-    // 'e', 'i' and 'n' are declared, the counter is a register or a variable in
-    // memory, as the machine prefers
+    // 'e', 'i' and 'n' are declared and the counter 'i' is returned, a
+    // register or a variable in memory, as the machine prefers
     auto declare_loop_names(compile_toc& tc, const ident_info& array_info,
                             const operand& reg_iter,
                             machine::held_registers& held) const -> operand {
@@ -335,8 +336,8 @@ class stmt_builtin_foo final : public statement {
         return reg_counter;
     }
 
-    // the element and the counter are declared during the parse so the block
-    // can name them, the labels are made at the compile
+    // 'e', 'i' and 'n' are declared during the parse so the block can name
+    // them, the labels are made at the compile
     // note: called by the constructor after 'ident_' is made
     [[nodiscard]] auto parse_code(parse_toc& tc, tokenizer& tz) const
         -> stmt_block {
@@ -387,8 +388,8 @@ class stmt_builtin_foo final : public statement {
     // statics
     //
 
-    // the array after 'foo'; e.g. 'foo e in arr' names the element, which
-    // 'foo' gives, but the body of 'foo arr in = e' assigns a variable 'in'
+    // the array after 'foo'; 'foo e in arr' is rejected, 'foo' names the
+    // element 'e', while 'foo arr in = e' is a body that assigns 'in'
     [[nodiscard]] static auto parse_array(parse_toc& tc, tokenizer& tz)
         -> stmt_identifier {
 

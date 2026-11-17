@@ -8178,3 +8178,7 @@ SRC=4521 && EXP=8 && OPTS="--checks=noub" RUN
 # second is tried with the source the fold of the first gave it
 SRC=4920 && EXP=0 && RUN
 SRC=4920 && LISTING folds
+
+# x86: a variable shift with all fourteen registers live needs 'rcx', which
+# holds its count: rejected; the rv32i targets have the registers
+if [[ $MACHINE == x86_64 ]]; then SRC=4940 && COMPERR; else SRC=4940 && EXP=15 && RUN; fi

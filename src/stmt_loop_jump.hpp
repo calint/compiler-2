@@ -26,14 +26,14 @@ class stmt_loop_jump final : public statement {
     auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
         comment_source(tc);
 
         const scope* const loop{tc.scopes().innermost_loop()};
 
         // note: the parse rejected a 'break' or 'continue' outside a loop
         assert(loop != nullptr);
+
+        machine& x{tc.machine()};
 
         if (tok().is_text("break")) {
             tc.record_break();

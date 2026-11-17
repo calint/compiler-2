@@ -9,7 +9,8 @@
 #include "token.hpp"
 #include "ub_assigned.hpp"
 
-// e.g. 'loop { x = x + 1 if x == 9 break }'
+// 'loop' repeats its block until a 'break', a 'return' or an 'exit' leaves
+// it, e.g. 'loop { x = x + 1 if x == 9 break }'
 class stmt_loop final : public statement {
     stmt_block code_;
 

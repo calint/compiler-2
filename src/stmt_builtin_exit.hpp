@@ -40,9 +40,9 @@ class stmt_builtin_exit final : public statement {
     auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
         comment_source(tc);
+
+        machine& x{tc.machine()};
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 

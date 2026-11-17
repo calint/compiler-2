@@ -21,13 +21,13 @@ class stmt_return final : public statement {
     auto compile(compile_toc& tc, [[maybe_unused]] const destination& dst) const
         -> void override {
 
-        machine& x{tc.machine()};
-
         comment_source(tc);
 
         const scope& func_scp{tc.scopes().current_func_scope()};
 
         tc.record_return();
+
+        machine& x{tc.machine()};
 
         if (func_scp.is_main()) {
             x.exit({tok(), tc.indent()},

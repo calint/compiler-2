@@ -123,9 +123,9 @@ class stmt_builtin_io final : public statement {
 
         const place buffer{assert_buffer(tc)};
 
-        machine& x{tc.machine()};
-
         comment_source(tc);
+
+        machine& x{tc.machine()};
 
         x.call_target(
             {tok(), tc.indent()}, io_.function,

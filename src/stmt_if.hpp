@@ -190,8 +190,9 @@ class stmt_if final : public statement {
         x.label(tc.indent(), label_after_if);
     }
 
-    // the paths that the conditions known where the 'if' is written leave,
-    // e.g. 'if 1 == 1 { res = 2 }' sets 'res' on every path
+    // the paths follow the conditions known at the parse
+    // ('branch::constant_at_parse'), e.g. 'if 1 == 1 { res = 2 }' sets 'res'
+    // on every path
     auto trace_assignment(assignment_flow& flow) const -> void override {
         assignment_flow::path_merge paths{flow};
 
@@ -312,8 +313,9 @@ class stmt_if final : public statement {
         return condition;
     }
 
-    // an empty 'else' is the path that skips every branch, it starts where
-    // the condition of the last branch is false
+    // the 'else' code, or without one or with an empty one the path that
+    // skips every branch; it starts where the condition of the last branch is
+    // false
     auto compile_else(compile_toc& tc, const std::string_view if_label,
                       compile_toc::path_merge& paths,
                       const bool is_start_reachable) const -> void {
@@ -330,7 +332,7 @@ class stmt_if final : public statement {
         paths.join_path();
     }
 
-    // an empty 'else' compiles as none, null then
+    // null without an 'else' or with an empty one, which compiles as none
     [[nodiscard]] auto else_code() const -> const stmt_block* {
         if (not else_ or else_->code.is_empty()) {
             return nullptr;
@@ -394,16 +396,16 @@ class stmt_if final : public statement {
         return std::format("{}.{}", if_label, branch_index);
     }
 
+    // the chain rule, the same for the compile and for the paths of the
+    // definite assignment: a branch whose condition is true ends the chain, the
+    // later branches and the 'else' do not run
     [[nodiscard]] static auto ends_chain(const std::optional<bool> known)
         -> bool {
 
         return known.value_or(false);
     }
 
-    // the chain rule, the same for the compile and for the paths of the
-    // definite assignment: a branch whose condition is false does not run, one
-    // whose condition is true ends the chain, the later branches and the
-    // 'else' do not run
+    // a branch whose condition is false does not run, see 'ends_chain'
     [[nodiscard]] static auto runs(const std::optional<bool> known) -> bool {
         return known.value_or(true);
     }

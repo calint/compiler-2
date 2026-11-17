@@ -1,6 +1,39 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 464 (2026-11-17, bug hunt: registers under pressure;
+    design: arithmetic, 'expr_arith.hpp'; readability: a newcomer walks
+    the control statements, 'stmt_if.hpp', the loops, 'foo', 'return')
+    => bug hunt: no defect; a model generator of deep and wide
+       expressions with calls, built-ins, loops and conversions as
+       operands, checked after every statement: about 10900 programs on
+       x86_64 and rv32i-fpga (300 on rv32i and rv32i-qemu) with 'noub',
+       '--nopt', every '--versions' and partial checks; a leak test adds
+       the deepest chain that compiles alone after each program (1450
+       programs, no register left held); about 1150 limit probes; 4 of 5
+       mutants caught, the fifth (x86 shifts not reserving 'rcx') only
+       at 14 live registers: test 4940 pins it (rejected on x86_64,
+       exits 15 on rv32i)
+    => design: no change; seven candidates kept with reasons ('first_op'
+       and 'merge_run' both turn '-' into '+' for different jobs, the
+       negated operand and the overflow check have different reasons,
+       the constant divisor and the constant shift count are excluded
+       in different layers, 'factor_use' is backend API, merged
+       divisors are exact and exclude -1)
+    => readability: nine comments in 'stmt_if.hpp', 'stmt_loop.hpp' and
+       'stmt_builtin_foo.hpp' (what 'trace_assignment' follows,
+       'compile_else' and 'else_code' also without an 'else', the chain
+       rule above 'ends_chain', the role of 'loop', 'declare_loop_names'
+       returns 'i', 'compile_limit' is the length without a count,
+       'parse_array', 'parse_code' declares 'n' too); the walk saw the
+       backend local declared before 'comment_source' in four files
+       ('stmt_return', 'stmt_loop_jump', 'stmt_builtin_exit',
+       'stmt_builtin_io'), against AGENTS.md: moved to just before its
+       use; 41 functions, 5 predictions wrong
+    => checks: 'fuzz-combos.py' reports a program that every target
+       rejects for a global passed to a function that writes it; a
+       defect of the generator's effect sets, in 'etc/todo.txt'; the
+       rest clean
 [x] easy: round 463 (2026-11-17, bug hunt: malformed programs in the
     front end; design: the top level and lifecycle, 'program.hpp',
     'stmt_block.hpp', 'main.cpp'; readability: a newcomer walks
