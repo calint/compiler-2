@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 467 (2026-11-17, bug hunt: code versions; design: the
+    parser's structure, 'parse_statement.hpp', 'parse_lookahead.hpp';
+    readability: a newcomer walks 'expr_type.hpp' and the small
+    built-ins)
+    => bug hunt: no defect; the listing of a kept version equals that of
+       the version alone on 436 rv32i-fpga and 419 x86_64 suite programs;
+       'fuzz-versions.py' 2000, 'fuzz-whole.py' 300 and 'fuzz-frames.py'
+       400 programs; 15 mutants, all caught or equivalent but one (a kept
+       second version reporting the scope count of the first): test-cli
+       now checks "max scopes in use: 4" of 1661 under '--versions=last'
+    => design: no change; 'classify_term' owns what a first token means,
+       'parse_statement' and 'parse_operand' check results in opposite
+       directions, the two 'else' errors and the operand messages differ
+       on purpose, probes and 'put_back_token' do different jobs; a
+       message of 'return a < b' added to the round 450 item
+    => readability: three comments ('array_length' emits nothing, the
+       'expr_arith' holding it compiles the folded constant; its range
+       message gives no conversion hint; 'plan_unwritten' says first
+       what it zeroes); 48 functions, 2 predictions wrong
 [x] easy: round 466 (2026-11-17, bug hunt: strings and text; design:
     generic types and aliases; readability: a newcomer walks the second
     half of 'machine_rv32i.hpp' and the rv32i targets)

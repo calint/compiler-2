@@ -220,6 +220,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
     a call on the line of a 'return' without value, as
     'assert_return_without_value' rejects a value there; changes
     which programs are accepted
+    => round 467, the same rule: its '<' (kept for 'if x return
+       show<i8>(y)') lets 'if a == 1 return a < b' pass to the next
+       statement, "expected '=' for assignment or '(' for function call
+       after 'a'", where 'return a + b' gets "'return' takes no value";
+       '<=' and '<<' alike; exact needs to know whether the name is a
+       generic function
 [ ] easy: (round 449, bug hunt of several source files) docs do not
     say that a column counts bytes ('é' is 2) while the caret is placed
     by characters, so a double-width character puts the caret off by

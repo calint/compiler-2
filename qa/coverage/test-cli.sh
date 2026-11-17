@@ -978,12 +978,13 @@ CLI_VERSIONS() {
     grep -Fxq "# max scratch registers in use: 29" gen.s
     # 1661.baz: a call in a value stored to memory compiles in place without a
     # temporary, the version through a scratch register holds one across the
-    # call
+    # call in a scope of its own; the footer has the peaks of the kept one
     "$BIN" --versions=first 1661.baz >gen.s 2>err
     grep -Fxq ";           max body vars size: 16 B" gen.s
     grep -Fxq ";            max scopes in use: 3" gen.s
     "$BIN" --versions=last 1661.baz >gen.s 2>err
     grep -Fxq ";           max body vars size: 24 B" gen.s
+    grep -Fxq ";            max scopes in use: 4" gen.s
     "$BIN" --vars=16 1661.baz >gen.s 2>err
     [[ ! -s err ]]
     # 0106.baz: choices nested in a version take the first unless 'nested'

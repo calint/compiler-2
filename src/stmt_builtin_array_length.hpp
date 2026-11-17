@@ -66,7 +66,8 @@ class stmt_builtin_array_length final : public statement {
         const ident_info src_info{array_info(tc)};
 
         // note: the destination has the default type, so a known length
-        //       folds and the list copies it itself; the length is unknown
+        //       folds and the 'expr_arith' holding it compiles the constant,
+        //       this compile emits nothing; the length is unknown
         //       only in a function checked without a call or a body it
         //       checks, whose code is discarded, e.g. the left side of
         //       'array_length(a) * i', which an operation with a run-time
@@ -97,8 +98,8 @@ class stmt_builtin_array_length final : public statement {
         const int64_t length{static_cast<int64_t>(*array_len)};
 
         // e.g. 'i8[0x80000000]' on rv32i, an array size is not limited to the
-        // default type, like the 'n' of a 'foo' over it; no hint, a conversion
-        // folds its argument here too
+        // default type, like the 'n' of a 'foo' over it; the message gives no
+        // conversion hint, a conversion folds its argument here too
         if (not constant_arith::fits_width(length, get_type())) {
             throw compile_error{tok(),
                                 std::format("constant {} does not fit {}",

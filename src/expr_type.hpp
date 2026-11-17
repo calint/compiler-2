@@ -599,9 +599,10 @@ class expr_type final : public statement {
                      write_plan& plan) const -> void;
 
   private:
-    // padding is zeroed too so that instances compare equal byte by byte,
-    // 'offset' bytes into the instance at 'at'; 'covered' are the unlisted
-    // fields among the bytes, none for padding
+    // zeroes 'size_bytes' bytes that no listed field writes, 'offset' bytes
+    // into the instance at 'at'; padding too, so that instances compare equal
+    // byte by byte; 'covered' are the unlisted fields among the bytes, none
+    // for padding
     auto plan_unwritten(const part_location& at, const std::string_view what,
                         const size_t offset, const size_t size_bytes,
                         std::vector<access_path> covered,
