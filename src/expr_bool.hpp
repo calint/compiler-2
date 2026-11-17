@@ -434,7 +434,8 @@ class expr_bool_op final : public statement {
                                  mirrored_action);
     }
 
-    // a constant emits no comparison, only the short-circuit branch
+    // a constant emits no comparison: it stores its value when the list is
+    // stored and branches when the value is 'branch_on_true'
     auto compile_constant(compile_toc& tc, const bool value,
                           const machine::comparison_action& action) const
         -> bool {
@@ -815,8 +816,8 @@ class expr_bool_op final : public statement {
     }
 
     // the value of a comparison whose sides fold, without the element's
-    // 'not's, empty otherwise; the one fold of the parse, a 'let' and the
-    // compile, so its sides are checked like those of a compiled comparison
+    // 'not's, empty otherwise; the parse, a 'let' and the compile all fold
+    // through it, so its sides are checked like those of a compiled comparison
     [[nodiscard]] static auto constant_comparison(const comparison_side& lhs,
                                                   const comparison_operator op,
                                                   const comparison_side& rhs)
@@ -1048,8 +1049,8 @@ class expr_bool final : public statement {
     auto compile(compile_toc& tc, const destination& dst) const
         -> void override {
 
-        // stored comparisons would change what later elements read; a
-        // register that the list reads is the result of an inlined function
+        // each element stores its value in 'dst', which would change what a
+        // later element reads, e.g. the 'res' of 'res = x > 1 and res'
         if (not reaches_destination(tc, *this, dst)) {
             compile_value(tc, dst.operand());
             return;
@@ -1281,6 +1282,8 @@ class expr_bool final : public statement {
                                    is_or, inverted, joined_by(inverted), dst);
     }
 
+    // the last element decides the list: false branches to 'if_false' and
+    // true to 'if_true', neither when the value is only stored
     [[nodiscard]] auto
     compile_last_element(compile_toc& tc, const branch_targets& targets,
                          const bool inverted, const operand& dst,

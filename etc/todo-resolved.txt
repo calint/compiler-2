@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 471 (2026-11-17, bug hunt: generics; design: the split
+    of 'toc', 'parse_toc' and 'compile_toc' and their tables;
+    readability: a newcomer walks 'expr_bool.hpp')
+    => bug hunt: no defect; three generators of generic programs each
+       compared with its hand expansion (generic types with based types
+       that reorder their parameters, instances as fields and array
+       elements, methods with type parameters of their own, deduction
+       from arguments and destination, constant parameters in folded
+       branches, generics three deep, noinline instances, injected
+       errors): about 3600 programs, 60 probes; 10 of 10 mutants caught;
+       the differences from the expansion follow documented rules
+    => design: 'types()' and 'generics()' move from 'toc' to 'parse_toc',
+       the only phase that reads them (README 7.6: an accessor sits on
+       the context of the phase that reads its table), found by hiding
+       each of the 13 base accessors from one phase in turn; a stale
+       'toc::get_type_or_throw' in a note; the rest kept with reasons
+       (shared accessors used by both phases, forwarders that README 7.6
+       asks for, 'storage_layout' needed by 'parse_toc::add_dat')
+    => readability: four comments ('compile_constant' also stores its
+       value, 'constant_comparison' is the fold of the parse, a 'let'
+       and the compile, 'expr_bool::compile' says why a list that reads
+       its destination goes through a scratch register, a comment for
+       'compile_last_element'); about 49 functions, 1 prediction wrong
 [x] easy: round 470 (2026-11-17, bug hunt: function results and
     returns; design: loops as a family, 'loop', 'foo', 'break' and
     'continue'; readability: a newcomer walks 'stmt_def_dat.hpp' and

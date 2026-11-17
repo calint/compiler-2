@@ -1519,7 +1519,7 @@ class storage_layout final {
         const size_t frame_alignment{x.address_size_bytes()};
 
         // note: no built-in type is wider than an address
-        //       ('toc::get_type_or_throw'), so no type is aligned past it
+        //       ('parse_toc::get_type_or_throw'), so no type is aligned past it
 
         const storage_location location{find_storage_location()};
 
@@ -2341,8 +2341,7 @@ struct toc_tables final {
 //                  'compile_toc'), 'add_generic_const', 'resolve_declared',
 //                  'storage_of', 'use_at', 'overflow_check' without a
 //                  destination, 'get_main_or_throw'
-//   tables         'builtins', 'checks', 'funcs', 'generics', 'machine',
-//                  'scopes', 'types'
+//   tables         'builtins', 'checks', 'funcs', 'machine', 'scopes'
 //
 // the tables are read through these const accessors, a change goes through a
 // method of a context, which may combine tables (README 7.6)
@@ -2394,10 +2393,6 @@ class toc {
         return tables().funcs;
     }
 
-    [[nodiscard]] auto generics() const -> const generic_registry& {
-        return tables().generics;
-    }
-
     // no token names a missing 'main'
     [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
         const function_table& table{funcs()};
@@ -2440,10 +2435,6 @@ class toc {
         -> std::optional<storage_path> {
 
         return tables().resolver.resolve_storage(name, path);
-    }
-
-    [[nodiscard]] auto types() const -> const type_table& {
-        return tables().types;
     }
 
     // a value used without a destination at 'width'
@@ -2510,6 +2501,7 @@ class toc {
 // the parse that needs it, in a 'generic_scope'
 //
 //   program        'begin_definition'
+//   tables         'generics', 'types'
 //   scopes         'scope_entry'
 //   definitions    'definitions', 'add_type', 'add_func',
 //                  'add_func_instance', 'add_generic_func',
@@ -2836,6 +2828,10 @@ class parse_toc final : public toc {
         return tables().definitions;
     }
 
+    [[nodiscard]] auto generics() const -> const generic_registry& {
+        return tables().generics;
+    }
+
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
                                          const std::string_view name) const
         -> const stmt_def_func& {
@@ -2966,6 +2962,10 @@ class parse_toc final : public toc {
         }
 
         return &types().get(name);
+    }
+
+    [[nodiscard]] auto types() const -> const type_table& {
+        return tables().types;
     }
 
     // where 'src_loc_tk' is, for a message, e.g. '4:9'
