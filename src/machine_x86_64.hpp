@@ -176,9 +176,8 @@ class machine_x86_64 final : public machine {
     assembler_x86_64 assembler_;
 
   public:
-    machine_x86_64(const builtin_type_set& builtins, const source_files& files,
-                   const target_options& options)
-        : machine{builtins, files, options, x86_64_target(), assembler_} {}
+    machine_x86_64(const source_files& files, const target_options& options)
+        : machine{files, options, x86_64_target(), assembler_} {}
 
     //
     // overridden methods

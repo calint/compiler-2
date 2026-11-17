@@ -522,9 +522,9 @@ inline auto array_shape::value_size_bytes(const token& src_loc_tk,
                                  element_count());
 }
 
-// the types of the language that the source does not define, made once before
-// the machine and the program, which refer to them; a type is compared by
-// address, so the set is not copied
+// the types of the language that the source does not define, owned by the
+// machine, which outlives the program; a type is compared by address, so the
+// set is not copied
 class builtin_type_set final {
   public:
     builtin_type_set() = default;

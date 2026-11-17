@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 463 (2026-11-17, bug hunt: malformed programs in the
+    front end; design: the top level and lifecycle, 'program.hpp',
+    'stmt_block.hpp', 'main.cpp'; readability: a newcomer walks
+    'assembler.hpp')
+    => bug hunt: no defect; every test cut at every token boundary
+       (200565 compiles), one token deleted, duplicated or swapped per
+       token, punctuation inserted before every token, stacked
+       mutations checked with '--reproduce-source', whitespace and
+       comment variants with the same instructions, the leftmost error
+       kept under cuts, 47 reserved and odd names in 30 naming places,
+       about 450 hand-written cases: about 1.86 million compiles without
+       a crash, an assert or a hang; eight awkward messages are in
+       'etc/todo.txt'
+    => design: the built-in types had two paths from 'main.cpp', into
+       every machine constructor and through 'program' and 'toc_tables'
+       into 'builtin_roles'; the machine owns them now and the front end
+       reads them from it ('machine::builtins'), the parameter is gone
+       from 10 constructors and functions; no listing differs; the
+       passes, the file loading, 'vars_size_bytes' and the option tables
+       were looked at and kept
+    => readability: the walk found that 'remove_copies' tried the copies
+       of a run last to first, an order left from an older version, so a
+       copy that an earlier fold rewrote ('mv t0, t1' after 'mv t1, a0'
+       folded) was never tried again; fix: first to last, with a note;
+       test 4920; 0072 one rv32i instruction fewer, roome unchanged;
+       four comments ('jump_info', the escapes name '\r' too,
+       'following_unconditional_jump', what 'referenced_labels'
+       returns); 68 functions, 2 predictions wrong
 [x] easy: round 462 (2026-11-17, bug hunt: the command line and its
     option combinations; design: conditions and branches,
     'expr_bool.hpp'; readability: a newcomer walks 'machine.hpp')

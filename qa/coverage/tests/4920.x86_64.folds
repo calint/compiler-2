@@ -1,0 +1,4 @@
+=== 16:     res = r * 0x100 + g # folds
+        mov dword [rbp + 16], r15d
+        sal dword [rbp + 16], 8
+        add dword [rbp + 16], r14d

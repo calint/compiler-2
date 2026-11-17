@@ -26,7 +26,6 @@
 #include "toc.hpp"
 #include "token.hpp"
 #include "tokenizer.hpp"
-#include "type.hpp"
 
 //
 // the compile of a program, the types below in reading order:
@@ -263,9 +262,8 @@ class program final {
 
   public:
     // the main file is the first of 'files', the included ones are added
-    program(machine& backend, const builtin_type_set& builtins,
-            source_files& files, const size_t vars_size_bytes)
-        : files_{files}, tables_{backend, builtins, files, vars_size_bytes} {
+    program(machine& backend, source_files& files, const size_t vars_size_bytes)
+        : files_{files}, tables_{backend, files, vars_size_bytes} {
 
         parse_toc tc{tables_};
 

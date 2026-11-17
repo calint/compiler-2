@@ -19,12 +19,11 @@ class machine_rv32i_bare_metal : public machine_rv32i {
   public:
     // 'memory_size_bytes_in' is the memory of the target, e.g. fixed for the
     // qemu 'virt' machine
-    machine_rv32i_bare_metal(const builtin_type_set& builtins,
-                             const source_files& files,
+    machine_rv32i_bare_metal(const source_files& files,
                              const target_options& options,
                              const size_t memory_start_address_in,
                              const size_t memory_size_bytes_in)
-        : machine_rv32i{builtins, files, options,
+        : machine_rv32i{files, options,
                         bare_metal_target(options, memory_start_address_in,
                                           memory_size_bytes_in)},
           memory_start_address_{memory_start_address_in},

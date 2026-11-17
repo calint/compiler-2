@@ -98,7 +98,7 @@ class assembler {
     enum class section : uint8_t { text, rodata, data, variables };
 
   protected:
-    // a jump the optimizer sees; the target keeps the condition of a branch
+    // a jump the optimizer sees; a subclass keeps the condition of a branch
     // in the record of its line
     struct jump_info {
         std::string target;
@@ -536,9 +536,9 @@ class assembler {
     }
 
     // 'bytes' between the quotes of a string directive: a backslash before
-    // a backslash and each of 'quote_chars', a line end or a tab by name, a
-    // printable character as it is and another byte by 'numeric_escape', a
-    // format of the byte value, e.g. '\x{:02x}'
+    // a backslash and each of 'quote_chars', a line feed, a carriage return
+    // or a tab by name, a printable character as it is and another byte by
+    // 'numeric_escape', a format of the byte value, e.g. '\x{:02x}'
     [[nodiscard]] static auto
     escaped_text(const std::string_view bytes,
                  const std::string_view quote_chars,
@@ -656,8 +656,7 @@ class assembler {
 
         const size_t next{next_instruction(index + 1)};
 
-        // the run or the code ends, e.g. with the jump of a loop that never
-        // ends
+        // an entry or the end of the code comes first
         if (next >= run_end) {
             return std::nullopt;
         }
@@ -803,6 +802,7 @@ class assembler {
         }
     }
 
+    // the labels named outside jumps and those the jumps not removed go to;
     // a jump target is viewed in its label line because inverting a branch
     // replaces its target string
     [[nodiscard]] auto referenced_labels(
@@ -827,8 +827,11 @@ class assembler {
         for (const straight_run run : runs) {
             const std::span<line> run_lines{lines_of(run)};
 
-            for (size_t first{run_lines.size()}; first > 0; --first) {
-                const std::span<line> block{run_lines.subspan(first - 1)};
+            // note: in order, so a copy that a fold rewrote is tried with its
+            //       new source, e.g. 'mv t0, t1' after 'mv t1, a0' folded
+
+            for (size_t first{}; first < run_lines.size(); ++first) {
+                const std::span<line> block{run_lines.subspan(first)};
 
                 if (block.front().code_size == 0) {
                     continue;
@@ -983,8 +986,8 @@ class assembler {
         return referenced.contains(l.label);
     }
 
-    // the escape of a line end or a tab, which reads better than a numeric
-    // escape
+    // the escape of a line feed, a carriage return or a tab, which reads
+    // better than a numeric escape
     [[nodiscard]] static auto named_escape(const char ch)
         -> std::optional<std::string_view> {
 

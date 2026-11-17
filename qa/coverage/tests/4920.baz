@@ -1,0 +1,25 @@
+# a copy of a copy is removed too: on rv32i the result of 'halve' in 'a0' is
+# copied to its variable and that to the parameter 'r', both copies are
+# removed and 'r * 0x100' reads 'a0'
+#
+# 'listing.py folds' checks the instructions of lines marked '# folds'
+
+func halve(n) half {
+    half = n / 2
+}
+
+func double(x) ret {
+    ret = x * 2
+}
+
+func combine(r i32, g i32) res i32 {
+    res = r * 0x100 + g # folds
+}
+
+func main() {
+    var r = 128
+    var g = 64
+    var c = combine(i32(halve(r)), i32(double(g)))
+    if c != 0x4080 exit(1)
+    exit(0)
+}

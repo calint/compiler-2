@@ -8173,3 +8173,8 @@ SRC=3981 && COMPERR
 # not write the destination: accepted either way
 SRC=4520 && EXP=8 && RUN
 SRC=4521 && EXP=8 && OPTS="--checks=noub" RUN
+
+# a copy of a copy is removed too: the copies are tried in order, so the
+# second is tried with the source the fold of the first gave it
+SRC=4920 && EXP=0 && RUN
+SRC=4920 && LISTING folds

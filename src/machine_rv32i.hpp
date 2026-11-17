@@ -444,9 +444,8 @@ class machine_rv32i : public machine {
 
   public:
     // 'options.binary_file_name' receives the image of the resolved output
-    machine_rv32i(const builtin_type_set& builtins, const source_files& files,
-                  const target_options& options)
-        : machine_rv32i{builtins, files, options, rv32i_target()} {}
+    machine_rv32i(const source_files& files, const target_options& options)
+        : machine_rv32i{files, options, rv32i_target()} {}
 
     //
     // overridden methods
@@ -1019,10 +1018,9 @@ class machine_rv32i : public machine {
 
   protected:
     // a target that differs from 'rv32i_target' passes its own table
-    machine_rv32i(const builtin_type_set& builtins, const source_files& files,
-                  const target_options& options,
+    machine_rv32i(const source_files& files, const target_options& options,
                   const target_description& target)
-        : machine{builtins, files, options, target, assembler_} {}
+        : machine{files, options, target, assembler_} {}
 
     static constexpr size_t word_size_bytes_{4};
     static constexpr size_t register_bits_{

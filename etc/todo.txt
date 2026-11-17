@@ -10,6 +10,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 463, bug hunt of malformed programs) messages, from
+    1.86 million mutated compiles without a crash: 'func f<T type> {}'
+    says "expected '(' after function name" at 'f', the '(' is missing
+    after '>' (docs 1.9 place a missing token where the next one
+    starts); 'type t<N> { x i8[N]' then 'var g = 1' and 'func main'
+    reports "'func' can only be in global scope" on the 'func' line, the
+    skip of a generic body passes 'var'; 'var s = i8{1}' says "expected
+    a statement" at '1'; 'func f(x mut i8[' says "write 'i8[]'";
+    'exit([1)' says "expected type 'i64', got 'i64[]'"; 'func mut t'
+    says "expected '(' after function name"; 'a = a < < 1' and 'a <> 1'
+    say "a comparison makes a condition"
 [ ] easy: (round 462, bug hunt of the command line) messages:
     '--target=rv32i --sdcard=./p-rv32i.bin p.baz' says "invalid --bin:
     'p-rv32i.bin' is the sd card image" without a '--bin' given, and a

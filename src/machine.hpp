@@ -531,7 +531,7 @@ class machine {
 
     target_description target_{};
     source_locations locations_;
-    std::reference_wrapper<const builtin_type_set> builtins_;
+    builtin_type_set builtins_;
     // the assembler member of the backend
     std::reference_wrapper<assembler> output_;
     target_options options_;
@@ -749,11 +749,10 @@ class machine {
   public:
     // 'files' locate the tokens of comments; 'output' is not used here, the
     // backend constructs it after the base
-    machine(const builtin_type_set& builtins, const source_files& files,
-            const target_options& options, const target_description& target,
-            assembler& output)
-        : target_{target}, locations_{files}, builtins_{builtins},
-          output_{output}, options_{options} {
+    machine(const source_files& files, const target_options& options,
+            const target_description& target, assembler& output)
+        : target_{target}, locations_{files}, output_{output},
+          options_{options} {
 
         // a check the target cannot honor is off, e.g. x86_64 has no stack
         // bound
@@ -1047,6 +1046,11 @@ class machine {
         emit_frame_entry();
     }
 
+    // the types of the language, also of the front end
+    [[nodiscard]] auto builtins() const -> const builtin_type_set& {
+        return builtins_;
+    }
+
     // 'receiver_address' is the address the callee finds in
     // 'receiver_register', none when the register is not used; 'name' is the
     // callee's for the register report
@@ -1288,8 +1292,8 @@ class machine {
         assert(address_size_bytes() == sizeof(int32_t) or
                address_size_bytes() == sizeof(int64_t));
 
-        return address_size_bytes() == sizeof(int32_t) ? builtins_.get().int32
-                                                       : builtins_.get().i64;
+        return address_size_bytes() == sizeof(int32_t) ? builtins_.int32
+                                                       : builtins_.i64;
     }
 
     // a frame size, limited by the variables that hold the frames
@@ -1823,10 +1827,6 @@ class machine {
                                               const type& type_ref) -> operand {
 
         return alloc_scratch_register_from(site, type_ref, 0);
-    }
-
-    [[nodiscard]] auto builtins() const -> const builtin_type_set& {
-        return builtins_.get();
     }
 
     // the handler of a check: without the line it prints 'panic: NAME' and

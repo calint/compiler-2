@@ -42,7 +42,6 @@
 #include "register_report.hpp" // IWYU pragma: keep
 #include "source_files.hpp"
 #include "stmt_identifier_impl.hpp" // IWYU pragma: keep
-#include "type.hpp"
 
 // the version '--version' prints; 'make.sh' defines 'BAZ_VERSION' from 'git
 // describe', other builds do not
@@ -69,8 +68,7 @@ constexpr std::string_view default_src_file_name{"prog.baz"};
 // the others reject them
 struct target_name {
     std::string_view text;
-    std::unique_ptr<machine> (*make)(const builtin_type_set& builtins,
-                                     const source_files& files,
+    std::unique_ptr<machine> (*make)(const source_files& files,
                                      const machine::target_options& options){};
     bool writes_image{};
     bool reads_stack{};
@@ -80,12 +78,11 @@ struct target_name {
 
 // the backend 'machine_t' of a target
 template <class machine_t>
-[[nodiscard]] auto make_machine(const builtin_type_set& builtins,
-                                const source_files& files,
+[[nodiscard]] auto make_machine(const source_files& files,
                                 const machine::target_options& options)
     -> std::unique_ptr<machine> {
 
-    return std::make_unique<machine_t>(builtins, files, options);
+    return std::make_unique<machine_t>(files, options);
 }
 
 // the targets of '--target', in the order of the usage text
@@ -1134,9 +1131,7 @@ auto check_listing_written(const machine& backend) -> void {
 
 // the source file compiled for the target, the listing written to stdout;
 // 'files' holds the sources read, for the report of an error
-auto compile_to_stdout(const options& opts, source_files& files,
-                       const builtin_type_set& builtins) -> void {
-
+auto compile_to_stdout(const options& opts, source_files& files) -> void {
     const std::string_view src_file_name{
         opts.src_file_name.value_or(default_src_file_name),
     };
@@ -1152,10 +1147,10 @@ auto compile_to_stdout(const options& opts, source_files& files,
     };
 
     const std::unique_ptr<machine> backend{
-        target.make(builtins, files, resolved),
+        target.make(files, resolved),
     };
 
-    program prg{*backend, builtins, files, opts.vars_size_bytes};
+    program prg{*backend, files, opts.vars_size_bytes};
 
     check_output_files(target, files, resolved);
 
@@ -1171,11 +1166,8 @@ auto compile_to_stdout(const options& opts, source_files& files,
 [[nodiscard]] auto compile_file(const options& opts) -> int {
     source_files files;
 
-    // the machine and the program refer to them
-    const builtin_type_set builtins;
-
     try {
-        compile_to_stdout(opts, files, builtins);
+        compile_to_stdout(opts, files);
     } catch (const compile_error& e) {
         print_compiler_error(files, e);
         return 1;

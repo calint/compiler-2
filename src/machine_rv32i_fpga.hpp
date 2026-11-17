@@ -30,9 +30,8 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     static constexpr size_t max_memory_size_bytes_{0xffff'f000};
 
   public:
-    machine_rv32i_fpga(const builtin_type_set& builtins,
-                       const source_files& files, const target_options& options)
-        : machine_rv32i_bare_metal{builtins, files, options, 0,
+    machine_rv32i_fpga(const source_files& files, const target_options& options)
+        : machine_rv32i_bare_metal{files, options, 0,
                                    options.memory_size_bytes} {
 
         if (options.memory_size_bytes > max_memory_size_bytes_) {

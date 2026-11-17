@@ -1764,11 +1764,9 @@ class storage_layout final {
 // machine decides
 class builtin_roles final {
     std::reference_wrapper<const ::machine> machine_;
-    std::reference_wrapper<const builtin_type_set> types_;
 
   public:
-    builtin_roles(const ::machine& backend, const builtin_type_set& types)
-        : machine_{backend}, types_{types} {}
+    explicit builtin_roles(const ::machine& backend) : machine_{backend} {}
 
     // note: the same type as 'default_type', the word of the target
     [[nodiscard]] auto address() const -> const type& {
@@ -1777,7 +1775,7 @@ class builtin_roles final {
     }
 
     [[nodiscard]] auto boolean() const -> const type& {
-        return types_.get().boolean;
+        return types().boolean;
     }
 
     [[nodiscard]] auto default_type() const -> const type& {
@@ -1785,14 +1783,21 @@ class builtin_roles final {
         return x.default_type();
     }
 
-    [[nodiscard]] auto i32() const -> const type& { return types_.get().i32; }
+    [[nodiscard]] auto i32() const -> const type& { return types().i32; }
 
-    [[nodiscard]] auto i64() const -> const type& { return types_.get().i64; }
+    [[nodiscard]] auto i64() const -> const type& { return types().i64; }
 
-    [[nodiscard]] auto i8() const -> const type& { return types_.get().i8; }
+    [[nodiscard]] auto i8() const -> const type& { return types().i8; }
 
     [[nodiscard]] auto void_type() const -> const type& {
-        return types_.get().void_type;
+        return types().void_type;
+    }
+
+  private:
+    // the built-in types are those of the machine
+    [[nodiscard]] auto types() const -> const builtin_type_set& {
+        const ::machine& x{machine_.get()};
+        return x.builtins();
     }
 };
 
@@ -2285,17 +2290,19 @@ class definition_checks final {
 // 'compile_toc', each a 'toc' over these tables; each phase starts and ends
 // without scopes, the root scope is entered again by the compile
 struct toc_tables final {
-    // 'builtin_types' are the types of the language, shared with the machine
-    toc_tables(::machine& backend_in, const builtin_type_set& builtin_types,
-               const source_files& files, const size_t vars_capacity_bytes)
+    toc_tables(::machine& backend_in, const source_files& files,
+               const size_t vars_capacity_bytes)
         : backend{backend_in}, locations{files}, types{order},
           scopes{order, types}, funcs{order}, generics{order},
           definitions{scopes, funcs, types, generics, locations},
-          builtins{backend_in, builtin_types},
+          builtins{backend_in},
           resolver{scopes, backend_in, funcs, generics, builtins},
           storage{backend_in, scopes, data, vars_capacity_bytes} {
 
-        // the built-in types are looked up by name like the defined ones
+        // the built-in types, those of the machine, are looked up by name
+        // like the defined ones
+        const builtin_type_set& builtin_types{backend_in.builtins()};
+
         for (const type* const tp : builtin_types.all()) {
             types.add_builtin(tp->name(), *tp);
         }

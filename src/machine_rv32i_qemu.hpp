@@ -27,9 +27,8 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     //       '--memory' is for 'rv32i-fpga'
 
   public:
-    machine_rv32i_qemu(const builtin_type_set& builtins,
-                       const source_files& files, const target_options& options)
-        : machine_rv32i_bare_metal{builtins, files, options, ram_start_address_,
+    machine_rv32i_qemu(const source_files& files, const target_options& options)
+        : machine_rv32i_bare_metal{files, options, ram_start_address_,
                                    ram_size_bytes_} {}
 
   protected:
