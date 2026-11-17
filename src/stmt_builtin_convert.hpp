@@ -155,9 +155,10 @@ class stmt_builtin_convert final : public statement {
         return argument_.arg;
     }
 
-    // the arithmetic of the argument wraps, 'uops' apply to the converted
-    // value as the target checks them; the argument is an operand, so a
-    // narrower call result widens into a wider register, e.g. 'i16(g())'
+    // 'target' is at most as wide as the type; the arithmetic of the argument
+    // wraps, 'uops' apply to the converted value as the target checks them;
+    // the argument is an operand, so a narrower call result widens into a
+    // wider register, e.g. 'i16(g())'
     auto compile_argument(compile_toc& tc, const destination& target,
                           const unary_ops& uops) const -> void {
 
@@ -195,7 +196,7 @@ class stmt_builtin_convert final : public statement {
         };
 
         // the argument is made at the width of the type, where its
-        // arithmetic wraps
+        // arithmetic wraps, without the ops, which apply at the width of 'dst'
         compile_argument(tc, destination::of_register(converted), {});
 
         const operand widened{x.register_view(converted, dst.type_ref())};

@@ -153,7 +153,8 @@ struct generic_type_use {
     // statics
     //
 
-    // 'user' is what must come after the generic type
+    // 'user' names the definition that uses the generic type, for the error
+    // when it is not defined yet
     // note: the callers dispatch on the '='
     [[nodiscard]] static auto parse(const parse_toc& tc, tokenizer& tz,
                                     const std::string_view user)
@@ -209,8 +210,8 @@ struct generic_type_use {
                                     arg_tks.size())};
     }
 
-    // e.g. 'text' of 'type str = text<8>', 'user' is what must come after the
-    // generic type; 'tz' is after 'generic_tk'
+    // e.g. 'text' of 'type str = text<8>', 'user' as in 'parse'; 'tz' is
+    // after 'generic_tk'
     static auto assert_generic_type(const parse_toc& tc, const tokenizer& tz,
                                     const token& generic_tk,
                                     const std::string_view user) -> void {

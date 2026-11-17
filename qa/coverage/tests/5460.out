@@ -1,0 +1,4 @@
+
+5460.baz:11:18: argument 2 'a' may share storage with argument 1 'a' (both name 'a'), use a temporary variable for one of them
+    var r = f(a, a)
+                 ^

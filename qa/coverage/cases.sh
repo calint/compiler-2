@@ -8186,3 +8186,11 @@ if [[ $MACHINE == x86_64 ]]; then SRC=4940 && COMPERR; else SRC=4940 && EXP=15 &
 # a conversion inside a conversion widens its narrower argument before its
 # unary ops
 SRC=5420 && EXP=0 && RUN
+
+# a 'read' into a 'mut' parameter writes its argument: 'f(a, a)' of an 'f'
+# that reads into 'u' and then reads 'v' is rejected
+SRC=5460 && COMPERR
+
+# a 'read' into a global is a write of the global in the record of the
+# function: 'f(g)' of an 'f' that reads into 'g' and reads 'v' is rejected
+SRC=5461 && COMPERR

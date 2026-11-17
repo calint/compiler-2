@@ -267,6 +267,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
     13000 programs found nothing, 6 of 7 mutants caught (padding,
     compare and copy bytes, storage sharing); kept in the session
     scratchpad as 'keep-types-gen.py'
+[p] easy: (round 473, bug hunt of aliasing) need approval: a fuzzer of
+    records and arrays copied over themselves and their parts, 'mut'
+    record and array arguments, results into an argument, globals a
+    callee writes, 'foo' elements and 'array_copy' over one root, with a
+    copy-in copy-out model and an inlined/noinline swap that must keep
+    verdict and result; about 7700 programs and 42000 runs found nothing,
+    7 of 9 mutants caught (the eighth by tests 5460 and 5461 now); a new
+    file in 'qa/fuzz'; kept in the session scratchpad as 'keep-alias/'
 [p] easy: (round 465, bug hunt of frames) need approval: a fuzzer of
     'noinline' recursion with a model (records and arrays by value and
     'mut', methods, results of a type, panics from the deepest frame)

@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 473 (2026-11-17, bug hunt: aliasing and overlap;
+    design: the input and output built-ins, 'stmt_builtin_io.hpp';
+    readability: a newcomer walks 'stmt_builtin_convert.hpp' and
+    'stmt_def_type.hpp')
+    => bug hunt: no defect; a model generator of records and arrays
+       copied over themselves and their parts, 'mut' record and array
+       arguments, results into an argument, globals a callee writes,
+       'foo' elements and 'array_copy' over one root, each also with
+       its calls swapped between inlined and 'noinline': about 7700
+       programs, 42000 runs, 75 probes (a matrix of a write and a read
+       through each construct for 'f(a, a)'); 7 of 9 mutants caught by
+       the generator, one more by tests; a 'read' into a 'mut'
+       parameter or a global not recorded as a write was caught only by
+       a probe: tests 5460 and 5461; the generator as a fuzzer needs
+       approval (todo)
+    => design: no change; merging 'check_range_from_start' with
+       'move_to_constant_start' and 'move_to_run_time_start' (-17 lines,
+       listings equal) was not taken: one function of two paths in
+       place of a dispatcher and two named steps; seven ideas kept with
+       reasons (the sector failure handler placed by each target, one x86
+       clobber set grows 'read' and 'write', 'target_call' keeps backend
+       labels out of the front end)
+    => readability: four comments ('compile_argument' expects a target
+       at most as wide as the type, 'compile_at_type_register' leaves the
+       ops for the width of 'dst', 'user' of 'generic_type_use::parse'
+       and 'assert_generic_type' names the definition for the error); 35
+       functions, 2 predictions wrong
 [x] easy: round 472 (2026-11-17, bug hunt: integer conversions; design:
     variable definitions, 'stmt_def_var.hpp'; readability: a newcomer
     walks 'stmt_builtin_foo.hpp' and 'tokenizer.hpp')

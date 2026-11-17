@@ -1,0 +1,14 @@
+# a 'read' into a global is a write of the global in the record of the
+# function: 'f(g)' of an 'f' that reads into 'g' and reads 'v' is rejected
+
+dat g = i8[4]
+
+func f(v i8[]) res i8 {
+    read(0, g)
+    res = v[0]
+}
+
+func main() {
+    var r = f(g)
+    exit(r)
+}
