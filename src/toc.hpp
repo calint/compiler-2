@@ -989,7 +989,6 @@ struct name_meaning {
 // globals to the innermost one
 class scope_stack final {
     std::vector<scope> scopes_;
-    size_t max_scope_count_{};
     std::reference_wrapper<const definition_order> order_;
     // a type parameter names no value, see 'lookup'
     std::reference_wrapper<const type_table> types_;
@@ -1163,10 +1162,6 @@ class scope_stack final {
         return meaning_in(0, name);
     }
 
-    [[nodiscard]] auto max_scope_count() const -> size_t {
-        return max_scope_count_;
-    }
-
     // 'name' means the result of the innermost function, not a name that
     // hides it, e.g. the 'e' of a 'foo' over the result
     [[nodiscard]] auto names_result(const std::string_view name) const -> bool {
@@ -1183,10 +1178,7 @@ class scope_stack final {
 
     auto pop() -> void { scopes_.pop_back(); }
 
-    auto push(scope scp) -> void {
-        scopes_.push_back(std::move(scp));
-        max_scope_count_ = std::max(scopes_.size(), max_scope_count_);
-    }
+    auto push(scope scp) -> void { scopes_.push_back(std::move(scp)); }
 
     [[nodiscard]] auto reach_state_now() const -> reach_state {
         // see 'compile_toc::is_reachable'
@@ -1284,10 +1276,6 @@ class scope_stack final {
         }
 
         func_scope().reach_of_func() = state.func;
-    }
-
-    auto set_max_scope_count(const size_t count) -> void {
-        max_scope_count_ = count;
     }
 
     // see 'compile_toc::is_reachable'
@@ -3137,6 +3125,8 @@ class compile_toc final : public toc {
     // the indent of the listing lines the code being compiled emits, see
     // 'indent_scope'
     size_t indent_{};
+    // the most scopes open at once, see 'scope_entry'
+    size_t max_scope_count_{};
 
     // what a dry run and a version that is not kept put back: the peaks that
     // compiling raises and whether the code after is reached, which an error
@@ -3268,6 +3258,9 @@ class compile_toc final : public toc {
             }
 
             tc_.tables().scopes.push(std::move(scp));
+
+            tc_.max_scope_count_ =
+                std::max(tc_.scopes().count(), tc_.max_scope_count_);
         }
 
         scope_entry(const scope_entry&) = delete;
@@ -3286,8 +3279,6 @@ class compile_toc final : public toc {
     // without storage
     explicit compile_toc(toc_tables& tables_in) : toc{tables_in} {
         assert(scopes().is_empty());
-
-        tables().scopes.set_max_scope_count(0);
     }
 
     // the overloads of 'machine' and 'overflow_check' below would hide
@@ -3633,7 +3624,7 @@ class compile_toc final : public toc {
         const toc_tables& t{tables()};
 
         return {
-            .max_scope_count{t.scopes.max_scope_count()},
+            .max_scope_count{max_scope_count_},
             .max_body_vars_size_bytes{t.storage.max_body_vars_size_bytes()},
             .dat_size_bytes{t.data.total_size_bytes()},
             .dat_var_padding_bytes{t.data.dat_var_padding_bytes()},
@@ -3711,7 +3702,7 @@ class compile_toc final : public toc {
 
     [[nodiscard]] auto compile_state_now() const -> compile_state {
         return {
-            .max_scope_count{scopes().max_scope_count()},
+            .max_scope_count{max_scope_count_},
             .storage{layout().peaks_now()},
             .reach{scopes().reach_state_now()},
         };
@@ -3741,7 +3732,7 @@ class compile_toc final : public toc {
     auto restore_compile_state(const compile_state& state) -> void {
         toc_tables& t{tables()};
 
-        t.scopes.set_max_scope_count(state.max_scope_count);
+        max_scope_count_ = state.max_scope_count;
         t.storage.restore_peaks(state.storage);
         t.scopes.restore_reach_state(state.reach);
     }

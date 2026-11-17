@@ -79,7 +79,7 @@
     return is_read;
 }
 
-// a read of the statement whose parts 'written' are reaches none of them
+// 'read' reaches none of the parts 'written' before it in the same statement
 inline auto assert_read_not_written(const toc& tc, const stmt_identifier& read,
                                     const std::span<const storage_path> written)
     -> void {
@@ -117,7 +117,8 @@ inline auto assert_read_not_written(const toc& tc, const stmt_identifier& read,
     }
 }
 
-// a call in the statement whose parts 'written' are reaches none of them
+// the call of 'effect' reaches none of the parts 'written' before it in the
+// same statement
 inline auto
 assert_call_effect_not_written(const call_effect& effect,
                                const std::span<const storage_path> written)
@@ -176,12 +177,13 @@ inline auto assert_not_read_before(const toc& tc, const node_operand& earlier,
     });
 }
 
-// evaluation is left to right, but the compile reads a name where it is
-// used, so a name that a later operand of the same list may write would read
-// the written value; such a list is rejected, e.g. the 'i' of 'f(arr[i],
-// h(i))' or of 'i == h(i)' with 'h' writing 'i'; 'node' lists its operands by
-// 'visit_operands', a 'statement' or a part of one; 'operand' is the word the
-// message uses for an operand of the list
+// evaluation is left to right, but the compile reads a name where its value
+// is used, which can be after a later operand ran, so a name that a later
+// operand of the same list may write would read the written value; such a
+// list is rejected, e.g. the 'i' of 'f(arr[i], h(i))' or of 'i == h(i)' with
+// 'h' writing 'i'; 'node' lists its operands by 'visit_operands', a
+// 'statement' or a part of one; 'operand' is the word the message uses for an
+// operand of the list
 // note: a call among the earlier operands has run before the later ones,
 //       only the names those read are checked
 inline auto assert_not_written_later(const toc& tc, const auto& node,

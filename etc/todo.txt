@@ -222,6 +222,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
     13000 programs found nothing, 6 of 7 mutants caught (padding,
     compare and copy bytes, storage sharing); kept in the session
     scratchpad as 'keep-types-gen.py'
+[p] easy: (round 461, bug hunt of compile-time values) need approval: a
+    new fuzzer 'qa/fuzz/fuzz-constants.py' without a model: each program
+    once with typed 'let' constants (folded) and once with the same
+    initializers as 'var' (run time), which must end alike or the folded
+    one be rejected where the other panics; modes with global 'let' and
+    'dat', and constants passed to an inlined against a 'noinline'
+    function; 5420 programs found nothing; it kills 4 mutants the
+    current fuzzers miss ('<=' folded as '<', '>>' of -1 at 64 bits, an
+    untyped-led list kept untyped, a conversion not wrapped to its use);
+    kept in the session scratchpad as 'keep-const-gen.py'
 [ ] easy: (round 447, design of storage addresses) 'main.cpp' asks
     '--vars' to be a multiple of 16 ('vars_alignment'); no code or
     docs say why: tie it to the rule that needs it or relax it

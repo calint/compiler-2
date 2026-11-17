@@ -140,7 +140,8 @@ class expr_any final : public statement {
         token string_tk;
     };
 
-    // e.g. 'i8[]{1, 2}', '{{1, 2}, {3, 4}}' or 'i8[4]', which is 'i8[4]{}'
+    // e.g. 'i8[]{1, 2}', '{{1, 2}, {3, 4}}' of instances or 'i8[4]', which
+    // is 'i8[4]{}'
     struct element_list {
         // none when the destination gives the type and the size
         std::optional<array_prefix> prefix;
@@ -339,10 +340,11 @@ class expr_any final : public statement {
         return tok();
     }
 
-    // the fold of a condition stops at the element that decides it, so the
-    // elements after it are checked like skipped code, e.g. the 'a / 0 == 1'
-    // of 'true or a / 0 == 1'; every condition of the value is, also in the
-    // elements of a list and in the fields of an instance literal
+    // a value that folds is not compiled, and the fold of a condition stops
+    // at the element that decides it, so the elements after it are checked
+    // like skipped code, e.g. the 'a / 0 == 1' of 'true or a / 0 == 1'; in
+    // every condition of the value, also in the elements of a list and in
+    // the fields of an instance literal
     auto check_folded_conditions(compile_toc& tc) const -> void {
         if (std::holds_alternative<single_value>(form_)) {
             check_folded_conditions_of(tc, value_variant());

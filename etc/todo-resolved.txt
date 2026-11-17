@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 461 (2026-11-17, bug hunt: compile-time values, 'let',
+    folding and 'dat' data; design: scopes and name resolution in
+    'toc.hpp'; readability: a newcomer walks 'expr_any.hpp',
+    'stmt_assign_var.hpp' and 'ub_order.hpp')
+    => bug hunt: no defect; about 130 probes (the minimum by -1, negation
+       of the minimum, wrapping shifts, mirrored comparisons, 'and'/'or'
+       with calls, 'dat' data of every byte, padding and alignment on the
+       four targets) and a generator comparing each program with folded
+       'let' constants against the same values as 'var': 5420 programs;
+       differences only where documented (skipped code is checked as if
+       it ran, chapter 8 item 1); 9 mutants all caught, 4 only by the
+       new generator, which needs approval as a fuzzer
+    => design: the peak of scopes in use had two owners, 'scope_stack'
+       raised it at every push, the parse too, and 'compile_toc' reset
+       it; it is now kept by 'compile_toc' alone, raised in
+       'scope_entry'; no listing differs; left: recording globals at the
+       parse only, deriving the parameter names of a function scope
+    => readability: five comments in 'ub_order.hpp' and 'expr_any.hpp'
+       (the three 'assert_*' of written parts say what is checked in
+       plain words, a name is read where its value is used, a folded
+       value is not compiled so its conditions are compiled skipped, an
+       element list of instances); the walk asked why
+       'stmt_assign_var::parse_value' records the write before the
+       value: so an error at the destination comes first, now said; 83
+       functions, 3 predictions wrong
+    => checks: the fuzzers again report the known test 1698 doubling of
+       '--versions=nested' as a hang (round 412 item); the rest clean
 [x] easy: round 460 (2026-11-16, bug hunt: the built-ins and their
     run-time checks; design: the non-generic call path in
     'stmt_call.hpp'; readability: a newcomer walks 'operand.hpp',
