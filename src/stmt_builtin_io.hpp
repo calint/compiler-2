@@ -403,7 +403,7 @@ class stmt_builtin_io final : public statement {
         const ident_info& buffer_info{buffer.info};
 
         // the range is checked after the count
-        buffer.ident->load_address(tc, tok(), buffer_info, buffer_reg);
+        buffer.ident->load_address(tc, tok(), buffer_reg);
 
         const std::optional<int64_t> known_count{
             constant_count(tc, buffer_info),

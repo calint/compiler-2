@@ -42,7 +42,7 @@
 //   'stmt_identifier'        the path node; its members that use 'expr_any'
 //                            are in 'stmt_identifier_impl.hpp'
 //   'place', 'make_ident_info', 'is_whole_array',
-//   'assert_not_whole_array', 'make_scalar_ident_info', 'as_place'
+//   'assert_not_whole_array', 'as_place'
 //                            what a value names when it is a place
 //   'statement::visit_call_effects', 'visit_operand_reads',
 //   'statement::visit_reads', 'statement::assert_result_set_before_read',
@@ -188,10 +188,6 @@ class stmt_identifier;
 
 [[nodiscard]] inline auto make_ident_info(const toc& tc,
                                           const stmt_identifier& ident)
-    -> ident_info;
-
-[[nodiscard]] inline auto make_scalar_ident_info(const toc& tc,
-                                                 const stmt_identifier& ident)
     -> ident_info;
 
 // a call where an array is expected, e.g. the 'f()' of 'array_length(f())',
@@ -468,16 +464,15 @@ class stmt_identifier final : public statement {
 
         comment_source(tc);
 
-        const ident_info src_info{make_scalar_ident_info(tc, *this)};
-
-        // note: a list copies a constant itself
-        assert(not src_info.is_const());
+        // note: the parse rejected a whole array ('assert_not_whole_array')
+        assert(not shape_.is_array());
 
         machine& x{tc.machine()};
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand op{operand_of(tc, src_info, held)};
+        // note: a list copies a constant itself
+        const operand op{operand_of(tc, held)};
 
         // the copy protects the address registers until it reads them, then
         // may load the value into one of them
@@ -495,7 +490,10 @@ class stmt_identifier final : public statement {
         // note: instances are copied whole and cannot narrow
         assert(dst_type.is_builtin());
 
-        const ident_info info{make_scalar_ident_info(tc, *this)};
+        const ident_info info{make_ident_info(tc, *this)};
+
+        // note: the parse rejected a whole array ('assert_not_whole_array')
+        assert(not info.is_array());
 
         if (info.is_const() and not info.constant().is_typed()) {
             assert_constant_fits(info, dst_type);
@@ -649,23 +647,20 @@ class stmt_identifier final : public statement {
         return operand::mem(address, get_type());
     }
 
-    // the value of this path where 'info' resolves it to a variable: its
-    // storage or computed address, with unary ops a scratch register of
-    // 'register_type' that holds the result; the registers go to 'held'
+    // the value of this path, which names a variable: its storage or
+    // computed address, with unary ops a scratch register of 'register_type'
+    // that holds the result; the registers go to 'held'
     [[nodiscard]] auto
     compile_value_operand(compile_toc& tc, const token& src_loc_tk,
-                          const ident_info& info, const type& register_type,
+                          const type& register_type,
                           const machine::runtime_check& overflow_check,
                           machine::held_registers& held) const -> operand {
 
-        // note: a constant is folded by the caller, each by its own policy
-        assert(not info.is_const());
-
         if (get_unary_ops().is_empty()) {
-            return operand_of(tc, info, held);
+            return operand_of(tc, held);
         }
 
-        const operand storage{operand_of(tc, info, held)};
+        const operand storage{operand_of(tc, held)};
 
         const operand reg{
             held.alloc_scratch_register({src_loc_tk, tc.indent()},
@@ -687,21 +682,22 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
 
-    // 'info' at the address of what it resolves this statement to: as it is
-    // when its operand is that address ('needs_compile_lea'), else at the
-    // address 'compile_lea' computes ('ident_info::at_address'), e.g.
+    // what this path resolves to at its address: as resolved when its
+    // operand is that address ('needs_compile_lea'), else at the address
+    // 'compile_lea' computes ('ident_info::at_address'), e.g.
     // '[rbp + r14 * 4 + 205]', whose registers go into 'held'
-    [[nodiscard]] auto info_at_address(compile_toc& tc, const ident_info& info,
+    [[nodiscard]] auto info_at_address(compile_toc& tc,
                                        machine::held_registers& held) const
         -> ident_info {
 
-        if (not needs_compile_lea(info)) {
-            return info;
+        ident_info info{make_ident_info(tc, *this)};
+
+        if (needs_compile_lea(info)) {
+            const operand address{compile_lea(tc, held, {})};
+            info = info.at_address(address);
         }
 
-        const operand address{compile_lea(tc, held, {})};
-
-        return info.at_address(address);
+        return info;
     }
 
     [[nodiscard]] auto is_array() const -> bool { return shape_.is_array(); }
@@ -725,17 +721,16 @@ class stmt_identifier final : public statement {
         return elems_.back().name_tk;
     }
 
-    // 'reg' receives the address of what 'info' resolves this statement to;
-    // 'src_loc_tk' is the statement that asks for it, e.g. a 'foo'
+    // 'reg' receives the address of what this path names; 'src_loc_tk' is
+    // the statement that asks for it, e.g. a 'foo'
     auto load_address(compile_toc& tc, const token& src_loc_tk,
-                      const ident_info& info, const operand& reg) const
-        -> void {
+                      const operand& reg) const -> void {
 
         machine& x{tc.machine()};
 
         machine::held_registers held{x, {src_loc_tk, tc.indent()}};
 
-        const operand address{operand_of(tc, info, held)};
+        const operand address{operand_of(tc, held)};
 
         x.address_of({src_loc_tk, tc.indent()}, reg, address);
     }
@@ -765,11 +760,16 @@ class stmt_identifier final : public statement {
     // the root is the result of the function the path was parsed in
     [[nodiscard]] auto names_result() const -> bool { return names_result_; }
 
-    // the operand of what 'info' resolves this statement to, the registers of
-    // a computed address go into 'held'
-    [[nodiscard]] auto operand_of(compile_toc& tc, const ident_info& info,
+    // the operand of what this path names, a variable, the registers of a
+    // computed address go into 'held'
+    [[nodiscard]] auto operand_of(compile_toc& tc,
                                   machine::held_registers& held) const
         -> operand {
+
+        const ident_info info{make_ident_info(tc, *this)};
+
+        // note: a constant is folded by the caller, each by its own policy
+        assert(not info.is_const());
 
         if (not needs_compile_lea(info)) {
             return info.operand();
@@ -1337,19 +1337,6 @@ inline auto assert_not_whole_array(const statement& value) -> void {
     const stmt_identifier& path{*value.operand_path()};
 
     throw_unindexed_array(path.tok(), path.path_text());
-}
-
-// a whole array is not read as its first element
-[[nodiscard]] inline auto make_scalar_ident_info(const toc& tc,
-                                                 const stmt_identifier& ident)
-    -> ident_info {
-
-    ident_info info{make_ident_info(tc, ident)};
-
-    // note: the parse rejected a whole array ('assert_not_whole_array')
-    assert(not info.is_array());
-
-    return info;
 }
 
 // the storage 'st' names in place, empty for a value: a node with operators

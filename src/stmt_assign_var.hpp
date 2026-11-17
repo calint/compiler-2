@@ -73,7 +73,7 @@ class stmt_assign_var final : public statement {
 
         // the destination is written at the address computed here
         const ident_info written{
-            stmt_ident_.info_at_address(tc, dst_info, held),
+            stmt_ident_.info_at_address(tc, held),
         };
 
         const destination var_dst{

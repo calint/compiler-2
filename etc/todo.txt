@@ -255,6 +255,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
     13000 programs found nothing, 6 of 7 mutants caught (padding,
     compare and copy bytes, storage sharing); kept in the session
     scratchpad as 'keep-types-gen.py'
+[p] easy: (round 465, bug hunt of frames) need approval: a fuzzer of
+    'noinline' recursion with a model (records and arrays by value and
+    'mut', methods, results of a type, panics from the deepest frame)
+    that on rv32i-fpga searches the smallest '--vars' and '--stack' in
+    16 B steps under an emulator build that reports a load or store
+    between the variables and the stack limit; about 3500 programs and
+    40000 runs found nothing; it caught a frame 4 bytes short and a stack
+    check without the leaf bytes, which a model comparison misses; new
+    files in 'qa/fuzz' and an emulator option; kept in the session
+    scratchpad as 'keep-frames/'
 [p] easy: (round 461, bug hunt of compile-time values) need approval: a
     new fuzzer 'qa/fuzz/fuzz-constants.py' without a model: each program
     once with typed 'let' constants (folded) and once with the same
@@ -1070,6 +1080,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
        with 'r(n - 1, a)' called twice, 'r(49, a)', killed at about 18
        GB in 26 s ('--versions=nested') and 152 s ('first'), alike in
        the build of round 448
+    => round 465: 'noinline' calls nested as arguments of themselves,
+       'f(n - 1, (f(n - 1, ...) + 1) & 255)', grow about 2.8 times per
+       level with '--versions=last' (10 levels 2.3 s, 12 levels 21 s, a
+       fuzzed program past 120 s); the default and 'first' stay under
+       15 ms; '--help' says the time doubles per level for 'first' and
+       'last'
 [ ] medium: user decision (round 224 UB1): a typed 'let' passed as a
     generic constant loses its type, 'let K = i8(127)' and 'type B =
     buf<K>' make 'N + 1' 128 at the default type inside the instance where

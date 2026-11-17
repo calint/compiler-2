@@ -78,7 +78,7 @@ class stmt_builtin_foo final : public statement {
 
         x.comment({ident_.tok(), tc.indent()}, "initialize iterator e");
 
-        ident_.load_address(tc, tok(), array_info, reg_iter);
+        ident_.load_address(tc, tok(), reg_iter);
 
         const operand limit{
             compile_limit(tc, array_info.element_count(), held),

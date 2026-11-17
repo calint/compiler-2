@@ -2048,7 +2048,7 @@ is, an operand or a compared side included, e.g. 'ps + 1' or 'ps == p' with
 'ps' an array, as one message whatever the element type
 ('assert_not_whole_array'); the compile checks the width of the same value and
 asserts the kind ('stmt_identifier::assert_not_narrowed',
-'make_scalar_ident_info').
+'stmt_identifier::compile').
 
 Why: every value passes one point at the parse, the constructor of 'expr_any'
 with the type of its destination, while the compile reaches a value in about

@@ -1278,10 +1278,6 @@ class expr_arith final : public statement {
 
         const stmt_identifier& ident{*src.operand_path()};
 
-        const ident_info src_info{make_scalar_ident_info(tc, ident)};
-
-        assert(not src_info.is_const());
-
         const bool has_unary_ops{not ident.get_unary_ops().is_empty()};
 
         machine& x{tc.machine()};
@@ -1298,7 +1294,7 @@ class expr_arith final : public statement {
             };
 
             const operand src_operand{
-                ident.operand_of(tc, src_info, held),
+                ident.operand_of(tc, held),
             };
 
             emit_operation(tc, src.tok(), flipped, dst, src_operand,
@@ -1308,7 +1304,7 @@ class expr_arith final : public statement {
         }
 
         const operand src_operand{
-            ident.compile_value_operand(tc, src.tok(), src_info, dst.type_ref(),
+            ident.compile_value_operand(tc, src.tok(), dst.type_ref(),
                                         tc.overflow_check(dst), held),
         };
 

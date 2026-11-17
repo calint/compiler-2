@@ -894,13 +894,8 @@ class expr_bool_op final : public statement {
             return compile_to_scratch(tc, expr, held);
         }
 
-        const ident_info expr_info{make_scalar_ident_info(tc, *ident)};
-
-        assert(not expr_info.is_const());
-
         // e.g. 'a', '-a[i]'
-        return ident->compile_value_operand(tc, expr.tok(), expr_info,
-                                            expr_info.type_ref(),
+        return ident->compile_value_operand(tc, expr.tok(), ident->get_type(),
                                             tc.overflow_check(), held);
     }
 

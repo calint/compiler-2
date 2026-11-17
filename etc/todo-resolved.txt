@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 465 (2026-11-17, bug hunt: 'noinline' frames and
+    recursion; design: identifier paths, 'stmt_identifier.hpp',
+    'ident_info.hpp'; readability: a newcomer walks
+    'stmt_def_func_param.hpp', 'stmt_def_type_field.hpp', 'decouple.hpp'
+    and 'generics.hpp')
+    => bug hunt: no defect; a model generator of 'noinline' recursion
+       (records and arrays by value and 'mut', methods, results of a
+       type, arrays past 2047 bytes, inlined helpers calling 'noinline'
+       ones, panics from the deepest frame) on the four targets with
+       five option sets; on rv32i-fpga the smallest '--vars' and
+       '--stack' searched under an emulator that reports any access
+       between the variables and the stack limit: about 3500 programs,
+       40000 runs; 3 of 7 mutants caught, the others within the slack of
+       the leaf reserve or needing versions with different peaks; the
+       growth of '--versions=last' measured into the round 226 item
+    => design: 'operand_of', 'info_at_address', 'load_address' and
+       'compile_value_operand' took an 'ident_info' that every caller
+       made as 'make_ident_info(tc, *this)', a rule stated in four
+       comments: they resolve the path themselves; 'make_scalar_ident_info'
+       had one user left and is gone, its assert written there; callers
+       in 8 files; no listing differs; left: 'operand_of' through
+       'compile_lea', 'make_ident_info' as a member
+    => readability: one comment; 'syntax::read' says the name check runs
+       also in a generic definition no instance parses, its example was
+       not generic: 'func f<T type>(a, mut b T)'; 57 functions, no
+       prediction wrong
+    => checks: the fuzzers again report the known test 1698 doubling of
+       '--versions=nested' as a hang (round 412 item); the rest clean
 [x] easy: round 464 (2026-11-17, bug hunt: registers under pressure;
     design: arithmetic, 'expr_arith.hpp'; readability: a newcomer walks
     the control statements, 'stmt_if.hpp', the loops, 'foo', 'return')

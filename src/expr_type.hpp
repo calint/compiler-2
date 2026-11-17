@@ -471,7 +471,7 @@ class expr_path final : public statement {
 
         machine::held_registers held{x, {tok(), tc.indent()}};
 
-        const operand src_op{path_.operand_of(tc, src_info, held)};
+        const operand src_op{path_.operand_of(tc, held)};
 
         const size_t size_bytes{src_info.value_size_bytes(tok())};
 

@@ -51,7 +51,7 @@ class stmt_def_func_param final : public statement {
             }
 
             // where it is read, also in a generic definition that no instance
-            // parses, e.g. the 'mut' of 'func f(a, mut b i8)'
+            // parses, e.g. the 'mut' of 'func f<T type>(a, mut b T)'
             tc.assert_valid_unqualified_name(name_tk);
 
             // 'mut' after the name allows the body to write the parameter

@@ -1185,7 +1185,7 @@ class inline_call final {
             // note: the address registers stay allocated until the inlined
             //       body is compiled
             const ident_info bound{
-                ident.info_at_address(tc, arg_place->info, held),
+                ident.info_at_address(tc, held),
             };
 
             return param_binding::make_name(param.name(), bound,
@@ -1368,8 +1368,7 @@ class noinline_call final {
 
             const stmt_identifier& ident{*arg_place->ident};
 
-            arguments.push_back(
-                ident.info_at_address(tc, arg_place->info, held));
+            arguments.push_back(ident.info_at_address(tc, held));
         }
 
         return arguments;
