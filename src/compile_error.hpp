@@ -137,8 +137,8 @@ class compile_error final : public std::exception {
 
     error_kind kind{error_kind::source};
 
-    // 'instance' names the generic instance that was called, empty for a
-    // function written in the source, e.g. 'use<big>'
+    // 'instance' names the generic instance that was called, e.g. 'use<big>',
+    // empty for a function written in the source
     auto add_call_frame(const token& call_tk, std::string text,
                         std::string_view instance) -> void;
 
@@ -313,9 +313,9 @@ class compile_error final : public std::exception {
     return result;
 }
 
-// a source text in a message, in quotes unless it holds a character literal,
-// which brings its own, e.g. -'\xff', not a lone apostrophe, e.g. 'don't'; a
-// message never puts quotes around source text itself
+// a source text in a message, in quotes unless it has more than one
+// apostrophe: a character literal brings its own, e.g. -'\xff', a lone one is
+// quoted as 'don't'; a message never puts quotes around source text itself
 // ('qa/lint/check-messages.py')
 [[nodiscard]] inline auto in_quotes(const std::string_view source)
     -> std::string {

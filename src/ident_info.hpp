@@ -80,8 +80,8 @@ struct folded_value {
 // register
 struct in_storage {
     // the base register and the offset from it, set when the storage is
-    // placed ('storage_layout'); empty before, at the parse, where the name
-    // is resolved with the variables base
+    // placed ('storage_layout'); before, in the parse, 'base_register' is
+    // empty and the name resolves against the variables base ('toc::memory_at')
     int64_t offset{};
     std::string_view base_register;
     // the storage holds the address of the variable, e.g. a parameter of a
@@ -242,7 +242,8 @@ class ident_info final {
         return std::get<const_part>(part_).value;
     }
 
-    // 1 for a name that is not an array, see 'discarded_array_len'
+    // 1 for a name that is not an array, 0 ('discarded_array_len') for an
+    // unknown length
     [[nodiscard]] auto element_count() const -> size_t {
         return shape().element_count();
     }
@@ -529,7 +530,8 @@ class destination final {
         return result;
     }
 
-    // an unsized one gets its length from the argument
+    // an unsized array parameter has the length its call gave it, see
+    // 'array_shape::is_length_unknown'
     [[nodiscard]] auto shape() const -> array_shape {
         const stored_name* const name{std::get_if<stored_name>(&place_)};
         return name != nullptr ? name->info.shape() : array_shape{};

@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 475 (2026-11-17, bug hunt: methods and user types;
+    design: the no-UB layer, 'ub_assigned.hpp', 'ub_order.hpp' and
+    'ub_reads.hpp'; readability: a newcomer walks 'ident_info.hpp' and
+    'compile_error.hpp')
+    => bug hunt: no defect; a model generator of records with fields of
+       every width and padding, nested records, arrays of records and
+       generic instances as fields, inlined and 'noinline' methods that
+       call methods of 'self' and of fields, constructors, receivers
+       that are globals, 'let's, elements with run-time indexes, field
+       paths and 'foo' elements, receivers that alias their arguments on
+       disjoint leaves, and an expected-rejection mode for overlapping
+       ones: about 24800 programs, 284000 runs (7000 with the asan
+       build), 124 probes; 4 of 5 mutants caught (two of them by tests
+       0660 and 1618, not by the generator); the fifth, the
+       'receiver_kept' scope of 'machine::call_function', changes no
+       code since a far frame's scratch register is never the receiver
+       register under stack-order allocation; kept, it states the
+       requirement instead of relying on the order
+    => design: no change; nine ideas kept with reasons (the reach walks
+       of the parse and the compile answer different questions,
+       'names_result_' differs from the storage root for the 'e' of
+       'foo res', byte ranges carry the padding rules, an unreached path
+       full on 'end_path' is neutral in an intersection)
+    => readability: five comments ('in_storage' before placement,
+       'element_count' 0 for an unknown length, 'destination::shape' of
+       an unsized array parameter, the example of 'add_call_frame',
+       'in_quotes' quotes a text with at most one apostrophe); 83
+       functions, 3 predictions wrong
 [x] easy: round 474 (2026-11-17, bug hunt: loops and control flow;
     design: generics, 'generics.hpp'; readability: a newcomer walks
     'bulk_operands.hpp' and 'parse_lookahead.hpp')
