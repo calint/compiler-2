@@ -1106,9 +1106,10 @@ class machine {
     // 'emit_arguments' compiles the arguments into the registers it is given,
     // in their order, and 'use_result' takes the count that 'read' and
     // 'write' return, it is not called for a sector function; the registers
-    // are held for the call only; a sector is its value modulo 2^32, the
-    // size of a sector transfer is 'sector_size_bytes', a sector past the end
-    // of the card panics where the target can tell
+    // are held for the call only; a sector is its value modulo 2^32 (x86_64
+    // panics outside -2^31 to 2^32 - 1), the size of a sector transfer is
+    // 'sector_size_bytes', a sector past the end of the card panics where the
+    // target can tell
     auto
     call_target(const emit_site site, const target_call function,
                 const std::function_ref<void(std::span<const operand> args)>

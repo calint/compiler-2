@@ -508,7 +508,7 @@ inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
     return tm;
 }
 
-// called from 'expr_arith', whose elements include it, e.g. a call
+// an element of 'expr_arith', described at its declaration ('decouple.hpp')
 inline auto parse_operand(parse_toc& tc, tokenizer& tz, unary_ops uops,
                           const type* const destination_type)
     -> std::unique_ptr<statement> {

@@ -252,5 +252,10 @@ class stmt_def_func_param final : public statement {
         return not syntax_.mut_tk;
     }
 
+    // takes a value, not a place: read-only, built-in and not an array
+    [[nodiscard]] auto is_value() const -> bool {
+        return is_read_only() and not is_array() and get_type().is_builtin();
+    }
+
     [[nodiscard]] auto name() const -> std::string_view { return tok().text(); }
 };

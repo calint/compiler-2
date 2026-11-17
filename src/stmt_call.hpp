@@ -1140,7 +1140,7 @@ class inline_call final {
                     return false;
                 }
 
-                return not is_value_param(param) or
+                return not param.is_value() or
                        arg.fold(tc, tc.use_at(param.get_type()));
             });
     }
@@ -1274,15 +1274,6 @@ class inline_call final {
 
         return bound.is_address_by_call() and
                not bound.operand().index_register().empty();
-    }
-
-    // a parameter that takes a value, not a place: read-only, built-in and
-    // not an array
-    [[nodiscard]] static auto is_value_param(const stmt_def_func_param& param)
-        -> bool {
-
-        return param.is_read_only() and not param.is_array() and
-               param.get_type().is_builtin();
     }
 };
 
@@ -1755,7 +1746,7 @@ class shared_storage_check final {
         token tk;
         // e.g. "argument 1 'a'" or "the result destination 'x'"
         std::string text;
-        storage_path target{};
+        // the parts reached, all below the root of what 'text' names
         std::vector<call_effect> reached;
     };
 
@@ -1779,17 +1770,19 @@ class shared_storage_check final {
                 continue;
             }
 
+            // note: 'may_share' found a part that 'ref' reaches
+            const std::string_view root{ref.reached.front().storage.root.name};
+
             // note: the root of an argument is a name of the source or a
             //       parameter, a temporary is the result or behind a binding
 
-            assert(not is_temporary_name(ref.target.root.name));
+            assert(not is_temporary_name(root));
 
             throw compile_error{
-                ref.tk, std::format("{} may share storage with {} (both name "
-                                    "{}), {}",
-                                    ref.text, other.text,
-                                    in_quotes(ref.target.root.name),
-                                    use_temporary_fix_)};
+                ref.tk,
+                std::format("{} may share storage with {} (both name {}), {}",
+                            ref.text, other.text, in_quotes(root),
+                            use_temporary_fix_)};
         }
 
         references_.push_back(std::move(ref));
@@ -2420,7 +2413,6 @@ class stmt_call final : public statement {
         shared_storage_check::reference result{
             .tk{tk},
             .text{std::move(text)},
-            .target{target},
             .reached{},
         };
 
@@ -2859,9 +2851,8 @@ class stmt_call final : public statement {
         // passed like 'a + 1'; widths compared as the narrowing checks see
         // them, so the default type of a 32-bit target gets the hint too
         const bool is_narrowing{
-            param.is_read_only() and not param.is_array() and
-                param_type.is_integer() and arg_type.is_integer() and
-                arg_type.is_wider_than(param_type),
+            param.is_value() and param_type.is_integer() and
+                arg_type.is_integer() and arg_type.is_wider_than(param_type),
         };
 
         const std::string hint{

@@ -402,9 +402,10 @@ class statement {
                         instance_hint(type_tk.text()))};
     }
 
-    // where it is read, also in a generic definition that no instance
-    // parses, e.g. the '"i8"' of 'a "i8"' or of 'res "i8" {', or the '7' of
-    // 'a 7', which is not a type that is missing
+    // a string or a constant where a type name is read, e.g. the '"i8"' of
+    // 'a "i8"' or of 'res "i8" {', or the '7' of 'a 7', reported as such, not
+    // as a type not found; checked as it is read, so also in a generic
+    // definition that no instance parses
     static auto assert_not_literal_type(const token& type_tk) -> void {
         if (type_tk.is_string()) {
             throw compile_error{type_tk, "expected a type name, got a string"};

@@ -115,6 +115,8 @@ class operand final {
         displacement_ = add_address_offset(displacement_, offset);
     }
 
+    // the index of a memory operand, e.g. 't0' of '[s0 + t0 * 4]', empty
+    // when it has none or is not memory
     [[nodiscard]] auto index_register() const -> const std::string& {
         return index_register_;
     }

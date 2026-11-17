@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 460 (2026-11-16, bug hunt: the built-ins and their
+    run-time checks; design: the non-generic call path in
+    'stmt_call.hpp'; readability: a newcomer walks 'operand.hpp',
+    'statement.hpp' and 'parse_statement.hpp')
+    => bug hunt: no defect; the first agent stopped in a tool outage, a
+       second continued its generator: 'array_copy', 'arrays_equal',
+       'write', 'read', 'foo' and the sector functions with constant and
+       run-time starts and counts, unsized parameters, inlined and
+       'noinline', one bad value per program, arrays up to 4097
+       elements; about 28000 programs on the four targets with the
+       default options, '--nopt', '--versions=first' and 'last'; panic
+       messages and lines the same on every build; 11 of 12 mutants
+       caught, the 12th equivalent under 'noub'; the comment of
+       'machine::call_target' now says x86_64 panics on a sector
+       outside -2^31 to 2^32 - 1, as the readme does
+    => design: the rule that a parameter takes a value, not a place, was
+       written twice ('inline_call::is_value_param' and the hint of
+       'throw_param_type_mismatch'): one owner,
+       'stmt_def_func_param::is_value'; 'shared_storage_check::reference'
+       no longer keeps the target, its root is that of any part reached;
+       no listing differs; six ideas left (the effect loops, the two
+       binding paths, the two result widenings, 'populate_frame', the
+       asserted result, 'is_result_passed_as_mut')
+    => readability: three comments ('assert_not_literal_type' says what
+       it rejects and that it runs as the type is read, 'parse_operand'
+       parses an element of 'expr_arith', 'index_register' is empty for
+       a non-memory operand, which 'register_mask' relies on); 86
+       functions, 4 predictions wrong; seen and left: the compound
+       message's example always ends in '1' (it is an example), 'if x
+       == 1 return f()' is the round 450 user decision
 [x] easy: round 459 (2026-11-16, bug hunt: user types; design: how
     types are represented and queried; readability: a newcomer walks
     'tokenizer.hpp', 'token.hpp' and 'stmt_builtin_convert.hpp')
