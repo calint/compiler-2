@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 474 (2026-11-17, bug hunt: loops and control flow;
+    design: generics, 'generics.hpp'; readability: a newcomer walks
+    'bulk_operands.hpp' and 'parse_lookahead.hpp')
+    => bug hunt: no defect; a model generator of 'foo' with constant,
+       run-time, empty and out-of-range counts, nested 'foo' that shadows
+       'e', 'i' and 'n', writes to 'e' and to the array, 'break',
+       'continue', 'return' and 'exit' with calls in their conditions,
+       conditions that fold at an inlined call, bodies padded past 4 KiB
+       on rv32i: about 17000 programs, 187000 runs, 68 probes; 7 of 7
+       mutants caught, a stress build with 'foo' counters in memory
+       agrees; kept in the session scratchpad as 'keep-loops/'
+    => design: 'generic_deduction' is gone, its two fields were read by
+       different callers: 'generic_signature::deducing_param' and
+       'is_result_type' (-7 lines, listings equal); six ideas kept with
+       reasons ('generic_method' holds the report name, the 'exists_'
+       pair ignores definition order, 'instantiable_funcs_' lists methods
+       before any type instance)
+    => readability: four comments ('address_of' frees the registers of
+       the walk first, 'check_range' names 'count_lower_checked',
+       'free_done_starts', 'assert_no_surplus_argument' states where
+       'tz' is); 45 functions, 1 prediction wrong
 [x] easy: round 473 (2026-11-17, bug hunt: aliasing and overlap;
     design: the input and output built-ins, 'stmt_builtin_io.hpp';
     readability: a newcomer walks 'stmt_builtin_convert.hpp' and

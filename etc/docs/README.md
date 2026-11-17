@@ -954,7 +954,8 @@ result; it hides a global of its name (1.3).
 
 So that a call can omit the type arguments, the definition keeps the declared
 types of its parameters and its result ('generic_signature'), and a call looks
-in them for each type parameter ('generic_signature::deduction'):
+in them for each type parameter ('generic_signature::deducing_param',
+'generic_signature::is_result_type'):
 
 1. the first parameter declared with exactly that type, e.g. 'a T'; an array
    parameter 'a T[]' does not count, since the argument's type is an array of

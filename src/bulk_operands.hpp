@@ -143,8 +143,8 @@ class bulk_operands final {
 
       private:
         // a run-time start gets its register before the walk of the address,
-        // which frees its own registers first; 'checks_ranges' checks the
-        // ranges before the address is used
+        // so the registers of the walk, allocated later, are freed first;
+        // 'checks_ranges' checks the ranges before the address is used
         [[nodiscard]] auto address_of(const stmt_identifier& array,
                                       held_start& held,
                                       const bool checks_ranges)
@@ -178,7 +178,8 @@ class bulk_operands final {
 
         // the range from the start of 'array': 'start' holds a run-time
         // start, which the walk of the address checked up to the length,
-        // 'count_register' a run-time count, none for a constant one
+        // 'count_register' a run-time count, none for a constant one;
+        // 'count_lower_checked' when an earlier range tested the count's sign
         auto check_range(const stmt_identifier& array,
                          const std::optional<operand>& start,
                          const std::optional<operand>& count_register,
@@ -232,10 +233,10 @@ class bulk_operands final {
             are_ranges_checked_ = true;
         }
 
-        // frees the starts that are walked and checked from the top, outside
-        // the walk of an address; when the machine nests the walks, the
-        // first start is under the registers of the first address and is
-        // freed after it
+        // once the ranges are checked, frees the starts whose walk has
+        // returned, the last allocated first; when the machine nests the
+        // walks, the first start is under the registers of the first address
+        // and is freed after its walk returns
         auto free_done_starts() -> void {
             if (not are_ranges_checked_) {
                 return;

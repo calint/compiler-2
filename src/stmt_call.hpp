@@ -192,11 +192,11 @@ class generic_call {
           generic_{&tc.generics().get_func(generic_name)} {
 
         for (const token& param_tk : generic_->signature.type_param_tks) {
-            const generic_deduction source{
-                generic_->signature.deduction(param_tk.text()),
+            const bool is_result_type{
+                generic_->signature.is_result_type(param_tk.text()),
             };
 
-            deduced_.push_back(source.is_result ? expected_type : nullptr);
+            deduced_.push_back(is_result_type ? expected_type : nullptr);
         }
     }
 
@@ -277,7 +277,7 @@ class generic_call {
         };
 
         // e.g. the 'b' of 'same(a, b)', 'a' told 'T' or nothing
-        if (generic_->signature.deduction(p.type_name).param_index != index) {
+        if (generic_->signature.deducing_param(p.type_name) != index) {
             return arg_type;
         }
 

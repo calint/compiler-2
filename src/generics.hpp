@@ -446,16 +446,6 @@ struct generic_type_instance {
     generic_trace trace;
 };
 
-// how a call without type arguments can tell a type parameter
-struct generic_deduction {
-    // the first parameter declared with exactly that type, e.g. 's T' in
-    // 'func text.append<T type>(s T)', not an array
-    std::optional<size_t> param_index;
-    // the result is declared with exactly that type, e.g. 'res T', the
-    // destination of the call tells it
-    bool is_result{};
-};
-
 // the result 'name [type]' of a function as written after the parameters,
 // e.g. 'res i8', read by 'read_func_result' ('stmt_def_func.hpp'); the type is
 // the node's ('stmt_def_func::result_type'), resolved by each instance of a
@@ -493,34 +483,36 @@ struct generic_signature {
     // none without a result
     std::optional<func_result> result;
 
-    // how a call tells the type parameter 'type_param': the first parameter
-    // declared with exactly its type and the result, e.g. 's T' and 'res T'
-    [[nodiscard]] auto deduction(const std::string_view type_param) const
-        -> generic_deduction {
+    // the parameter whose argument tells the type parameter 'type_param' to a
+    // call without type arguments, the first declared with exactly its type,
+    // e.g. 's T' in 'func text.append<T type>(s T)', not an array
+    [[nodiscard]] auto deducing_param(const std::string_view type_param) const
+        -> std::optional<size_t> {
 
         const auto it{
             std::ranges::find(params, type_param,
                               &generic_signature_param::type_name),
         };
 
-        return {
-            .param_index{
-                it == params.end()
-                    ? std::nullopt
-                    : std::optional{
-                          static_cast<size_t>(it - params.begin()),
-                      },
-            },
-            .is_result{
-                result and result->type_tk and
-                    result->type_tk->is_text(type_param),
-            },
-        };
+        if (it == params.end()) {
+            return std::nullopt;
+        }
+
+        return static_cast<size_t>(it - params.begin());
     }
 
     // the result 'self' builds an instance of the receiver type
     [[nodiscard]] auto is_constructor() const -> bool {
         return result and result->is_self();
+    }
+
+    // the result is declared with exactly the type 'type_param', e.g. 'res T',
+    // the destination of a call tells it
+    [[nodiscard]] auto is_result_type(const std::string_view type_param) const
+        -> bool {
+
+        return result and result->type_tk and
+               result->type_tk->is_text(type_param);
     }
 };
 

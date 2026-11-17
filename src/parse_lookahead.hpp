@@ -52,9 +52,9 @@
     return ch == ')' or ch == ']' or ch == '}' or ch == '\0';
 }
 
-// a ',' where the last of 'count' arguments ends is a surplus one, or a
-// trailing ','; without parameters anything but a closer or the end is, e.g.
-// 'f(1)' of 'func f()'; a missing ')' is the caller's
+// 'tz' is after the last of 'count' arguments: a ',' there starts a surplus
+// argument or is a trailing ','; without parameters anything but a closer or
+// the end starts one, e.g. 'f(1)' of 'func f()'; a missing ')' is the caller's
 inline auto assert_no_surplus_argument(const tokenizer& tz,
                                        const std::string_view name,
                                        const size_t count) -> void {

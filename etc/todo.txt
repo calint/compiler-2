@@ -22,7 +22,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     storage with the global 'g' that 'work' uses"), as the language
     says, and the fuzzer reports 'combos-reject'; 'args_for' filters
     on 'fn.uses | fn.writes', so the effects of 'work' lack 'g' when
-    its call is made; seed 464001 index 16, seed 409001 index 48
+    its call is made; seed 464001 index 16, seed 409001 index 48, seed
+    474001
 [ ] easy: (round 463, bug hunt of malformed programs) messages, from
     1.86 million mutated compiles without a crash: 'func f<T type> {}'
     says "expected '(' after function name" at 'f', the '(' is missing
