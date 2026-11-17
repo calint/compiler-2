@@ -3386,7 +3386,7 @@ class compile_toc final : public toc {
     //
     //   if.L.C         an 'if' at line L, column C; '.N' its branch N
     //                  ('stmt_if::branch_label'), '.code', '.else', '.end'
-    //   cmp.L.C        a condition ('expr_bool')
+    //   cmp.L.C        an element of a condition ('element_label')
     //   bool.L.C.end   the end of a condition stored as a value
     //   loop.L.C       a 'loop', '.end' ('end_label')
     //   foo.L.C        a 'foo', '.continue' ('continue_label'), '.end'

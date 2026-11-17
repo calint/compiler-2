@@ -51,6 +51,15 @@ template <typename... Nodes>
         [](const auto& item) -> const statement& { return item; });
 }
 
+// the label at which an element of a condition starts, also the target of a
+// nested list before it, e.g. 'cmp.5.8'
+[[nodiscard]] inline auto element_label(const compile_toc& tc,
+                                        const statement& element)
+    -> std::string {
+
+    return tc.unique_label(element.tok(), "cmp");
+}
+
 // where a condition continues, e.g. the code of an 'if' when it holds and the
 // next branch when it does not; the same label for both when the value is
 // only stored, e.g. 'b = x < 3'
@@ -231,7 +240,7 @@ class expr_bool_op final : public statement {
 
         x.comment({tok(), tc.indent()}, trimmed_source(*this, "?", prefix));
 
-        x.label(tc.indent(), tc.unique_label(tok(), "cmp"));
+        x.label(tc.indent(), element_label(tc, *this));
 
         // 'constant_value' applies the element's 'not's, the inversion of the
         // list is applied here
@@ -1254,9 +1263,7 @@ class expr_bool final : public statement {
 
             const statement& next_expr{as_statement(bools_.at(expr_index + 1))};
 
-            const std::string next_label{
-                tc.unique_label(next_expr.tok(), "cmp"),
-            };
+            const std::string next_label{element_label(tc, next_expr)};
 
             // an 'or' continues when false and an 'and' continues when true
             const branch_targets nested_targets{
@@ -1386,7 +1393,7 @@ class expr_bool final : public statement {
 
         machine& x{tc.machine()};
 
-        x.label(tc.indent(), tc.unique_label(tok(), "cmp"));
+        x.label(tc.indent(), element_label(tc, *this));
 
         return compile_list(tc, targets, outer_inverted, dst);
     }

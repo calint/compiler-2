@@ -1242,8 +1242,10 @@ class machine {
         return options_.checks;
     }
 
-    // synthetic tokens and standalone backend calls have no source location;
-    // the text may quote the source, e.g. a raw NUL that ends a line for nasm
+    // a comment line after the source location of 'site', none for a
+    // synthetic token or a standalone backend call; the text is made
+    // printable, it may quote the source, e.g. a raw NUL that ends a line for
+    // nasm
     auto comment(const emit_site site, const std::string_view text) -> void {
         if (state_.is_dry_run) {
             return;
@@ -1632,9 +1634,9 @@ class machine {
         return target_.variables_base_register;
     }
 
-    // the padding of the instance 'dst' of 'dst_type', zeroed gap by gap or as
-    // the whole instance, whichever the target emits smaller; the fields are
-    // written over the zeroes after
+    // the padding of the instance 'dst' of 'dst_type', zeroed gap by gap or,
+    // above the count of gaps of the target, as the whole instance; the
+    // fields are written over the zeroes after
     auto zero_padding(const emit_site site, const operand& dst,
                       const type& dst_type) -> void {
 
@@ -2405,16 +2407,17 @@ class machine {
             emit_sector_routines(is_sector_read_used, is_sector_write_used);
         }
 
-        // note: after the routines that may use 'exit', e.g. the report of a
-        //       line
+        // note: after the routines that may mark 'exit' used, e.g. the report
+        //       of a line
 
         if (is_used(routines.exit)) {
             label(0, routines.exit);
             emit_exit_routine();
         }
 
-        // note: after 'exit', so that 'exit' follows the report of a line,
-        //       which writes and exits, as its next code
+        // note: after 'exit', so that 'exit' can follow the report of a line,
+        //       which writes and exits, as its next code; a helper or a sector
+        //       routine still comes between them
 
         const bool is_read_used{is_used(routines.read)};
         const bool is_write_used{is_used(routines.write)};
@@ -2441,7 +2444,7 @@ class machine {
         return lines;
     }
 
-    // e.g. 'panic: bounds at prog.baz:', the line follows; the name is
+    // e.g. 'panic: bounds at prog.baz:', the line follows; the file name is
     // escaped as in the compiler's messages, so the message stays one line
     [[nodiscard]] auto failure_message(const std::string_view name,
                                        const size_t file_ix) const
