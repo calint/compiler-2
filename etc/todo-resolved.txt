@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 466 (2026-11-17, bug hunt: strings and text; design:
+    generic types and aliases; readability: a newcomer walks the second
+    half of 'machine_rv32i.hpp' and the rv32i targets)
+    => bug hunt: no defect; a model generator of strings in records,
+       arrays, 'dat' and 'var' with every escape, UTF-8 and line
+       continuations, stores through paths, setters and results, copies
+       and compares, 'write' and 'read': 1500 programs on the four
+       targets with up to 6 option lists; 'fuzz-io.py' 3300 and
+       'fuzz-data.py' 1500 programs; about 40 probes (all 256 bytes,
+       exact and one-past sizes, literal edges, unterminated literals,
+       labels of strings in included files); 5 of 6 mutants caught, the
+       sixth changes only the code shape
+    => design: no change; seven ideas weighed and kept with reasons (the
+       exclusive tokens of 'generic_type_info' read better than a
+       variant, function type parameters as tokens, the two instance
+       spellings are labels, the alias step of 'instantiate', the two
+       places that add generic constants by design, 'report_name')
+    => readability: five comments in 'machine_rv32i.hpp'
+       ('emit_shift_add_sequence' starts from the value because the top
+       digit is 1, 'multiply_by_shifts_and_adds' takes the factors
+       'multiply' does not resolve, 'upper_bound_top' also tests the
+       wrap of 'index + count', 'walk_runtime_tail' after halfwords too,
+       'describe_loop' wording); the three target files read well; about
+       127 functions, 4 predictions wrong; a 2-instruction 'x * -3' in
+       'etc/todo.txt'
+    => checks: 'fuzz-mutate.py' reports a compiler killed for memory
+       (exit -9, the signature of the round 226 UF1 doubling kept since
+       round 451) and a slow mutant at the limit of 256 scopes (99 s in
+       the sanitizer build under load); the rest clean
 [x] easy: round 465 (2026-11-17, bug hunt: 'noinline' frames and
     recursion; design: identifier paths, 'stmt_identifier.hpp',
     'ident_info.hpp'; readability: a newcomer walks

@@ -2671,6 +2671,9 @@ class machine_rv32i : public machine {
                                             : alloc_word_register(site),
         };
 
+        // note: the top digit is 1 ('make_digit_sequence'), its term is the
+        //       value itself
+
         std::string_view shifted{loaded.value.register_name()};
         int pending_shift{};
 
@@ -3074,8 +3077,8 @@ class machine_rv32i : public machine {
         return operand::mem(pointer.register_name(), {}, 1, 0, default_type());
     }
 
-    // the remaining constant needs shifts and adds; keep the original value
-    // for the additions while the result changes
+    // a constant factor that 'multiply' does not resolve, not zero, one,
+    // minus one or a power of two, as shifts and adds
     auto multiply_by_shifts_and_adds(const emit_site site,
                                      const operand& product,
                                      const uint32_t multiplier,
@@ -3358,8 +3361,9 @@ class machine_rv32i : public machine {
         return lowered;
     }
 
-    // the value compared with the limit, the index or the end 'index + count';
-    // 'limit' is a scratch here, 'check_upper_bound' loads it afterwards
+    // the value compared with the limit, the index or the end 'index + count',
+    // whose wrap it tests when the lower checks did not run; 'limit' is a
+    // scratch here, 'check_upper_bound' loads it afterwards
     [[nodiscard]] auto upper_bound_top(const emit_site site,
                                        const bounds_range& range,
                                        const operand& limit,
@@ -3627,8 +3631,8 @@ class machine_rv32i : public machine {
         advance(walk.site.indent, walk.dst, width);
     }
 
-    // after words at most 3 bytes remain, bit 1 selects a halfword and bit 0
-    // the final byte
+    // fewer than 'width' bytes remain: after words bit 1 of the count selects
+    // a halfword, then bit 0 the final byte
     auto walk_runtime_tail(const runtime_walk& walk, const operand& chunks,
                            const size_t width) -> void {
 
@@ -4014,7 +4018,7 @@ class machine_rv32i : public machine {
                operation == comparison_operator::less_equal;
     }
 
-    // what a loop of 'width' byte accesses does, e.g. 'copy 4-byte words'
+    // what a loop of accesses of 'width' bytes does, e.g. 'copy 4-byte words'
     [[nodiscard]] static auto describe_loop(const std::string_view verb,
                                             const size_t width) -> std::string {
 

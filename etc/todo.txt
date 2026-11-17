@@ -10,6 +10,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 466, a walk of 'machine_rv32i.hpp') a negative constant
+    factor is built as its positive and then negated: 'x * -3' is
+    'slli', 'sub', 'sub zero' where 'slli t1, t0, 2' and 'sub t0, t0,
+    t1' take 2; 'make_digit_sequence' always negates a negative
+    multiplier instead of a leading -1 digit; an optimization, not
+    measured
 [ ] easy: (round 464, the fuzzers) 'fuzz-combos.py' passes a global to a
     'noinline' function that writes it ('work(loc, g)', 'work' calls
     'bump()', which writes 'g'); every target rejects it ("may share
