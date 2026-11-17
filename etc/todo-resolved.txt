@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 470 (2026-11-17, bug hunt: function results and
+    returns; design: loops as a family, 'loop', 'foo', 'break' and
+    'continue'; readability: a newcomer walks 'stmt_def_dat.hpp' and
+    'type.hpp')
+    => bug hunt: no defect; a model generator of results of built-ins
+       and of records with nested records and arrays, set whole or by
+       part, early returns from conditions and loops, results as
+       operands, indexes, arguments, receivers and 'mut' arguments,
+       generic and method results, each inlined, 'noinline' and as
+       drawn: about 4300 programs, 55000 runs; 13000 programs reading a
+       result unset on some path, all rejected; 10 of 11 mutants caught,
+       the eleventh covered by tests 1682 to 1684
+    => design: one way to find the innermost loop, 'innermost_loop'
+       returns a reference and asserts (the nullable pointer and
+       'innermost_loop_ref' merged), 'assert_in_loop' tests the index;
+       five ideas kept with reasons (parse-time loop scopes carry unread
+       labels, the 'foo' continue label differs from that of 'loop' in
+       the listings, 'also_when_done' at the parse by design, reach
+       records have one owner)
+    => readability: five comments ('stmt_def_dat' class comment in
+       parse-then-emit order, 'compile_data' emits after the code while
+       'compile' only declares, 'tp' of 'compile_data_elem' and
+       'fold_data' is the element type of an array, the body
+       'len.u.8' of 'is_length_unknown' names 'array_lengths_path'); 57
+       functions, 3 predictions wrong
 [x] easy: round 469 (2026-11-17, bug hunt: integer arithmetic and its
     run-time checks; design: read-only data, 'stmt_def_dat.hpp';
     readability: a newcomer walks 'stmt_identifier_impl.hpp' and

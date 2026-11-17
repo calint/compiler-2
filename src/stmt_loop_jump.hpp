@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-
 #include "ident_info.hpp"
 #include "machine.hpp"
 #include "statement.hpp"
@@ -28,21 +26,18 @@ class stmt_loop_jump final : public statement {
 
         comment_source(tc);
 
-        const scope* const loop{tc.scopes().innermost_loop()};
-
-        // note: the parse rejected a 'break' or 'continue' outside a loop
-        assert(loop != nullptr);
+        const scope& loop{tc.scopes().innermost_loop()};
 
         machine& x{tc.machine()};
 
         if (tok().is_text("break")) {
             tc.record_break();
-            x.branch(tc.indent(), compile_toc::end_label(loop->name()));
+            x.branch(tc.indent(), compile_toc::end_label(loop.name()));
         } else {
             tc.record_continue();
 
             // e.g. the head of a 'loop', the counter step of a 'foo'
-            x.branch(tc.indent(), loop->continue_label());
+            x.branch(tc.indent(), loop.continue_label());
         }
     }
 

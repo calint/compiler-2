@@ -26,12 +26,11 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 
-// e.g. 'dat x = i32(0)': the initializer is parsed like the one of a 'var' and
-// folded to the constants of the data section, a value that is not constant is
-// rejected; it is folded at the parse into its own 'elem' tree rather than
-// laid out by the 'write_plan' of a 'var', which is made at compile time and
-// packs constant elements into bytes, where the data keeps typed lines, e.g.
-// 'dd 2, 3, 5, 7'
+// e.g. 'dat x = i32(0)': the initializer is parsed like the one of a 'var',
+// then folded at the parse into an 'elem' tree of constants, a value that is
+// not constant is rejected; the tree is emitted as typed data lines such as
+// 'dd 2, 3, 5, 7', where the 'write_plan' of a 'var', made at compile time,
+// packs constant elements into bytes
 class stmt_def_dat final : public statement {
     // the folded initializer at the type it fills, e.g. '3', '"hi"',
     // '{1, 2}' of an array or '{1, 2}' of an instance
@@ -131,7 +130,8 @@ class stmt_def_dat final : public statement {
     // class methods
     //
 
-    // the initial values, in the data section
+    // the initial values, in the data section after the code; 'compile' only
+    // declares the name
     auto compile_data(compile_toc& tc) const -> void {
         machine& x{tc.machine()};
 
@@ -144,8 +144,8 @@ class stmt_def_dat final : public statement {
     // statics
     //
 
-    // an element of any form at the type 'tp', a field or an element of it
-    // in turn
+    // an element of any form at the type 'tp', the element type of an array;
+    // a field or an element of it in turn
     static auto compile_data_elem(machine& x, const type& tp, const elem& el)
         -> void {
 
@@ -291,7 +291,8 @@ class stmt_def_dat final : public statement {
         x.emit_zero_data(size_bytes);
     }
 
-    // the constants of 'value' at the type 'tp', e.g. '{1, 2 * 3}' of 'point'
+    // the constants of 'value' at the type 'tp', the element type of an
+    // array, e.g. '{1, 2 * 3}' of 'point'
     [[nodiscard]] static auto fold_data(const toc& tc, const type& tp,
                                         const expr_any& value) -> elem {
 

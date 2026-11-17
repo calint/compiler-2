@@ -1016,7 +1016,7 @@ class scope_stack final {
     // checked at the parse, which reaches the branches that are not compiled,
     // e.g. the 'break' of 'if 1 == 2 { break }'
     auto assert_in_loop(const token& src_loc_tk) const -> void {
-        if (innermost_loop() == nullptr) {
+        if (not innermost_loop_index()) {
             throw compile_error{src_loc_tk,
                                 std::format("{} is not in a loop",
                                             in_quotes(src_loc_tk.text()))};
@@ -1088,15 +1088,14 @@ class scope_stack final {
     }
 
     // the innermost 'loop' or 'foo' of the function, the target of a 'break'
-    // or a 'continue'; null outside a loop
-    [[nodiscard]] auto innermost_loop() const -> const scope* {
+    // or a 'continue'
+    [[nodiscard]] auto innermost_loop() const -> const scope& {
         const std::optional<size_t> index{innermost_loop_index()};
 
-        if (not index) {
-            return nullptr;
-        }
+        // note: the parse rejected a 'break' or a 'continue' outside a loop
+        assert(index);
 
-        return &scopes_.at(*index);
+        return scopes_.at(*index);
     }
 
     // only the scope of the globals is open
@@ -1202,13 +1201,13 @@ class scope_stack final {
     // a 'break' of the innermost 'loop' or 'foo' is compiled, see
     // 'loop_reach'
     auto record_break() -> void {
-        innermost_loop_ref().reach_of_loop().is_left_by_break = true;
+        innermost_loop().reach_of_loop().is_left_by_break = true;
     }
 
     // a 'continue' of the innermost 'loop' or 'foo' is compiled, see
     // 'loop_reach'
     auto record_continue() -> void {
-        innermost_loop_ref().reach_of_loop().is_continued = true;
+        innermost_loop().reach_of_loop().is_continued = true;
     }
 
     // a variable, data or constant declared in the root scope keeps the
@@ -1300,6 +1299,15 @@ class scope_stack final {
         std::unreachable();
     }
 
+    [[nodiscard]] auto innermost_loop() -> scope& {
+        const std::optional<size_t> index{innermost_loop_index()};
+
+        // note: the parse rejected a 'break' or a 'continue' outside a loop
+        assert(index);
+
+        return scopes_.at(*index);
+    }
+
     // the index of the innermost 'loop' or 'foo' of the function
     [[nodiscard]] auto innermost_loop_index() const -> std::optional<size_t> {
         for (size_t i{scopes_.size()}; i > 0; --i) {
@@ -1315,15 +1323,6 @@ class scope_stack final {
         }
 
         std::unreachable();
-    }
-
-    [[nodiscard]] auto innermost_loop_ref() -> scope& {
-        const std::optional<size_t> index{innermost_loop_index()};
-
-        // note: the parse rejected a 'break' or a 'continue' outside a loop
-        assert(index);
-
-        return scopes_.at(*index);
     }
 
     [[nodiscard]] auto is_global_visible(const std::string_view name) const
