@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 472 (2026-11-17, bug hunt: integer conversions; design:
+    variable definitions, 'stmt_def_var.hpp'; readability: a newcomer
+    walks 'stmt_builtin_foo.hpp' and 'tokenizer.hpp')
+    => bug hunt: no defect; a model generator of conversions between
+       widths from locals, fields, array elements, typed constants,
+       bools and call results, as destinations, initializers, sides of
+       comparisons and arguments, on all four targets with '--nopt' and
+       the versions, also without the overflow check under a wrapping
+       model: about 27000 programs, 250000 runs, 16 probes; 6 of 10
+       mutants caught by the generator, 1 only by a probe: test 5420
+       (a conversion inside a conversion widens its narrower argument
+       before its unary ops, 'compile_in_scratch', which test 1366 does
+       not reach)
+    => design: the read-only state of a 'let' has one owner, the
+       'var_info' that 'stmt_def_var::declared_var' builds, added alike
+       by the parse and the compile ('make_var_read_only' of 'scope' and
+       'parse_toc' removed, which marked the scope's copy after the
+       initializer); four ideas kept with reasons ('fold_let' types a
+       default-type constant on purpose, the initializer constructor of
+       'stmt_assign_var' skips the write check)
+    => readability: eight comments ('add_loop_names' note, 'compile_limit'
+       checks a count at run time, 'assert_not_at_delimiter'
+       precondition, 'skip_braced_block' and 'skip_braced_block_after'
+       reject any unclosed block, three rewordings); 59 functions, 2
+       predictions wrong
 [x] easy: round 471 (2026-11-17, bug hunt: generics; design: the split
     of 'toc', 'parse_toc' and 'compile_toc' and their tables;
     readability: a newcomer walks 'expr_bool.hpp')

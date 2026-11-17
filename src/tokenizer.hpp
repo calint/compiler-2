@@ -109,8 +109,9 @@ class tokenizer final {
         return next_token();
     }
 
-    // e.g. the last ',' of 'f(1, 2,)', 'close' ends the list; a braced list
-    // may end with a ',', see the value literals and the type definitions
+    // throws when 'close' follows 'delimiter_tk', e.g. the last ',' of
+    // 'f(1, 2,)'; a braced list may end with a ',', see the value literals
+    // and the type definitions
     auto assert_no_trailing_delimiter(const token& delimiter_tk,
                                       const char close,
                                       const std::string_view list) const
@@ -125,9 +126,10 @@ class tokenizer final {
             std::format("a trailing ',' is not allowed in {}", list)};
     }
 
-    // 'next_token' made no text: the source ended or a delimiter is next, which
-    // no statement or definition starts with; a skip stops before the
-    // whitespace of the closer that ends it, e.g. the ')' of '{ f() ) }'
+    // precondition: 'next_token' made no text, so the source ended or a
+    // delimiter is next; throws unless at the end, as no statement or
+    // definition starts with a delimiter; looks past the whitespace since a
+    // skip stops before the closer that ends it, e.g. the ')' of '{ f() ) }'
     auto assert_not_at_delimiter() const -> void {
         const tokenizer probe{past_whitespace()};
 
@@ -269,18 +271,16 @@ class tokenizer final {
         return token{file_ix_, ws_before, bgn_ix, text, "", at_line};
     }
 
-    // skips the braced block that starts at the next '{', strings and
-    // character literals may contain brackets; false when no '}' closes it
-    // e.g. '{ a = { 1 } b = 2 }', a closer that does not close the last open
-    // bracket ends it early
+    // skips the braced block that starts at the next '{' with its nested
+    // brackets and literals, e.g. all of '{ a = { 1 } b = "}" }'; false when
+    // no '}' closes it, see 'skip_to_unnested'
     [[nodiscard]] auto skip_braced_block() -> bool {
         return skip_enclosed('{', '}');
     }
 
     // skips the next braced block and returns the source text from the end of
-    // 'tk' to the end of the block; a keyword that starts a definition is
-    // rejected as in a block that is parsed, e.g. the 'func' after a generic
-    // body without its '}'
+    // 'tk' to the end of the block; a block without its '}' is rejected as a
+    // parsed one, see 'throw_unclosed_block'
     auto skip_braced_block_after(const token& tk) -> std::string_view {
         if (not skip_braced_block()) {
             throw_unclosed_block();
@@ -306,9 +306,9 @@ class tokenizer final {
         return true;
     }
 
-    // skips up to and including the ')' that closes a '(' that is already read
-    // e.g. 'b, f(c)) + d', the ')' before ' + d'; stops at the end of the
-    // source, at a closer that does not close the last open bracket or at a
+    // skips up to and including the ')' that closes a '(' that is already
+    // read, e.g. the ')' before ' + d' of 'b, f(c)) + d'; stops at the end of
+    // the source, at a closer that does not close the last open bracket or at a
     // keyword that starts a definition
     auto skip_to_close_paren() -> void {
         if (skip_to_unnested(")")) {
@@ -560,8 +560,8 @@ class tokenizer final {
     // reads a character the caller has no use for
     auto skip_char() -> void { std::ignore = next_char(); }
 
-    // the text of a literal opened by 'quote' up to and with its closing
-    // quote, which an escape does not close
+    // skips the text of a literal opened by 'quote' up to and with its
+    // closing quote, which an escaped quote does not close
     auto skip_past_closing_quote(const char quote, const token& open_quote_tk)
         -> void {
 

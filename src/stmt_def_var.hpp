@@ -464,7 +464,7 @@ class stmt_def_var final : public statement {
     stmt_def_var(parse_toc& tc, const token& tk, tokenizer at_name,
                  const token& equals_tk,
                  const initializer_declaration& declaration, expr_any value)
-        : statement{tk}, declared_{declaration.declared_var()},
+        : statement{tk}, declared_{declared_var(tk, declaration)},
           assign_var_{
               declare_and_assign(tc, declared_, at_name, equals_tk,
                                  std::move(value)),
@@ -474,12 +474,6 @@ class stmt_def_var final : public statement {
 
         // note: a read of the variable in its initializer was rejected
         //       where it was parsed ('scope::initializer')
-
-        // marked after the initializer, which writes the variable; statements
-        // parsed from here on cannot assign it
-        if (tk.is_text("let")) {
-            tc.make_var_read_only(declared_.name, read_only_cause::let);
-        }
     }
 
     //
@@ -556,6 +550,21 @@ class stmt_def_var final : public statement {
             equals_tk,
             std::move(value),
         };
+    }
+
+    // a 'let' is read-only from its declaration on, its initializer is not
+    // an assignment and is not checked for it
+    [[nodiscard]] static auto
+    declared_var(const token& keyword_tk,
+                 const initializer_declaration& declaration) -> var_info {
+
+        var_info var{declaration.declared_var()};
+
+        if (keyword_tk.is_text("let")) {
+            var.read_only_why = read_only_cause::let;
+        }
+
+        return var;
     }
 };
 

@@ -1,0 +1,25 @@
+# a conversion inside a conversion widens its narrower argument before its
+# unary ops: the '-' of 'i16(-i32(g(v)))' of an 'i8' -128 gives 128, with an
+# inlined and a noinline call
+
+func inlined(x i8) res i8 {
+    res = x
+}
+
+func noinline called(x i8) res i8 {
+    res = x
+}
+
+func main() {
+    var v = i8(-128)
+    var w = i16(1)
+    w = i16(-i32(inlined(v)))
+    if w != 128 {
+        exit(1)
+    }
+    w = i16(-i32(called(v)))
+    if w != 128 {
+        exit(2)
+    }
+    exit(0)
+}

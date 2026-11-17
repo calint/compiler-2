@@ -478,12 +478,6 @@ class scope final {
 
     [[nodiscard]] auto loop_end_kind() const -> loop_end { return loop().end; }
 
-    auto make_var_read_only(const std::string_view name,
-                            const read_only_cause cause) -> void {
-
-        vars_.get_ref(name).read_only_why = cause;
-    }
-
     auto mark_taking_from_call() -> void { func_part().takes_from_call = true; }
 
     auto mark_without_call() -> void { func_part().is_without_call = true; }
@@ -2512,7 +2506,7 @@ class toc {
 //   names          'assert_loop_names_free', 'assert_valid_unqualified_name',
 //                  'assert_valid_name', 'constant_value_of',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
-//                  'type_param_named', 'make_var_read_only'
+//                  'type_param_named'
 //   body uses      'record_use', 'record_result_passed_as_mut'
 //   source         'parse_nesting_scope', 'source_of', 'where'
 class parse_toc final : public toc {
@@ -2909,14 +2903,6 @@ class parse_toc final : public toc {
     // a plain or a generic function, unlike 'funcs().has'
     [[nodiscard]] auto is_func(const std::string_view name) const -> bool {
         return funcs().has(name) or generics().has_func(name);
-    }
-
-    // 'name' is a variable of the innermost scope, e.g. a 'let' variable once
-    // its initializer is parsed
-    auto make_var_read_only(const std::string_view name,
-                            const read_only_cause cause) -> void {
-
-        tables().scopes.back().make_var_read_only(name, cause);
     }
 
     auto mark_generic_func_instantiated(const std::string_view name) -> void {

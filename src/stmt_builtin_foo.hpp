@@ -188,7 +188,9 @@ class stmt_builtin_foo final : public statement {
 
         const std::optional<size_t> array_len{array_info.array_len()};
 
-        // note: a constant 0 would fold, e.g. 'let m = n' would keep it
+        // note: 'n' is a variable here, a constant 'discarded_array_len' would
+        //       fold into code that is kept, e.g. 'let m = n'
+
         if (not array_len) {
             tc.add_var(
                 {
@@ -256,8 +258,9 @@ class stmt_builtin_foo final : public statement {
     }
 
     // what the counter runs up to: the array length without a count; a
-    // constant count is checked against the length at compile time, a count
-    // in a register like the count of 'array_copy'
+    // constant count is checked against the length at compile time, another
+    // count is held in a register and checked at run time like the count of
+    // 'array_copy'
     [[nodiscard]] auto compile_limit(compile_toc& tc, const size_t array_len,
                                      machine::held_registers& held) const
         -> operand {

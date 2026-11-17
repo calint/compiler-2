@@ -8182,3 +8182,7 @@ SRC=4920 && LISTING folds
 # x86: a variable shift with all fourteen registers live needs 'rcx', which
 # holds its count: rejected; the rv32i targets have the registers
 if [[ $MACHINE == x86_64 ]]; then SRC=4940 && COMPERR; else SRC=4940 && EXP=15 && RUN; fi
+
+# a conversion inside a conversion widens its narrower argument before its
+# unary ops
+SRC=5420 && EXP=0 && RUN
