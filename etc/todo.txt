@@ -287,6 +287,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
     current fuzzers miss ('<=' folded as '<', '>>' of -1 at 64 bits, an
     untyped-led list kept untyped, a conversion not wrapped to its use);
     kept in the session scratchpad as 'keep-const-gen.py'
+[p] easy: (round 469, bug hunt of integer arithmetic) need approval: a
+    wrap mode in the fuzzers; no fuzzer compares results under
+    '--checks=noub,-overflow' with a wrapping model, the mode where
+    'arith_steps::plan' regroups constants ('fuzz-exprs.py' requires the
+    overflow check); a model generator with that mode, '--nopt' and
+    '--versions=last', and a pair generator of 'let' against 'var'
+    spellings with edge values: 7000 programs found nothing, the final
+    generators kill 10 of 10 mutants (MIN / -1 unchecked, a shift by the
+    width, divisors merged although their product wraps); kept in the
+    session scratchpad as 'keep-arith/'
 [ ] easy: (round 447, design of storage addresses) 'main.cpp' asks
     '--vars' to be a multiple of 16 ('vars_alignment'); no code or
     docs say why: tie it to the rule that needs it or relax it

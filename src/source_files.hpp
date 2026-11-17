@@ -107,7 +107,7 @@ class source_files final {
     }
 
     // 'path' names one of the files, also through another path; a path that
-    // names no file names none of them
+    // does not exist names none of them
     [[nodiscard]] auto contains(const std::filesystem::path& path) const
         -> bool {
 
@@ -252,7 +252,8 @@ class source_locations final {
                            text(src_loc_tk, ':'));
     }
 
-    // where an error is, 'file:line:column', always with the file name
+    // where an error is, 'file:line:column', always with the file name as
+    // given, not the relative name
     [[nodiscard]] auto for_error(const source_span& where) const
         -> std::string {
 
@@ -286,8 +287,8 @@ class source_locations final {
         return for_comment(src_loc_tk);
     }
 
-    // a source location for a message, with the file name when the program
-    // has more than one file
+    // a source location for a message, with the file name as given when the
+    // program has more than one file
     [[nodiscard]] auto for_message(const token& src_loc_tk) const
         -> std::string {
 

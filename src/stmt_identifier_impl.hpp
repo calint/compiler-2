@@ -46,8 +46,8 @@ inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,
                                         const path_reach reach)
     : statement{tk}, reach_{reach} {
 
-    // note: the callers read a name, a string or no token was rejected
-    //       before, e.g. by 'parse_array_argument'
+    // note: the callers rejected a string or a missing token before, e.g.
+    //       'parse_array_argument'
 
     assert(tk.is_word());
 
@@ -107,7 +107,8 @@ inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,
 
     resolve_type(prefix);
 
-    // note: the parse records the uses, no name is bound to an argument
+    // note: the parse records the uses, where a parameter is not bound to an
+    //       argument, so a use names the parameter ('body_uses')
 
     tc.record_use(storage(tc), use_kind::read);
 
@@ -246,8 +247,8 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
         return;
     }
 
-    // the checks that use the accessed bytes would report an unknown
-    // element first, e.g. a result that may be unset
+    // an index out of bounds is rejected here, before a check that uses the
+    // accessed bytes reports it otherwise, e.g. as a read of an unset result
     const std::optional<int64_t> constant_index{
         checked_constant_index(tc, elems_.size() - 1, array_info,
                                reach == path_reach::to_end),
@@ -438,7 +439,8 @@ inline auto stmt_identifier::compile_checked_index(
 
     const std::optional<size_t> array_len{shape.length()};
 
-    // note: an unknown length checks the index alone, its code is discarded
+    // note: an unknown length checks the index alone, also of a range,
+    //       against 'discarded_array_len', its code is discarded
 
     const machine::bounds_range checked{
         is_range and array_len

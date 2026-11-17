@@ -846,7 +846,6 @@ class function_table final {
 // dat before it align it at 'offset_bytes' from the start of the section
 struct placed_dat {
     const stmt_def_dat* def{};
-    std::string name;
     size_t padding_bytes{};
     size_t offset_bytes{};
 };
@@ -896,7 +895,6 @@ class data_table final {
         dats_.put(std::string{name_tk.text()},
                   {
                       .def{&dat},
-                      .name{name_tk.text()},
                       .padding_bytes{padding_bytes},
                       .offset_bytes{offset_bytes},
                   });

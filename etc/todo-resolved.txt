@@ -1,7 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 468 (2026-11-17, bug hunt: arrays and indexing; design:
+[x] easy: round 469 (2026-11-17, bug hunt: integer arithmetic and its
+    run-time checks; design: read-only data, 'stmt_def_dat.hpp';
+    readability: a newcomer walks 'stmt_identifier_impl.hpp' and
+    'source_files.hpp')
+    => bug hunt: no defect; a model generator of operands in fields,
+       record arrays and constants under noub, a wrapping model under
+       '-overflow' (also with '--nopt' and '--versions=last') and the
+       division and shift checks alone; self-assignments; 'let' against
+       'var' spellings with edge values; i64 on x86_64: about 7000
+       programs, 100000 runs; 10 of 10 mutants caught; the wrap mode is
+       a [p] item
+    => design: 'placed_dat::name' removed, set but never read (the table
+       keys dats by name); one path per kind of data otherwise: a 'dat'
+       keeps its folded tree for typed lines, a 'var' goes through
+       'write_plan', all raw data through 'data', 'string_data' and
+       'zero_data', each layout rule has one owner
+    => readability: seven comments (the constructor's two notes, what
+       the callers rejected and why a use names the parameter;
+       'narrow_to_element' rejects an index out of bounds before a check
+       of the accessed bytes reports it otherwise;
+       'compile_checked_index' checks a range of unknown length against
+       'discarded_array_len'; 'contains' of a path that does not exist;
+       'for_error' and 'for_message' use the file name as given); 37
+       functions, 2 predictions wrong
+[x] easy: round 468(2026-11-17, bug hunt: arrays and indexing; design:
     how compile errors are built and located, 'compile_error.hpp',
     'source_files.hpp'; readability: a newcomer walks
     'register_pool.hpp' and 'register_report.hpp')
