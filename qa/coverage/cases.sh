@@ -8246,3 +8246,13 @@ SRC=6160 && EXP=0 && RUN
 # a 'dat' of a user type places each field after padding of 1 and 2 bytes,
 # also in a nested instance and in an array of the type
 SRC=6161 && EXP=0 && RUN
+
+# --checks=stack: a recursion that keeps values in registers across its calls
+# fits a stack of exactly what the checks reserve, 16 B less panics
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=0 && OPTS="--stack=736 --checks=stack" RUN; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=250 && OPTS="--stack=720 --checks=stack" RUN_ERR; fi
+
+# --checks=frame: a recursion whose last frame ends exactly at the end of
+# '--vars' passes, 16 B less panics; x86_64 has other frame sizes
+if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=0 && OPTS="--vars=320 --checks=frame" RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=254 && OPTS="--vars=304 --checks=frame" RUN_ERR; fi

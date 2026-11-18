@@ -1,6 +1,39 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 496 (2026-11-19, bug hunt: the bare-metal rv32i images
+    and the limits '--memory', '--vars' and '--stack'; design: the x86_64
+    backend, 'machine_x86_64.hpp'; readability: a newcomer walks the last
+    third of 'stmt_call.hpp')
+    => bug hunt: one wrong message: '--target=rv32i-fpga
+       --memory=0x100000000 --stack=0x100001000' said the stack exceeds
+       the device memory, since the base checked '--stack' against a
+       '--memory' the fpga constructor checked after it; the fpga machine
+       checks '--memory' in its base initializer
+       ('checked_memory_size_bytes'), 'test-cli.sh' checks the case; the
+       emulator instrumented for stack overflow into the variables, stores
+       past memory or into code and loads of unwritten memory, a sweep of
+       noinline recursions at the predicted '--vars' and '--stack' and 16
+       B around, 'dat', globals and locals at 4 KiB edges, the uart and the
+       array built-ins, option edges, qemu filled to 126 MiB, memories near
+       2^31 and 2^32 against llvm-mc: 1600 programs, 4200 runs, the whole
+       rv32i-fpga suite clean under the instrumented emulator; 10 mutants
+       of the limit checks, three missed (saved registers left out of the
+       stack check, the stack limit 16 B lower, a frame ending at the end
+       of '--vars' failing): tests 6220 and 6221, each written with a local for
+       its result so that '--versions' keeps one version and the boundary
+       is the same in every mode; the stack check reserves
+       more than the call saves: todo
+    => design: every compare goes through 'cmp' (the sign test, the
+       divisor probe and the frame check emitted it three other ways),
+       'needs_immediate_register' reads the immediate (-4 lines, listings
+       equal); ten ideas kept with reasons (merging the multiply paths
+       costs lines, 'branch' and 'emit_call' differ on rv32i, 'copy_block'
+       allows size 0, 'store_bytes' always has immediates to fall back on)
+    => readability: the note of 'callee()' says a deducing call sets it
+       after its arguments, the 'written' of 'assert_argument_writable'
+       renamed 'arg_place' like its neighbors, a note names
+       'assert_call_in_func'; 46 functions, 3 predictions wrong
 [x] easy: round 495 (2026-11-19, bug hunt: generics; design: the
     aliasing rules as a whole, where two places may share storage;
     readability: a newcomer walks the middle third of 'stmt_call.hpp')

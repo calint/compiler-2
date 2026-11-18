@@ -32,15 +32,7 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
   public:
     machine_rv32i_fpga(const source_files& files, const target_options& options)
         : machine_rv32i_bare_metal{files, options, 0,
-                                   options.memory_size_bytes} {
-
-        if (options.memory_size_bytes > max_memory_size_bytes_) {
-            throw option_error{
-                std::format("invalid --memory: {} B exceeds the {} B below "
-                            "the device addresses",
-                            options.memory_size_bytes, max_memory_size_bytes_)};
-        }
-    }
+                                   checked_memory_size_bytes(options)} {}
 
   protected:
     //
@@ -130,6 +122,20 @@ class machine_rv32i_fpga final : public machine_rv32i_bare_metal {
     //
     // statics
     //
+
+    // '--memory', checked before the base checks '--stack' against it
+    [[nodiscard]] static auto
+    checked_memory_size_bytes(const target_options& options) -> size_t {
+
+        if (options.memory_size_bytes <= max_memory_size_bytes_) {
+            return options.memory_size_bytes;
+        }
+
+        throw option_error{
+            std::format("invalid --memory: {} B exceeds the {} B below the "
+                        "device addresses",
+                        options.memory_size_bytes, max_memory_size_bytes_)};
+    }
 
     // the card is busy while it starts up and while it transfers a sector,
     // 'label_name' is a numeric label of the routine

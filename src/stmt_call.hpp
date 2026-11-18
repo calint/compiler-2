@@ -2032,7 +2032,9 @@ class stmt_call final : public statement {
     // class methods
     //
 
-    // note: set at the parse before the arguments are parsed
+    // note: set at the parse, after the arguments of a call that deduces its
+    //       type arguments ('parse_arguments')
+
     [[nodiscard]] auto callee() const -> const stmt_def_func& { return *func_; }
 
     // e.g. 'at' of 'point.at(1, 2)', 'tok()' is the type there
@@ -2103,7 +2105,7 @@ class stmt_call final : public statement {
     // a function that is never called, so inlining does not change what is
     // accepted
     auto assert_argument_writable(const size_t index,
-                                  const std::optional<place>& written) const
+                                  const std::optional<place>& arg_place) const
         -> void {
 
         // a parameter without 'mut' takes any argument
@@ -2123,18 +2125,19 @@ class stmt_call final : public statement {
         }
 
         // e.g. '2' or a 'let' constant
-        if (not written) {
+        if (not arg_place) {
             throw_not_writable(
                 index, std::format("constant {}", in_quotes(path->path_text())),
                 "");
         }
 
-        if (written->info.is_read_only()) {
+        if (arg_place->info.is_read_only()) {
             throw_not_writable(
                 index,
                 std::format("read-only {}",
-                            in_quotes(written->ident->path_text())),
-                read_only_hint(written->ident->tok().text(), written->info));
+                            in_quotes(arg_place->ident->path_text())),
+                read_only_hint(arg_place->ident->tok().text(),
+                               arg_place->info));
         }
     }
 
@@ -2605,7 +2608,7 @@ class stmt_call final : public statement {
         parse_toc& tc, const std::span<const std::optional<place>> places) const
         -> void {
 
-        // note: a call outside a function was rejected (the constructors)
+        // note: a call outside a function was rejected ('assert_call_in_func')
         assert(tc.scopes().is_in_func());
 
         visit_callee_effects(

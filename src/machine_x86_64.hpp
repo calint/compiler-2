@@ -647,8 +647,7 @@ class machine_x86_64 final : public machine {
         //       the displacement pass the address of 'vars.end'; addresses and
         //       sizes stay below 2^47, so nothing wraps
 
-        assembler_.instruction(site.indent, op::cmp, to_argument(last_base),
-                               frame_address.base_register());
+        cmp(site, last_base, qword_register(frame_address.base_register()));
 
         branch_to_failure(site, condition::l, frame_overflow_failure_);
     }
@@ -1214,8 +1213,7 @@ class machine_x86_64 final : public machine {
         //       so the minimum needs no immediate, which takes a register for
         //       a qword
 
-        emit_op(site, op::cmp, sized_register("rax", dividend_size_bytes),
-                immediate(1));
+        cmp(site, sized_register("rax", dividend_size_bytes), immediate(1));
 
         branch_to_failure(site, condition::o, division_failure_);
         assembler_.label(site.indent, not_minus_one);
@@ -1749,7 +1747,7 @@ class machine_x86_64 final : public machine {
 
     // a negative value is out of bounds
     auto test_sign(const emit_site site, const operand& value) -> void {
-        emit_op(site, op::test, value, value);
+        cmp(site, value, immediate(0));
         branch_to_failure(site, condition::s, bounds_failure_);
     }
 
@@ -1856,11 +1854,7 @@ class machine_x86_64 final : public machine {
             return false;
         }
 
-        const std::optional<uint64_t> bits{immediate_bits(src)};
-
-        assert(bits);
-
-        return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
+        return not std::in_range<int32_t>(src.immediate());
     }
 
     // unsigned when 'lower_checked', a negative value then compares large and

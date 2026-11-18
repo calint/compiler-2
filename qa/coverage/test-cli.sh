@@ -880,6 +880,9 @@ CLI_FPGA_MEMORY() {
     # the target rejects a memory that reaches its devices
     expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x100000000 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4294967296 B exceeds the 4294963200 B below the device addresses" err
+    # a stack larger than such a memory does not hide it
+    expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x100000000 --stack=0x100001000 0418.baz >gen.s 2>err
+    grep -Fq "error: invalid --memory: 4294967296 B exceeds the 4294963200 B below the device addresses" err
     # the largest memory below the devices is accepted
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 0418.baz >gen.s 2>err
     [[ ! -s err ]]

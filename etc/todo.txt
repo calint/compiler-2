@@ -10,6 +10,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 496, the bare-metal limits) the stack check of a noinline
+    call reserves the registers allocated at the check, also those the call
+    does not save: a recursion of 2 parameters reserves 48 B where 32 B are
+    pushed, test 6220 64 B where 48 B are; stricter than needed, the
+    verdict is fixed at compile time and alike on rv32i-qemu and
+    rv32i-fpga; an optimization of the limit, not measured further
 [ ] easy: (round 491, malformed programs) three messages differ from their
     neighbors: 'dat a = a' says "'a' not found" where 'let a = a' and
     'var a = a' say it is read in its own initializer; 'var func = 1' in a

@@ -1,0 +1,15 @@
+# --checks=stack: a recursion that keeps values in registers across its
+# calls fits a stack of exactly what the checks reserve, 16 B less panics
+
+func noinline sum(n, a, b) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    var t = a + (b + (a + (b + (a + (b + (a + (b + (a + (b + sum(n - 1, a, b))))))))))
+    res = t
+}
+
+func main() {
+    exit(sum(10, 1, 2) - 150)
+}
