@@ -248,7 +248,7 @@ class generic_call {
         return generic_->signature.params.size();
     }
 
-    // the type the argument at 'index', which is at 'tz', is parsed at, the
+    // the type that the argument at 'index', read at 'tz', is parsed at: the
     // type of its parameter in the instance; the deducing argument of a type
     // parameter, the first declared with it, deduces it when it tells a type
     // ('argument_type'), none for a literal or an expression, else the
@@ -687,8 +687,8 @@ struct call_site {
     }
 
     // the result is written field by field, so its padding is zeroed for
-    // '==' to compare instances byte by byte; after the arguments, which may
-    // read the destination, e.g. 'p = f(p.a + 1)'
+    // '==' to compare instances byte by byte; called after the arguments are
+    // compiled, which may read the destination, e.g. 'p = f(p.a + 1)'
     auto zero_result_padding(compile_toc& tc, const destination& dst) const
         -> void {
 
@@ -959,6 +959,8 @@ class inline_call final {
             });
     }
 
+    // the body writes a destination of the result type, a wider one goes
+    // through 'compile_widened'
     auto compile_at_result_type(compile_toc& tc, const destination& dst) const
         -> void {
 
@@ -990,8 +992,8 @@ class inline_call final {
         }
     }
 
-    // a new register per argument because the index register may belong to
-    // an enclosing binding that is used after the call
+    // each indexed address goes into a new register, not into its index
+    // register, which an enclosing binding may still use after the call
     auto compile_body_with_address_registers(compile_toc& tc,
                                              call_bindings bindings) const
         -> void {
@@ -1162,8 +1164,9 @@ class inline_call final {
     // statics
     //
 
-    // the inlined body reaches a place or a value of a built-in type by
-    // the binding it gives, see 'stmt_call::argument_places'
+    // a place is bound at its address, a variable in a register as it is,
+    // any other value by 'bind_expression'; an instance value without a place
+    // is in a temporary ('call_site::is_argument_temporary')
     [[nodiscard]] static auto
     bind_argument(compile_toc& tc, const expr_any& arg,
                   const stmt_def_func_param& param,
@@ -1341,8 +1344,6 @@ class noinline_call final {
     // names or a temporary of the current block that holds its value, at its
     // address, which is computed at the argument's position in the list;
     // 'held' holds the registers of an address with a run-time index
-    // note: a place is passed by its address, any other argument in a
-    //       temporary
     [[nodiscard]] auto compile_arguments(compile_toc& tc,
                                          machine::held_registers& held) const
         -> std::vector<ident_info> {

@@ -183,7 +183,6 @@ class assembler_x86_64 final : public assembler {
         std::string register_name;
         // the operand with its width, e.g. 'word [rbp + 2]'
         std::string address;
-        size_t size_bytes{};
         bool stores{};
     };
 
@@ -522,8 +521,8 @@ class assembler_x86_64 final : public assembler {
         add_line(std::move(text), instruction_size());
     }
 
-    // the load of 'l' when it is a qword 'mov' into 'register_name', else
-    // none
+    // the load of 'l' when it is a 'mov' into qword 'register_name', else
+    // none; the register names the width
     [[nodiscard]] auto qword_load(const line* const l,
                                   const std::string_view register_name)
         -> memory_move* {
@@ -539,8 +538,7 @@ class assembler_x86_64 final : public assembler {
         }
 
         const bool loads{
-            not move->stores and move->size_bytes == size_qword and
-                move->register_name == register_name,
+            not move->stores and move->register_name == register_name,
         };
 
         return loads ? move : nullptr;
@@ -797,28 +795,22 @@ class assembler_x86_64 final : public assembler {
             std::get_if<std::string_view>(&dst),
         };
 
-        const memory* const src_memory{std::get_if<memory>(&src)};
-
-        if (dst_register != nullptr and src_memory != nullptr) {
+        if (dst_register != nullptr and std::holds_alternative<memory>(src)) {
             return memory_move{
                 .register_name{*dst_register},
                 .address{argument_text(src)},
-                .size_bytes{src_memory->size_bytes},
                 .stores{false},
             };
         }
-
-        const memory* const dst_memory{std::get_if<memory>(&dst)};
 
         const std::string_view* const src_register{
             std::get_if<std::string_view>(&src),
         };
 
-        if (dst_memory != nullptr and src_register != nullptr) {
+        if (std::holds_alternative<memory>(dst) and src_register != nullptr) {
             return memory_move{
                 .register_name{*src_register},
                 .address{argument_text(dst)},
-                .size_bytes{dst_memory->size_bytes},
                 .stores{true},
             };
         }

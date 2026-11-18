@@ -1,7 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 476 (2026-11-18, bug hunt: the input and output built-ins;
+[x] easy: round 477 (2026-11-18, bug hunt: conditions, bool values and
+    short-circuit; design: the x86_64 assembler, 'assembler_x86_64.hpp';
+    readability: a newcomer walks the first half of 'stmt_call.hpp')
+    => bug hunt: no defect; a model generator of comparisons of every
+       width with arithmetic, elements, fields and call results on either
+       side, run-time checks guarded by 'and', 'or' and 'not', equality
+       of records and arrays, conditions that fold at an inlined call,
+       'mut' calls inside conditions, bools stored to places the
+       condition reads, loops with 'break' and 'continue', far branches
+       on rv32i: about 47000 programs, a million runs, 35 probes; 8 of 8
+       mutants caught
+    => design: 'memory_move::size_bytes' is gone, the register name and
+       the address text already tell the width, the qword load is
+       recognized by its register (-8 lines, listings equal); six ideas
+       kept with reasons ('records_' is the subclass's own type, a
+       retest found by text needs no record per 'cmp', comment formats
+       differ between the targets)
+    => readability: six comments ('param_type' reworded,
+       'zero_result_padding' after the arguments are compiled,
+       'compile_at_result_type' and the wider destination,
+       'bind_argument' names its three bindings, a repeated 'note:'
+       removed); 57 functions, 6 predictions wrong
+[x] easy: round 476(2026-11-18, bug hunt: the input and output built-ins;
     design: the rv32i assembler, 'assembler_rv32i.hpp'; readability: a
     newcomer walks 'stmt_def_var.hpp' and 'statement.hpp')
     => bug hunt: no defect; a model generator of 'read', 'write',
