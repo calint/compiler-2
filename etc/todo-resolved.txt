@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 494 (2026-11-19, bug hunt: control flow, nested loops,
+    'break', 'continue', 'return' and 'exit', the reach rules and results
+    set on every path; design: how the source is written back,
+    'source_to' and '--reproduce-source'; readability: a newcomer walks
+    the first third of 'stmt_call.hpp')
+    => bug hunt: no defect; a model generator of 'loop' and 'foo' nested
+       four deep with constant, 'let', run-time and folded counts, 'break'
+       and 'continue' at every depth, returns and exits in functions,
+       conditions and inlined helpers, noinline recursion, constant
+       conditions that make code unreachable, with an inserted unreachable
+       statement or an unset result checked against the reach and
+       definite-assignment rules: 23500 programs, 520000 runs, 3000
+       rejections all as the model said, 15 probes; 18 mutants, 16 caught
+       by the suite and the generator; the round 415 question on
+       'restore_reach_state' answered in its todo item; the round 417
+       report of '28 of 29 registers live', fixed in round 489, removed
+       from its item
+    => design: the write-back is built on tokens, which keep the space and
+       comments around them, so no node writes indentation or separators;
+       'stmt_identifier::path_source_to' renamed 'source_path_to' like the
+       other 'source_X_to' helpers; six ideas kept with reasons (operator
+       chains hold operator structs, the delimited lists differ around
+       their ends, a span overload of 'token::source_to' would be
+       ambiguous with the optional one)
+    => readability: two comments ('instantiate' gives the name of the
+       instance, 'fixed_param_type' names its parameter 'p'); 36
+       functions, 4 predictions wrong
 [x] easy: round 493 (2026-11-19, bug hunt: user types, nested records,
     arrays of records, whole copies and compares, methods; design: how
     user types are defined and laid out, 'stmt_def_type.hpp',

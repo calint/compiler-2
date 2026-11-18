@@ -458,7 +458,7 @@ class stmt_identifier final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         get_unary_ops().source_to(os);
-        path_source_to(os);
+        source_path_to(os);
     }
 
     auto compile(compile_toc& tc, const destination& dst) const
@@ -782,7 +782,7 @@ class stmt_identifier final : public statement {
     // the path as written, with indexes but without unary operators
     [[nodiscard]] auto path_text() const -> std::string {
         std::stringstream ss;
-        path_source_to(ss);
+        source_path_to(ss);
         return one_line_source::of(ss.view());
     }
 
@@ -1104,8 +1104,6 @@ class stmt_identifier final : public statement {
     auto parse_element(parse_toc& tc, tokenizer& tz, const token& tk,
                        const type_field* fld, const ident_info& prefix) -> void;
 
-    auto path_source_to(std::ostream& os) const -> void;
-
     // the path is an array only while its last element is not indexed
     auto resolve_type(const ident_info& info) -> void {
         set_type(info.type_ref());
@@ -1116,6 +1114,8 @@ class stmt_identifier final : public statement {
 
         shape_ = info.shape();
     }
+
+    auto source_path_to(std::ostream& os) const -> void;
 
     //
     // statics

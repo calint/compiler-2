@@ -204,7 +204,7 @@ class generic_call {
         return generic_name_;
     }
 
-    // after the arguments, the instance named by the deduced types, an
+    // after the arguments, the name of the instance of the deduced types, an
     // existing one is reused; a type parameter still not deduced, e.g. the
     // 'T' of 'var m = make(2)', is "cannot deduce"
     [[nodiscard]] auto instantiate(parse_toc& tc) const -> std::string {
@@ -364,7 +364,7 @@ class generic_call {
     }
 
   private:
-    // the type that 'param' has in every instance: the default type, a type
+    // the type that 'p' has in every instance: the default type, a type
     // defined before the generic function or an argument of the generic type
     // of a method, e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)'
     // called on a 'cell<i8>'; none for a name that is no type there, which

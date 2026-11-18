@@ -115,7 +115,7 @@ inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,
     names_result_ = tc.scopes().names_result(tok().text());
 }
 
-inline auto stmt_identifier::path_source_to(std::ostream& os) const -> void {
+inline auto stmt_identifier::source_path_to(std::ostream& os) const -> void {
     assert(not elems_.empty());
 
     source_delimited_to(os, elems_, elem_delims_tk_);
