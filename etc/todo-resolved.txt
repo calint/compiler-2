@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 491 (2026-11-18, bug hunt: malformed and near-valid
+    programs in the front end under the sanitizers; design: the operation
+    scope of the backends and 'alloc_load_register'; readability: a
+    newcomer walks 'unary_ops.hpp', 'constant_arith.hpp',
+    'constant_parser.hpp' and 'lut.hpp')
+    => bug hunt: no defect; tests cut after every token and character,
+       tokens deleted, duplicated, swapped, replaced and inserted, lines
+       re-indented and deleted, also for rv32i-fpga with checks, and 400
+       probes (keywords as names, generic argument counts, misplaced
+       modifiers, odd and cyclic includes, bad UTF-8, control bytes): 1.39
+       million programs through the sanitizer build, every one accepted or
+       rejected with a location in the file, accepted mutants legal; three
+       messages that differ from their neighbors: todo
+    => design: 'alloc_load_register' no longer keeps the registers of
+       'dst', which the caller or the operation holds when the scope
+       begins, and loses the parameter; the x86_64 'emit_through_register'
+       takes a plain scratch register, its fresh scope made the consumed
+       registers free ones; listings equal; four ideas kept with reasons
+    => readability: 'constant_arith::eval_constant' renamed 'compare', the
+       'width' of 'unary_ops::evaluate_at' renamed 'width_type', two
+       comments (the errors of 'parse_constant', every target shifts the
+       same); 34 functions, 3 predictions wrong
 [x] easy: round 490 (2026-11-18, bug hunt: the passes on the emitted
     lines, reloads, copies, retests, jumps and far jumps; design: constants
     and folding, 'constant_arith.hpp', 'constant_parser.hpp', 'lut.hpp' and

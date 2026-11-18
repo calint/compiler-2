@@ -688,22 +688,24 @@ class machine {
             pool.restore_unavailable(saved_mask_);
         }
 
-        // a register for the value of 'src' on its way to 'dst': the first in
-        // the scratch order that is free or a register of the address 'src'
-        // that was free when the scope began and that 'dst' does not use; the
-        // caller has given those up, so they are dead once 'src' is read,
-        // e.g. the index of 'b[j]' in 'a[i] = b[j]'
-        [[nodiscard]] auto
-        alloc_load_register(const emit_site site, const type& type_ref,
-                            const operand& dst, const operand& src) const
+        // a register for the value of 'src': the first in the scratch order
+        // that is free or a register of the address 'src' that was free when
+        // the scope began; the caller has given those up, so they are dead
+        // once 'src' is read, e.g. the index of 'b[j]' in 'a[i] = b[j]'
+        //
+        // note: the registers of the destination are held by the caller, it
+        //       writes the destination after the scope reads 'src'
+        [[nodiscard]] auto alloc_load_register(const emit_site site,
+                                               const type& type_ref,
+                                               const operand& src) const
             -> operand {
 
+            assert(src.is_memory());
+
             const uint32_t address{machine_.registers_mask(src)};
-            const uint32_t kept{saved_mask_ | machine_.registers_mask(dst)};
-            const uint32_t consumed{src.is_memory() ? address & ~kept : 0};
 
             return machine_.alloc_scratch_register_from(site, type_ref,
-                                                        consumed);
+                                                        address & ~saved_mask_);
         }
 
         // the registers of 'value' are not picked for scratch until the scope

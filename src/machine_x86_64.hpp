@@ -1494,10 +1494,8 @@ class machine_x86_64 final : public machine {
         const operation_scope scope{*this};
 
         const operand reg{
-            scope.alloc_load_register(
-                site,
-                builtin_type_for_size_bytes(dst_op.type_ref().size_bytes()),
-                dst_op, src_op),
+            alloc_scratch_register(site, builtin_type_for_size_bytes(
+                                             dst_op.type_ref().size_bytes())),
         };
 
         mov(site, reg, src_op);

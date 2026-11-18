@@ -105,7 +105,8 @@ class constant_parser final {
         return static_cast<unsigned char>(*esc.decoded);
     }
 
-    // e.g. '12', '0x1f', '0b101' and ''a'' have a value, 'x' has none
+    // e.g. '12', '0x1f', '0b101' and ''a'' have a value, 'x' has none; a
+    // number out of range or a character of more than one byte is an error
     [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
                                              const std::string_view str)
         -> std::optional<int64_t> {

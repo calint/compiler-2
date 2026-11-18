@@ -74,19 +74,10 @@ class constant_arith final {
         return wrap_to_width(static_cast<int64_t>(bits), width_type);
     }
 
-    // true when the quotient is outside the width, e.g. -128 / -1 of an 'i8'
-    [[nodiscard]] static auto division_overflows(const int64_t lhs,
-                                                 const int64_t rhs,
-                                                 const type& width_type)
-        -> bool {
-
-        return rhs == -1 and lhs == signed_minimum(width_type.size_bits());
-    }
-
     // the comparison of two constants
-    [[nodiscard]] static auto eval_constant(const int64_t lhs,
-                                            const comparison_operator op,
-                                            const int64_t rhs) -> bool {
+    [[nodiscard]] static auto compare(const int64_t lhs,
+                                      const comparison_operator op,
+                                      const int64_t rhs) -> bool {
 
         if (op == comparison_operator::equal) {
             return lhs == rhs;
@@ -111,6 +102,15 @@ class constant_arith final {
         assert(op == comparison_operator::greater_equal);
 
         return lhs >= rhs;
+    }
+
+    // true when the quotient is outside the width, e.g. -128 / -1 of an 'i8'
+    [[nodiscard]] static auto division_overflows(const int64_t lhs,
+                                                 const int64_t rhs,
+                                                 const type& width_type)
+        -> bool {
+
+        return rhs == -1 and lhs == signed_minimum(width_type.size_bits());
     }
 
     // 'value' is in the range of a signed integer of the width of
@@ -207,7 +207,7 @@ class constant_arith final {
         return wrap_to_width(lhs % rhs, width_type);
     }
 
-    // a count within the width shifts the same on both targets
+    // a count within the width shifts the same on every target
     [[nodiscard]] static auto
     shift_constant(const int64_t lhs, const arithmetic_operator op,
                    const uint64_t count, const type& width_type) -> int64_t {

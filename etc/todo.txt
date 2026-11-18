@@ -10,6 +10,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 491, malformed programs) three messages differ from their
+    neighbors: 'dat a = a' says "'a' not found" where 'let a = a' and
+    'var a = a' say it is read in its own initializer; 'var func = 1' in a
+    generic body says "'func' can only be in global scope" instead of "'func'
+    is a keyword"; '{' at the top level says "unexpected '{'" where other
+    tokens say "expected a definition"; the locations are right
 [ ] easy: (round 466, a walk of 'machine_rv32i.hpp') a negative constant
     factor is built as its positive and then negated: 'x * -3' is
     'slli', 'sub', 'sub zero' where 'slli t1, t0, 2' and 'sub t0, t0,

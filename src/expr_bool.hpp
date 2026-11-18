@@ -832,8 +832,8 @@ class expr_bool_op final : public statement {
 
         assert_sides_fit(lhs, rhs, op);
 
-        return constant_arith::eval_constant(lhs.folded->value, op,
-                                             rhs.folded->value);
+        return constant_arith::compare(lhs.folded->value, op,
+                                       rhs.folded->value);
     }
 
     // a 'bool' is 0 or 1 so it needs no comparison with 0; inversion and

@@ -651,10 +651,9 @@ class machine_rv32i : public machine {
         operand value{dst};
 
         if (not dst.is_register()) {
-            value =
-                src.is_register()
-                    ? src
-                    : scope.alloc_load_register(site, default_type(), dst, src);
+            value = src.is_register()
+                        ? src
+                        : scope.alloc_load_register(site, default_type(), src);
         }
 
         load_into(site, value, src);
