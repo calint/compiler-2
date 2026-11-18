@@ -14,7 +14,6 @@
 #include <sstream>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -920,11 +919,11 @@ class stmt_def_func final : public statement {
     }
 
     // the body in a frame of its own at the frame base, which the caller
-    // holds, inside its 'frame_scope'; returns the size of the frame
-    [[nodiscard]] auto compile_in_frame(
+    // holds, inside its 'frame_scope'
+    auto compile_in_frame(
         compile_toc& tc,
         const std::span<const std::optional<size_t>> array_lengths) const
-        -> size_t {
+        -> void {
 
         // a body is listed from the left also where a call checks it
         const compile_toc::indent_scope body_indent{tc, 0};
@@ -956,8 +955,6 @@ class stmt_def_func final : public statement {
 
         code_.compile(tc, destination{});
         x.return_function(1);
-
-        return tc.layout().max_frame_size_bytes();
     }
 
     // the body compiled in a frame of its own for 'array_lengths', nothing
@@ -974,7 +971,7 @@ class stmt_def_func final : public statement {
 
             const compile_toc::scope_entry body{tc, frame_scope(array_lengths)};
 
-            std::ignore = compile_in_frame(tc, array_lengths);
+            compile_in_frame(tc, array_lengths);
         });
     }
 
@@ -1005,9 +1002,11 @@ class stmt_def_func final : public statement {
 
         x.begin_noinline_body(std::string{name()}, body_label(array_lengths));
 
-        const size_t frame_size_bytes{compile_in_frame(tc, array_lengths)};
+        compile_in_frame(tc, array_lengths);
 
         x.end_noinline_body();
+
+        const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
 
         x.define_constant(frame_size_label(array_lengths), frame_size_bytes);
     }

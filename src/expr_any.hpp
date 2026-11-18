@@ -74,9 +74,9 @@ class stmt_array_size final : public statement {
     // 'i8[4]'; asked only when 'has_value'
     [[nodiscard]] auto array_size() const -> size_t;
 
-    // folds the size again where its value is written, whose checks see what
-    // a call gives, e.g. the length of the unsized array parameter 'x' of
-    // 'i8[array_length(x[5].a)]'
+    // folds the size again where its value is written, so that its checks see
+    // the lengths a call gives, e.g. that of the unsized array parameter 'x'
+    // of 'i8[array_length(x[5].a)]'
     auto check_where_written(const toc& tc) const -> void;
 
     [[nodiscard]] auto close_bracket_tk() const -> const token& {
@@ -439,7 +439,7 @@ class expr_any final : public statement {
             plan_value(tc, at, plan);
 
             if (is_array()) {
-                assert_whole_array_copy_fits(tc, dst_count);
+                assert_whole_array_copy_lengths_match(tc, dst_count);
             }
 
             return;
@@ -509,9 +509,9 @@ class expr_any final : public statement {
         return &*list->prefix;
     }
 
-    // the copy size comes from the source, so its length is that of the
-    // destination, 'array_count' when known
-    auto assert_whole_array_copy_fits(
+    // the copy size comes from the source, so its length must equal
+    // 'array_count', the destination length; unchecked when either is unknown
+    auto assert_whole_array_copy_lengths_match(
         const toc& tc, const std::optional<size_t> array_count) const -> void {
 
         const ident_info src_info{make_ident_info(tc, *operand_path())};
@@ -564,8 +564,8 @@ class expr_any final : public statement {
             };
         }
 
-        // an array is initialized by a '{ ... }' or by the name of an array,
-        // e.g. 'str.data'
+        // an array is initialized by a '{ ... }', by a prefix alone, e.g.
+        // 'i8[4]', or by the name of an array, e.g. 'str.data'
 
         std::optional<array_prefix> prefix{
             parse_array_prefix(tc, tz, tp, typing),
@@ -616,7 +616,8 @@ class expr_any final : public statement {
 
     // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
     // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
-    // the default type; none when the destination gives both
+    // the default type; none when the destination gives both; rejected where
+    // the type is known ('from_destination')
     [[nodiscard]] auto parse_array_prefix(parse_toc& tc, tokenizer& tz,
                                           const type& tp,
                                           const literal_typing typing)
@@ -740,8 +741,8 @@ class expr_any final : public statement {
                 .covered{},
             });
 
-            // a call element writes at the element, not at the array start
-            // the identifier names, and an element is not an array
+            // at the element, not at the array start, e.g. for a call
+            // element; no unsized count since an element is not an array
             listed.plan_writes(tc, at.element(i), std::nullopt, plan);
         }
     }
@@ -823,6 +824,9 @@ class expr_any final : public statement {
         if (not array_count) {
             return;
         }
+
+        // note: an 'i8' element is one byte, so the string length counts the
+        //       listed elements
 
         plan_remaining_elements(at, size_bytes, *array_count, plan);
     }
@@ -982,8 +986,8 @@ class expr_any final : public statement {
         }
     }
 
-    // a built-in value whose only element is parsed, e.g. the zero value of
-    // 'i8', 'bool' or '{}'
+    // a built-in value whose first element 'first' is already parsed, e.g.
+    // the zero value 'i8', 'bool' or '{}'
     [[nodiscard]] static auto builtin_value(parse_toc& tc, tokenizer& tz,
                                             std::unique_ptr<statement> first)
         -> expr_variant {

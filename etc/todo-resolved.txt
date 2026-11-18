@@ -1,7 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 480 (2026-11-18, bug hunt: instance and array literals
+[x] easy: round 481 (2026-11-18, bug hunt: inlined calls and how their
+    arguments are bound; design: how storage gets its addresses,
+    'storage_layout', frames, 'dat'; readability: a newcomer walks
+    'expr_any.hpp')
+    => bug hunt: no defect; a model generator of 2 to 5 functions whose
+       parameters reuse the caller's names, scalar, array and record
+       parameters, 'mut' or not, bound to constants, names in registers,
+       elements at constant and run-time indexes, fields, 'foo' elements
+       and nested calls, a 'mut' write of an index an argument uses,
+       early 'return' in loops, each program all inlined, all 'noinline'
+       and mixed: about 5800 programs, 140000 runs, 80 probes; 3 of 5
+       mutants caught by the generator, the other two by tests 1682 and
+       1340
+    => design: 'compile_in_frame' returns nothing, 'emit_in_frame' reads
+       the frame size where it defines its label and the dry run ignores
+       no result (listings equal); seven ideas kept with reasons (the
+       frame peak and the body vars peak are different facts, the dats
+       check keeps the sum from overflowing, the dat padding and the
+       '.align' before 'vars' are the layout and the image)
+    => readability: six comments and a rename,
+       'assert_whole_array_copy_lengths_match' says it requires equal
+       lengths ('parse_array_prefix' rejects a prefix where the type is
+       known, a string length counts 'i8' elements, the array forms of
+       'parse_array_form'); 69 functions, 7 predictions wrong
+[x] easy: round 480(2026-11-18, bug hunt: instance and array literals
     and whole-value initialization; design: assignment, how a value
     reaches its destination, 'stmt_assign_var.hpp'; readability: a
     newcomer walks the second half of 'machine_x86_64.hpp')
