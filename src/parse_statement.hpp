@@ -63,14 +63,14 @@ inline auto assert_builtin_place(const token& tk,
                                  const reserved_names::builtin_function& fn,
                                  const builtin_place at) -> void {
 
-    if (at == builtin_place::value and
-        fn.use == reserved_names::builtin_use::statement) {
+    const bool has_value{fn.value != reserved_names::builtin_value::none};
 
+    if (at == builtin_place::value and not has_value) {
         throw_no_value(tk, tk.text());
     }
 
-    if (at == builtin_place::statement and
-        fn.use == reserved_names::builtin_use::value) {
+    if (at == builtin_place::statement and has_value and
+        not fn.is_value_discardable) {
 
         throw_discarded_result(tk, tk.text());
     }

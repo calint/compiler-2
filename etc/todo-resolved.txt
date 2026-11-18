@@ -1,7 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 483 (2026-11-18, bug hunt: definite assignment and reads
+[x] easy: round 484 (2026-11-18, bug hunt: frames and the stack; design:
+    the built-ins as a family, 'stmt_builtin_*.hpp' and their catalog;
+    readability: a newcomer walks 'stmt_identifier.hpp')
+    => bug hunt: no defect; a model generator of 'noinline' functions,
+       record results, 'mut' methods and inlined helpers calling them,
+       deep and wide recursion with array arguments of several lengths and
+       locals up to 'int[3000]', each run at the exact '--vars', '--stack'
+       and '--memory' edges under an emulator that stops on any store
+       outside the program's regions and under gdb watchpoints past
+       'vars.end' on x86_64: 1400 programs, 21600 model runs, 223700 edge
+       probes, 9 probes; mutants caught by the watch and by tests 0426,
+       1837 and 2374; the stack check without its 16 B return-address
+       area survived, its 48 B callee allowance was never used up
+    => design: the built-in catalog ('token.hpp') holds whether a call
+       has a value once: 'builtin_use' and its 'static_assert' are gone,
+       'is_value_discardable' marks 'read' and 'write', and
+       'assert_builtin_place' reads the value (-11 lines, listings and
+       errors equal); five ideas kept with reasons (the io table needs the
+       backend's 'target_call', 'array_copy' stands only as a statement,
+       the constructors of 'make_builtin_function' differ)
+    => readability: six comments ('info_at_address' had its condition on
+       the wrong case, 'load_held_address' is an address held in a slot,
+       'make_ident_info' against 'resolve_path', 'assert_element_selected',
+       'assert_not_method', 'elem_pos'); 69 functions, 3 predictions
+       wrong
+[x] easy: round 483(2026-11-18, bug hunt: definite assignment and reads
     of unwritten storage; design: the parser's structure,
     'parse_statement.hpp' and 'parse_lookahead.hpp'; readability: a
     newcomer walks 'ub_assigned.hpp', 'ub_reads.hpp' and

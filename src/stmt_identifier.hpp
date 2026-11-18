@@ -256,7 +256,7 @@ class stmt_identifier final : public statement {
     // one element of a walk of the path from its root, see 'for_each_prefix'
     struct prefix_step {
         const ident_elem* elem{};
-        // the position of 'elem' in the path, its text is 'array_text' of it
+        // the position of 'elem' in the path, which 'array_text' takes
         size_t elem_pos{};
         // what the path up to the element resolves to
         const ident_info* info{};
@@ -371,6 +371,8 @@ class stmt_identifier final : public statement {
             return folded_into;
         }
 
+        // the memory at the address that 'address_slot' holds, loaded into a
+        // new owned register
         [[nodiscard]] auto load_held_address(const operand& address_slot)
             -> operand {
 
@@ -682,8 +684,7 @@ class stmt_identifier final : public statement {
     [[nodiscard]] auto constant_start_index(const toc& tc) const
         -> std::optional<int64_t>;
 
-    // what this path resolves to at its address: as resolved when its
-    // operand is that address ('needs_compile_lea'), else at the address
+    // what this path names; when 'needs_compile_lea', moved to the address
     // 'compile_lea' computes ('ident_info::at_address'), e.g.
     // '[rbp + r14 * 4 + 205]', whose registers go into 'held'
     [[nodiscard]] auto info_at_address(compile_toc& tc,
@@ -952,6 +953,7 @@ class stmt_identifier final : public statement {
                                minimum, maximum, dst_type.name())};
     }
 
+    // a field after the path 'prefix' needs it indexed when it is an array,
     // 'ps.x' does not mean 'ps[0].x'; a name that is no field of the element,
     // e.g. the 'length' of 'a.length', likely asks for the size
     auto assert_element_selected(const ident_info& prefix,
@@ -981,8 +983,8 @@ class stmt_identifier final : public statement {
     }
 
     // where only an array is expected, the path does not end at a method,
-    // e.g. the 'a.m' of 'array_length(a.m)', or its call, which is named like
-    // its callee in the other call messages
+    // e.g. the 'a.m' of 'array_length(a.m)'; a call 'a.m()' is reported like
+    // other calls, naming the method as its callee 'T.m'
     auto assert_not_method(const parse_toc& tc, const tokenizer& tz) const
         -> void {
 
@@ -1307,7 +1309,8 @@ struct place {
     ident_info info;
 };
 
-// the identifier the path names, e.g. one element for 'ps[1]'
+// what the path names, e.g. the element of 'ps[1]', where 'resolve_path'
+// gives the array 'ps'
 [[nodiscard]] inline auto make_ident_info(const toc& tc,
                                           const stmt_identifier& ident)
     -> ident_info {

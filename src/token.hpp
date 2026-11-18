@@ -76,16 +76,13 @@ inline constexpr std::array<std::string_view, 4> definition_keywords{
 // the default type, or a 'bool'
 enum class builtin_value : uint8_t { none, count, boolean };
 
-// where a call of a built-in may stand: alone as a statement, in a value, or
-// either, e.g. 'read' whose count may be dropped
-enum class builtin_use : uint8_t { statement, value, either };
-
-// a built-in function: its name, the value of a call and where a call may
-// stand
+// a built-in function: its name and the value of a call; a call without a
+// value is a statement, one with a value stands in a value, or also alone
+// when the value may be discarded, e.g. 'read' whose count may be dropped
 struct builtin_function {
     std::string_view name;
     builtin_value value{};
-    builtin_use use{};
+    bool is_value_discardable{};
 };
 
 // a variable or function with the name of a built-in function would be read
@@ -94,52 +91,44 @@ inline constexpr std::array<builtin_function, 8> builtin_functions{
     builtin_function{
         .name{"array_copy"},
         .value{builtin_value::none},
-        .use{builtin_use::statement},
+        .is_value_discardable{false},
     },
     builtin_function{
         .name{"array_length"},
         .value{builtin_value::count},
-        .use{builtin_use::value},
+        .is_value_discardable{false},
     },
     builtin_function{
         .name{"arrays_equal"},
         .value{builtin_value::boolean},
-        .use{builtin_use::value},
+        .is_value_discardable{false},
     },
     builtin_function{
         .name{"read"},
         .value{builtin_value::count},
-        .use{builtin_use::either},
+        .is_value_discardable{true},
     },
     builtin_function{
         .name{"write"},
         .value{builtin_value::count},
-        .use{builtin_use::either},
+        .is_value_discardable{true},
     },
     builtin_function{
         .name{"sector_read"},
         .value{builtin_value::none},
-        .use{builtin_use::statement},
+        .is_value_discardable{false},
     },
     builtin_function{
         .name{"sector_write"},
         .value{builtin_value::none},
-        .use{builtin_use::statement},
+        .is_value_discardable{false},
     },
     builtin_function{
         .name{"exit"},
         .value{builtin_value::none},
-        .use{builtin_use::statement},
+        .is_value_discardable{false},
     },
 };
-
-// only a statement has no value
-static_assert(std::ranges::all_of(builtin_functions,
-                                  [](const builtin_function& fn) -> bool {
-                                      return (fn.value ==
-                                              builtin_value::none) ==
-                                             (fn.use == builtin_use::statement);
-                                  }));
 
 // the built-in function named 'name', null for any other name
 [[nodiscard]] constexpr auto find_builtin_function(const std::string_view name)

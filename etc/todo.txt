@@ -1007,6 +1007,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
     is held, while 'store_bytes' falls back to immediate stores at any
     size: 'p = {"<200 bytes>"}' is accepted and 'p = {"abc"}' is not; rv32i
     accepts all three
+[ ] easy: (round 485 RA) 'qa/fuzz/fuzzlib.py' mixes encodings:
+    'build_and_run' writes the program with the default UTF-8 ('open(path,
+    "w")') while 'split_include', 'Findings.add' and the reads of kept
+    programs use latin-1 with 'replace', so a program with raw non-ASCII
+    text is changed when split into an include or kept as a finding ('€'
+    becomes '?'); no fuzzer emits non-ASCII today; one encoding for all
+    sites, about 8 lines
 [ ] easy: user decision (round 478 RA): the later-operand rule
     ('assert_not_written_later', 'ub_order.hpp') also checks the names in
     the arguments of a call among the earlier operands, which ran before
