@@ -1,0 +1,12 @@
+# a folded '>>' of a negative constant shifts in its sign bit, as the same
+# shift of a variable does: -1 stays -1
+
+func main() {
+    var m = -1
+    var r = -1 >> 1
+    if r != m >> 1 { exit(1) }
+    if r != -1 { exit(2) }
+    r = -3 >> 1
+    if r != -2 { exit(3) }
+    exit(0)
+}

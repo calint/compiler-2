@@ -1112,7 +1112,7 @@ class expr_bool final : public statement {
     // the value the parse can tell, the part of what 'compile' finds that
     // needs no code: constants up to the one that decides the list; after a
     // run-time element 'compile' may still decide it, see
-    // 'resolve_last_constant'
+    // 'compile_last_element'
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
@@ -1283,7 +1283,9 @@ class expr_bool final : public statement {
     }
 
     // the last element decides the list: false branches to 'if_false' and
-    // true to 'if_true', neither when the value is only stored
+    // true to 'if_true', neither when the value is only stored; a constant
+    // decides the list only if all earlier elements were constants or it
+    // short-circuits the list
     [[nodiscard]] auto
     compile_last_element(compile_toc& tc, const branch_targets& targets,
                          const bool inverted, const operand& dst,
@@ -1298,10 +1300,6 @@ class expr_bool final : public statement {
             is_stored_only ? std::string_view{} : targets.if_false,
         };
 
-        const std::string_view if_true{
-            is_stored_only ? std::string_view{} : targets.if_true,
-        };
-
         const expr_bool* const nested_expr{
             std::get_if<expr_bool>(&bools_.back()),
         };
@@ -1314,21 +1312,26 @@ class expr_bool final : public statement {
                                       joined_by(inverted), dst),
         };
 
-        if (const_eval) {
-            return resolve_last_constant(tc, *const_eval, if_true, inverted,
-                                         has_runtime_element);
+        if (const_eval and (not has_runtime_element or
+                            is_short_circuit(*const_eval, inverted))) {
+
+            return *const_eval;
         }
 
-        // a nested list has emitted its final branch, a stored value branches
-        // nowhere
-        if (nested_expr != nullptr or is_stored_only) {
+        // the run decides the list; a constant false has branched to
+        // 'if_false' and a nested list decided at run time has emitted its
+        // final branch, else the list holds here
+        const bool is_true_here{
+            const_eval ? *const_eval : nested_expr == nullptr,
+        };
+
+        if (not is_true_here or is_stored_only) {
             return std::nullopt;
         }
 
         machine& x{tc.machine()};
 
-        // the last element branched when false, so the list holds here
-        x.branch(tc.indent(), if_true);
+        x.branch(tc.indent(), targets.if_true);
 
         return std::nullopt;
     }
@@ -1497,32 +1500,6 @@ class expr_bool final : public statement {
         if (parens_.is_enclosed()) {
             throw_unclosed_list(op_tk);
         }
-
-        return std::nullopt;
-    }
-
-    // a constant last element decides the list only if all earlier elements
-    // were constants or it short-circuits the list
-    [[nodiscard]] auto
-    resolve_last_constant(compile_toc& tc, const bool const_eval,
-                          const std::string_view if_true, const bool inverted,
-                          const bool has_runtime_element) const
-        -> std::optional<bool> {
-
-        if (not has_runtime_element or is_short_circuit(const_eval, inverted)) {
-            return const_eval;
-        }
-
-        // a constant false has already branched to 'if_false', a stored value
-        // has no branch
-        if (not const_eval or if_true.empty()) {
-            return std::nullopt;
-        }
-
-        machine& x{tc.machine()};
-
-        // a constant true emits no branch of its own
-        x.branch(tc.indent(), if_true);
 
         return std::nullopt;
     }

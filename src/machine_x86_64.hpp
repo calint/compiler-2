@@ -360,7 +360,7 @@ class machine_x86_64 final : public machine {
         reserve_named_register(site, "rax");
 
         // note: a register 'dst' is overwritten by the result, so its value
-        //       can move to 'rax'
+        //       can move to 'rax'; 'move_consumed' takes qword registers
 
         const bool consumed{
             dst.is_register() and dst.type_ref().size_bytes() == size_qword_,
@@ -485,9 +485,9 @@ class machine_x86_64 final : public machine {
         emit_op(site, code, dst, sized_register("rcx", size_byte_));
     }
 
-    // up to 'immediate_store_threshold_bytes_' as immediates, larger bytes
-    // copied from read-only data with 'rep movsb', or as immediates when one
-    // of its registers is held, e.g. 'rsi' by an enclosing 'array_copy'
+    // up to 'immediate_store_threshold_bytes_' as immediates; larger ones are
+    // copied from read-only data with 'rep movsb', or stored as immediates
+    // when a register of 'rep movsb' is held, e.g. 'rsi' by an 'array_copy'
     auto store_bytes(
         const emit_site site, const std::string_view bytes, const operand& dst,
         [[maybe_unused]] const size_t alignment,
@@ -687,7 +687,7 @@ class machine_x86_64 final : public machine {
 
         if (write_used) {
             assembler_.label(0, write_label_);
-            // 1 and 2 less 1 are below 2 unsigned, any other 64 bit value not
+            // unsigned, only the descriptors 1 and 2 give an 'rax' below 2
             assembler_.instruction(1, op::lea, "rax", write_index);
             assembler_.instruction(1, op::cmp, "rax", write_served_count_);
             assembler_.jcc(1, condition::ae, bad_descriptor_label);
@@ -721,6 +721,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (use == factor_use::may_overwrite) {
+            // 'imul' writes only a register, here the factor
             emit_op(site, op::imul, factor, product);
 
             // the move keeps the flags
@@ -992,11 +993,11 @@ class machine_x86_64 final : public machine {
     }
 
     // calls the routine of 'function' ('emit_io_routines',
-    // 'emit_sector_routines'): its 'syscall' changes 'rcx' and 'r11', a sector
-    // routine also 'rax', which returns nothing, and 'r10', the live ones are
-    // saved around the call; 'rax' of 'read' and 'write' is the result
-    // register 'call_target' allocated, and the argument 'rdi' a sector
-    // routine changes is held by 'call_target' for the call only
+    // 'emit_sector_routines') and saves the live registers it changes: its
+    // 'syscall' changes 'rcx' and 'r11', a sector routine also 'r10' and
+    // 'rax' (it returns nothing); not saved are 'rax' of 'read' and 'write',
+    // the result register that 'call_target' allocated, and 'rdi', which a
+    // sector routine changes but 'call_target' holds for the call only
     auto emit_target_call(const emit_site site, const target_call function)
         -> void override {
 

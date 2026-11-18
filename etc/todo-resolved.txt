@@ -1,7 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 478 (2026-11-18, bug hunt: global variables and
+[x] easy: round 479 (2026-11-18, bug hunt: shifts, bitwise operators and
+    the unary operators; design: conditions and branches,
+    'expr_bool.hpp' and 'stmt_if.hpp'; readability: a newcomer walks the
+    first half of 'machine_x86_64.hpp')
+    => bug hunt: no defect; a model generator of shifts and masks of
+       every width with constant, masked, wrapped, negative and call
+       counts, in indexes, conditions and nested lists with unary
+       operators, each program also all inlined and all 'noinline', and
+       7200 constant factors of the rv32i shifts and adds: about 47000
+       programs, 270000 runs, 15 probes; of 9 mutants that built 5 were
+       caught by the generator, 1 by test 2229, 1 only by a probe and
+       the suite: a folded '>>' of -1 as a logical shift (test 5700, at
+       the default type on every target); the 'rcx' count moved at its
+       own width differs only with stale upper bits
+    => design: 'resolve_last_constant' is merged into
+       'compile_last_element', the final jump to 'if_true' is emitted in
+       one place (-23 lines, listings equal); five ideas kept with
+       reasons ('is_stored_only' and an empty destination agree but the
+       inner elements need the shared end label, a jump to the next label
+       is dropped by the backend, 'constant_at_parse' is read without a
+       'tc')
+    => readability: five comments ('move_consumed' takes qword
+       registers, 'store_bytes' and the registers of 'rep movsb', the
+       descriptor check, 'imul' into the factor, what 'emit_target_call'
+       saves); 30 functions, 2 predictions wrong
+[x] easy: round 478(2026-11-18, bug hunt: global variables and
     whole-program state; design: how registers are handed out and given
     back, 'register_pool.hpp'; readability: a newcomer walks the second
     half of 'stmt_call.hpp')

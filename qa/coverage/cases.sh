@@ -8201,3 +8201,6 @@ SRC=5580 && EXP=255 && RUN_ERR
 
 # a run-time start moves the buffer by whole elements wider than a register
 SRC=5581 && DIFF
+
+# a folded '>>' of a negative constant shifts in its sign bit
+SRC=5700 && EXP=0 && RUN
