@@ -121,9 +121,9 @@ struct target_description {
     // the live scratch values from which the counter of an array loop is
     // kept in memory, none where it stays in a register
     std::optional<size_t> memory_counter_pressure_count;
-    // the alignment of a read-only constant ('str.L.C', 'init.L.C'), e.g. a
-    // word lets copies to aligned destinations use words
-    size_t string_alignment{};
+    // of 'str.L.C' and 'init.L.C', e.g. a word lets copies to aligned
+    // destinations use words
+    size_t read_only_constant_alignment{};
     // the lowest address the stack may reach where no operating system stops
     // a program that overflows the stack: calls check that the stack has room
     // and a failure has a handler
@@ -404,8 +404,8 @@ class machine {
 
     // saved before a version and put back after it, see 'version_scope'
     version_state state_{};
-    // for the register report; not in 'version_state' either, which would
-    // copy an entry per callee for each version
+    // for the register report; not in 'version_state', which would copy an
+    // entry per callee for each version
     register_call_log call_log_;
 
   public:
@@ -538,7 +538,7 @@ class machine {
 
     // the state before a version, put back when the scope ends, also when an
     // error unwinds; a version that is kept is given its end state again
-    // ('emit_most_efficient'), the code of a dry run is not ('dry_run')
+    // ('emit_most_efficient'), a dry run is not ('dry_run')
     class version_scope final {
         machine& machine_;
         version_state start_{};
@@ -720,7 +720,8 @@ class machine {
     struct bounds_plan {
         // the values tested for a negative sign, in order
         std::vector<operand> sign_tested;
-        // the range is compared with the array count
+        // the range is compared with the array count, unless every index is
+        // below it
         bool upper{};
         // the lower bound is checked or covered, so the upper compare is
         // unsigned
@@ -1181,13 +1182,30 @@ class machine {
 
         comment(site, "bounds check begin");
 
+        // an index is at most the largest value of the default type, so it is
+        // below a larger count; a negative one is left to the lower check
+        const bool upper_compared{
+            checks.bounds_upper and
+                (range.count or range.array_count <= default_signed_max()),
+        };
+
         const bounds_plan plan{
             .sign_tested{lower_bound_tests(site, range)},
-            .upper{checks.bounds_upper},
+            .upper{upper_compared},
             .lower_checked{checks.bounds_lower},
         };
 
+        // note: the scratch registers of the check are freed after the end
+        //       comment
+
+        const operation_scope scope{*this};
+
         emit_bounds_check(site, range, plan);
+
+        if (checks.bounds_upper and not upper_compared) {
+            comment(site, "upper bound: a {}-bit index is below the count",
+                    default_type().size_bits());
+        }
 
         comment(site, "bounds check end");
     }
@@ -1393,8 +1411,8 @@ class machine {
         output.switch_section(section::rodata);
         for (const read_only_constant& constant : constants) {
             // note: a byte alignment needs no directive
-            if (target_.string_alignment > 1) {
-                output.align(target_.string_alignment);
+            if (target_.read_only_constant_alignment > 1) {
+                output.align(target_.read_only_constant_alignment);
             }
 
             output.label(0, constant.label);
@@ -1692,8 +1710,7 @@ class machine {
     // the compares and branches of 'check_bounds' after its plan, between the
     // begin and end comments: the sign tests, then the upper compare; none
     // for an empty plan, e.g. a start that the walk of its address checked,
-    // under '--checks=lower' alone; it frees the registers it allocates, the
-    // capacity checks leave theirs to the scope of their caller
+    // under '--checks=lower' alone
     virtual auto emit_bounds_check(const emit_site site,
                                    const bounds_range& range,
                                    const bounds_plan& plan) -> void = 0;
@@ -2296,6 +2313,11 @@ class machine {
         };
     }
 
+    // the largest value of the default type, at which bounds are compared
+    [[nodiscard]] auto default_signed_max() const -> uint64_t {
+        return (uint64_t{1} << (default_type().size_bits() - 1)) - 1;
+    }
+
     // the failures of 'handler' at 'lines' of the file 'file_ix': a stub per
     // line loads the line and enters the entry of the file, which prints
     // 'panic: NAME at FILE:', loads the exit code and enters the shared line
@@ -2533,17 +2555,12 @@ class machine {
 
         comment(site, "lower bound");
 
-        // the compare is at the default type, 'signed_max' its largest value
-        const uint64_t signed_max{
-            (uint64_t{1} << (default_type().size_bits() - 1)) - 1,
-        };
-
         // note: the unsigned upper compare already fails a negative index or
         //       count as long as the limit is below 2^(width - 1), only a sum
         //       'index + count' needs both signs checked
 
         if (checks.bounds_upper and not range.count and
-            range.array_count <= signed_max) {
+            range.array_count <= default_signed_max()) {
 
             comment(site, "{} lower bound covered by the unsigned upper bound",
                     range.checked.register_name());

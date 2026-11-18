@@ -1253,8 +1253,6 @@ class machine_x86_64 final : public machine {
 
         const operand& count{*range.count};
 
-        const operation_scope scope{*this};
-
         const operand top{
             alloc_scratch_register(site, default_type()),
         };
@@ -1966,7 +1964,7 @@ class machine_x86_64 final : public machine {
                 max_padding_gaps_zeroed_one_by_one_,
             },
             .memory_counter_pressure_count{memory_counter_pressure_count_},
-            .string_alignment{1},
+            .read_only_constant_alignment{1},
             .stack_limit_address{},
             .frame_base_register{"rbx"},
             .variables_base_register{"rbp"},

@@ -694,7 +694,8 @@ class machine_rv32i : public machine {
                    const size_t alignment, const operand& dst)
         -> void override {
 
-        const operation_scope bulk_scope{*this};
+        // the registers of the operation are not those of the result
+        const operation_scope bulk_scope{*this, dst};
 
         bulk_operation bulk{
             begin_array_operation(site, "lhs", "rhs", alignment),
@@ -703,13 +704,7 @@ class machine_rv32i : public machine {
         load_bulk_addresses(site, bulk, lhs, rhs);
 
         emit_count(bulk.count());
-
-        {
-            // scaling the count must not pick the result registers
-            const operation_scope scope{*this, dst};
-
-            count_to_bytes(site, bulk, element_size_bytes);
-        }
+        count_to_bytes(site, bulk, element_size_bytes);
 
         compare_runtime_count(site, bulk, dst);
     }
@@ -1038,35 +1033,12 @@ class machine_rv32i : public machine {
     // overridden methods
     //
 
-    // the operation scope frees its temporaries before the end comment
     auto emit_bounds_check(const emit_site site, const bounds_range& range,
                            const bounds_plan& plan) -> void override {
 
-        // note: array lengths are limited by the variables that hold the
-        //       arrays, the line is loaded with 'li' into a 32-bit register
-
-        assert(range.array_count <= std::numeric_limits<uint32_t>::max() and
-               site.src_loc_tk.get().at_line() <=
-                   std::numeric_limits<uint32_t>::max());
-
-        operation_scope scope{*this, range.checked};
-
-        if (range.count) {
-            scope.protect(*range.count);
-        }
-
-        // an index of 32 bits is below 2^31 and never reaches a count of 2^31
-        // or more, a negative one is left to the lower check
-        const bool upper_compared{
-            plan.upper and
-                (range.count or
-                 range.array_count <=
-                     static_cast<size_t>(std::numeric_limits<int32_t>::max())),
-        };
-
         size_t test_count{plan.sign_tested.size()};
 
-        if (upper_compared) {
+        if (plan.upper) {
             test_count += upper_bound_test_count(range, plan.lower_checked);
         }
 
@@ -1077,11 +1049,6 @@ class machine_rv32i : public machine {
         }
 
         if (not plan.upper) {
-            return;
-        }
-
-        if (not upper_compared) {
-            comment(site, "upper bound: a 32-bit index is below the count");
             return;
         }
 
@@ -1457,7 +1424,7 @@ class machine_rv32i : public machine {
             },
             // note: a load and store machine counts in a register
             .memory_counter_pressure_count{},
-            .string_alignment{word_size_bytes_},
+            .read_only_constant_alignment{word_size_bytes_},
             .stack_limit_address{},
             .frame_base_register{"s1"},
             .variables_base_register{"s0"},
@@ -1847,6 +1814,11 @@ class machine_rv32i : public machine {
         const std::string top{
             upper_bound_top(site, range, limit, lower_checked, tests),
         };
+
+        // note: array lengths are limited by the variables that hold the
+        //       arrays
+
+        assert(range.array_count <= std::numeric_limits<uint32_t>::max());
 
         assembler_.li(site.indent, limit.register_name(), range.array_count);
 

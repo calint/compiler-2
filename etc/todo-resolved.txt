@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 497 (2026-11-19, bug hunt: compile-time values and
+    constant data, 'let', typed constants, folding and 'dat'; design: the
+    first half of the rv32i backend, 'machine_rv32i.hpp'; readability: a
+    newcomer walks the first third of 'machine.hpp')
+    => bug hunt: no defect; a model generator of 'let' chains of every
+       width used as sizes, indexes, shift counts, divisors and generic
+       arguments, inlined and noinline calls with constant arguments,
+       'dat' arrays and records with partial initializers, strings and
+       run-time reads and writes, a third with one statement of known
+       verdict (an error or a panic); one constant expression in five
+       places that must agree; dat against var initializer pairs: about
+       77000 builds, 90 probes; 14 mutants of the folding and data code,
+       all caught by the suite
+    => design: the base 'check_bounds' decides that a 32-bit index needs
+       no upper compare ('default_signed_max', shared with
+       'lower_bound_tests') and opens the scope of the bounds check like
+       those of the frame and stack checks, the backends no longer do;
+       'equal_elements' protects its result with the scope of the
+       operation; the line assert of the rv32i bounds check is gone and
+       the count assert is next to its 'li' (-14 lines; only listing
+       comments of freed registers move); eight ideas kept with reasons
+       (the branch routes have different targets, the two immediate
+       loads narrow to different types)
+    => readability: 'target_description::string_alignment' renamed
+       'read_only_constant_alignment', it aligns initializers too (the
+       round 417 item loses that part, 'string_data' names the form of
+       its directive like 'zero_data'); two comments ('call_log_',
+       'version_scope' gives back no end state of a dry run); 41
+       functions, 2 predictions wrong
 [x] easy: round 496 (2026-11-19, bug hunt: the bare-metal rv32i images
     and the limits '--memory', '--vars' and '--stack'; design: the x86_64
     backend, 'machine_x86_64.hpp'; readability: a newcomer walks the last
