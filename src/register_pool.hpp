@@ -83,13 +83,14 @@ class register_pool final {
 
     auto protect(const uint32_t mask) -> void { unavailable_ |= mask; }
 
+    // a register that is free, or protected by an operation that consumes
+    // it, see 'machine::operation_scope::alloc_load_register'
     auto push(const allocation& entry) -> void {
-        const uint32_t mask{uint32_t{1} << entry.index};
-
-        assert(not is_unavailable(mask));
+        assert(not std::ranges::contains(allocations_, entry.index,
+                                         &allocation::index));
 
         allocations_.push_back(entry);
-        unavailable_ |= mask;
+        unavailable_ |= uint32_t{1} << entry.index;
     }
 
     // forgets what 'protect' added since 'saved' was read by
@@ -112,17 +113,6 @@ class register_pool final {
     // the registers that are allocated or protected, none when all is freed
     [[nodiscard]] auto unavailable_mask() const -> uint32_t {
         return unavailable_;
-    }
-
-    // the protected registers of 'mask', none of which is allocated, may be
-    // allocated
-    auto unprotect(const uint32_t mask) -> void {
-        assert(std::ranges::none_of(
-            allocations_, [&](const allocation& allocated) -> bool {
-                return (mask & (uint32_t{1} << allocated.index)) != 0;
-            }));
-
-        unavailable_ &= ~mask;
     }
 };
 

@@ -1448,9 +1448,9 @@ class noinline_call final {
         x.check_frame_capacity({call_.tk, tc.indent()}, frame_address,
                                call_.func->frame_size_label(array_lengths));
 
-        // the registers holding the addresses of the arguments are still
-        // allocated, the check must not change a register that is free but
-        // used by the call
+        // note: 'held' is not released yet, so the scratch registers of the
+        //       check do not take a register that holds an argument address
+
         x.check_stack_capacity({call_.tk, tc.indent()});
 
         return write_frame_slots(tc, frame_address, dst, arguments);
@@ -1493,7 +1493,8 @@ class noinline_call final {
     // statics
     //
 
-    // the body is compiled for the lengths of the array arguments
+    // one length per array parameter, none when unknown; the body is compiled
+    // for these lengths
     [[nodiscard]] static auto
     array_argument_lengths(const stmt_def_func& func,
                            const std::span<const ident_info> arguments)
@@ -2139,8 +2140,8 @@ class stmt_call final : public statement {
 
     // what the destination and the bindings of the current scope decide,
     // checked before the inlined and the noinline paths split, so inlining
-    // does not change what is accepted; the result is the call's own, an
-    // error in it has no call frame
+    // does not change what is accepted; an error here is in the caller and
+    // has no call frame
     auto assert_call_accepted(
         const toc& tc, const destination& dst,
         const std::span<const std::optional<place>> places) const -> void {
@@ -2416,7 +2417,7 @@ class stmt_call final : public statement {
             .reached{},
         };
 
-        // note: the parts are compared, not named
+        // note: the name is left empty, only the parts are compared
 
         visit_effects_of(tc, param_index, {}, target,
                          [&](const call_effect& effect) -> void {
@@ -2451,6 +2452,7 @@ class stmt_call final : public statement {
                          const std::string_view what,
                          std::optional<generic_call> deduction) -> void {
 
+        // a callee whose body is not parsed is reported before a missing '('
         if (not deduction) {
             take_callee(tc);
         }
@@ -2550,7 +2552,7 @@ class stmt_call final : public statement {
             return;
         }
 
-        // a deducing argument names the type of its literal, it told it
+        // a literal that deduced the type keeps its written type
         parse_typed_argument(tc, tz, *param_type,
                              param.is_mut or
                                  deduction.is_deducing_argument(arg_index));
@@ -2703,9 +2705,6 @@ class stmt_call final : public statement {
     // type
     auto take_callee(const toc& tc) -> void {
         assert_callee_body_parsed(tc);
-
-        // the type is the result type of the callee, resolved before, so an
-        // unknown callee is reported before a missing '('
         set_type(callee().result_type());
     }
 
@@ -2765,9 +2764,9 @@ class stmt_call final : public statement {
     }
 
     // what the body reaches of 'target', the argument of the parameter at
-    // 'param_index' or the result (empty), by its record; a call of the
-    // function it is in, whose record the parse is still making, reaches it
-    // whole, written unless the parameter is read-only
+    // 'param_index' or the result when 'param_index' is none, by its record;
+    // a call of the function it is in, whose record the parse is still
+    // making, reaches it whole, written unless the parameter is read-only
     // note: only a function that calls itself has an incomplete record
     //       ('assert_callee_body_parsed')
     auto visit_effects_of(const toc& tc,

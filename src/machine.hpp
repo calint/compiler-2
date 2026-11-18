@@ -2162,8 +2162,6 @@ class machine {
 
         comment(site, "allocate scratch register -> {}", *register_name);
 
-        state_.registers.unprotect(consumed & register_mask(*register_name));
-
         push_allocation(site, *register_name,
                         register_pool::holder_kind::scratch);
 

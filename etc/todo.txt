@@ -1007,6 +1007,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
     is held, while 'store_bytes' falls back to immediate stores at any
     size: 'p = {"<200 bytes>"}' is accepted and 'p = {"abc"}' is not; rv32i
     accepts all three
+[ ] easy: user decision (round 478 RA): the later-operand rule
+    ('assert_not_written_later', 'ub_order.hpp') also checks the names in
+    the arguments of a call among the earlier operands, which ran before
+    the later ones: 'add(id(g + 1), w())' with 'w' writing the global 'g'
+    is rejected ("'g' may be written by the call of 'w' in a later
+    argument"), the same inlined and 'noinline', no UB either way; README
+    3.1 does not state it; either 3.1 says the arguments of an earlier
+    call count as read where it is used, or 'visit_operand_reads' skips
+    the arguments of a call operand (a special case in the walk)
 [ ] easy: user decision (round 288 ZC): 'foo g[k].it, bump()' with 'bump'
     writing 'k' is accepted (the address of 'g[k].it' is taken before the
     count, the same on every target), while 'array_copy(g[k].it, b,

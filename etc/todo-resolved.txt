@@ -1,7 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 477 (2026-11-18, bug hunt: conditions, bool values and
+[x] easy: round 478 (2026-11-18, bug hunt: global variables and
+    whole-program state; design: how registers are handed out and given
+    back, 'register_pool.hpp'; readability: a newcomer walks the second
+    half of 'stmt_call.hpp')
+    => bug hunt: no defect; a model generator of globals of every width,
+       records, arrays and a generic instance, 'var' initializers over
+       earlier globals, inlined, 'noinline' and recursive functions and
+       methods that read and write them, globals and their parts as
+       arguments, shadowing parameters and locals, each program built
+       all inlined, all 'noinline' and mixed: about 9700 programs, 140000
+       runs, 24 probes; 3 of 4 mutants caught by the generator, the
+       fourth (the later-operand order check off) by test 1618; the
+       later-operand rule also checks the arguments of an earlier call,
+       a conservative rejection: todo, user decision
+    => design: 'register_pool::unprotect' is gone, it cleared the bit of
+       a consumed register only for 'push' to set it again; 'push' now
+       asserts a register is allocated once (-12 lines, listings equal);
+       eight ideas kept with reasons (one unwind policy for
+       'held_registers' and 'operation_scope' was tried before, split
+       masks need two saved values, 'max_scratch_registers' is kept
+       without the trace)
+    => readability: seven comments (the 'held' registers during the
+       stack check, 'array_argument_lengths' says what it returns, the
+       wrong order claim of 'take_callee' removed and placed at its call,
+       'visit_effects_of' and the result when 'param_index' is none); 66
+       functions, 7 predictions wrong
+[x] easy: round 477(2026-11-18, bug hunt: conditions, bool values and
     short-circuit; design: the x86_64 assembler, 'assembler_x86_64.hpp';
     readability: a newcomer walks the first half of 'stmt_call.hpp')
     => bug hunt: no defect; a model generator of comparisons of every
