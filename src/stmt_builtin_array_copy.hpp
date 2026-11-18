@@ -59,7 +59,7 @@ class stmt_builtin_array_copy final : public statement {
         // may share storage ('stmt_call::assert_no_shared_storage'), e.g. two
         // 'mut' parameters bound to one array
         const bool checks_overlap{
-            tc.checks().overlap and may_overlap(tc),
+            tc.checks().overlap and in_same_variable(tc),
         };
 
         bulk_operands::argument_emitters emit{operands_, tc, tok()};
@@ -96,7 +96,7 @@ class stmt_builtin_array_copy final : public statement {
 
   private:
     // the two arrays are in the same variable, e.g. 'array_copy(a[0], a[1], n)'
-    [[nodiscard]] auto may_overlap(const toc& tc) const -> bool {
+    [[nodiscard]] auto in_same_variable(const toc& tc) const -> bool {
         const std::optional<storage_path> src{operands_.first().storage(tc)};
         const std::optional<storage_path> dst{operands_.second().storage(tc)};
 

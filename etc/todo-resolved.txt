@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 492 (2026-11-18, bug hunt: integer widths and
+    conversions; design: the register report as a whole,
+    'register_report.hpp' and what feeds it; readability: a newcomer walks
+    'access_path.hpp', 'expr_zero.hpp', 'stmt_include.hpp', 'decouple.hpp',
+    'stmt_builtin_array_copy.hpp', 'ub_order.hpp' and 'expr_type_impl.hpp')
+    => bug hunt: no defect; a model generator of locals, fields, arrays and
+       globals of every width, values at the edges of each width and of
+       the immediates, all operators with unary '-' and '~', nested
+       conversions, typed constants, calls at the parameter width and
+       mixed-width comparisons, each run with and without checks, inlined
+       and noinline, with '--nopt': 28000 programs, 192000 runs, 150
+       probes; 20 mutants of the conversion code, 18 caught by the suite,
+       the other two equivalent (a width tie of 'bool' or 'int' against
+       'i64', a factor of -1 of an 'i8')
+    => design: no change in the structure, each number of the report is
+       computed once and the peak and failure paths share their lines; a
+       note that the calls of a body of its own save its frame base, which
+       the other counts leave out; ten ideas kept with reasons
+    => readability: the note of 'access_path::overlaps' gives the reason
+       the steps are alike (same root, earlier steps overlap), the private
+       'may_overlap' of 'array_copy' renamed 'in_same_variable', it
+       compares the roots; 37 functions, 2 predictions wrong
 [x] easy: round 491 (2026-11-18, bug hunt: malformed and near-valid
     programs in the front end under the sanitizers; design: the operation
     scope of the backends and 'alloc_load_register'; readability: a

@@ -373,6 +373,9 @@ class register_reporter final {
     }
 
     // the registers that the calls of each function with a body of its own save
+    // note: a call made in a body of its own also saves its frame base, which
+    //       the other counts of the report leave out, see
+    //       'machine::registers_saved_by_call'
     [[nodiscard]] auto noinline_call_lines() const -> std::vector<std::string> {
         const machine& x{machine_.get()};
 

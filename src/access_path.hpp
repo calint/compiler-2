@@ -115,8 +115,8 @@ class access_path final {
             const path_step& lhs_step{steps_.at(i)};
             const path_step& rhs_step{other.steps_.at(i)};
 
-            // note: an index follows a field, so steps at the same position
-            //       are both fields or both indexes
+            // note: the roots are the same and the steps before overlap, so
+            //       both steps select in the same type
 
             assert(lhs_step.is_field == rhs_step.is_field);
 
