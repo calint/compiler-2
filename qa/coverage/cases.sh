@@ -8237,3 +8237,12 @@ if [[ $MACHINE != x86_64 ]]; then SRC=6063 && EXP=65 && RUN; fi
 # test of the stored value, so the branch after it reads the flags of its own
 # comparison
 SRC=6100 && EXP=0 && RUN
+
+# a result written field by field has the padding after each element of an
+# array field zeroed, for an element type of one run of bytes with padding at
+# its end, on a frame that an earlier call left nonzero
+SRC=6160 && EXP=0 && RUN
+
+# a 'dat' of a user type places each field after padding of 1 and 2 bytes,
+# also in a nested instance and in an array of the type
+SRC=6161 && EXP=0 && RUN

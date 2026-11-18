@@ -1,0 +1,33 @@
+# a 'dat' of a user type places each field at its offset after padding of 1
+# and 2 bytes, also in an array of the type and in a nested instance
+
+type pair {
+    a i8,
+    b i16,
+    c bool,
+    d i32,
+}
+
+type outer {
+    k i8,
+    p pair,
+    ps pair[2],
+}
+
+dat one = pair{1, 2, true, 4}
+dat two = outer{5, {6, 7, true, 8}, {{9, 10}, {11, 12, true, 13}}}
+
+func main() {
+    if one.b != 2 exit(1)
+    if not one.c exit(2)
+    if one.d != 4 exit(3)
+    if two.p.b != 7 exit(4)
+    if two.p.d != 8 exit(5)
+    if two.ps[0].b != 10 exit(6)
+    if two.ps[1].b != 12 exit(7)
+    if two.ps[1].d != 13 exit(8)
+
+    var p = pair{1, 2, true, 4}
+    if p != one exit(9)
+    exit(0)
+}

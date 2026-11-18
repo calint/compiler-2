@@ -1,0 +1,43 @@
+# a result written field by field has the padding after each element of an
+# array field zeroed, also for an element type whose fields are one run of
+# bytes with padding only at its end; the frame of an earlier call left the
+# bytes nonzero
+
+type entry {
+    a i32,
+    b i8,
+}
+
+type table {
+    k i8,
+    es entry[3],
+}
+
+func table.make() self {
+    self.k = 1
+    self.es[0].a = 2
+    self.es[0].b = 3
+    self.es[1].a = 4
+    self.es[1].b = 5
+    self.es[2].a = 6
+    self.es[2].b = 7
+}
+
+func noinline fill() {
+    var junk = i8[256]
+    foo junk {
+        e = -1
+    }
+}
+
+func noinline check() {
+    var x = table.make()
+    var y = table{1, {{2, 3}, {4, 5}, {6, 7}}}
+    if x != y exit(1)
+}
+
+func main() {
+    fill()
+    check()
+    exit(0)
+}

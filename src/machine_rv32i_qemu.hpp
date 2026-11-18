@@ -23,7 +23,7 @@ class machine_rv32i_qemu final : public machine_rv32i_bare_metal {
     static constexpr size_t ram_start_address_{0x8000'0000};
     static constexpr size_t ram_size_bytes_{0x7e0'0000};
     // note: 126 MiB, the 128 MiB of the 'virt' machine without '-m' less the
-    //       2 MiB that qemu keeps after the image for its device tree, fixed,
+    //       2 MiB at their end where qemu puts its device tree, fixed,
     //       '--memory' is for 'rv32i-fpga'
 
   public:

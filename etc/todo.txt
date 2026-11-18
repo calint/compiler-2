@@ -1013,6 +1013,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
     is held, while 'store_bytes' falls back to immediate stores at any
     size: 'p = {"<200 bytes>"}' is accepted and 'p = {"abc"}' is not; rv32i
     accepts all three
+    => round 493 RA, records against a model: a function that passes 9 of
+       its parameters to an inlined constructor of an 80-byte record with
+       5 padding gaps ('self = {}', or the result padding that
+       'zero_result_padding' zeroes after the arguments) is rejected on
+       x86_64 ("register rax holds a value computed at ...", one address
+       register per forwarded parameter), also when the function is never
+       called (the check of its body); rv32i accepts; of 3000 generated
+       programs with such constructors (up to 14 parameters) 179 were
+       rejected on x86_64, 171 of them accepted on rv32i-fpga; 13
+       forwarded 'int' parameters give "out of scratch registers" on
+       x86_64 for any inlined callee
 [ ] easy: (round 485 RA) 'qa/fuzz/fuzzlib.py' mixes encodings:
     'build_and_run' writes the program with the default UTF-8 ('open(path,
     "w")') while 'split_include', 'Findings.add' and the reads of kept

@@ -108,9 +108,9 @@ class stmt_block final : public statement {
     // the compile rules too, see 'compile_toc::check_skipped'
     auto compile_from(compile_toc& tc, const size_t first) const -> void {
         for (size_t i{first}; i < statements_.size(); ++i) {
-            // e.g. the code after a 'return', or of a branch whose condition
-            // never returns, as 'stop() == 1' with 'stop' an inlined 'exit';
-            // 'check_skipped' compiles it as reached
+            // e.g. the code after an 'if' whose folded branch returns, or of
+            // a branch whose condition never returns, as 'stop() == 1' with
+            // 'stop' an inlined 'exit'; 'check_skipped' compiles it as reached
             if (not tc.is_reachable()) {
                 tc.check_skipped([&] -> void { compile_from(tc, i); });
                 return;
