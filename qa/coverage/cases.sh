@@ -8208,3 +8208,27 @@ SRC=5700 && EXP=0 && RUN
 # failed checks at the same line of two files have stubs of their own, the
 # panic names the included file
 SRC=5980 && EXP=255 && RUN_ERR
+
+# rv32i: a remainder into the temporary of a noinline call argument while
+# 'a1', where the helper returns it, holds a value of the expression around:
+# the result is kept in another register before the saved ones are restored
+if [[ $MACHINE != x86_64 ]]; then SRC=6060 && EXP=7 && RUN; fi
+
+# the register report after the code: the frames at the first of two equal
+# peaks, the frames worth making noinline, the most registers each callee
+# holds itself without the backend's own, and what the noinline calls save;
+# the script prints the report and the most scratch registers of the footer
+SRC=6061 && DIFFPY
+
+# rv32i: a remainder into the temporary of a noinline call argument needs a
+# register for its result while the helper keeps 'a0' and 'a1': out of
+# scratch registers with one free but kept by the operation, which the report
+# counts
+if [[ $MACHINE != x86_64 ]]; then SRC=6062 && COMPERR; fi
+
+# rv32i: a product whose factor is an element of an array past 2 KiB of
+# variables, with the nesting holding the scratch registers before 'a7': the
+# version computed in the destination runs out of registers, since the
+# address of the element needs one besides 'a0' and 'a1', which hold the
+# factors of the helper, and the other version is kept
+if [[ $MACHINE != x86_64 ]]; then SRC=6063 && EXP=65 && RUN; fi

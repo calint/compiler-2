@@ -1,0 +1,25 @@
+# the register report after the code: the frames at the first of two equal
+# peaks, the frames worth making noinline, the most registers each callee
+# holds itself without the backend's own, and what the noinline calls save;
+# the script prints the report and the most scratch registers of the footer
+
+func noinline g(x i32) res i32 {
+    res = x + (x * (x + 1))
+}
+
+func h(x i32, y i32) res i32 {
+    res = x + (y * (x + g(y)))
+}
+
+func k(x i32) res i32 {
+    res = x - h(x, x + (x * x))
+}
+
+func main() {
+    var a = i32(7)
+    var b = i32(3)
+    var r = a + (b + (a * k(b + (a - b))))
+    # note: a peak as high as the first, the report keeps the first
+    var s = a + (b + (a * k(b + (a - b))))
+    exit(i8((r + s) & 127))
+}

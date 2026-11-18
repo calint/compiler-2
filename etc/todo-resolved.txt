@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 489 (2026-11-18, bug hunt: register pressure, run again
+    after round 488; design: the rv32i targets as a family,
+    'machine_rv32i_bare_metal.hpp', 'machine_rv32i_fpga.hpp',
+    'machine_rv32i_linux.hpp' and 'machine_rv32i_qemu.hpp'; readability: a
+    newcomer walks the last third of 'toc.hpp')
+    => bug hunt: no miscompile; a model generator of deep and
+       right-nested chains through inlined and noinline functions and
+       methods, nested indexes and fields, narrow operands, 'foo' nests,
+       the array built-ins and whole records, each program trimmed per
+       target to just fit and run plain, inlined, noinline, '--nopt', every
+       '--versions', with the register report and with checks, a third
+       ending in a statement that fails a check deep in a nest: 10100
+       programs, 184000 runs, 2000 probes; 24 mutants of the allocator,
+       the report and the backends, 13 caught by the suite; the failure
+       report said '28 of 29 registers live' for 'out of scratch
+       registers' while the helper kept the 29th: the heading now counts
+       the registers an operation keeps ('kept_register_count'); tests
+       6060 to 6063 (a helper result kept across the restore, the report
+       and the footer after the code, the kept register, the version
+       computed in the destination out of registers); a load register
+       kept from 'dst' looked unneeded (no assert fired): round 490
+    => design: the abstract 'machine_rv32i' has no public constructor, the
+       linux target names its table like the bare-metal ones (-1 line,
+       listings equal); 'assembler_rv32i::memory_end_address' is a size
+       from the start of the image: 'used_memory_bytes'; eight ideas kept
+       with reasons (the startup, exit, sector and uart routines differ by
+       target, the fpga '--memory' bound is the fpga's)
+    => readability: two comments ('get_type_or_throw' rejects 'void' and
+       built-ins wider than the default type, 'add_read_only_constant'
+       returns the first label of equal bytes) and 'assert_loop_names_free'
+       renamed 'assert_foo_names_free'; 91 functions, 4 predictions wrong
 [x] easy: round 488 (2026-11-18, bug hunt: register pressure; design:
     the backend interface, 'machine.hpp'; readability: a newcomer walks the
     middle third of 'toc.hpp')

@@ -1,0 +1,39 @@
+max scratch registers in use: 10
+register use at the peak: 10 of 14 registers live
+
+  held  frame, registers (allocated at)
+     4  main
+          r15 21:18
+          r14 21:23
+          r13 21:27
+          r12 21:29
+     2  k called at 21:27
+          r10 15:15
+          r9 15:20
+     4  h called at 15:15
+          r8 11:16
+          r11 11:21
+          rbx 11:25
+          rdx 11:25
+
+these frames are not noinline, making one noinline starts its body with all 13
+registers free and saves the registers held above it around the call:
+
+  held inside  saved at the call  candidate frame
+            6                  4  k
+            4                  6  h
+
+per callee, the most registers one call holds itself
+
+  own  calls  callee
+    5      1  main
+    4      2  g (noinline body)
+    4      2  h
+    3      2  k
+
+calls of functions with a body of their own save the registers held at the
+call
+
+  saved  calls  callee, most saved at
+      9      2  g 11:25
+0

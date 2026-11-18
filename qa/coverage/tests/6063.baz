@@ -1,0 +1,15 @@
+# rv32i: a product whose factor is an element of an array past 2 KiB of
+# variables, with the nesting holding the scratch registers before 'a7': the
+# version computed in the destination runs out of registers, since the
+# address of the element needs one besides 'a0' and 'a1', which hold the
+# factors of the helper, and the other version is kept
+
+func main() {
+    var pad = i8[5000]
+    var a = i32(7)
+    var b = i32(3)
+    var arr = i32[8]
+    arr[3] = 5
+    var r = a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a * arr[b]))))))))))))))))))))))))))
+    exit(i8(r - 100))
+}

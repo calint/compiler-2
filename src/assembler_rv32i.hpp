@@ -607,16 +607,6 @@ class assembler_rv32i final : public assembler {
         load(indent, op::lw, rd, std::move(offset), base);
     }
 
-    // the address after the variables, valid once jumps are resolved
-    [[nodiscard]] auto memory_end_address() const -> size_t {
-        assert(jumps_resolved_);
-
-        const image_layout image{layout_image()};
-        const size_t variables{section_index(section::variables)};
-
-        return image.bases.at(variables) + image.sizes.at(variables);
-    }
-
     // copies 'rs' to 'rd' where 'rs' is written before it is read again: the
     // instruction just added, when it computes 'rs', computes 'rd' instead
     auto move_consumed(const size_t indent, const std::string_view rd,
@@ -828,6 +818,17 @@ class assembler_rv32i final : public assembler {
             const std::string_view base) -> void {
 
         store(indent, op::sw, src, std::move(offset), base);
+    }
+
+    // the bytes from the start of the image to the end of the variables,
+    // valid once jumps are resolved
+    [[nodiscard]] auto used_memory_bytes() const -> size_t {
+        assert(jumps_resolved_);
+
+        const image_layout image{layout_image()};
+        const size_t variables{section_index(section::variables)};
+
+        return image.bases.at(variables) + image.sizes.at(variables);
     }
 
     // 'binary' receives the sections as one image from address zero, the

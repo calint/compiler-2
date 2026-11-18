@@ -2505,7 +2505,7 @@ class toc {
 //                  'add_generic_type_instance', 'add_dat',
 //                  'mark_generic_func_instantiated',
 //                  'generic_scope', 'current_definition'
-//   names          'assert_loop_names_free', 'assert_valid_unqualified_name',
+//   names          'assert_foo_names_free', 'assert_valid_unqualified_name',
 //                  'assert_valid_name', 'constant_value_of',
 //                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
 //                  'type_param_named'
@@ -2748,7 +2748,7 @@ class parse_toc final : public toc {
 
     // the names a 'foo' declares are no type parameter either, see
     // 'assert_valid_unqualified_name'
-    auto assert_loop_names_free(const token& foo_tk) const -> void {
+    auto assert_foo_names_free(const token& foo_tk) const -> void {
         for (const std::string_view name : reserved_names::foo_names) {
             if (const type* const bound{type_param_named(name)}) {
                 throw compile_error{
@@ -2856,6 +2856,8 @@ class parse_toc final : public toc {
             src_loc_tk, std::format("function {} not found", in_quotes(name))};
     }
 
+    // a type a value can have on this target: not 'void', no built-in wider
+    // than the default type
     [[nodiscard]] auto get_type_or_throw(const token& type_tk) const
         -> const type& {
 
@@ -3354,8 +3356,8 @@ class compile_toc final : public toc {
         emitted_bodies_.add_once(std::move(body));
     }
 
-    // a read-only constant labeled 'kind' and the call path, e.g. "str" for
-    // a string, kept once by its bytes
+    // the label of a read-only constant, 'kind' and the call path, e.g. "str"
+    // for a string; equal bytes are kept once, under the first label
     [[nodiscard]] auto add_read_only_constant(const std::string_view kind,
                                               const token& src_loc_tk,
                                               std::string bytes)

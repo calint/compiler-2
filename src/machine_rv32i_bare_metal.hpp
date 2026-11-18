@@ -130,20 +130,20 @@ class machine_rv32i_bare_metal : public machine_rv32i {
 
         const assembler_rv32i& output{assembler()};
 
-        const size_t memory_end_address{output.memory_end_address()};
+        const size_t used_memory_bytes{output.used_memory_bytes()};
         const size_t stack_bytes{options().stack_size_bytes};
 
         // note: 'bare_metal_target' rejected a stack larger than the memory
         assert(stack_bytes <= memory_size_bytes_);
 
-        if (memory_end_address <= memory_size_bytes_ - stack_bytes) {
+        if (used_memory_bytes <= memory_size_bytes_ - stack_bytes) {
             return;
         }
 
         throw unlocated_error{std::format(
             "code, data and variables use {} B and the stack {} B, which "
             "exceeds the {} B of device memory",
-            memory_end_address, stack_bytes, memory_size_bytes_)};
+            used_memory_bytes, stack_bytes, memory_size_bytes_)};
     }
 
   private:

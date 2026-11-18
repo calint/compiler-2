@@ -1,0 +1,16 @@
+# rv32i: a remainder into the temporary of a noinline call argument needs a
+# register for its result while the helper keeps 'a0' and 'a1': out of
+# scratch registers with one free but kept by the operation, which the report
+# counts
+
+func noinline f(p i32) res i32 {
+    res = p + 1
+}
+
+func main() {
+    var a = i32(7)
+    var b = i32(3)
+    # note: the nesting holds every scratch register up to 'a7'
+    var r = b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + (a + (b + f(a % (b ^ a))))))))))))))))))))))))))))
+    exit(i8(r - 100))
+}

@@ -59,6 +59,9 @@ struct register_use_report final {
     size_t noinline_register_total{};
     // the live registers fixed by an instruction or the calling convention
     size_t named_count{};
+    // at a failure, the scratch registers that an operation keeps from being
+    // picked without holding them, e.g. those a helper call changes
+    size_t kept_count{};
     std::vector<frame_use> frames;
 
     [[nodiscard]] auto lines() const -> std::vector<std::string> {
@@ -150,9 +153,15 @@ struct register_use_report final {
                 : std::format(", {} named by instructions", named_count),
         };
 
+        const std::string kept_note{
+            kept_count == 0
+                ? std::string{}
+                : std::format(", {} kept by the operation", kept_count),
+        };
+
         return {
-            std::format("{}: {} of {} registers live{}", heading, live_count(),
-                        register_total, named_note),
+            std::format("{}: {} of {} registers live{}{}", heading,
+                        live_count(), register_total, named_note, kept_note),
             "",
             std::format("{}  frame, registers (allocated at)",
                         right_aligned(held_heading_, held_width_)),
@@ -233,7 +242,7 @@ class register_reporter final {
 
         const std::vector<std::string> lines{
             report_lines("register use at the failure", pool.allocations(),
-                         x.state_.trace.frames()),
+                         x.state_.trace.frames(), kept_register_count()),
         };
 
         for (const std::string& part : wrapped_lines(lines, max_detail_width)) {
@@ -259,7 +268,7 @@ class register_reporter final {
 
         std::vector<std::string> lines{
             report_lines("register use at the peak", peak.allocations,
-                         peak.frames),
+                         peak.frames, 0),
         };
 
         lines.append_range(peak_note_lines(peak.frames));
@@ -340,6 +349,29 @@ class register_reporter final {
         return uses;
     }
 
+    // the scratch registers that are unavailable but not allocated: an
+    // operation keeps them for its operands or the registers it changes
+    [[nodiscard]] auto kept_register_count() const -> size_t {
+        const machine& x{machine_.get()};
+
+        const register_pool& pool{x.state_.registers};
+
+        size_t kept{};
+
+        for (const std::string_view name : x.scratch_registers()) {
+            const bool is_allocated{
+                std::ranges::contains(pool.allocations(), x.pool_index(name),
+                                      &register_pool::allocation::index),
+            };
+
+            if (x.is_register_unavailable(name) and not is_allocated) {
+                ++kept;
+            }
+        }
+
+        return kept;
+    }
+
     // the registers that the calls of each function with a body of its own save
     [[nodiscard]] auto noinline_call_lines() const -> std::vector<std::string> {
         const machine& x{machine_.get()};
@@ -409,12 +441,13 @@ class register_reporter final {
                                : "");
     }
 
-    // what each frame of 'frames' holds of the 'allocations', as lines of text
+    // what each frame of 'frames' holds of the 'allocations', as lines of
+    // text; 'kept' counts the registers an operation keeps at a failure
     [[nodiscard]] auto
     report_lines(const std::string_view heading,
                  const std::span<const register_pool::allocation> allocations,
-                 const std::vector<register_trace::frame>& frames) const
-        -> std::vector<std::string> {
+                 const std::vector<register_trace::frame>& frames,
+                 const size_t kept) const -> std::vector<std::string> {
 
         std::vector<register_use_report::frame_use> uses{frame_uses(frames)};
         size_t named{};
@@ -441,6 +474,7 @@ class register_reporter final {
             .register_total{x.scratch_register_count(allocations)},
             .noinline_register_total{x.noinline_body_register_count()},
             .named_count{named},
+            .kept_count{kept},
             .frames{std::move(uses)},
         };
 

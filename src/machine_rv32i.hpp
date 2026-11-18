@@ -443,10 +443,6 @@ class machine_rv32i : public machine {
     assembler_rv32i assembler_;
 
   public:
-    // 'options.binary_file_name' receives the image of the resolved output
-    machine_rv32i(const source_files& files, const target_options& options)
-        : machine_rv32i{files, options, rv32i_target()} {}
-
     //
     // overridden methods
     //
@@ -1017,7 +1013,8 @@ class machine_rv32i : public machine {
     }
 
   protected:
-    // a target that differs from 'rv32i_target' passes its own table
+    // 'target' is 'rv32i_target' or a table derived from it;
+    // 'options.binary_file_name' receives the image of the resolved output
     machine_rv32i(const source_files& files, const target_options& options,
                   const target_description& target)
         : machine{files, options, target, assembler_} {}
@@ -1346,7 +1343,7 @@ class machine_rv32i : public machine {
         // instructions, a failing build writes nothing
         assembler_.resolve_jumps();
 
-        check_address_range(assembler_.memory_end_address());
+        check_address_range(assembler_.used_memory_bytes());
     }
 
     [[nodiscard]] auto make_register_operand(const std::string_view name,
@@ -3968,17 +3965,17 @@ class machine_rv32i : public machine {
     }
 
     // the code and data of the image cannot be addressed beyond 32 bits
-    static auto check_address_range(const size_t memory_end_address) -> void {
+    static auto check_address_range(const size_t used_memory_bytes) -> void {
         // note: an end of the address space would wrap to 0
 
-        if (memory_end_address < assembler_rv32i::address_space_bytes) {
+        if (used_memory_bytes < assembler_rv32i::address_space_bytes) {
             return;
         }
 
         throw unlocated_error{std::format(
             "code, data and variables use {} B, which reaches the {} B that "
             "the target addresses",
-            memory_end_address, assembler_rv32i::address_space_bytes)};
+            used_memory_bytes, assembler_rv32i::address_space_bytes)};
     }
 
     // the immediate that a boolean result compares the left side with, when

@@ -25,7 +25,9 @@ class machine_rv32i_linux final : public machine_rv32i {
     static constexpr int syscall_pwrite_{68};
 
   public:
-    using machine_rv32i::machine_rv32i;
+    machine_rv32i_linux(const source_files& files,
+                        const target_options& options)
+        : machine_rv32i{files, options, rv32i_target()} {}
 
   protected:
     //
