@@ -1,0 +1,8 @@
+# a run-time count from a constant start is checked against the elements after
+# the start: 2 from 3 passes the end of 4
+
+func main() {
+    var a = "abc\n"
+    var n = 2
+    write(1, a, n, 3)
+}

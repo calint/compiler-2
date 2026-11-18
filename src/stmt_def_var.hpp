@@ -153,9 +153,9 @@ class initializer_declaration final {
         return constant;
     }
 
-    // the '=' after 'name_tk', 'keyword' names the definition in the
-    // example; the error is at the end of the name, the next token can be on
-    // another line
+    // the '=' after 'name_tk', 'keyword' starts the example of the error;
+    // the error is at the end of the name, the next token can be on another
+    // line
     [[nodiscard]] static auto read_equals(tokenizer& tz,
                                           const std::string_view keyword,
                                           const token& name_tk) -> token {
@@ -184,7 +184,7 @@ class initializer_declaration final {
     }
 
   private:
-    // e.g. 'var s = "hi"' is an 'i8' array of 2
+    // sets the type and size, e.g. 'var s = "hi"' is an 'i8' array of 2
     auto deduce_declaration(parse_toc& tc, tokenizer& tz) -> void {
         // note: the placeholder has the default type until the type is known
         set_type(tc.builtins().default_type());
@@ -348,9 +348,9 @@ class initializer_declaration final {
     // statics
     //
 
-    // the element type of a string, 'i8', or of an array literal, null when
-    // the initializer is neither or a comparison or a connective continues
-    // the literal, an operand that is rejected, e.g. 'var b = [2]{1, 2} == a'
+    // the element type of a string, 'i8', or of an array literal; null when
+    // the initializer is neither or the literal is an operand of a longer
+    // expression, e.g. 'var b = [2]{1, 2} == a', which the parse rejects
     [[nodiscard]] static auto literal_element_type(const parse_toc& tc,
                                                    tokenizer& tz)
         -> const type* {
@@ -514,9 +514,9 @@ class stmt_def_var final : public statement {
     }
 
   private:
-    // as at the parse ('make_stmt_def_var'); the constant keeps the type of
-    // the variable the parse made, also the default type, e.g. 'let m = 0 + k'
-    // compares as an 'int'
+    // the fold of the parse ('make_stmt_def_var'), typed as the variable the
+    // parse made, also at the default type, e.g. 'let m = 0 + k' compares as
+    // an 'int'
     [[nodiscard]] auto fold_let(const toc& tc) const
         -> std::optional<folded_value> {
 

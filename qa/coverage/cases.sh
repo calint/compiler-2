@@ -8194,3 +8194,10 @@ SRC=5460 && COMPERR
 # a 'read' into a global is a write of the global in the record of the
 # function: 'f(g)' of an 'f' that reads into 'g' and reads 'v' is rejected
 SRC=5461 && COMPERR
+
+# a run-time count from a constant start is checked against the elements after
+# the start
+SRC=5580 && EXP=255 && RUN_ERR
+
+# a run-time start moves the buffer by whole elements wider than a register
+SRC=5581 && DIFF

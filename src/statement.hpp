@@ -93,7 +93,7 @@ class one_line_source final {
     // appends the literal starting at 'begin' and returns where it ends,
     // after its closing quote, which an escaped character cannot be; a
     // backslash before a line end continues the literal on the next line, the
-    // comment stays on one
+    // listing comment stays on one line
     // note: the tokenizer rejects a carriage return that is not in a crlf
     //       line end, so dropping it makes a crlf continuation look like a lf
     //       one
@@ -278,8 +278,8 @@ class statement {
     }
 
     // reports what the bodies of the calls in this node read and write, in
-    // the order they are called, see 'call_effect'; the calls of the operands
-    // ('stmt_identifier.hpp')
+    // the order they are called, see 'call_effect'; by default the calls of
+    // the operands ('stmt_identifier.hpp')
     virtual auto visit_call_effects(const toc& tc,
                                     const call_effect_visitor visitor) const
         -> void;
@@ -373,8 +373,8 @@ class statement {
     // statics
     //
 
-    // e.g. 'box<i8>' as the type of a field, a parameter or a result: only a
-    // generic type takes arguments, and there an alias names its instance
+    // rejects type arguments in the type of a field, a parameter or a result,
+    // e.g. 'box<i8>': there an alias names the instance of a generic type
     static auto assert_no_type_arguments(const parse_toc& tc, tokenizer& tz,
                                          const token& type_tk) -> void {
 

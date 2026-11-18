@@ -1,0 +1,14 @@
+# a run-time start moves the buffer by whole elements of 6 bytes, a struct
+# wider than a register
+
+type rec { t i8[6] }
+
+func main() {
+    var rs = rec[3]
+    rs[1].t = "first\n"
+    rs[2].t = "last.\n"
+    var s = 1
+    write(1, rs, 1, s)
+    s = 2
+    write(1, rs, 1, s)
+}

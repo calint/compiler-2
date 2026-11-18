@@ -1,7 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 475 (2026-11-17, bug hunt: methods and user types;
+[x] easy: round 476 (2026-11-18, bug hunt: the input and output built-ins;
+    design: the rv32i assembler, 'assembler_rv32i.hpp'; readability: a
+    newcomer walks 'stmt_def_var.hpp' and 'statement.hpp')
+    => bug hunt: no defect; a model generator of 'read', 'write',
+       'sector_read' and 'sector_write' into arrays, 'dat', record arrays
+       and fields of elements, with constant, run-time and call starts and
+       counts, through inlined and 'noinline' wrappers, one bad count,
+       start, index or sector per program, the card image compared after
+       the run: about 760 programs, 11400 runs, 12 probes; of 7 mutants
+       the x86_64 suite missed two: a run-time count from a constant
+       start checked against the whole array (test 5580) and a run-time
+       start scaled by at most 4 bytes (test 5581)
+    => design: no change; seven ideas kept with reasons ('alignments' as
+       a local adds a parameter, a resolved branch as an 'instruction'
+       stores its target twice, the two paths of 'encode_jump' differ by
+       the condition lookup, 'image_size_bytes' and 'write_line_bytes'
+       ask different questions)
+    => readability: seven comments ('assert_no_type_arguments' says what
+       it rejects, 'deduce_declaration' and 'literal_element_type' say
+       what they return, 'fold_let' names the fold of the parse); 62
+       functions, 7 predictions wrong
+[x] easy: round 475(2026-11-17, bug hunt: methods and user types;
     design: the no-UB layer, 'ub_assigned.hpp', 'ub_order.hpp' and
     'ub_reads.hpp'; readability: a newcomer walks 'ident_info.hpp' and
     'compile_error.hpp')
