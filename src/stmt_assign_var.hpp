@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-#include <optional>
 #include <ostream>
 #include <utility>
 
@@ -17,7 +15,7 @@
 // 'dst = value' and the initializer of a declaration: the value is parsed as
 // the type of the destination, which types its literals, and is written
 // into the destination part by part, so a part that reads a part already
-// written is rejected ('expr_any::checked_plan')
+// written is rejected ('expr_any::compile')
 class stmt_assign_var final : public statement {
     stmt_identifier stmt_ident_;
     expr_any expr_;
@@ -54,19 +52,6 @@ class stmt_assign_var final : public statement {
 
         comment_source(tc);
 
-        const std::optional<storage_path> dst_storage{
-            stmt_ident_.storage(tc),
-        };
-
-        const ident_info dst_info{make_ident_info(tc, stmt_ident_)};
-
-        const write_plan plan{
-            expr_.checked_plan(tc, dst_storage, dst_info.array_len()),
-        };
-
-        // note: the parse rejected a constant destination
-        assert(not dst_info.is_const());
-
         machine& x{tc.machine()};
 
         machine::held_registers held{x, {tok(), tc.indent()}};
@@ -79,12 +64,12 @@ class stmt_assign_var final : public statement {
         const destination var_dst{
             destination::of_name(written,
                                  {
-                                     .storage{dst_storage},
+                                     .storage{stmt_ident_.storage(tc)},
                                      .text{stmt_ident_.path_text()},
                                  }),
         };
 
-        emit_write_plan(tc, plan, var_dst);
+        expr_.compile(tc, var_dst);
     }
 
     // the value is read before the destination is written

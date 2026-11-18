@@ -220,14 +220,7 @@ class expr_any final : public statement {
     auto compile(compile_toc& tc, const destination& dst) const
         -> void override {
 
-        // note: an array is written by its assignment or definition, as a
-        //       field by the plan of its instance ('plan_writes'); the parse
-        //       rejects an array literal as an argument, an array argument
-        //       is a path
-
-        assert(not is_array());
-
-        const write_plan plan{checked_plan(tc, dst.storage(), std::nullopt)};
+        const write_plan plan{checked_plan(tc, dst)};
 
         emit_write_plan(tc, plan, dst);
     }
@@ -354,20 +347,6 @@ class expr_any final : public statement {
         for (const expr_any& e : elements()) {
             e.check_folded_conditions(tc);
         }
-    }
-
-    // the steps that write the value at a destination, 'dst' its storage when
-    // it has one; 'unsized_count' as for 'plan_writes'
-    // note: the plan that is checked is the plan that is emitted
-    [[nodiscard]] auto
-    checked_plan(const toc& tc, const std::optional<storage_path>& dst,
-                 const std::optional<size_t> unsized_count) const
-        -> write_plan {
-
-        write_plan plan;
-        plan_writes(tc, part_location{}, unsized_count, plan);
-        assert_parts_not_clobbered(tc, dst, plan);
-        return plan;
     }
 
     // compiles all but the trailing added constant of an arithmetic
@@ -552,6 +531,18 @@ class expr_any final : public statement {
             tok(), std::format("destination array size {} does not match "
                                "source size {}",
                                *array_count, *src_len)};
+    }
+
+    // the steps that write the value at 'dst'; the length of an unsized
+    // array destination is the one its call gave
+    // note: the plan that is checked is the plan that is emitted
+    [[nodiscard]] auto checked_plan(const toc& tc, const destination& dst) const
+        -> write_plan {
+
+        write_plan plan;
+        plan_writes(tc, part_location{}, dst.shape().length(), plan);
+        assert_parts_not_clobbered(tc, dst.storage(), plan);
+        return plan;
     }
 
     // the form of an array destination: a string, an element list or a whole

@@ -1150,9 +1150,9 @@ class machine_x86_64 final : public machine {
         restore_call_registers(indent, saved);
     }
 
-    // 'left' holds the product of two bytes in a register of the default
-    // width, which fits when the low byte sign extended is the same value;
-    // 'right', the factor that was multiplied, is overwritten with it
+    // 'left' holds the product of two bytes at the default width, which fits
+    // a byte when its low byte sign extended equals it; that extension
+    // overwrites 'right', the factor no longer needed
     auto check_byte_product(const emit_site site, const operand& left,
                             const operand& right) -> void {
 
@@ -1242,8 +1242,8 @@ class machine_x86_64 final : public machine {
         comment(site, "shift check end");
     }
 
-    // branches to the failure handler when the range passes the array count, a
-    // range 'start + count' may end at it
+    // 'checked', or 'checked + count' of a range, jumps to the failure handler
+    // when not below the array count, or above it with 'allow_end'
     auto check_upper_bound(const emit_site site, const bounds_range& range,
                            const bool lower_checked) -> void {
 
@@ -1348,7 +1348,8 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    // a part that differs decides the result, so the rest is skipped
+    // a 'jne' after each compare but the last skips the rest at the first
+    // part that differs, whose flags are the result
     auto emit_compares(const size_t indent, const std::vector<op>& compares)
         -> void {
 
@@ -1593,8 +1594,8 @@ class machine_x86_64 final : public machine {
         scale_index(site, count, element_size_bytes);
     }
 
-    // the register it allocates is freed by the 'operation_scope' of the
-    // caller
+    // a displacement beyond 'int32_t' is added in a scratch register, freed
+    // by the 'operation_scope' of the caller
     [[nodiscard]] auto lower_address(const emit_site site, const operand& value)
         -> operand {
 
@@ -1739,8 +1740,8 @@ class machine_x86_64 final : public machine {
     }
 
     // the rep form when the parts take more instructions than it; when one of
-    // its 'named' registers is held, only beyond twice its instructions, so a
-    // value that is not small is never unrolled
+    // its 'named' registers is held, only beyond twice its instructions, where
+    // reserving the held register is a compile error instead of a long unroll
     [[nodiscard]] auto
     takes_rep_form(const size_t part_instructions,
                    const std::span<const std::string_view> named) const
@@ -1808,7 +1809,8 @@ class machine_x86_64 final : public machine {
         }
     }
 
-    // a dword write clears the upper half, a narrower register keeps its move
+    // a move of 0 to a qword or dword register, which a dword 'xor' replaces:
+    // a dword write clears the upper half
     [[nodiscard]] static auto is_wide_register_zeroed(const operand& dst,
                                                       const operand& src)
         -> bool {
@@ -1869,8 +1871,8 @@ class machine_x86_64 final : public machine {
         return not std::in_range<int32_t>(std::bit_cast<int64_t>(*bits));
     }
 
-    // the unsigned upper comparison also fails a negative value when the lower
-    // bound is covered by it
+    // unsigned when 'lower_checked', a negative value then compares large and
+    // fails; 'allow_end' passes a value equal to the count
     [[nodiscard]] static auto out_of_bounds_condition(const bool allow_end,
                                                       const bool lower_checked)
         -> condition {

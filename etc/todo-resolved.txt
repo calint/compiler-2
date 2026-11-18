@@ -1,7 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 479 (2026-11-18, bug hunt: shifts, bitwise operators and
+[x] easy: round 480 (2026-11-18, bug hunt: instance and array literals
+    and whole-value initialization; design: assignment, how a value
+    reaches its destination, 'stmt_assign_var.hpp'; readability: a
+    newcomer walks the second half of 'machine_x86_64.hpp')
+    => bug hunt: no defect; a model generator of record and array
+       literals, nested, with constants, locals, widened fields, elements
+       at run-time indexes, comparisons, counting calls, strings and whole
+       copies as parts, into declarations, globals, parts at run-time
+       indexes, 'foo' elements and 'mut' parameters, each compared with
+       '==' against a constant to check the padding, in dirtied frames,
+       and programs that must be rejected for a part read after it is
+       written: about 8500 accepted and 470 rejected programs, 75000
+       runs, 26 probes, 80 zero-fill programs; 4 of 4 mutants caught
+    => design: assignment hands its destination to 'expr_any::compile',
+       which builds and checks the write plan for every destination;
+       'checked_plan' takes the destination and reads the unsized length
+       and the storage from it instead of two arguments (-24 lines,
+       listings equal); four ideas kept with reasons (a 'noinline' result
+       widened through a temporary needs storage, the parse and the plan
+       check different lengths, 'in_register' keeps the wrapping)
+    => readability: seven comments ('check_byte_product', what
+       'check_upper_bound' and 'out_of_bounds_condition' fail,
+       'emit_compares', 'lower_address', why 'takes_rep_form' waits for
+       twice its instructions, what 'is_wide_register_zeroed' tests); 55
+       functions, 7 predictions wrong
+[x] easy: round 479(2026-11-18, bug hunt: shifts, bitwise operators and
     the unary operators; design: conditions and branches,
     'expr_bool.hpp' and 'stmt_if.hpp'; readability: a newcomer walks the
     first half of 'machine_x86_64.hpp')
