@@ -28,7 +28,9 @@ struct register_use_report final {
     // a frame that the registers held above it make worth making 'noinline'
     struct candidate {
         std::string name;
+        // the registers held by the frame and the frames it inlines
         size_t inside{};
+        // the registers held by its callers
         size_t saved{};
     };
 
@@ -51,10 +53,11 @@ struct register_use_report final {
     };
 
     std::string heading;
-    // the scratch registers that can be live, the bases held are not
+    // the scratch registers that can be live, less the ones the backend holds
     size_t register_total{};
     // the scratch registers that a 'noinline' body starts with
     size_t noinline_register_total{};
+    // the live registers fixed by an instruction or the calling convention
     size_t named_count{};
     std::vector<frame_use> frames;
 
@@ -98,8 +101,7 @@ struct register_use_report final {
         return text;
     }
 
-    // the frames whose callers hold registers: what they and the frames
-    // below them hold, and what the call of them would save
+    // the frames whose callers hold registers, 'frames' is outermost first
     [[nodiscard]] auto candidates() const -> std::vector<candidate> {
         std::vector<candidate> found;
         size_t saved{};

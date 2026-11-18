@@ -1,7 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 484 (2026-11-18, bug hunt: frames and the stack; design:
+[x] easy: round 485 (2026-11-18, bug hunt: strings, character literals
+    and the text the compiler writes; design: the top level and the
+    driver, 'main.cpp' and 'program.hpp'; readability: a newcomer walks
+    'register_report.hpp' and 'source_files.hpp')
+    => bug hunt: no defect; a model generator of strings built from
+       every accepted escape, raw ';', '#', backquote, tab, UTF-8 and line
+       continuations, of lengths 0, 1, n - 1 and n into variables,
+       globals, 'dat', 'let', fields and elements at run-time indexes,
+       record literals with strings, 'write' of parts, '==',
+       'arrays_equal' and 'array_copy', stores through 'mut' parameters
+       and methods, long enough for both the immediate and the read-only
+       copy paths: 6400 programs, 140000 runs, 110 probes (rejected
+       escapes, listing comments that assemble with nasm and llvm-mc, a
+       file name with quotes in a 'line' panic); 9 of 9 mutants caught;
+       the fuzz library mixes UTF-8 and latin-1: todo
+    => design: no change; eight ideas kept with reasons (the target table
+       rejects options before a backend exists, 'reads_stack' and
+       'is_stack_bounded' answer different questions, the default stack
+       check keeps its message, 'report_options' keeps 'options' free of
+       backend structs)
+    => readability: five comments ('inside' and 'saved' of a candidate,
+       'register_total' less the backend registers, 'named_count', the
+       order 'candidates' relies on) and the locals of 'source_files::add'
+       renamed 'unresolved' and 'resolved'; 44 functions, 2 predictions
+       wrong
+[x] easy: round 484(2026-11-18, bug hunt: frames and the stack; design:
     the built-ins as a family, 'stmt_builtin_*.hpp' and their catalog;
     readability: a newcomer walks 'stmt_identifier.hpp')
     => bug hunt: no defect; a model generator of 'noinline' functions,

@@ -51,7 +51,7 @@ class source_files final {
 
         std::error_code error;
 
-        const std::filesystem::path given{
+        const std::filesystem::path unresolved{
             std::filesystem::absolute(std::filesystem::path{name}, error),
         };
 
@@ -66,14 +66,14 @@ class source_files final {
 
         // the absolute path, its directory resolved ('resolved_path'), e.g.
         // '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'
-        const std::filesystem::path absolute{resolved_path(given)};
+        const std::filesystem::path resolved{resolved_path(unresolved)};
 
         if (files_.empty()) {
-            main_dir_ = absolute.parent_path();
+            main_dir_ = resolved.parent_path();
         }
 
         std::string relative_name{
-            absolute.lexically_relative(main_dir_).string(),
+            resolved.lexically_relative(main_dir_).string(),
         };
 
         std::vector<size_t> line_begins{line_begins_of(text)};
