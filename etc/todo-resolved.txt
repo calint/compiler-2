@@ -1,7 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 482 (2026-11-18, bug hunt: arrays passed through calls;
+[x] easy: round 483 (2026-11-18, bug hunt: definite assignment and reads
+    of unwritten storage; design: the parser's structure,
+    'parse_statement.hpp' and 'parse_lookahead.hpp'; readability: a
+    newcomer walks 'ub_assigned.hpp', 'ub_reads.hpp' and
+    'stmt_builtin_io.hpp')
+    => bug hunt: no defect; a model generator of a padded record result
+       written in parts at constant and run-time indexes, read through
+       terms, copies and conditions, under 'if' chains folded at the
+       parse, at the compile or at run time, 'loop' with 'break' and
+       'continue', 'foo', 'return' and 'exit', each inlined and 'noinline'
+       after a call that fills the stack with garbage, with a model of
+       the parse rule and an interpreter of the written leaves: about
+       9800 programs, 39000 runs, 45 probes; 7 of 8 mutants caught by the
+       generator, the eighth ('trace_skipped' not restoring the breaks)
+       by test 2090
+    => design: 'classify_term' tells an array literal of the default
+       type, '[2]{1, 2}', as 'term_kind::array_literal'; four callers no
+       longer ask 'is_default_array_literal' beside their own check and
+       the helper is gone, a duplicated rejection in the array operand of
+       'stmt_identifier' too (-13 lines, listings and errors equal, also
+       on nine probes of untested shapes); five ideas kept with reasons
+       (the builtin and user type terms differ on '(' and '{', a probe
+       helper would need a token and kind pair, 'read_func_result' puts
+       back two tokens)
+    => readability: eight comments ('trace_skipped' checks from the
+       'if', 'max_arg_count', 'assert_buffer' and its note,
+       'assert_buffer_path' takes an array or an element of one,
+       'check_range' emits nothing for a constant range, the example of
+       'move_to_run_time_start', 'read_arguments'); 47 functions, 7
+       predictions wrong
+[x] easy: round 482(2026-11-18, bug hunt: arrays passed through calls;
     design: code versions and dry runs, what a version puts back;
     readability: a newcomer walks 'stmt_def_func.hpp')
     => bug hunt: no defect; a model generator of unsized array

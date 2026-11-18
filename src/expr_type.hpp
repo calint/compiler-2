@@ -149,12 +149,7 @@ inline auto assert_not_array_literal(const parse_toc& tc, const tokenizer& tz,
                                      const token& tk, const term_kind tm,
                                      const type& tp) -> void {
 
-    const bool is_array_literal{
-        tm == term_kind::array_literal or
-            (tk.is_none() and is_default_array_literal(tz)),
-    };
-
-    if (not is_array_literal) {
+    if (tm != term_kind::array_literal) {
         return;
     }
 

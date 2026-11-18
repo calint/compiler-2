@@ -624,16 +624,17 @@ class expr_any final : public statement {
         -> std::optional<array_prefix> {
 
         const token tk{tz.next_token()};
+        const term_kind tm{classify_term(tc, tk, tz)};
+        const bool is_typed{not tk.is_none()};
 
-        const bool is_typed{
-            classify_term(tc, tk, tz) == term_kind::array_literal,
-        };
+        // note: the '[' of the default type is read with the whitespace
+        //       before it
 
-        if (not is_typed) {
+        if (tm != term_kind::array_literal or not is_typed) {
             tz.put_back_token(tk);
         }
 
-        if (not is_typed and not is_default_array_literal(tz)) {
+        if (tm != term_kind::array_literal) {
             return std::nullopt;
         }
 

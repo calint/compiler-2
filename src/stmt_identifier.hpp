@@ -870,12 +870,10 @@ class stmt_identifier final : public statement {
 
         const token tk{tz.next_token()};
 
-        // e.g. '{1, 2}' or '[2]{1, 2}'; not '{}', the zero value: the caller
-        // rejected it for an array parameter, a built-in expects an array
-        // below
-        if (tk.is_none() and (is_default_array_literal(tz) or
-                              (tz.peek_char_after_whitespace() == '{' and
-                               not is_zero_value(tz)))) {
+        // e.g. '{1, 2}'; not '{}', the zero value: the caller rejected it
+        // for an array parameter, a built-in expects an array below
+        if (tk.is_none() and tz.peek_char_after_whitespace() == '{' and
+            not is_zero_value(tz)) {
 
             throw_literal_not_operand(tk, "an array literal");
         }

@@ -450,11 +450,6 @@ inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
             "'{}' is the zero value of a typed destination, not an operand"};
     }
 
-    // e.g. the '[2]{1, 2}' of 'a == [2]{1, 2}'
-    if (is_default_array_literal(tz)) {
-        throw_literal_not_operand(tk, "an array literal");
-    }
-
     // e.g. the '!' of '!x', not the '!=' of a comparison
     if (tz.peek_operator().empty() and tz.peek_char_after_whitespace() == '!') {
         throw compile_error{tk, "'!' is not an operator, use 'not'"};
@@ -482,16 +477,16 @@ inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
                 "e.g. 'a = \"abc\"'"};
     }
 
-    if (tk.is_none()) {
-        throw_no_operand(tk, tz);
-    }
-
     const term_kind tm{classify_term(tc, tk, tz)};
 
-    // e.g. the 'i8[2]{1, 2}' of 'x + i8[2]{1, 2}', an array is compared as
-    // memory like an instance
+    // e.g. the 'i8[2]{1, 2}' of 'x + i8[2]{1, 2}' or the '[2]{1, 2}' of
+    // 'a == [2]{1, 2}', an array is compared as memory like an instance
     if (tm == term_kind::array_literal) {
         throw_literal_not_operand(tk, "an array literal");
+    }
+
+    if (tm == term_kind::none) {
+        throw_no_operand(tk, tz);
     }
 
     // e.g. the 'not b' of 'int(not b)' or of 'a == not b'

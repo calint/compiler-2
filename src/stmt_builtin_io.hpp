@@ -39,8 +39,8 @@ class stmt_builtin_io final : public statement {
         bool fills_buffer{};
         bool is_sector{};
 
-        // also the count and the start of a transfer, the start of a sector
-        // function
+        // the minimum and then the count and the start, only the start for a
+        // sector function
         [[nodiscard]] constexpr auto max_arg_count() const -> size_t {
             return is_sector ? buffer_index_ + 2 : buffer_index_ + 3;
         }
@@ -209,12 +209,12 @@ class stmt_builtin_io final : public statement {
     }
 
   private:
-    // the buffer an array, of whole sectors for a sector function, and a
-    // constant range in its bounds: every verdict that needs no code, made
-    // before the arguments are compiled
+    // the checks of the buffer that need no code, made before the arguments
+    // are compiled: whole sectors for a sector function and a constant range
+    // in its bounds
     [[nodiscard]] auto assert_buffer(const toc& tc) const -> place {
-        // note: the parse took an array path ('assert_buffer_path'), an
-        //       address would bypass the bounds check
+        // note: the parse took a path to a whole array ('assert_buffer_path'),
+        //       not an address, which would bypass the bounds check
 
         std::optional<place> buffer{as_place(tc, buffer_path())};
 
@@ -229,8 +229,8 @@ class stmt_builtin_io final : public statement {
         return std::move(*buffer);
     }
 
-    // the buffer is an array, not an element ('builtin_arguments' took an
-    // array path); the sector size and the constant range need the types,
+    // 'builtin_arguments' took an array or an element of one, the buffer must
+    // be the array; the sector size and the constant range need the types,
     // 'assert_buffer' checks them at compile time
     auto assert_buffer_path() const -> void {
         const stmt_identifier& buffer{buffer_path()};
@@ -316,8 +316,8 @@ class stmt_builtin_io final : public statement {
         return *args_.at(buffer_index_).bare_path();
     }
 
-    // the range of 'count' elements from 'start', each an immediate when
-    // constant
+    // the run-time check of 'count' elements from 'start', each an immediate
+    // when constant; none when both are constant, 'assert_buffer' checked them
     auto check_range(compile_toc& tc, const operand& start,
                      const operand& count, const ident_info& buffer_info) const
         -> void {
@@ -518,8 +518,8 @@ class stmt_builtin_io final : public statement {
                        buffer_reg, operand::imm(offset_bytes, default_type));
     }
 
-    // a run-time start is checked with the count, against the last start a
-    // constant count leaves, e.g. 'write(1, a, 2, s)'
+    // a run-time start is checked with the count, e.g. the 's' of
+    // 'write(1, a, 2, s)' against the length of 'a' less 2
     auto move_to_run_time_start(compile_toc& tc, const operand& buffer_reg,
                                 const operand& count,
                                 const ident_info& buffer_info) const -> void {
@@ -567,8 +567,8 @@ class stmt_builtin_io final : public statement {
     // statics
     //
 
-    // the arguments after the checks of the call itself, made first as for a
-    // call of a function, e.g. 'write' in the initializer of a global
+    // the call is checked to be in a function before its arguments are read,
+    // as for a call of a function, e.g. 'write' in the initializer of a global
     [[nodiscard]] static auto read_arguments(parse_toc& tc,
                                              const io_function& io,
                                              const token& tk, tokenizer& tz)

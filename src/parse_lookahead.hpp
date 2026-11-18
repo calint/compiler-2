@@ -25,13 +25,6 @@
 #include "tokenizer.hpp"
 #include "type.hpp"
 
-// e.g. '[]{1, 2}' has the default type, no expression starts with '['
-[[nodiscard]] inline auto is_default_array_literal(const tokenizer& tz)
-    -> bool {
-
-    return tz.peek_char_after_whitespace() == '[';
-}
-
 // a comparison or a connective follows, which makes a condition, e.g. the
 // '==' of 'p == q' or the 'and' of 'b and c'
 [[nodiscard]] inline auto continues_condition(const tokenizer& tz) -> bool {
@@ -168,7 +161,8 @@ enum class term_kind : uint8_t {
     conversion,
     // a built-in type alone, e.g. the 'i8' of 'var x = i8'
     builtin_type,
-    // a type followed by '[', e.g. 'i8[]{1, 2}'
+    // a type followed by '[', e.g. 'i8[]{1, 2}', or no token before a '[',
+    // e.g. '[]{1, 2}' of the default type, no expression starts with '['
     array_literal,
     // a user type followed by '{', e.g. 'point{1, 2}'
     instance_literal,
@@ -255,6 +249,12 @@ enum class term_kind : uint8_t {
         return term_kind::string;
     }
 
+    const char next{tz.peek_char_after_whitespace()};
+
+    if (tk.is_none() and next == '[') {
+        return term_kind::array_literal;
+    }
+
     if (tk.is_none()) {
         return term_kind::none;
     }
@@ -268,8 +268,6 @@ enum class term_kind : uint8_t {
     if (reserved_names::find_builtin_function(text) != nullptr) {
         return term_kind::builtin_function;
     }
-
-    const char next{tz.peek_char_after_whitespace()};
 
     if (tc.types().has(text) and tc.types().get(text).is_builtin()) {
         return classify_builtin_type_term(next);

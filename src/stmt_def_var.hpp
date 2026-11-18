@@ -363,11 +363,6 @@ class initializer_declaration final {
                                                       : &tc.builtins().i8();
         }
 
-        if (is_default_array_literal(tz)) {
-            return is_literal_value(tz) ? &tc.builtins().default_type()
-                                        : nullptr;
-        }
-
         const token tk{tz.next_token()};
 
         const bool is_literal{
@@ -379,6 +374,11 @@ class initializer_declaration final {
 
         if (not is_literal) {
             return nullptr;
+        }
+
+        // e.g. '[2]{1, 2}' has the default type
+        if (tk.is_none()) {
+            return &tc.builtins().default_type();
         }
 
         return &tc.get_type_or_throw(tk);
