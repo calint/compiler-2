@@ -751,12 +751,6 @@ class machine_x86_64 final : public machine {
         mov(site, product, reg);
     }
 
-    auto emit_no_return_jump(const size_t indent, const std::string_view target)
-        -> void override {
-
-        assembler_.jmp(indent, target);
-    }
-
     auto emit_panic_message(const std::string_view message_label,
                             const std::string_view message) -> void override {
 

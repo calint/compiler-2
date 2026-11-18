@@ -1406,8 +1406,9 @@ class storage_layout final {
         : machine_{backend}, scopes_{scopes}, data_{data},
           vars_capacity_bytes_{vars_capacity_bytes} {
 
-        // the option is wrong, not the source; the variables stay below the
-        // end of the address space like the data and variables in all
+        // the option is wrong, not the source; the capacity alone stays
+        // below what the target addresses, as do the dats with it
+        // ('assert_dats_and_vars_fit_target')
         if (vars_capacity_bytes >= backend.max_storage_bytes()) {
             throw option_error{std::format(
                 "invalid --vars: {} B reaches the {} B that the target "
@@ -1487,8 +1488,8 @@ class storage_layout final {
             sum_storage_size(vars_start_bytes(), vars_capacity_bytes_));
     }
 
-    // a scope with a frame is compiled; the frames do not nest, a noinline
-    // body is compiled after the body that calls it
+    // called before a scope with a frame is pushed; the frames do not nest,
+    // a noinline body is compiled after the body that calls it
     auto begin_frame() -> void {
         assert(not find_storage_location().is_in_frame);
 
@@ -1648,8 +1649,8 @@ class storage_layout final {
 
         const size_t max_bytes{x.max_storage_bytes()};
 
-        // note: below, the code needs room too and a type stays below the
-        //       end of the address space
+        // note: strictly below because the code needs room too and a type
+        //       stays below the end of the address space
 
         if (total_bytes < max_bytes) {
             return;
@@ -1729,7 +1730,8 @@ class storage_layout final {
     // statics
     //
 
-    // of the kind that lets another version of the code be kept
+    // a limit, not a rule: another version of the code may fit, see
+    // 'compile_error::error_kind'
     [[nodiscard]] static auto vars_capacity_error(const token& src_loc_tk,
                                                   const var_info& var)
         -> compile_error {
@@ -1792,8 +1794,8 @@ class builtin_roles final {
     }
 };
 
-// e.g. the ';' of 'var x = 3;', which the tokenizer reads as part of the word
-// before it; the error points at the first ';' of 'var x = 3;;;'
+// rejects a word that ends with ';', which the tokenizer keeps in the word,
+// e.g. 'var x = 3;'; the error points at the first ';' of 'var x = 3;;;'
 inline auto throw_if_ends_with_semicolon(const token& src_loc_tk) -> void {
     const std::string_view word{src_loc_tk.text()};
 
@@ -1890,8 +1892,8 @@ class ident_resolver final {
             return ident_info::make_const(constant_type, constant);
         }
 
-        // e.g. the 'a' of 'var a = a[0]', before its type, which is not known
-        // yet, tells another mistake
+        // e.g. the 'a' of 'var a = a[0]'; rejected here, its type is not
+        // known yet and would report another mistake
         if (scp.is_initializer()) {
             throw compile_error{src_loc_tk,
                                 std::format("{} is read in its own initializer",
@@ -1901,9 +1903,9 @@ class ident_resolver final {
         return resolve_var(scp.get_var(ident));
     }
 
-    // what 'name' names with 'path' inside it, as a root variable and the
-    // path inside it, empty when it holds no storage, e.g. a constant. the
-    // element 'e' of a 'foo' is any element of the array it iterates
+    // the storage that 'name' with 'path' reaches, as a root variable and a
+    // path; empty when there is none, e.g. a constant; the element 'e' of a
+    // 'foo' reaches any element of the array it iterates
     [[nodiscard]] auto resolve_storage(const std::string_view name,
                                        const access_path& path) const
         -> std::optional<storage_path> {
@@ -2034,8 +2036,8 @@ class ident_resolver final {
     // statics
     //
 
-    // the memory of a variable placed at 'placement', in storage from its own
-    // base, from 'base_register' before the storage is placed (the parse)
+    // the memory of a variable at 'placement'; storage not placed yet (at the
+    // parse) has no base register of its own and uses 'base_register'
     [[nodiscard]] static auto memory_at(const var_placement& placement,
                                         const std::string_view base_register,
                                         const type& value_type) -> operand {
@@ -2327,9 +2329,9 @@ struct toc_tables final {
 
 // the context every node receives over the tables, the table of contents:
 // the names, their storage and the machine. the phase is the type of the
-// context: a parse-time constructor takes a 'parse_toc', a 'compile' a
+// context: a parse-time constructor takes a 'parse_toc', a 'compile' takes a
 // 'compile_toc' and what both phases run, e.g. 'fold' or the declarations of
-// a function body, this base, which holds what both phases do
+// a function body, takes this base, which holds what both phases do
 //
 //   both           'add_var' and 'add_const' (placed and commented only by
 //                  'compile_toc'), 'add_generic_const', 'resolve_declared',
@@ -2599,6 +2601,7 @@ class parse_toc final : public toc {
         auto operator=(generic_scope&&) -> generic_scope& = delete;
 
         ~generic_scope() {
+            // note: the block is left before the parameters, in reverse order
             constants_block_.reset();
             tc_.tables().types.exit_params();
         }

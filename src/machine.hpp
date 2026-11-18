@@ -1732,9 +1732,12 @@ class machine {
                                const runtime_check& check) -> void = 0;
 
     // a jump to a handler or a routine that does not return, so the registers
-    // are dead at the target
+    // are dead at the target; a 'branch' by default
     virtual auto emit_no_return_jump(const size_t indent,
-                                     const std::string_view target) -> void = 0;
+                                     const std::string_view target) -> void {
+
+        branch(indent, target);
+    }
 
     // writes 'message' at 'message_label' to stderr, for the failure handlers,
     // which run after all allocations; it keeps 'report_line_register', which

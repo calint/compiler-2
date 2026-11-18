@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 488 (2026-11-18, bug hunt: register pressure; design:
+    the backend interface, 'machine.hpp'; readability: a newcomer walks the
+    middle third of 'toc.hpp')
+    => bug hunt: interrupted by a restart before it reported; run again in
+       round 489
+    => design: 'emit_no_return_jump' is a 'branch' by default in 'machine',
+       the x86_64 override that only jumped is removed (-3 lines), listings
+       equal; nine ideas kept with reasons
+    => readability: ten comments (the capacity check of an option, when
+       the frame hook is called, why a size is strictly below the end of
+       the address space, a limit that another version may fit, the word
+       ending with ';', the storage a path reaches, the base register
+       before placement, the parse and compile contexts, the parameters
+       left in reverse order); 82 functions, 3 predictions wrong
 [x] easy: round 487 (2026-11-18, bug hunt: the '--checks' options as a
     matrix; design: how compile errors are built, located and printed;
     readability: a newcomer walks the first third of 'toc.hpp')
