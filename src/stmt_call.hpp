@@ -71,7 +71,7 @@
 //                                address ('noinline_call::compile_arguments',
 //                                'call_site::make_argument_temporary')
 //   frame slot                   the address written to it
-//                                ('noinline_call::slot_address_of')
+//                                ('noinline_call::slot_referent')
 //
 // the formatter sorts the functions of a class by name, so the comment above
 // each class lists them in the order they run
@@ -1473,14 +1473,14 @@ class noinline_call final {
         for (const frame_slot& slot : call_.func->frame_slots()) {
             // the callee finds it in a register, it has no slot
             if (slot.is_in_register) {
-                receiver_address = slot_address_of(dst, slot, arguments);
+                receiver_address = slot_referent(dst, slot, arguments);
                 continue;
             }
 
             comment_frame_slot(tc, slot);
 
             x.address_of({call_.tk, tc.indent()}, slot_address,
-                         slot_address_of(dst, slot, arguments));
+                         slot_referent(dst, slot, arguments));
 
             slot_address.increment_offset(
                 address_offset(x.address_size_bytes()));
@@ -1551,10 +1551,10 @@ class noinline_call final {
         }
     }
 
-    // the destination for the result, the argument for a parameter
+    // the result destination or the argument whose address 'slot' holds
     [[nodiscard]] static auto
-    slot_address_of(const destination& dst, const frame_slot& slot,
-                    const std::span<const ident_info> arguments) -> operand {
+    slot_referent(const destination& dst, const frame_slot& slot,
+                  const std::span<const ident_info> arguments) -> operand {
 
         if (not slot.param_index) {
             return dst.operand();

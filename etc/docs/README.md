@@ -1331,10 +1331,6 @@ The compile decides that in
 'expr_arith::destination_is_clobbered_before_read', with the reads resolved
 like above.
 
-Two names that the body makes itself, e.g. the element 'e' of a 'foo' and the
-array it iterates, are protected by the compile as above; storage that only a
-call shares between two names is rejected at the call (4.2).
-
 ### 3.8 Fuzzing the aliasing check
 
 The aliasing check is tested against a brute force of the bytes, in which
@@ -2206,7 +2202,7 @@ constants out of range, and the code the run-time checks.
 |---|---|---|---|---|
 | uninitialized read | 'var x = x', 'res' read before it is set | rejected ('stmt_def_var' for a declaration; definite assignment of the result, 'ub_assigned.hpp', 3.10) | always | 0095, 0096, 0455, 0456, 1289-1291 |
 | an argument sharing bytes with another argument that the call writes | 'f(a, a)' with 'f' writing 'p.x' and reading 'q.x' | rejected ('stmt_call::assert_no_shared_storage', 4.2) | always | 0517, 0633, 0667 |
-| a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.7, 4.2) | always | 0514-0516, 0518, 0519, 0930 |
+| a result or a global sharing storage with an argument | 'p = f(p)' with 'f' writing its result before it reads 'p', 'f(g)' with 'f' using the global 'g' | rejected ('stmt_call::assert_no_shared_storage', 3.6, 4.2) | always | 0514-0516, 0518, 0519, 0930 |
 | a value written in parts reading a part written before it | 'p = {p.y, p.x}', 'q = {{1}, q.a[3]}', 'g = {7, gx()}' | rejected ('stmt_assign_var', the 'write_plan' of 'expr_type.hpp', 3.7) | always | 1590-1594, 1616, 1617, 1626 |
 | evaluation order | 'f(arr[i], h(i))', 'i == h(i)' with 'h' writing 'i' | evaluation is left to right; an argument, a side of a comparison or a bulk or io argument that a call in a later one may write is rejected ('assert_not_written_later'), an arithmetic list reads each operand at its place; a destination that the value reads, also through a call, is written last ('reaches_destination'), 3.1 | always | 1618-1621, 1623, 1624, 1658; accepted: 1612-1615, 1622, 1625, 1660, 1684 |
 | narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected ('statement::assert_not_narrowed' through 'compile_checked' and 'fold_checked'); a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0715, 0845, 0854, 1005, 1006, 1008, 1010, 1011 |
@@ -2216,7 +2212,7 @@ constants out of range, and the code the run-time checks.
 | division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0954-0957, 1757-1759 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift', from 'expr_arith::emit_operation') | 'shift' | 0964-0966 |
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_check') | 'overflow' | 0977, 0978, 0983 |
-| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy') | 'overlap' | 0970-0972 |
+| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy', where the paths may overlap, 3.5) | 'overlap' | 0970-0972 |
 | the variables of a noinline call past '--vars' | deep noinline recursion | run time ('machine::check_frame_capacity' from 'noinline_call::populate_frame', 4.1) | 'frame' | 0405, 0406, 0426 |
 | the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'noinline_call::populate_frame'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0974-0976 |
 

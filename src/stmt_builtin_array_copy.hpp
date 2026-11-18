@@ -54,12 +54,12 @@ class stmt_builtin_array_copy final : public statement {
             operands_.constant_size_bytes(tc, element_type),
         };
 
-        // the overlap check compares the addresses of the loop at run time;
-        // only one variable can overlap itself, a call rejects arguments that
-        // may share storage ('stmt_call::assert_no_shared_storage'), e.g. two
-        // 'mut' parameters bound to one array
+        // the overlap check compares the addresses of the loop at run time
+        // where the paths may overlap; a call rejects arguments that may share
+        // storage ('stmt_call::assert_no_shared_storage'), e.g. two 'mut'
+        // parameters bound to one array
         const bool checks_overlap{
-            tc.checks().overlap and in_same_variable(tc),
+            tc.checks().overlap and may_overlap(tc),
         };
 
         bulk_operands::argument_emitters emit{operands_, tc, tok()};
@@ -95,14 +95,17 @@ class stmt_builtin_array_copy final : public statement {
     }
 
   private:
-    // the two arrays are in the same variable, e.g. 'array_copy(a[0], a[1], n)'
-    [[nodiscard]] auto in_same_variable(const toc& tc) const -> bool {
+    // the two arrays may share bytes, e.g. 'array_copy(a[0], a[1], n)' but
+    // not 'array_copy(s.a, s.b, n)'
+    // note: the 'upper' check of the count keeps each copy inside the range
+    //       of its path, from its start element to the end of the array
+    [[nodiscard]] auto may_overlap(const toc& tc) const -> bool {
         const std::optional<storage_path> src{operands_.first().storage(tc)};
         const std::optional<storage_path> dst{operands_.second().storage(tc)};
 
         // note: both are arrays of variables, a constant is not written
         assert(src and dst);
 
-        return src->root.is_same(dst->root);
+        return src->may_overlap(*dst);
     }
 };

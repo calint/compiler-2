@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 495 (2026-11-19, bug hunt: generics; design: the
+    aliasing rules as a whole, where two places may share storage;
+    readability: a newcomer walks the middle third of 'stmt_call.hpp')
+    => bug hunt: no defect; a model generator writing each program with
+       generics and expanded by hand, generic types with constant
+       capacities, based generics two levels deep, nested instances, one
+       instance under several spellings, methods defined before and after
+       aliases, constants folded per instance, generic methods with their
+       own type parameter, deduced and written arguments, result-type
+       deduction, 'mut T' and 'T[]' parameters, hidden globals: 11520
+       programs, 92160 runs, 200 probes (argument counts and kinds, failed
+       deduction, constant arguments, shadowing, visibility, recursion,
+       included definitions); 21 mutants, 19 caught by the suite, one by
+       'test-cli.sh', one equivalent: without the 'void' test of
+       'generic_call::value_type' the argument's own parse gives the same
+       error, kept so that 'void' never enters a deduction
+    => design: 'array_copy' decided its overlap check by the root variable
+       while every other rule compares paths ('storage_path::may_overlap'):
+       it now asks the paths, so 'array_copy(s.a, s.b, n)' has no check;
+       the 'upper' check of the count keeps each copy inside its path;
+       listings of 0105 and 0106 with checks shorter (0106: 2579 to 2539
+       lines on x86_64, 4372 to 4248 on rv32i), nothing else differs;
+       docs 3.7 lost a paragraph that 3.6 says, the 8.1 row of shared
+       storage cites 3.6; seven ideas kept with reasons
+    => readability: 'noinline_call::slot_address_of' renamed
+       'slot_referent', it gives the operand whose address the slot holds;
+       42 functions, 1 prediction wrong
 [x] easy: round 494 (2026-11-19, bug hunt: control flow, nested loops,
     'break', 'continue', 'return' and 'exit', the reach rules and results
     set on every path; design: how the source is written back,
