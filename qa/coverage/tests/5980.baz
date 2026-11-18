@@ -1,0 +1,9 @@
+# failed checks at the same line of two files enter the handler of their own
+# file: the panic names the included file, not the main one
+include "include/line7.baz"
+func main() {
+    var a = i32[4]
+    var i = 2
+    a[i] = 1
+    var x = get7(a, 4)
+}

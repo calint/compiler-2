@@ -37,6 +37,7 @@ class stmt_loop final : public statement {
         const std::string label{tc.unique_label(tok(), "loop")};
         x.label(tc.indent(), label);
 
+        // a 'continue' jumps back to the head at 'label'
         const compile_toc::scope_entry loop{
             tc,
             scope::loop(label, loop_end::at_break, label),

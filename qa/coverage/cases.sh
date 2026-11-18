@@ -8204,3 +8204,7 @@ SRC=5581 && DIFF
 
 # a folded '>>' of a negative constant shifts in its sign bit
 SRC=5700 && EXP=0 && RUN
+
+# failed checks at the same line of two files have stubs of their own, the
+# panic names the included file
+SRC=5980 && EXP=255 && RUN_ERR

@@ -1,7 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 485 (2026-11-18, bug hunt: strings, character literals
+[x] easy: round 486 (2026-11-18, bug hunt: programs of several files and
+    the locations of errors and panics; design: how types are represented
+    and queried, 'type.hpp'; readability: a newcomer walks 'stmt_if.hpp',
+    'stmt_loop.hpp', 'stmt_loop_jump.hpp' and 'stmt_return.hpp')
+    => bug hunt: no defect; a model generator of 1 to 6 files across
+       directories, run from three working directories, with chained,
+       repeated and cyclic includes through '..' and './', generic and
+       'noinline' functions and methods, tabs, continued strings, lines
+       past 2048, 4096 and 65536 and checks of several files on the same
+       line, a planted error or panic whose file, line, column, call frames
+       and include chain are checked, and the listing comments checked
+       against their files: 4860 programs, 13500 runs, probes at the rv32i
+       immediate boundaries and odd file names; 7 of 8 mutants caught;
+       the eighth, the failure label of a line shared by the main file
+       and the first included one ('line_failure_label'), passed the
+       suite: test 5980
+    => design: no change in the representation; 'assert_number_kind'
+       asks 'is_integer' instead of a hand-written built-in and not bool
+       test; seven ideas kept with reasons ('builtin_roles::address' names
+       the role, 'fields_end_bytes_' is not derived more simply, a type
+       parameter bound to a built-in counts in the lookahead)
+    => readability: four comments (the last branch without 'else' code
+       falls through, 'else_label', 'parse_else' keeps the block in
+       'else_', the continue label of a 'loop'); 29 functions, 4
+       predictions wrong
+[x] easy: round 485(2026-11-18, bug hunt: strings, character literals
     and the text the compiler writes; design: the top level and the
     driver, 'main.cpp' and 'program.hpp'; readability: a newcomer walks
     'register_report.hpp' and 'source_files.hpp')

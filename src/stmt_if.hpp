@@ -301,7 +301,7 @@ class stmt_if final : public statement {
         x.label(tc.indent(), code_label);
         b.code.compile(tc, destination{});
 
-        // the last branch without an 'else' continues after the 'if'
+        // the last branch without 'else' code continues after the 'if'
         // without a jump; so does a constant true one, the branches after
         // it are not emitted ('check_skipped_from')
         const bool falls_through{is_last_branch and else_code() == nullptr};
@@ -341,7 +341,7 @@ class stmt_if final : public statement {
         return &else_->code;
     }
 
-    // an empty 'else' continues after the 'if'
+    // without 'else' code a false last condition continues after the 'if'
     [[nodiscard]] auto else_label(const std::string_view if_label) const
         -> std::string {
 
@@ -353,8 +353,8 @@ class stmt_if final : public statement {
     }
 
     // reads what follows a branch: 'else if' continues the chain and is
-    // returned, 'else' ends it with the else code, anything else is a new
-    // statement
+    // returned, 'else' ends it and its block is kept in 'else_', anything
+    // else is a new statement
     auto parse_else(parse_toc& tc, tokenizer& tz)
         -> std::optional<else_if_tokens> {
 

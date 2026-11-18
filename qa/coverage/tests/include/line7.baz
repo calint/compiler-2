@@ -1,0 +1,8 @@
+# an element of an array, the index checked at line 7 where it is read, the
+# line of a check in 5980.baz
+
+func get7(a i32[], i) res i32 {
+    var j = i
+
+    res = a[j]
+}

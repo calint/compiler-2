@@ -899,7 +899,7 @@ class expr_any final : public statement {
 
         const type& value_type{value.get_type()};
 
-        if (value_type.is_builtin() and not value_type.is_bool()) {
+        if (value_type.is_integer()) {
             return;
         }
 
