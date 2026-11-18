@@ -1,7 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 481 (2026-11-18, bug hunt: inlined calls and how their
+[x] easy: round 482 (2026-11-18, bug hunt: arrays passed through calls;
+    design: code versions and dry runs, what a version puts back;
+    readability: a newcomer walks 'stmt_def_func.hpp')
+    => bug hunt: no defect; a model generator of unsized array
+       parameters of every width, of records and of field arrays of
+       elements at run-time indexes, from arrays of lengths 1 to 7, with
+       'array_length' of parameters and of fields of their elements,
+       'arrays_equal' and 'array_copy' between parameters of different
+       lengths with run-time starts and counts, 'foo', 'mut' writes, chains
+       several levels deep and recursion that swaps two arrays so one
+       function gets a body per length pair: about 13000 programs, 100000
+       runs, 9 probes; 4 of 4 mutants caught
+    => design: no change; nine ideas kept with reasons (each layer's
+       version state has one owner and one restore, an error unwinding a
+       version changes the reach, 'held_registers' cannot free out of
+       order on an error, the 'is_dry_run' test of 'comment_source' is a
+       todo pending approval)
+    => readability: five comments ('is_name_next', the order of the
+       errors of 'read_type_params', the subject of the result name
+       check, 'add_self_param', 'assert_main_signature'); 78 functions,
+       none predicted wrong, 5 needed effort
+[x] easy: round 481(2026-11-18, bug hunt: inlined calls and how their
     arguments are bound; design: how storage gets its addresses,
     'storage_layout', frames, 'dat'; readability: a newcomer walks
     'expr_any.hpp')

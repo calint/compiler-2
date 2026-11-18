@@ -226,8 +226,7 @@ struct func_head {
         throw compile_error{*mut_tk, "'mut' requires a method 'type.name'"};
     }
 
-    // 'name_tk' is a modifier, a word follows it, not the '(', '.' or '<'
-    // after a name
+    // the word in 'name_tk' is a modifier: no '(', '.' or '<' follows it
     [[nodiscard]] auto is_name_next(const tokenizer& tz) const -> bool {
         const char next{tz.peek_char_after_whitespace()};
         return not open_paren_tk and next != '.' and next != '<';
@@ -329,8 +328,9 @@ struct func_head {
             parse_toc::assert_valid_name(param.name_tk);
 
             if (not param.is_type) {
-                // note: a name no parameter can have first, e.g. 'i8' of
-                //       'func f<i8>()'; an instance has only type parameters
+                // note: a name no parameter can take is reported first, e.g.
+                //       'i8' of 'func f<i8>()'; an instance has only type
+                //       parameters
 
                 tc.assert_valid_unqualified_name(param.name_tk);
 
@@ -428,9 +428,9 @@ inline auto assert_plain_result_type(const parse_toc& tc, tokenizer& tz,
         }
     }
 
-    // where it is read, also in a generic definition that no instance
-    // parses, e.g. the '5' of 'func f<T type>() 5 {'; without the '{'
-    // the body reports it missing first
+    // the name is checked where it is read, also in a generic definition
+    // that no instance parses, e.g. the '5' of 'func f<T type>() 5 {'; without
+    // the '{' the body reports it missing first
     if (not name_tk.is_text(reserved_names::self) and
         tz.peek_char_after_whitespace() == '{') {
 
@@ -800,7 +800,7 @@ class stmt_def_func final : public statement {
             var_kind::result);
     }
 
-    // located at the method name for diagnostics
+    // the implicit first parameter, located at the method name for errors
     auto add_self_param() -> void {
         // note: called for a method, see 'has_self_param'
         assert(head_.method);
@@ -868,8 +868,8 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // no caller gives 'main' arguments or calls it out of line, the result
-    // is 'assert_main_has_no_result'
+    // no caller gives 'main' arguments or calls it out of line; its result
+    // is checked by 'assert_main_has_no_result'
     auto assert_main_signature() const -> void {
         if (name() != reserved_names::main) {
             return;
