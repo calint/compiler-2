@@ -8232,3 +8232,8 @@ if [[ $MACHINE != x86_64 ]]; then SRC=6062 && COMPERR; fi
 # address of the element needs one besides 'a0' and 'a1', which hold the
 # factors of the helper, and the other version is kept
 if [[ $MACHINE != x86_64 ]]; then SRC=6063 && EXP=65 && RUN; fi
+
+# x86_64: a comparison right after the 'setcc' that stores a bool is not a
+# test of the stored value, so the branch after it reads the flags of its own
+# comparison
+SRC=6100 && EXP=0 && RUN

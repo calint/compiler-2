@@ -204,8 +204,8 @@ struct generic_arg_tokens {
     // statics
     //
 
-    // an argument not followed by '>' is followed by a ',', not by an array
-    // or the arguments of a generic
+    // an argument not followed by '>' is not followed by an array or the
+    // arguments of a generic; 'parse' expects the ','
     static auto assert_arg_ends(tokenizer& tz, const token& arg_tk,
                                 const bool takes_constants) -> void {
 
@@ -370,6 +370,7 @@ class definition_order final {
     [[nodiscard]] auto current() const -> size_t { return current_; }
 
     // what definition 'definition' made is seen where the name is used
+    // note: outside an instance parse a later definition is not made yet
     [[nodiscard]] auto is_visible(const size_t definition) const -> bool {
         return not visible_until_ or definition <= *visible_until_;
     }
@@ -602,8 +603,8 @@ class generic_registry final {
     // the methods of the generic types, see 'add_method'
     std::vector<generic_func_info> methods_;
     std::vector<generic_type_instance> type_instances_;
-    // the names that a call instantiates, in the order of definition, see
-    // 'uninstantiated_func_names'
+    // the generic functions a call can instantiate, in the order of
+    // definition, see 'uninstantiated_func_names'
     std::vector<std::string> instantiable_funcs_;
     std::set<std::string, std::less<>> instantiated_funcs_;
 
@@ -700,6 +701,8 @@ class generic_registry final {
                order_.get().is_visible(types_.get_const_ref(name).definition);
     }
 
+    // the methods of all the instances of a generic type count as one, see
+    // 'generic_func_info::report_name'
     auto mark_func_instantiated(const std::string_view name) -> void {
         instantiated_funcs_.emplace(funcs_.get_const_ref(name).report_name);
     }

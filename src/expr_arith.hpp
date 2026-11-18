@@ -275,18 +275,14 @@ class arith_steps final {
             return std::nullopt;
         }
 
-        const int64_t product{
-            constant_arith::combine(*current_divisor,
-                                    arithmetic_operator::multiply,
-                                    *next_divisor, width_type),
-        };
+        if (constant_arith::overflows_width(*current_divisor,
+                                            arithmetic_operator::multiply,
+                                            *next_divisor, width_type)) {
 
-        // a wrapped product divided back differs from the divisor
-        if (product / *next_divisor != *current_divisor) {
             return std::nullopt;
         }
 
-        return product;
+        return *current_divisor * *next_divisor;
     }
 };
 

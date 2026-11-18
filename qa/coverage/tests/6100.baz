@@ -1,0 +1,18 @@
+# x86_64: a comparison right after the 'setcc' that stores a bool is not a
+# test of the stored value, so the branch after it reads the flags of its
+# own comparison
+
+func main() {
+    var a = 3
+    var b = 5
+    var c = a <= b
+    if b != 5 exit(1)
+    c = a > b
+    if a == 3 {
+        c = b < a
+    } else {
+        exit(2)
+    }
+    if c exit(3)
+    exit(0)
+}

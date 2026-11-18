@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 490 (2026-11-18, bug hunt: the passes on the emitted
+    lines, reloads, copies, retests, jumps and far jumps; design: constants
+    and folding, 'constant_arith.hpp', 'constant_parser.hpp', 'lut.hpp' and
+    their users; readability: a newcomer walks 'generics.hpp')
+    => bug hunt: no defect; a model generator of inlined and noinline
+       functions with 'mut' scalars and arrays, globals written by callees,
+       loops with 'break' and 'continue', early returns, bool variables and
+       'array_copy', each run mixed, inlined, noinline, '--nopt', with
+       checks and two '--versions', on rv32i also with a 5000 B frame and
+       branches padded across the 4 KiB reach: 2100 programs, 63300 runs;
+       31 mutants of the passes, all caught but one: the x86_64 retest that
+       no longer compares the test line turned a 'cmp' after a 'setcc' into
+       a branch on the stored bool: test 6100
+    => design: 'merged_divisor' asks 'constant_arith::overflows_width'
+       instead of dividing the wrapped product back (-4 lines, listings
+       equal); seven ideas kept with reasons (the encoding limits belong to
+       the backends, 'unary_ops' owns its operators and the token of an
+       error, 'constant_value_of' leaves out 'true' and 'false')
+    => readability: four comments ('assert_arg_ends' leaves the ',' to
+       'parse', 'is_visible' outside an instance parse, the methods of all
+       instances counted once, 'instantiable_funcs_' are candidates); 44
+       functions, 3 predictions wrong
 [x] easy: round 489 (2026-11-18, bug hunt: register pressure, run again
     after round 488; design: the rv32i targets as a family,
     'machine_rv32i_bare_metal.hpp', 'machine_rv32i_fpga.hpp',
