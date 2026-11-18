@@ -1,7 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
-[x] easy: round 486 (2026-11-18, bug hunt: programs of several files and
+[x] easy: round 487 (2026-11-18, bug hunt: the '--checks' options as a
+    matrix; design: how compile errors are built, located and printed;
+    readability: a newcomer walks the first third of 'toc.hpp')
+    => bug hunt: no defect; a model generator of steps that each can
+       fire one check (arithmetic with unary '-', inlined helpers with
+       literal arguments, division, shifts, indexes, 'arrays_equal',
+       'write', 'foo', overlapping 'array_copy', recursion past the
+       frame), each program under 8 to 26 check sets in every spelling,
+       expecting the first enabled check to panic and a disabled one to
+       give its documented result: 1440 programs, 55500 runs; the listings
+       of the whole suite are the same without checks and with a check
+       the program cannot use; 8 of 9 mutants caught, the ninth (folding
+       'MIN / -1' keyed on 'overflow') by test 1757; README 8.2 said a
+       shift count is masked to the register, it is masked to the width
+       of the operation, 5 bits for an 'i32' on x86_64 too: corrected
+    => design: no change; deriving the line of an error from
+       'source_files' instead of the token was not taken: errors would
+       count lines from 'line_begins' while panics, labels and listing
+       comments keep the token's line, two owners where there was one (+10
+       lines); six ideas kept with reasons ('included from' is a fact of
+       the file, 'generic_trace' and call frames differ by reason,
+       'for_message' and 'for_error' print differently)
+    => readability: five comments ('param_binding::from', the typed
+       constant of 'const_info', 'loop_reach', 'inlined_nesting' counts the
+       open scopes of the function, 'record_if_global' keeps the parse's
+       definition); 132 functions, 3 predictions wrong
+[x] easy: round 486(2026-11-18, bug hunt: programs of several files and
     the locations of errors and panics; design: how types are represented
     and queried, 'type.hpp'; readability: a newcomer walks 'stmt_if.hpp',
     'stmt_loop.hpp', 'stmt_loop_jump.hpp' and 'stmt_return.hpp')

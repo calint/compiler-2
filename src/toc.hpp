@@ -190,6 +190,7 @@ class body_uses final {
 // compile time; a register, e.g. 'x' of 'f(a + 1)'; or a place of the caller,
 // e.g. 'p' of 'f(world.rooms[i])' at the address the call computed
 struct param_binding {
+    // the name of the parameter or of the result
     std::string from;
     ident_info info;
     // what the parameter stands for, as the comments show it
@@ -251,8 +252,8 @@ struct param_binding {
 // constant parameter of a generic instance
 struct const_info {
     token src_loc_tk; // the definition
-    // typed when the initializer of a 'let' is or its type is not the
-    // default type, e.g. 'let v = int(5)' or 'let b = true'
+    // typed when the initializer of a 'let' names its type or has one other
+    // than the default type, e.g. 'let v = int(5)' or 'let b = true'
     folded_value constant{};
 };
 
@@ -260,8 +261,8 @@ struct const_info {
 // a parameter or the result
 enum class var_kind : uint8_t { var, dat, param, result };
 
-// whether the end of a loop and its counter step are reached by a jump, a
-// 'break' or a 'continue' of it was compiled; read by 'compile_toc::join_loop'
+// whether a 'break' or a 'continue' of a loop was compiled, so its end or its
+// counter step is reached by a jump; read by 'compile_toc::join_loop'
 struct loop_reach {
     bool is_left_by_break{};
     bool is_continued{};
@@ -1054,11 +1055,10 @@ class scope_stack final {
         return scopes_.at(func_scope_index());
     }
 
-    // how many times the inlined function 'name' is being compiled in place
-    // by the current function body, inlined bodies are searched down to the
-    // nearest function with a body of its own; that is the inlined function
-    // itself in the check of its body without its calls, where a call of it
-    // is a recursion ('stmt_def_func::check_body')
+    // how many scopes of the function 'name' are open, from the innermost out
+    // to the nearest one with a frame, that one included; in the body check of
+    // an inlined function ('stmt_def_func::check_body') that is the function
+    // itself, so a call of it there counts as a recursion
     [[nodiscard]] auto inlined_nesting(const std::string_view name) const
         -> size_t {
 
@@ -1204,8 +1204,8 @@ class scope_stack final {
         innermost_loop().reach_of_loop().is_continued = true;
     }
 
-    // a variable, data or constant declared in the root scope keeps the
-    // definition that declared it at the parse, the compile declares it again
+    // records the definition of a variable, data or constant of the root
+    // scope; the one of the parse stays when the compile declares it again
     auto record_if_global(const std::string_view name) -> void {
         if (not is_at_root()) {
             return;

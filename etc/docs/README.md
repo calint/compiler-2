@@ -2230,8 +2230,9 @@ program can reach the run-time classes of the table; the defaults stay so for
 the size and the speed of the code (decided 2026-10-23). Measured on x86_64
 without '--checks': a write past an array goes on silently, a division by zero
 stops the program with a floating point exception, a shift by 65 shifts by 1
-because the machine masks the count to the width of the register (6 bits on
-x86_64, 5 on rv32i) and a signed overflow wraps, also a constant one. Such a
+because the machine masks the count to the width of the operation (6 bits for
+a 64-bit one on x86_64, 5 for a narrower one and on rv32i) and a signed
+overflow wraps, also a constant one. Such a
 result depends on the target. With 'noub' each of them stops at a panic that
 names the check, e.g. 'panic: bounds'.
 
