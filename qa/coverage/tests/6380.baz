@@ -1,0 +1,4 @@
+# 'main' that is 'noinline' and has type parameters reports the leftmost,
+# 'noinline', as the head is checked in source order
+
+func noinline main<T type>() {}

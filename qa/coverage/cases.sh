@@ -8265,3 +8265,7 @@ SRC=6260 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
 # --checks=upper: a run-time range with a negative start whose end is inside
 # the array passes on every target, as a negative index does
 SRC=6261 && EXP=0 && OPTS="--checks=upper" RUN
+
+# 'main' that is 'noinline' and has type parameters reports the leftmost
+# error, 'noinline', as the head is checked in source order
+SRC=6380 && COMPERR

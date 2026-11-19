@@ -54,7 +54,8 @@ class initializer_declaration final {
     array_shape shape_;
 
   public:
-    // 'tz' is at the initializer, after the '='
+    // 'tz' is at the initializer, after the '=', and is left there for
+    // 'parse_value'
     initializer_declaration(parse_toc& tc, tokenizer& tz, const token& name_tk,
                             const name_in_initializer name_visibility)
         : name_tk_{name_tk}, name_visibility_{name_visibility} {
@@ -328,7 +329,8 @@ class initializer_declaration final {
 
     // the variable is in scope while its initializer is parsed, so a read of
     // it, e.g. 'var x = x + 1', resolves to it and is rejected
-    // ('scope::initializer'), not to an outer variable of that name
+    // ('scope::initializer'), not to an outer variable of that name; a
+    // hidden name is not added
     auto with_placeholder(parse_toc& tc,
                           const std::function_ref<void()> parse) const -> void {
 
@@ -398,10 +400,10 @@ class stmt_def_const final : public statement {
   public:
     // the constant is declared during the parse so later statements can name
     // it, e.g. as an array size
-    stmt_def_const(parse_toc& tc, const token& src_loc_tk, const token& name_tk,
+    stmt_def_const(parse_toc& tc, const token& keyword_tk, const token& name_tk,
                    const token& equals_tk, const type& tp, expr_any initializer,
                    const folded_value& constant)
-        : statement{src_loc_tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
+        : statement{keyword_tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
           initializer_{std::move(initializer)}, constant_{constant} {
 
         set_type(tp);
@@ -461,10 +463,11 @@ class stmt_def_var final : public statement {
   public:
     // 'at_name' is the tokenizer after the name, where the destination
     // continues
-    stmt_def_var(parse_toc& tc, const token& tk, tokenizer at_name,
+    stmt_def_var(parse_toc& tc, const token& keyword_tk, tokenizer at_name,
                  const token& equals_tk,
                  const initializer_declaration& declaration, expr_any value)
-        : statement{tk}, declared_{declared_var(tk, declaration)},
+        : statement{keyword_tk},
+          declared_{declared_var(keyword_tk, declaration)},
           assign_var_{
               declare_and_assign(tc, declared_, at_name, equals_tk,
                                  std::move(value)),
@@ -571,8 +574,8 @@ class stmt_def_var final : public statement {
 // reads the name and the initializer and makes the statement of the kind they
 // give: a constant for a 'let' that folds, e.g. 'let n = 2 * 3', else a
 // variable
-inline auto make_stmt_def_var(parse_toc& tc, const token& tk, tokenizer& tz)
-    -> std::unique_ptr<statement> {
+inline auto make_stmt_def_var(parse_toc& tc, const token& keyword_tk,
+                              tokenizer& tz) -> std::unique_ptr<statement> {
 
     const token name_tk{initializer_declaration::read_name(tc, tz)};
 
@@ -581,7 +584,7 @@ inline auto make_stmt_def_var(parse_toc& tc, const token& tk, tokenizer& tz)
     const tokenizer at_name{tz};
 
     const token equals_tk{
-        initializer_declaration::read_equals(tz, tk.text(), name_tk),
+        initializer_declaration::read_equals(tz, keyword_tk.text(), name_tk),
     };
 
     const initializer_declaration declaration{
@@ -594,16 +597,16 @@ inline auto make_stmt_def_var(parse_toc& tc, const token& tk, tokenizer& tz)
     expr_any value{declaration.parse_value(tc, tz)};
 
     const std::optional<folded_value> constant{
-        initializer_declaration::fold_let(tc, tk, value, declaration.type_ref(),
-                                          declaration.shape()),
+        initializer_declaration::fold_let(
+            tc, keyword_tk, value, declaration.type_ref(), declaration.shape()),
     };
 
     if (constant) {
-        return std::make_unique<stmt_def_const>(tc, tk, name_tk, equals_tk,
-                                                declaration.type_ref(),
-                                                std::move(value), *constant);
+        return std::make_unique<stmt_def_const>(
+            tc, keyword_tk, name_tk, equals_tk, declaration.type_ref(),
+            std::move(value), *constant);
     }
 
-    return std::make_unique<stmt_def_var>(tc, tk, at_name, equals_tk,
+    return std::make_unique<stmt_def_var>(tc, keyword_tk, at_name, equals_tk,
                                           declaration, std::move(value));
 }

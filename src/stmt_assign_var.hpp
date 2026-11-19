@@ -101,10 +101,7 @@ class stmt_assign_var final : public statement {
     //
 
     // the write is recorded before the value parses, so an error at the
-    // destination comes first, e.g. 'c = nope' of a constant 'c' reports 'c';
-    // the value is parsed as
-    // the type of the destination, which gives the type of a literal, e.g.
-    // 'a = {1, 2}'
+    // destination comes first, e.g. 'c = nope' of a constant 'c' reports 'c'
     [[nodiscard]] static auto parse_value(parse_toc& tc, tokenizer& tz,
                                           const stmt_identifier& dst)
         -> expr_any {

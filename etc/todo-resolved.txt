@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 503 (2026-11-19, bug hunt: whole programs of ordinary
+    size mixing every feature; design: function definitions and bodies,
+    'stmt_def_func.hpp' and 'stmt_def_func_param.hpp'; readability: a
+    newcomer walks 'stmt_assign_var.hpp', 'stmt_def_var.hpp' and
+    'statement.hpp')
+    => bug hunt: no defect; a generator of programs of 3 to 18 modules
+       with a model of each (sorts of records in generic lists, binary
+       search over 'dat', a stack machine with methods, matrices with the
+       array built-ins, ring buffers, recursion, generic text buffers,
+       global records with methods on elements indexed by calls), mixed
+       in 'main' over rounds through globals, the all-inlined loop long
+       enough for far jumps, each built as drawn, inlined and noinline
+       under twelve option sets: 2600 programs, 997000 lines, 95650 runs,
+       five hand-written programs on three targets; the x86_64 rejections
+       met are the documented fixed-register ones
+    => design: the rules of the head of 'main' ('noinline', type
+       parameters) are checked by 'func_head::assert_main_head' in source
+       order, the leftmost error first like 'assert_signature' (+3 lines,
+       listings equal): test 6380; nine ideas kept with reasons ('toc.hpp'
+       only declares 'stmt_def_func', so 'func_info' keeps its facts,
+       'is_body_parsed_' catches mutual calls)
+    => readability: three comments ('parse_value' records the write
+       before the value, the declaration leaves the tokenizer at the
+       initializer, a hidden name is not added) and the token of a
+       declaration, checked as 'let', named 'keyword_tk'; 72 functions, 3
+       predictions wrong
 [x] easy: round 502 (2026-11-19, bug hunt: shifts, bitwise and unary
     operators; design: what the front end hands the backend about a name,
     'ident_info.hpp' and 'operand.hpp'; readability: a newcomer walks

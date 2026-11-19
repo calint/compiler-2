@@ -87,6 +87,24 @@ struct func_head {
     // none until it is read, e.g. after 'list.add' of 'func list.add('
     std::optional<token> open_paren_tk;
 
+    // no call gives 'main' type arguments or calls it out of line; its
+    // parameters and result follow, 'stmt_def_func' checks them
+    auto assert_main_head() const -> void {
+        if (name != reserved_names::main) {
+            return;
+        }
+
+        if (noinline_tk) {
+            throw compile_error{*noinline_tk,
+                                "'main' cannot be declared 'noinline'"};
+        }
+
+        if (not type_param_tks.empty()) {
+            throw compile_error{type_param_tks.front(),
+                                "'main' cannot have type parameters"};
+        }
+    }
+
     // e.g. 'func f<T type> {' has no '(' after its name; reported at the
     // name, the next token can be on a later line
     auto assert_open_paren() const -> void {
@@ -866,19 +884,10 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // no caller gives 'main' arguments or calls it out of line; its result
-    // is checked by 'assert_main_has_no_result'
+    // no caller gives 'main' arguments; its head is checked by
+    // 'func_head::assert_main_head', its result by 'assert_main_has_no_result'
     auto assert_main_signature() const -> void {
-        if (name() != reserved_names::main) {
-            return;
-        }
-
-        if (head_.noinline_tk) {
-            throw compile_error{*head_.noinline_tk,
-                                "'main' cannot be declared 'noinline'"};
-        }
-
-        if (not params_.empty()) {
+        if (name() == reserved_names::main and not params_.empty()) {
             throw compile_error{params_.front().tok(),
                                 "'main' cannot have parameters"};
         }
@@ -1768,13 +1777,7 @@ inline auto make_stmt_def_func(parse_toc& tc, const token& src_loc_tk,
 
     const func_head head{func_head::read(tc, tz)};
 
-    // no call gives 'main' type arguments, the rest of its signature is
-    // checked by 'stmt_def_func::assert_main_signature'
-    if (head.name == reserved_names::main and not head.type_param_tks.empty()) {
-        throw compile_error{head.type_param_tks.front(),
-                            "'main' cannot have type parameters"};
-    }
-
+    head.assert_main_head();
     head.assert_open_paren();
 
     // e.g. 'func text.print()' or 'func tokenizer.to<T type>()'
