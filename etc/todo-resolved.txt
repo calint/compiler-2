@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 514 (2026-11-20, bug hunt: register pressure after the
+    register changes of rounds 491 to 513; design: the x86_64 assembler,
+    'assembler_x86_64.hpp'; readability: a newcomer walks the first half of
+    'machine_x86_64.hpp')
+    => bug hunt: no defect; a model generator of right-nested expressions
+       holding one register per level with '*', '/', '%', shifts, calls,
+       noinline methods, nested indexes, fields and conversions at the
+       innermost level, inlined helpers writing global arrays, conditions
+       and the io built-ins with deep arguments, each trimmed per target
+       to just fit, under eight option sets with the register report
+       checked against the listing: 12950 programs, 101500 runs, 550 on
+       rv32i-fpga, peaks of 14 of 14 registers on x86_64 and 29 of 29 on
+       rv32i; 16 mutants, 15 caught by the suite, the sixteenth ('rcx'
+       left out of the x86_64 io clobbers) not observable since 'rcx' is
+       last in the order and never live at such a call
+    => design: 'comment_start' loses its special case for indentation 0,
+       the general path gives the same text; 'address_text' asserts a
+       displacement within 32 bits instead of computing a magnitude for
+       'INT64_MIN', every memory argument is lowered or built so (-4
+       lines, listings equal); five ideas kept with reasons
+    => readability: three notes ('shift' sign-extends its count for the
+       unsigned check, 'emit_frame_capacity_check' is freed by the scope
+       of its caller, the system calls that open the sector file overwrite
+       'rax' and the arguments) and the operands of 'cmp' named 'lhs' and
+       'rhs'; 31 functions, 4 predictions wrong
 [x] easy: round 513 (2026-11-19, bug hunt: the '--checks' options as a
     matrix; design: generics as a whole; readability: a newcomer walks the
     second half of 'expr_any.hpp')

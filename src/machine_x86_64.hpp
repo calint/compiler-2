@@ -473,6 +473,9 @@ class machine_x86_64 final : public machine {
         // note: a count wider than the value is rejected as narrowed
         assert(count.type_ref().size_bytes() <= dst.type_ref().size_bytes());
 
+        // note: sign extended, so the unsigned 'check_shift_count' fails a
+        //       negative count
+
         mov(site, sized_register("rcx", dst.type_ref().size_bytes()), count);
 
         if (check.enabled) {
@@ -623,6 +626,7 @@ class machine_x86_64 final : public machine {
         // note: the frame follows the storage in use from the base
         assert(frame_address.displacement() >= 0);
 
+        // note: freed by the 'operation_scope' of 'check_frame_capacity'
         const operand last_base{
             alloc_scratch_register(site, default_type()),
         };
@@ -877,12 +881,14 @@ class machine_x86_64 final : public machine {
 
         assembler_.label(0, "baz_sector_transfer");
         assembler_.comment(1, "the system call is kept on the stack");
-        // 'rax' is reused by 'open' and 'lseek', so the number is saved
+        // 'rax' is reused by the system calls that open the file, so the
+        // number is saved
         assembler_.instruction(1, op::push, "rax");
         // a descriptor of 0 or more means the file is already open
         assembler_.instruction(1, op::cmp, descriptor, 0);
         assembler_.jcc(1, condition::ge, "baz_sector_opened");
-        // first transfer: save the arguments, 'open' and 'lseek' clobber them
+        // first transfer: save the arguments, the system calls that open the
+        // file clobber them
         assembler_.instruction(1, op::push, "rdi");
         assembler_.instruction(1, op::push, "rsi");
         assembler_.instruction(1, op::push, "rdx");
@@ -1280,17 +1286,15 @@ class machine_x86_64 final : public machine {
 
     // 'test' of a register with itself sets the flags of a compare with 0 and
     // is shorter
-    auto cmp(const emit_site site, const operand& dst_op, const operand& src_op)
+    auto cmp(const emit_site site, const operand& lhs, const operand& rhs)
         -> void {
 
-        if (dst_op.is_register() and src_op.is_immediate() and
-            src_op.immediate() == 0) {
-
-            emit_op(site, op::test, dst_op, dst_op);
+        if (lhs.is_register() and rhs.is_immediate() and rhs.immediate() == 0) {
+            emit_op(site, op::test, lhs, lhs);
             return;
         }
 
-        emit_op(site, op::cmp, dst_op, src_op);
+        emit_op(site, op::cmp, lhs, rhs);
     }
 
     // writes the instruction with the operands as they are

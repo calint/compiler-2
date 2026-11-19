@@ -569,19 +569,20 @@ class assembler_x86_64 final : public assembler {
             }
         }
 
+        // note: 'lower_address' adds a displacement beyond 32 bits in a
+        //       register
+
+        assert(std::in_range<int32_t>(address.displacement));
+
         if (address.displacement == 0) {
             return memory_text;
         }
 
-        memory_text += address.displacement > 0 ? " + " : " - ";
-
-        const uint64_t magnitude{
-            address.displacement < 0
-                ? uint64_t{} - static_cast<uint64_t>(address.displacement)
-                : static_cast<uint64_t>(address.displacement),
-        };
-
-        memory_text += std::format("{}", magnitude);
+        if (address.displacement > 0) {
+            memory_text += std::format(" + {}", address.displacement);
+        } else {
+            memory_text += std::format(" - {}", -address.displacement);
+        }
 
         return memory_text;
     }
@@ -620,17 +621,12 @@ class assembler_x86_64 final : public assembler {
         return text.substr(leading_whitespace(text).size());
     }
 
-    // the marker replaces the first spaces of the indentation
+    // the marker replaces the first spaces of the indentation, if any
     [[nodiscard]] static auto comment_start(const size_t indent)
         -> std::string {
 
-        if (indent == 0) {
-            return std::string{comment_marker_};
-        }
-
         std::string text{indentation(indent)};
         text.replace(0, comment_marker_.size(), comment_marker_);
-
         return text;
     }
 
