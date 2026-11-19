@@ -1177,7 +1177,7 @@ class stmt_identifier final : public statement {
         }
 
         if (tm == term_kind::call or tm == term_kind::generic_call or
-            tm == term_kind::conversion or tm == term_kind::builtin_function) {
+            is_builtin_term(tm)) {
 
             throw_call_not_array(tk, tk.text());
         }

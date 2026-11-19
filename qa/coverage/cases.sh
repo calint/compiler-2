@@ -8309,3 +8309,7 @@ if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6521 && EXP=
 # a noinline method calling a noinline method of an element of another array,
 # indexed by a run-time value, reads its own receiver after the call
 SRC=6522 && EXP=0 && RUN
+
+# a string continued after a backslash is one line in the comments of the
+# listing, without its line end, also a crlf one
+SRC=6540 && DIFFPY

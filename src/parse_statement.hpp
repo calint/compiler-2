@@ -111,11 +111,6 @@ inline auto make_builtin_function(parse_toc& tc, tokenizer& tz, const token& tk,
                                                        tz);
 }
 
-// a built-in function or a conversion, the terms 'parse_builtin' takes
-[[nodiscard]] inline auto is_builtin_term(const term_kind tm) -> bool {
-    return tm == term_kind::builtin_function or tm == term_kind::conversion;
-}
-
 // a call of the built-in at 'tk', classified as 'tm' ('is_builtin_term'); the
 // catalog says where a function may stand ('assert_builtin_place')
 inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
@@ -470,14 +465,14 @@ inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
 [[nodiscard]] inline auto classify_operand(const parse_toc& tc, const token& tk,
                                            const tokenizer& tz) -> term_kind {
 
+    const term_kind tm{classify_term(tc, tk, tz)};
+
     // array destinations parse strings in 'expr_any'
-    if (tk.is_string()) {
+    if (tm == term_kind::string) {
         throw compile_error{
             tk, "a string is not a number, it fills a whole array of 'i8', "
                 "e.g. 'a = \"abc\"'"};
     }
-
-    const term_kind tm{classify_term(tc, tk, tz)};
 
     // e.g. the 'i8[2]{1, 2}' of 'x + i8[2]{1, 2}' or the '[2]{1, 2}' of
     // 'a == [2]{1, 2}', an array is compared as memory like an instance
@@ -540,16 +535,16 @@ inline auto parse_operand(parse_toc& tc, tokenizer& tz, unary_ops uops,
 inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
     -> std::unique_ptr<statement> {
 
-    // e.g. the '2' of 'x = 1 2' or ''a' = 1'
-    if (tk.is_string() or constant_parser::is_literal(tk)) {
-        throw compile_error{tk, "expected a statement"};
-    }
-
     if (std::unique_ptr<statement> built{parse_keyword_statement(tc, tz, tk)}) {
         return built;
     }
 
     const term_kind tm{classify_term(tc, tk, tz)};
+
+    // e.g. the '2' of 'x = 1 2', ''a' = 1' or 'true'
+    if (tm == term_kind::string or tm == term_kind::literal) {
+        throw compile_error{tk, "expected a statement"};
+    }
 
     // e.g. 'arrays_equal(a, b, 4)' or 'i8(x)' alone is rejected, its value is
     // all it does

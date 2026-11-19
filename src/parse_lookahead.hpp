@@ -197,6 +197,11 @@ enum class term_kind : uint8_t {
            kind == term_kind::instance_literal;
 }
 
+// a built-in function or a conversion, the terms 'parse_builtin' takes
+[[nodiscard]] inline auto is_builtin_term(const term_kind tm) -> bool {
+    return tm == term_kind::builtin_function or tm == term_kind::conversion;
+}
+
 // what a built-in type denotes, 'next' is the character after it
 [[nodiscard]] inline auto classify_builtin_type_term(const char next)
     -> term_kind {

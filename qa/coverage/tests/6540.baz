@@ -1,0 +1,13 @@
+# a string continued after a backslash is one line in the comments of the
+# listing, without the line end, also after a crlf line end; the file has
+# crlf line ends but for the continuation of 'lf'
+
+dat crlf = "ab\
+cd"
+
+func main() {
+    var lf = "ef\
+gh"
+    write(1, crlf)
+    write(1, lf)
+}

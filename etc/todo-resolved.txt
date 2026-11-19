@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 511 (2026-11-19, bug hunt: strings, character literals
+    and text; design: how the parser decides what a statement or a
+    definition is; readability: a newcomer walks 'stmt_def_dat.hpp' and
+    'data_table')
+    => bug hunt: no defect; a model generator of strings with raw bytes,
+       every escape, mixed-case hex escapes and continued lines (a fifth
+       of the files CRLF) of lengths 0 to 65 into variables, fields after
+       fields of other alignment, elements at run-time indexes, 'mut'
+       parameters, 'dat', 'let', globals and results, compared, written
+       whole and in parts, spelled differently but equal so they share a
+       constant, every build with '--reproduce-source': 9000 programs,
+       205625 runs, probes of long strings past the rv32i offsets, odd
+       file names in panics and 45 malformed literals; 24 mutants, 22
+       caught: the listing comment of a string continued after a CRLF kept
+       the line end and nothing checked it: test 6540
+    => design: 'parse_statement' and 'classify_operand' ask
+       'classify_term' for a string or a literal instead of testing the
+       token themselves, so the string kind is read at last;
+       'is_builtin_term' sits with the other kind tests and
+       'assert_term_starts_path' uses it (listings, errors and 32 probes
+       equal); a stray '}' in a single statement block keeps its own
+       message (round 500); seven ideas kept with reasons
+    => readability: 'compile_data_elements' renamed 'compile_data_scalars',
+       it writes the listed scalars and 'compile_data_list' the zeros; a
+       wrong note on 'elem::form' removed, every element is folded as it
+       is built; 25 functions, 2 predictions wrong
 [x] easy: round 510 (2026-11-19, bug hunt: noinline calls and
     recursion at the '--stack' and '--vars' limits after the round 509
     stack check; design: data emission, 'dat' tables and read-only

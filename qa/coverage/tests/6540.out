@@ -1,0 +1,3 @@
+dat crlf = "abcd"
+var lf = "efgh"
+lf = "efgh"

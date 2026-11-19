@@ -61,7 +61,6 @@ class stmt_def_dat final : public statement {
             std::vector<elem> values;
         };
 
-        // note: a scalar until the definition folds its initializer
         std::variant<scalar, string, elements, fields> form{scalar{}};
 
         [[nodiscard]] auto tok() const -> const token& {
@@ -181,24 +180,6 @@ class stmt_def_dat final : public statement {
         compile_data_list(x, tp, std::get<elem::elements>(el.form));
     }
 
-    // the listed elements of a built-in type on one data line, e.g. 'dat
-    // primes = []{2, 3, 5}'
-    static auto compile_data_elements(machine& x, const type& tp,
-                                      const elem::elements& list) -> void {
-
-        std::vector<int64_t> values;
-        values.reserve(list.items.size());
-
-        for (const elem& item : list.items) {
-            values.push_back(std::get<elem::scalar>(item.form).value);
-        }
-
-        // e.g. 'dat a = i8[4]' lists no element
-        if (not values.empty()) {
-            x.emit_data_array(tp.size_bytes(), values);
-        }
-    }
-
     static auto compile_data_instance(machine& x, const type& tp,
                                       const elem::fields& instance) -> void {
 
@@ -245,7 +226,7 @@ class stmt_def_dat final : public statement {
         x.comment({list.src_loc_tk, 0}, "{}[{}]", tp.name(), list.array_count);
 
         if (tp.is_builtin()) {
-            compile_data_elements(x, tp, list);
+            compile_data_scalars(x, tp, list);
         } else {
             for (const auto [i, e] : std::views::enumerate(list.items)) {
                 x.comment({e.tok(), 0}, "[{}]", i);
@@ -255,6 +236,24 @@ class stmt_def_dat final : public statement {
 
         compile_zero_elements(x, list.src_loc_tk, tp,
                               list.array_count - list.items.size());
+    }
+
+    // the listed elements of a built-in type on one data line, e.g. 'dat
+    // primes = []{2, 3, 5}'; 'compile_data_list' adds the zeros
+    static auto compile_data_scalars(machine& x, const type& tp,
+                                     const elem::elements& list) -> void {
+
+        std::vector<int64_t> values;
+        values.reserve(list.items.size());
+
+        for (const elem& item : list.items) {
+            values.push_back(std::get<elem::scalar>(item.form).value);
+        }
+
+        // e.g. 'dat a = i8[4]' lists no element
+        if (not values.empty()) {
+            x.emit_data_array(tp.size_bytes(), values);
+        }
     }
 
     // the bytes of the string then zeros up to the length of the array
