@@ -105,6 +105,11 @@ class assembler_rv32i final : public assembler {
         std::string symbol;
         // a symbol subtracted from 'symbol', e.g. a frame size from 'vars.end'
         std::string subtracted;
+
+        [[nodiscard]] auto is_same(const immediate& other) const -> bool {
+            return number == other.number and symbol == other.symbol and
+                   subtracted == other.subtracted;
+        }
     };
 
     // starts the comment of a line, the text before it is code
@@ -1037,9 +1042,7 @@ class assembler_rv32i final : public assembler {
         return stored->code == op::sw and loaded->code == op::lw and
                stored->rs1 != zero_register_ and stored->rs1 == loaded->rs1 and
                stored->rs2 == loaded->rd and
-               stored->value.number == loaded->value.number and
-               stored->value.symbol == loaded->value.symbol and
-               stored->value.subtracted == loaded->value.subtracted;
+               stored->value.is_same(loaded->value);
     }
 
     // a set instruction leaves no flags
@@ -1121,8 +1124,8 @@ class assembler_rv32i final : public assembler {
         return symbols;
     }
 
-    // the instruction of 'l' when it computes only register 'rd' from its
-    // operands, e.g. a load or an 'add', else none
+    // the instruction of 'l' when its only effect is writing register 'rd',
+    // e.g. a load or an 'add', else none
     [[nodiscard]] auto computing_instruction(const line* const l,
                                              const uint8_t rd) -> instruction* {
 
@@ -1177,7 +1180,7 @@ class assembler_rv32i final : public assembler {
         return std::nullopt;
     }
 
-    // the words of the form 'write_line' writes for the jump's grown size
+    // the words of the form 'write_line_text' writes for the jump's grown size
     [[nodiscard]] auto encode_jump(const line& l, const size_t line_index,
                                    const int64_t address,
                                    const symbol_table& symbols) const
@@ -1305,8 +1308,8 @@ class assembler_rv32i final : public assembler {
         for (const line& l : lines()) {
             const record* const structured{records_.find(l)};
 
-            // note: the variables are not part of the image, so they only
-            //       reserve zero bytes
+            // note: the variables are not part of the image, so they hold
+            //       no code and no data, only zero fills
 
             assert(l.which != section::variables or
                    (l.code_size == 0 and
@@ -1376,8 +1379,33 @@ class assembler_rv32i final : public assembler {
         }
     }
 
-    auto write_line(std::ostream& os, const line& l, size_t& skip_count) const
-        -> void {
+    // the data, the zeros or the code of the line at 'line_index', which is
+    // at 'address'
+    auto write_line_bytes(std::ostream& os, const line& l,
+                          const size_t line_index, const size_t address,
+                          const symbol_table& symbols) const -> void {
+
+        const record* const structured{records_.find(l)};
+
+        const data_values* const data{
+            std::get_if<data_values>(structured),
+        };
+
+        const zero_fill* const fill{std::get_if<zero_fill>(structured)};
+
+        // zero fills such as the zero elements of a 'dat' can be large
+        if (data != nullptr) {
+            write_data(os, *data);
+        } else if (fill != nullptr) {
+            write_zeros(os, fill->size_bytes);
+        } else {
+            write_code(os, l, line_index, static_cast<int64_t>(address),
+                       symbols);
+        }
+    }
+
+    auto write_line_text(std::ostream& os, const line& l,
+                         size_t& skip_count) const -> void {
 
         if (l.removed) {
             return;
@@ -1423,31 +1451,6 @@ class assembler_rv32i final : public assembler {
         std::println(os, "{}:", skip_label);
     }
 
-    // the data, the zeros or the code of the line at 'line_index', which is
-    // at 'address'
-    auto write_line_bytes(std::ostream& os, const line& l,
-                          const size_t line_index, const size_t address,
-                          const symbol_table& symbols) const -> void {
-
-        const record* const structured{records_.find(l)};
-
-        const data_values* const data{
-            std::get_if<data_values>(structured),
-        };
-
-        const zero_fill* const fill{std::get_if<zero_fill>(structured)};
-
-        // zero fills such as the zero elements of a 'dat' can be large
-        if (data != nullptr) {
-            write_data(os, *data);
-        } else if (fill != nullptr) {
-            write_zeros(os, fill->size_bytes);
-        } else {
-            write_code(os, l, line_index, static_cast<int64_t>(address),
-                       symbols);
-        }
-    }
-
     // returns the end address of the section, 'written' is where the image
     // written so far ends
     auto write_section(std::ostream& os, const image_layout& image,
@@ -1484,7 +1487,7 @@ class assembler_rv32i final : public assembler {
     auto write_text(std::ostream& os) const -> void {
         size_t skip_count{};
         for (const line& l : lines()) {
-            write_line(os, l, skip_count);
+            write_line_text(os, l, skip_count);
         }
     }
 
@@ -1551,8 +1554,8 @@ class assembler_rv32i final : public assembler {
         return encode_branch(details.encoding, first, second, offset);
     }
 
-    // the forms that write register 'rd' from their operands only, e.g. a load
-    // or an 'add'
+    // the forms whose only effect is writing register 'rd', e.g. a load or
+    // an 'add'
     [[nodiscard]] static auto computes(const form operands) -> bool {
         return operands == form::registers or operands == form::immediate or
                operands == form::shift or operands == form::upper or
@@ -2060,8 +2063,8 @@ class assembler_rv32i final : public assembler {
         return {upper, encode_immediate(addi_encoding, rd, rd, lower)};
     }
 
-    // the jump of 'reach_form' without the skip of a conditional, also a 'j',
-    // 'distance' from its first instruction
+    // the jump of 'reach_form' after the skip of a conditional, or all of a
+    // 'j', 'distance' from its first instruction
     [[nodiscard]] static auto long_jump(const jump_reach reach_form,
                                         const jump_info& jump,
                                         const int64_t distance)
@@ -2131,15 +2134,15 @@ class assembler_rv32i final : public assembler {
 
         const size_t skip_bytes{skip_size_bytes(*l.jump)};
 
-        if (l.code_size == skip_bytes + one_instruction_bytes) {
-            return jump_reach::jal;
+        for (const jump_reach grown :
+             {jump_reach::jal, jump_reach::far, jump_reach::borrowed}) {
+
+            if (l.code_size == skip_bytes + jump_size_bytes(grown)) {
+                return grown;
+            }
         }
 
-        if (l.code_size == skip_bytes + two_instructions_bytes) {
-            return jump_reach::far;
-        }
-
-        return jump_reach::borrowed;
+        std::unreachable();
     }
 
     [[nodiscard]] static auto reaches(const line& l, const size_t source_offset,

@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 516 (2026-11-20, bug hunt: malformed and near-valid
+    programs in the front end after the changes of rounds 500 to 512;
+    design: the rv32i assembler, 'assembler_rv32i.hpp'; readability: a
+    newcomer walks the second half of 'assembler_rv32i.hpp')
+    => bug hunt: no defect; a mutation fuzzer of the tests (cut at a token
+       or byte, tokens deleted, duplicated, swapped, replaced and inserted,
+       keywords for names, lines reindented, CR and LF variants, splices
+       of other tests) through the sanitizer build on four targets: 240500
+       programs, every one rejected at a location in the file or accepted
+       as a valid program; every test in four whitespace variants compiles
+       to the same code; 450 probes of literals, the head of 'main',
+       keywords as names, misplaced modifiers, generics, statement
+       dispatch and scope messages; a ';' standing alone in a list gets the
+       list's message where an attached one gets the ';' message, both at
+       the ';', kept
+    => design: 'reach' reads the form of a grown jump by comparing its size
+       with 'jump_size_bytes', the one owner of those sizes, and an unknown
+       size is unreachable; 'is_reload' compares whole immediates with
+       'immediate::is_same' (clang-tidy forbids an overloaded '==') (listings and images equal); ten ideas kept with
+       reasons
+    => readability: 'write_line' renamed 'write_line_text', it writes the
+       text of a line; three comments (the variables hold only zero fills,
+       an instruction 'computes' when its only effect is writing 'rd',
+       also at 'computing_instruction', a 'long_jump' of a 'j' is all of
+       it); 54 functions, 4 predictions wrong
 [x] easy: round 515 (2026-11-20, bug hunt: the passes on the emitted
     lines; design: how registers are handed out and given back,
     'register_pool.hpp' and the scopes of 'machine.hpp'; readability: a
