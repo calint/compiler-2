@@ -1949,21 +1949,16 @@ class machine_rv32i : public machine {
             },
         };
 
-        {
-            // the walk's own registers are freed before the result is written
-            const operation_scope walk_scope{*this};
-
-            walk_runtime_count(
-                {
-                    .site{site},
-                    .verb{"compare"},
-                    .src{left},
-                    .dst{right},
-                    .count{count},
-                    .access{access},
-                },
-                bulk);
-        }
+        walk_runtime_count(
+            {
+                .site{site},
+                .verb{"compare"},
+                .src{left},
+                .dst{right},
+                .count{count},
+                .access{access},
+            },
+            bulk);
 
         write_compare_result(site, result, registers, false);
     }
@@ -2587,9 +2582,6 @@ class machine_rv32i : public machine {
     // magnitude above the range of the sign leaves the flag in 'a1' set, the
     // sign is applied last
     auto emit_multiply_checked_body() -> void {
-        // 'lui' of 2^31
-        constexpr int sign_bit_upper{0x80000};
-
         assembler_.xor_op(1, "a4", "a0", "a1");
         assembler_.srai(1, "a4", "a4", sign_shift_);
         assembler_.srai(1, "a3", "a0", sign_shift_);
@@ -2611,13 +2603,13 @@ class machine_rv32i : public machine {
         assembler_.slli(1, "a2", "a2", 1);
         assembler_.j(1, "1b");
         assembler_.label(0, "3");
-        assembler_.lui(1, "a3", sign_bit_upper);
-        assembler_.bltz(1, "a4", "4f");
-        assembler_.bgeu(1, "a0", "a3", "5f");
-        assembler_.j(1, "6f");
-        assembler_.label(0, "4");
+
+        // note: the largest magnitude is 2^31 - 1 minus the sign, 2^31 for a
+        //       negative product
+
+        assembler_.li(1, "a3", std::numeric_limits<int32_t>::max());
+        assembler_.sub(1, "a3", "a3", "a4");
         assembler_.bltu(1, "a3", "a0", "5f");
-        assembler_.label(0, "6");
         apply_sign("a0", "a0", "a4");
         assembler_.li(1, "a1", 0);
         assembler_.ret(1);
@@ -3516,9 +3508,12 @@ class machine_rv32i : public machine {
         assembler_.label(walk.site.indent, after_chunks_.name);
     }
 
-    // a head up to the first aligned chunk, whole chunks, then a tail
+    // a head up to the first aligned chunk, whole chunks, then a tail; the
+    // walk's own registers are freed before a comparison writes its result
     auto walk_runtime_count(const runtime_walk& walk,
                             const bulk_operation& bulk) -> void {
+
+        const operation_scope walk_scope{*this};
 
         const std::array<access_start, 2>& starts{bulk.checked_starts()};
 
@@ -4263,16 +4258,7 @@ class machine_rv32i : public machine {
             const size_t phase{starts.front().phase % width};
             const size_t head_size_bytes{(width - phase) % width};
 
-            const bool reaches_width{
-                std::ranges::all_of(
-                    starts,
-                    [width, phase](const access_start& s) -> bool {
-                        return width <= s.alignment and
-                               s.phase % width == phase;
-                    }),
-            };
-
-            if (reaches_width) {
+            if (is_aligned_at(starts, head_size_bytes, width)) {
                 return {
                     .head_size_bytes{head_size_bytes},
                     .width{width},

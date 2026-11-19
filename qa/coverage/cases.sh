@@ -8256,3 +8256,12 @@ if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=
 # '--vars' passes, 16 B less panics; x86_64 has other frame sizes
 if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=0 && OPTS="--vars=320 --checks=frame" RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=254 && OPTS="--vars=304 --checks=frame" RUN_ERR; fi
+
+# --checks=upper,line: a run-time start and count whose end passes the largest
+# 32-bit int fail the bounds check of the range, on rv32i the end is compared
+# unsigned
+SRC=6260 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
+
+# --checks=upper: a run-time range with a negative start whose end is inside
+# the array passes on every target, as a negative index does
+SRC=6261 && EXP=0 && OPTS="--checks=upper" RUN

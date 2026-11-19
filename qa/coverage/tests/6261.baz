@@ -1,0 +1,19 @@
+# with only the upper bound checked, a run-time range with a negative start
+# whose end is inside the array passes on every target, as a negative index
+# does: on rv32i the carry of 'start + count' makes the end fit
+
+# a value the compiler does not know
+func noinline id(x) res {
+    res = x
+}
+
+func main() {
+    var before = i8[4]
+    var x = i8[4]
+    var y = i8[4]
+    before[3] = 1
+    var start = id(-1)
+    var count = id(2)
+    array_copy(x[start], y, count)
+    exit(0)
+}

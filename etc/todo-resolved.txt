@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 498 (2026-11-19, bug hunt: arrays and indexing, the
+    bounds checks after the refactor of round 497; design: the second half
+    of the rv32i backend, 'machine_rv32i.hpp'; readability: a newcomer
+    walks the middle third of 'machine.hpp')
+    => bug hunt: no defect; a model generator of arrays of every width in
+       1 to 3 dimensions, indexes from constants, conversions, other arrays
+       and calls with effects, values at -1, n, n + 1 and the 32-bit
+       edges, 'array_copy' and 'arrays_equal' with counts 0, 1, n - 1, n,
+       n + 1, negative and 2^31 - 1, 'array_length' of unsized parameters,
+       'foo' with a count and 'write' with a start, each under 'noub',
+       'upper,lower,line', 'upper', 'lower' and no checks, plain, '--nopt'
+       and two '--versions': 4890 programs, 180000 runs, probes of the
+       order of panics, arrays of 0x90000000 elements on rv32i; 15
+       mutants, two missed by the suite: the rv32i end of a range compared
+       signed under 'upper' (test 1342 fails at its start first): test
+       6260; the carry of 'upper_bound_top' dropped: test 6261
+    => design: 'plan_loop_start' asks 'is_aligned_at' like
+       'aligned_width_at', 'walk_runtime_count' opens its own scope like
+       'walk_known_size' (listings equal); the checked multiply helper
+       tests its range against 2^31 - 1 less the sign word, one compare
+       instead of two branches and a jump: 4 B less in each of 122 rv32i
+       programs that use it; nine ideas kept with reasons (the three
+       access emitters stay parallel, 'store_at' mirrors 'load_at', the
+       two multiply loops differ)
+    => readability: two comments ('multiply' makes only an unchecked
+       power of two a shift, 'checks()' has the checks the target cannot
+       honor off); 85 functions, 7 predictions wrong, 5 of them told by a
+       comment already
 [x] easy: round 497 (2026-11-19, bug hunt: compile-time values and
     constant data, 'let', typed constants, folding and 'dat'; design: the
     first half of the rv32i backend, 'machine_rv32i.hpp'; readability: a

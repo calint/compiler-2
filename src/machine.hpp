@@ -1261,7 +1261,7 @@ class machine {
         comment(site, "stack capacity check end");
     }
 
-    // what '--checks' turns on, of it the checks the target honors
+    // what '--checks' turns on, with the checks the target cannot honor off
     [[nodiscard]] auto checks() const -> const check_options& {
         return options_.checks;
     }
@@ -1516,8 +1516,8 @@ class machine {
     }
 
     // a constant factor is resolved at the width of 'product': zero clears,
-    // one needs no code, minus one negates and a power of two is a shift, the
-    // other factors go to 'emit_multiply'
+    // one needs no code, minus one negates and an unchecked power of two is a
+    // shift, the other factors go to 'emit_multiply'
     auto multiply(const emit_site site, const operand& product,
                   const operand& factor, const factor_use use,
                   const runtime_check& check = {}) -> void {
