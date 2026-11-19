@@ -259,10 +259,17 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
     // note: 'checked_constant_index' rejected a negative index and one past the
     //       end, the end itself starts the empty range of a zero count
 
-    // an unsized array parameter: a constant element is known, its bytes
-    // are not; they matter only for a result, which has a length
-    if (constant_index and not array_len and reach == path_reach::element) {
-        access_path_.add_fixed_index(static_cast<size_t>(*constant_index));
+    // an unsized array parameter: a constant element or start is known, its
+    // bytes are not; they matter only for a result, which has a length
+    if (constant_index and not array_len) {
+        const size_t index{static_cast<size_t>(*constant_index)};
+
+        if (reach == path_reach::to_end) {
+            access_path_.add_index_range(index, access_path::run_time_end);
+        } else {
+            access_path_.add_fixed_index(index);
+        }
+
         return;
     }
 

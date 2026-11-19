@@ -1,0 +1,19 @@
+# a call of the function it is in reaches its arguments whole: at the call the
+# record of 'f' is not complete, the swapped arguments make it write 'b' too
+
+type pt {x, y}
+
+var gp = pt{1, 2}
+
+func noinline f(d, a mut pt, b mut pt) {
+    if d > 0 {
+        f(d - 1, b, a)
+    }
+    a = {gp.y, gp.x}
+}
+
+func main() {
+    var t = pt{3, 4}
+    f(1, t, gp)
+    exit(gp.y)
+}

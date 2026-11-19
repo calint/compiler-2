@@ -8273,3 +8273,11 @@ SRC=6420 && EXP=253 && OPTS="--checks=noub,-overflow" RUN_ERR
 # 'main' that is 'noinline' and has type parameters reports the leftmost
 # error, 'noinline', as the head is checked in source order
 SRC=6380 && COMPERR
+
+# a call of the function it is in reaches its arguments whole: the swapped
+# recursive call makes 'f' write its second argument, a global it reads
+SRC=6440 && COMPERR
+
+# the start of a bulk operand at a constant index of an unsized array reaches
+# from that element on, so a global element before it is not shared
+SRC=6441 && EXP=52 && RUN

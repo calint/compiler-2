@@ -1,0 +1,4 @@
+
+6440.baz:17:13: argument 3 'gp' may share storage with the global 'gp' that 'f' uses, use a temporary variable for one of them
+    f(1, t, gp)
+            ^~

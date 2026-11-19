@@ -129,7 +129,8 @@ class register_trace final {
         std::string name;
         token call_site_tk;
         frame_kind kind{};
-        // the most registers it held itself, none before it held one
+        // the most registers it held itself, none until a register is
+        // allocated in it, even one the backend holds
         std::optional<size_t> own_peak;
     };
 
@@ -150,10 +151,6 @@ class register_trace final {
     // 'name' made at 'call_site_tk'
     auto begin_frame(const token& call_site_tk, std::string name,
                      const frame_kind kind) -> void {
-
-        // note: a body is compiled once for each list of array lengths, its
-        //       calls are counted at the calls, see
-        //       'register_call_log::add_noinline_call'
 
         if (kind == frame_kind::noinline_body) {
             name = body_frame_name(name);
@@ -337,13 +334,16 @@ class register_call_log final {
     }
 
     // a call inlined counts where its frame ends, a call of a body of its own
-    // where it is made; a callee is listed once it is called or holds a
-    // register
+    // where it is made; a callee is listed once it is called or a register
+    // is allocated in it
     // note: the frame of 'main' is 'inlined', so it is listed with one call
     [[nodiscard]] auto callees() const -> std::map<std::string, callee_use> {
         std::map<std::string, callee_use> uses;
 
         for (const register_trace::frame& ended : frames_) {
+            // note: a body of its own is compiled once for each list of array
+            //       lengths, not once for each call
+
             if (ended.kind == register_trace::frame_kind::inlined) {
                 ++uses[ended.name].calls;
             }

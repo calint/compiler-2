@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 506 (2026-11-19, bug hunt: aliasing and overlap; design:
+    the checks that run at compile time, 'ub_assigned.hpp', 'ub_reads.hpp'
+    and 'ub_order.hpp'; readability: a newcomer walks 'register_pool.hpp'
+    and 'register_report.hpp')
+    => bug hunt: no missed overlap; a model of every scalar as a cell that
+       tries every value of every run-time index, over records and nested
+       arrays written in parts, whole copies, 'foo', inlined and noinline
+       calls with 'mut' and unsized parameters, methods with 'mut'
+       receivers, recursion with swapped arguments, hidden names, late
+       writes in later arguments and the array built-ins on parts of one
+       variable: 24400 programs, 270000 runs; 25 mutants, 24 caught by the
+       suite: a call of the function it is in reaching its arguments whole
+       had no test: test 6440; a bulk operand that starts at a constant
+       index of an unsized array took a run-time index step and rejected
+       'f(g)' for a 'g[0]' that 'f' does not write: it now reaches from
+       that element to the end like a sized one
+       ('stmt_identifier::narrow_to_element'): test 6441
+    => design: no change; each rule has one owner and one message, the
+       parse and the compile walks differ where only the compile folds;
+       restoring the breaks of 'trace_skipped' is needed (test 2090); seven
+       ideas kept with reasons
+    => readability: three comments ('own_peak' counts from the first
+       register allocated in the frame, so does 'callees', the note on
+       bodies compiled once for each list of array lengths moved to the
+       check it explains); 56 functions, 4 predictions wrong
 [x] easy: round 505 (2026-11-19, bug hunt: optimizations against
     '--nopt' and every '--versions'; design: the 'foo' loop,
     'stmt_builtin_foo.hpp'; readability: a newcomer walks 'assembler.hpp')
