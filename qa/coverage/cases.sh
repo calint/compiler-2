@@ -8295,3 +8295,17 @@ SRC=6460 && COMPERR
 
 # the 'else' after a branch true at the parse reads no unset result
 SRC=6461 && COMPERR
+
+# --checks=stack: a call that saves one register reserves its aligned area of
+# 16 B, 126 calls of 32 B fit a stack of 4 KB, 16 B less panics
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6520 && EXP=0 && OPTS="--stack=4096 --checks=stack" RUN; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6520 && EXP=250 && OPTS="--stack=4080 --checks=stack" RUN_ERR; fi
+
+# --checks=stack: the receiver register a noinline method saves at its calls
+# is counted, the recursion fits a stack of 2944 B, 16 B less panics
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6521 && EXP=0 && OPTS="--stack=2944 --checks=stack" RUN; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6521 && EXP=250 && OPTS="--stack=2928 --checks=stack" RUN_ERR; fi
+
+# a noinline method calling a noinline method of an element of another array,
+# indexed by a run-time value, reads its own receiver after the call
+SRC=6522 && EXP=0 && RUN

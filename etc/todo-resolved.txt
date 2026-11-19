@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 510 (2026-11-19, bug hunt: noinline calls and
+    recursion at the '--stack' and '--vars' limits after the round 509
+    stack check; design: data emission, 'dat' tables and read-only
+    constants; readability: a newcomer walks 'type.hpp' and
+    'stmt_def_type_field.hpp')
+    => bug hunt: no defect; a model of recursion with 0 to 9 values live
+       across the call, records by value and 'mut', unsized arrays of
+       several lengths, large locals, calls in 'foo', noinline 'mut'
+       methods on receivers at run-time indexes, each bisected to the
+       smallest '--stack' and '--vars' and checked 16 B below, on an
+       emulator that reports any store outside the variables and the
+       stack and the stack pointer at each body entry: 876 programs, about
+       440000 runs, the stack bound exact to the byte on rv32i-qemu and
+       rv32i-fpga; 14 mutants, three missed by the suite: one saved
+       register fewer counted (test 6520), the receiver left out of the
+       saved count (test 6521), the receiver loaded before the registers
+       are saved (test 6522)
+    => design: no change; each layout rule of the data is decided once,
+       the 'dat' and the read-only constant paths share their folding and
+       differ in the form they write; nine ideas kept with reasons (a
+       'dat' is writable so it shares no read-only bytes, its listing
+       keeps a comment per field)
+    => readability: 'max_listed_data_ranges_' renamed
+       'max_complete_data_ranges_', a list of 9 is known complete; the
+       comment of 'padding_gaps' says 'max_count' is no cap; 47
+       functions, 2 predictions wrong
 [x] easy: round 509 (2026-11-19, bug hunt: what is written besides the
     code, the listing comments, panic lines, the register report and
     '--reproduce-source'; design: the noinline call from both sides;

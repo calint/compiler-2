@@ -243,7 +243,7 @@ class type final {
     // with the length of an array or the depth of nested types
     std::vector<byte_range> data_ranges_;
 
-    static constexpr size_t max_listed_data_ranges_{9};
+    static constexpr size_t max_complete_data_ranges_{9};
     // note: 1 more than the most gaps a target zeroes one by one (8, rv32i),
     //       since a gap is between two ranges, see 'padding_gaps'
 
@@ -392,12 +392,12 @@ class type final {
     }
 
     // the bytes that no field covers, between the data ranges and after the
-    // last one; more than 'max_count' of them when there are more
+    // last one; all of them up to 'max_count', else more than 'max_count'
     [[nodiscard]] auto padding_gaps(const size_t max_count) const
         -> std::vector<padding_gap> {
 
         // note: a full list then has more than 'max_count' gaps
-        assert(max_count < max_listed_data_ranges_);
+        assert(max_count < max_complete_data_ranges_);
 
         std::vector<padding_gap> gaps;
         size_t covered_bytes{};
@@ -450,7 +450,7 @@ class type final {
         }
 
         // note: each padded element after the first adds a range, so the
-        //       loop ends within 'max_listed_data_ranges_' + 2 elements
+        //       loop ends within 'max_complete_data_ranges_' + 2 elements
 
         for (size_t i{}; i < f.shape.element_count(); ++i) {
             if (is_full(ranges)) {
@@ -506,12 +506,12 @@ class type final {
         });
     }
 
-    // a list of more than 'max_listed_data_ranges_' ranges is not continued,
+    // a list of more than 'max_complete_data_ranges_' ranges is not continued,
     // its last range may be incomplete
     [[nodiscard]] static auto is_full(const std::vector<byte_range>& ranges)
         -> bool {
 
-        return ranges.size() > max_listed_data_ranges_;
+        return ranges.size() > max_complete_data_ranges_;
     }
 };
 

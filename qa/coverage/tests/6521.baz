@@ -1,0 +1,24 @@
+# --checks=stack: the receiver register a noinline method holds is saved at
+# its calls and counted by the check: a recursion that saves it with the
+# frame base and three values fits a stack of 2944 B, 16 B less panics
+
+type counter {
+    calls,
+    step,
+}
+
+func noinline mut counter.down(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    self.calls = self.calls + 1
+    res = self.step + (n + self.down(n - 1))
+}
+
+func main() {
+    var c = counter{0, 2}
+    var r = c.down(60)
+    if c.calls != 60 exit(1)
+    exit(r - 1950)
+}

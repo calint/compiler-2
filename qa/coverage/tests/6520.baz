@@ -1,0 +1,12 @@
+# --checks=stack: a call that saves one register, the frame base, reserves
+# its aligned area of 16 B: 126 calls of 32 B (16 for the saved register, 16
+# for the return address) fit a stack of 4 KB, 16 B less panics
+
+func noinline down(n) {
+    if n == 0 return
+    down(n - 1)
+}
+
+func main() {
+    down(126)
+}
