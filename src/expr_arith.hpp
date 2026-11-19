@@ -1264,9 +1264,9 @@ class expr_arith final : public statement {
         const arithmetic_operator op{s.op};
         const statement& src{*s.element};
 
-        // note: a value that is not computed is a name or a literal, which
-        //       folds before as '{}' does; the rewrite hides an overflow of
-        //       the negation, the check computes it
+        // note: the element is stored, a literal or a constant name folds
+        //       into a constant step; the rewrite hides an overflow of the
+        //       negation, the check computes it
 
         const bool is_negation_absorbed{
             arith_steps::is_additive(op) and
@@ -1409,8 +1409,8 @@ class expr_arith final : public statement {
     }
 
     // rejects a constant divisor or shift count like 'compile', and the
-    // minimum divided by -1 where the division check is on or where it has
-    // no value: the 64-bit one traps on x86_64
+    // minimum divided by -1 where the division check is on or at 64 bits,
+    // where the quotient has no value: x86_64 traps
     [[nodiscard]] static auto
     fold_operation(const toc& tc, const int64_t lhs,
                    const arithmetic_operator op, const token& src_loc_tk,
@@ -1418,11 +1418,11 @@ class expr_arith final : public statement {
 
         assert_constant_operand(src_loc_tk, op, rhs, width_type);
 
-        const bool is_rejected{
+        const bool is_overflow_rejected{
             tc.checks().division or lhs == std::numeric_limits<int64_t>::min(),
         };
 
-        if (is_division(op) and is_rejected and
+        if (is_division(op) and is_overflow_rejected and
             constant_arith::division_overflows(lhs, rhs, width_type)) {
 
             throw compile_error{src_loc_tk,

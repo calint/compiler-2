@@ -3917,11 +3917,11 @@ SRC=1211 && EXP=136 && RUN
 # fifteen indexed arguments of an inlined call on rv32i: the version that
 # folds each address into a register runs out of registers and the version
 # that keeps the indexed addresses is kept
-if [[ $MACHINE == rv32i* ]]; then SRC=1212 && EXP=5 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1212 && EXP=5 && RUN; fi
 
 # fourteen indexed arguments of an inlined call on rv32i: both versions fit,
 # the footer counts the scratch registers of the kept version only
-if [[ $MACHINE == rv32i* ]]; then SRC=1213 && EXP=3 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1213 && EXP=3 && RUN; fi
 
 # --checks=shift: the count of a shift in an 'i8' expression is compared with
 # the width of 'i8' also when the expression is computed in a wider register
@@ -3934,7 +3934,7 @@ SRC=1215 && EXP=5 && OPTS="--vars=0x40000 --checks=shift" RUN
 # an array copy in an inlined body on rv32i: the version that folds the
 # indexed arguments into registers runs out of registers inside the copy and
 # leaves no bulk registers behind
-if [[ $MACHINE == rv32i* ]]; then SRC=1216 && EXP=7 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1216 && EXP=7 && RUN; fi
 
 # a shift in the argument of a conversion to a narrower type is computed at
 # the width of the argument, in a register and in memory
@@ -5515,7 +5515,7 @@ SRC=1726 && COMPERR
 # rv32i: an inlined recursion that runs out of registers in one version only
 # keeps the other version, the error of the dropped one does not end the
 # compile
-if [[ $MACHINE == rv32i* ]]; then SRC=1727 && EXP=108 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=1727 && EXP=108 && RUN; fi
 
 # code that a constant condition skips in 'main' is checked with the registers
 # it would have if it ran, not with those of a noinline body
@@ -7951,12 +7951,12 @@ SRC=3134 && EXP=1 && RUN
 # skipped code inside a version that runs out of registers only in the second
 # version drops that version, the first is kept
 if [[ $MACHINE == x86_64 ]]; then SRC=3150 && EXP=8 && RUN; fi
-if [[ $MACHINE == rv32i* ]]; then SRC=3151 && EXP=8 && RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=3151 && EXP=8 && RUN; fi
 
 # so the verdict does not depend on '--versions': a choice inside a version
 # compiles its second version only with 'nested' and 'last'
 if [[ $MACHINE == x86_64 ]]; then SRC=3152 && EXP=9 && OPTS="--versions=nested" RUN; fi
-if [[ $MACHINE == rv32i* ]]; then SRC=3153 && EXP=9 && OPTS="--versions=nested" RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=3153 && EXP=9 && OPTS="--versions=nested" RUN; fi
 
 # the ',' of written type arguments ends no argument where a deduced call
 # looks ahead for the argument that tells a type
@@ -8032,7 +8032,7 @@ SRC=3490 && EXP=116 && RUN
 # the second version of a list runs out of variable storage after it added a
 # read-only constant laid out differently under the label of the kept one:
 # the constants of a version that fails leave the table
-if [[ $MACHINE == rv32i* ]]; then SRC=3500 && EXP=117 && OPTS="--vars=64 --checks=upper,lower,line" RUN; fi
+if [[ $MACHINE != x86_64 ]]; then SRC=3500 && EXP=117 && OPTS="--vars=64 --checks=upper,lower,line" RUN; fi
 
 # a type lists the bytes its fields cover as its fields are added, so the
 # padding of a result is found without walking nested types and arrays: types

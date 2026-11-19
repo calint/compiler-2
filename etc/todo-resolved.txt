@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 501 (2026-11-19, bug hunt: inlined calls against
+    noinline ones; design: the test and QA scripts of 'qa/coverage';
+    readability: a newcomer walks the second half of 'expr_arith.hpp')
+    => bug hunt: no defect; a generator writing each program all inlined,
+       all noinline and in three mixes, with functions nested ten deep
+       sharing names, arguments by reference, as temporaries, constants
+       that fold, narrow and wide, elements at run-time indexes, fields
+       and calls, results widened at the call, 'x = f(x)', inlined
+       recursion ended by a constant, 'mut' parameters bound to globals,
+       methods, records and bools, each with '--checks=noub', '--nopt'
+       and '--versions': 6000 programs, 150000 runs, no difference in
+       result or verdict; the register-limit rejection of some forms only
+       (documented) in 8.9 % of program and target pairs; 17 mutants of
+       'stmt_call.hpp', all but an equivalent one caught by the generator,
+       the probes or the suite
+    => design: 'cases.sh' says all rv32i targets one way ('!= x86_64'); a
+       failed run of 'test-coverage.sh' ends with the case and the
+       target; 'RUN' and 'DIFFNOPT' keep the program's output out of the
+       log, which had lines like '2468: xok'; eleven ideas kept with
+       reasons (merging 'DIFF' and 'DIFFINP' adds a line, the rest is
+       open in todo)
+    => readability: the comment of 'fold_operation' says the minimum
+       divided by -1 is rejected with the check or at 64 bits, its local
+       'is_rejected' renamed 'is_overflow_rejected', the note of
+       'compile_stored_operand' says only a stored element reaches it; 32
+       functions, 3 predictions wrong
 [x] easy: round 500 (2026-11-19, bug hunt: the command line and its
     option combinations; design: the tokenizer and the tokens,
     'tokenizer.hpp' and 'token.hpp'; readability: a newcomer walks the first

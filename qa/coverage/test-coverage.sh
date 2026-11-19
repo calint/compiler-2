@@ -358,13 +358,14 @@ begin_case() {
 }
 
 # the helpers of the cases, see 'cases.sh'; a program judged by its output
-# must exit 0
+# must exit 0, one judged by its exit code writes its output to 'out' and
+# 'err', not into the log
 
 RUN() {
     begin_case
     compile_and_build
     local exit_code=0
-    execute_program 2>err || exit_code=$?
+    execute_program >out 2>err || exit_code=$?
     expect_exit "$CASE_EXP" $exit_code
     echo ok
 }
@@ -429,10 +430,10 @@ DIFFNOPT() {
     compile_case gen-nopt.s "$MACHINE" $CASE_OPTS --nopt
     compile_and_build
     local exit_code=0
-    execute_program 2>err || exit_code=$?
+    execute_program >out 2>err || exit_code=$?
+    expect_exit "$CASE_EXP" $exit_code
     # 'diff' exits 1 when the listings differ, the expected case
     diff gen-nopt.s gen.s >out || true
-    expect_exit "$CASE_EXP" $exit_code
     check_output "$SRC.$MACHINE.diff"
 }
 
@@ -467,6 +468,9 @@ COMPERR() {
     compile_expect_error
     check_output "$(expected_compile_output)"
 }
+
+# a failure also names the target, else only in the header far above
+trap '[[ $? -eq 0 ]] || echo "case $SRC failed on target $MACHINE"' EXIT
 
 source "$SCRIPT_DIR/cases.sh"
 
