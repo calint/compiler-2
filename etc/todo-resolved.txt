@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 505 (2026-11-19, bug hunt: optimizations against
+    '--nopt' and every '--versions'; design: the 'foo' loop,
+    'stmt_builtin_foo.hpp'; readability: a newcomer walks 'assembler.hpp')
+    => bug hunt: no defect; generators of arithmetic with runs of
+       constants (powers of two, negative ones, 1 and -1, the minimum and
+       the maximum, typed 'let's) that hit regrouping, merged divisors,
+       strength reduction and absorbed negations, of conditions against
+       edge thresholds, the round 490 generator of stores and jumps, near
+       exhaustive multiplies and divides by constants and overflow at the
+       edge, each optimized, with '--nopt' and with every '--versions',
+       inlined and noinline, on x86_64 and rv32i: about 20000 programs and
+       140000 runs; 25 mutants, 17 caught, the rest equivalent or not
+       reached by ordinary code; a divisor of -1 merged with the next one
+       was caught only by a listing: test 6420 checks it by behavior
+    => design: how a loop ends ('loop_end') is passed to 'join_loop', its
+       only reader, like 'trace_loop' takes it, instead of being stored in
+       every loop scope ('loop_part::end', 'loop_end_kind' removed, -6
+       lines, listings equal); eight ideas kept with reasons (the empty
+       loop skip tests '<= 0' since a negative count without the lower
+       check would run past the end)
+    => readability: four comments ('line::label' is the label the line
+       defines, 'label_lines' gives the line of each label, a removed line
+       stays so indexes hold, a label line names only its own label) and
+       the jumps of 'optimize_jump' named 'first' and 'second', the first
+       may be unconditional; 68 functions, 4 predictions wrong
 [x] easy: round 504 (2026-11-19, bug hunt: the input and output
     built-ins on every target; design: 'expr_any.hpp', how a value of any
     kind is classified and dispatched; readability: a newcomer walks

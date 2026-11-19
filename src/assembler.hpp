@@ -109,6 +109,7 @@ class assembler {
 
     struct line {
         std::string text;
+        // the label the line defines, empty for other lines
         std::string label;
         // the label a call line calls, empty for other lines
         std::string call_target;
@@ -464,6 +465,7 @@ class assembler {
     // a line that emits no code, e.g. a comment or a directive
     auto add_text(std::string text) -> void { add_line(std::move(text), 0); }
 
+    // the line index of each label
     [[nodiscard]] auto label_lines() const
         -> std::unordered_map<std::string_view, size_t> {
 
@@ -595,6 +597,7 @@ class assembler {
         return text.substr(0, text.find_first_not_of(" \t"));
     }
 
+    // kept so line indexes stay valid, it is not written
     static auto remove(line& l) -> void {
         l.jump.reset();
         l.code_size = 0;
@@ -692,6 +695,7 @@ class assembler {
 
         std::unordered_set<std::string_view> named;
         for (const line& l : lines_) {
+            // a label line names only its own label
             if (l.jump or not l.label.empty()) {
                 continue;
             }
@@ -723,57 +727,57 @@ class assembler {
                   const std::unordered_map<std::string_view, size_t>& labels)
         -> bool {
 
-        line& branch{lines_.at(index)};
+        line& first{lines_.at(index)};
 
-        if (not branch.jump) {
+        if (not first.jump) {
             return false;
         }
 
-        const size_t target{destination(labels, *branch.jump)};
+        const size_t target{destination(labels, *first.jump)};
 
         const size_t target_code{next_instruction(target)};
 
         // execution continues at the target anyway
         if (target_code == next_instruction(index + 1)) {
-            remove(branch);
+            remove(first);
             ++optimizations_.jumps_to_next;
             return true;
         }
 
-        const std::optional<size_t> jump_index{
+        const std::optional<size_t> second_index{
             following_unconditional_jump(index, run_end),
         };
 
-        if (not jump_index) {
+        if (not second_index) {
             return false;
         }
 
-        line& jump{lines_.at(*jump_index)};
+        line& second{lines_.at(*second_index)};
 
         // nothing reaches a jump right after an unconditional jump
-        if (not branch.jump->conditional) {
-            remove(jump);
+        if (not first.jump->conditional) {
+            remove(second);
             ++optimizations_.unreachable_jumps;
             return true;
         }
 
-        const size_t jump_target{destination(labels, *jump.jump)};
+        const size_t second_target{destination(labels, *second.jump)};
 
         // both outcomes continue at the same place
-        if (target_code == next_instruction(jump_target)) {
-            remove(branch);
+        if (target_code == next_instruction(second_target)) {
+            remove(first);
             ++optimizations_.same_target_branches;
             return true;
         }
 
         // branching over the jump is the inverse branch to its target
-        if (target_code != next_instruction(*jump_index + 1)) {
+        if (target_code != next_instruction(*second_index + 1)) {
             return false;
         }
 
-        invert(branch, *jump.jump);
+        invert(first, *second.jump);
 
-        remove(jump);
+        remove(second);
         ++optimizations_.inverted_branches;
 
         return true;

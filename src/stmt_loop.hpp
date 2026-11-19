@@ -40,7 +40,7 @@ class stmt_loop final : public statement {
         // a 'continue' jumps back to the head at 'label'
         const compile_toc::scope_entry loop{
             tc,
-            scope::loop(label, loop_end::at_break, label),
+            scope::loop(label, label),
         };
 
         code_.compile(tc, destination{});
@@ -50,7 +50,7 @@ class stmt_loop final : public statement {
 
         // the end is reached only by a 'break' that is compiled, the parse
         // rejects code after a loop without one
-        tc.join_loop();
+        tc.join_loop(loop_end::at_break);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
@@ -69,7 +69,7 @@ class stmt_loop final : public statement {
 
         const parse_toc::scope_entry loop{
             tc,
-            scope::loop({}, loop_end::at_break, {}),
+            scope::loop({}, {}),
         };
 
         return {tc, tz};

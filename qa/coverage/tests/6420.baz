@@ -1,0 +1,13 @@
+# without the overflow check consecutive constant divisors merge into their
+# product, but not a divisor of -1: 'm / -1 / 2' of the minimum panics at the
+# '-1' as it does when the divisors stay apart
+
+func main() {
+    var m = i32(-2147483647 - 1)
+    var n = i32(-2147483647)
+    if n / -1 / 2 != 1073741823 {
+        exit(1)
+    }
+    var r = m / -1 / 2
+    exit(2)
+}

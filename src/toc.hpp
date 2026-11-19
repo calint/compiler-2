@@ -329,9 +329,8 @@ class scope final {
 
     // what only a loop scope has
     struct loop_part {
-        // how its end is reached and where a 'continue' jumps, e.g. the head
-        // of a 'loop' or the counter step of a 'foo'
-        loop_end end{loop_end::at_break};
+        // where a 'continue' jumps, e.g. the head of a 'loop' or the counter
+        // step of a 'foo'
         std::string continue_label;
         loop_reach reach;
     };
@@ -477,8 +476,6 @@ class scope final {
         return func_part().is_without_call;
     }
 
-    [[nodiscard]] auto loop_end_kind() const -> loop_end { return loop().end; }
-
     auto mark_taking_from_call() -> void { func_part().takes_from_call = true; }
 
     auto mark_without_call() -> void { func_part().is_without_call = true; }
@@ -575,13 +572,11 @@ class scope final {
     // the body of a loop named by its label, a 'continue' jumps to
     // 'continue_label'
     [[nodiscard]] static auto loop(const std::string_view name,
-                                   const loop_end end,
                                    std::string continue_label) -> scope {
 
         scope scp{name};
 
         scp.loop_ = loop_part{
-            .end{end},
             .continue_label{std::move(continue_label)},
             .reach{loop_reach{}},
         };
@@ -3540,15 +3535,14 @@ class compile_toc final : public toc {
         return scopes().current_func_scope().reach_of_func().is_reachable;
     }
 
-    // the end of a loop is reached by a compiled 'break' or as its
-    // 'loop_end' says ('is_loop_end_reached'); called as the last step inside
-    // the loop's scope, where the end of its body is the current statement
-    auto join_loop() -> void {
+    // the end of a loop is reached by a compiled 'break' or as 'end' says
+    // ('is_loop_end_reached'); called as the last step inside the loop's
+    // scope, where the end of its body is the current statement
+    auto join_loop(const loop_end end) -> void {
         const scope& loop{scopes().back()};
 
         assert(loop.is_loop());
 
-        const loop_end end{loop.loop_end_kind()};
         const loop_reach& reach{loop.reach_of_loop()};
 
         const bool is_step_reached{is_reachable() or reach.is_continued};

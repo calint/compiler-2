@@ -87,16 +87,10 @@ class stmt_builtin_foo final : public statement {
         // e.g. not after 'foo a, stop() { }' with 'stop' an inlined 'exit'
         const bool is_count_end_reachable{tc.is_reachable()};
 
-        // a constant count above 0 runs the body, so the loop runs out only
-        // where the body reaches its counter step, e.g. not after
-        // 'foo a, 2 { stop() }'
-        const bool runs_body{limit.is_immediate() and limit.immediate() != 0};
-
         const compile_toc::scope_entry foo{
-            tc, scope::loop(loop_label,
-                            runs_body ? loop_end::when_stepped
-                                      : loop_end::also_when_done,
-                            compile_toc::continue_label(loop_label))};
+            tc,
+            scope::loop(loop_label, compile_toc::continue_label(loop_label)),
+        };
 
         const operand counter{
             declare_loop_names(tc, array_info, reg_iter, held),
@@ -125,7 +119,13 @@ class stmt_builtin_foo final : public statement {
             x.label(tc.indent(), end_label);
         }
 
-        tc.join_loop();
+        // a constant count above 0 runs the body, so the loop runs out only
+        // where the body reaches its counter step, e.g. not after
+        // 'foo a, 2 { stop() }'
+        const bool runs_body{limit.is_immediate() and limit.immediate() != 0};
+
+        tc.join_loop(runs_body ? loop_end::when_stepped
+                               : loop_end::also_when_done);
 
         if (not is_count_end_reachable) {
             tc.end_path();
@@ -352,7 +352,7 @@ class stmt_builtin_foo final : public statement {
 
         const parse_toc::scope_entry foo{
             tc,
-            scope::loop({}, loop_end::also_when_done, {}),
+            scope::loop({}, {}),
         };
 
         add_loop_names(tc, array_info, var_placement{}, var_placement{});
