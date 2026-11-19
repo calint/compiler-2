@@ -2453,11 +2453,7 @@ class machine_rv32i : public machine {
         // note: a comparison without a boolean result is a branch
         assert(not action.target.empty());
 
-        // the comparison the branch is taken on
-        const comparison_operator taken{
-            action.branch_on_true ? action.operation
-                                  : negated(action.operation),
-        };
+        const comparison_operator taken{action.branched_operation()};
 
         // only 'blt' and 'bge' exist: 'x > y' branches as 'y < x' and
         // 'x <= y' as 'y >= x'

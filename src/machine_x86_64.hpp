@@ -274,10 +274,7 @@ class machine_x86_64 final : public machine {
         }
 
         if (not action.target.empty()) {
-            const comparison_operator branched{
-                action.branch_on_true ? action.operation
-                                      : negated(action.operation),
-            };
+            const comparison_operator branched{action.branched_operation()};
 
             assembler_.jcc(site.indent, condition_for_comparison(branched),
                            action.target);

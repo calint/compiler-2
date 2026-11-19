@@ -143,7 +143,6 @@ class stmt_if final : public statement {
 
         // the 'if' keyword locates the labels shared by all branches
         const std::string if_label{tc.unique_label(tok(), "if")};
-        const std::string label_after_if{compile_toc::end_label(if_label)};
 
         compile_toc::path_merge paths{tc};
         // a branch starts where the condition before it is false, the first
@@ -187,7 +186,7 @@ class stmt_if final : public statement {
 
         machine& x{tc.machine()};
 
-        x.label(tc.indent(), label_after_if);
+        x.label(tc.indent(), compile_toc::end_label(if_label));
     }
 
     // the paths follow the conditions known at the parse

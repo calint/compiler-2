@@ -263,6 +263,11 @@ class machine {
 
         // branch when the comparison holds, otherwise when it does not
         bool branch_on_true{};
+
+        // the comparison the branch is taken on
+        [[nodiscard]] auto branched_operation() const -> comparison_operator {
+            return branch_on_true ? operation : negated(operation);
+        }
     };
 
     // what a bounds check compares with 'array_count' elements: an index, a

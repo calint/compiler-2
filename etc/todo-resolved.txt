@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 508 (2026-11-19, bug hunt: global variables and whole
+    program state; design: conditions and branches, 'stmt_if.hpp' and the
+    branch compile of 'expr_bool.hpp'; readability: a newcomer walks
+    'expr_type.hpp')
+    => bug hunt: no defect; a model of globals of every type declared with
+       'var', 'dat' and 'let', initialized from constants and other
+       globals, placed between functions, past the 12-bit offsets and in
+       included files, used by plain, generic and recursive functions,
+       methods and getters, hidden by parameters and locals, with the
+       shared-storage verdict predicted by path, and every fourth program
+       at the smallest '--vars' that fits: 41500 programs, 470000 runs,
+       probes of visibility, initialization order and panics in
+       initializers; 7 mutants, all caught by the suite
+    => design: the backends share 'comparison_action::branched_operation'
+       instead of each negating the operation for a branch on false;
+       'stmt_if::compile' computes its end label where it is used (-3
+       lines, listings equal); each kind of condition has one path; nine
+       ideas kept with reasons (the parse and the compile folds differ
+       since the compile knows more)
+    => readability: four comments (the 'write_plan' example packs a
+       constant list in one write, 'plan_unwritten' appends a step and
+       none for 0 bytes, the constructor parses the listed fields, the
+       header lists 'close_full_list' and 'emit_bytes_write'); 30
+       functions, 3 predictions wrong
 [x] easy: round 507 (2026-11-19, bug hunt: definite assignment and
     reads of unwritten storage; design: how a path is built and what it
     reaches, 'stmt_identifier.hpp' and 'access_path.hpp'; readability: a

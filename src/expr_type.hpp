@@ -40,11 +40,11 @@
 //   'throw_known_literal_type', 'assert_not_array_literal'
 //                            the messages of a value its destination does
 //                            not take
-//   'full_list', 'parse_braced_items'
+//   'full_list', 'close_full_list', 'parse_braced_items'
 //                            the items of a list in braces
 //   'part_location'          a part of a destination, a field or an element
 //   'value_write', 'bytes_write', 'zero_fill', 'write_comment', 'write_step',
-//   'write_plan', 'emit_write_plan'
+//   'write_plan', 'emit_bytes_write', 'emit_write_plan'
 //                            the steps that write a value in parts, read by
 //                            the compile and by the aliasing check
 //   'expr_path'              a path taken whole, copied as bytes
@@ -363,8 +363,8 @@ struct write_step {
 };
 
 // the steps that write a value, in the order they are emitted, e.g. 'q =
-// {{1}, x}' with 'q' of 'type st {a i8[4], b i8}': '1' at 'a[0]', zero
-// 'a[1]' to 'a[3]', then 'x' at 'b'; the compile emits it and the aliasing
+// {{x}, y}' with 'q' of 'type st {a i8[4], b i8}': 'x' at 'a[0]', zero
+// 'a[1]' to 'a[3]', then 'y' at 'b'; the compile emits it and the aliasing
 // check of an assignment reads it, so what is checked is what is emitted
 using write_plan = std::vector<write_step>;
 
@@ -560,8 +560,8 @@ class expr_type final : public statement {
     // the type name alone at 'type_tk', e.g. 'var p = point' is 'point{}'
     expr_type(const token& type_tk, const type& tp);
 
-    // parses an 'expr_any' for each field after 'first_tk', the type name or
-    // none at '{', e.g. 'point' of 'point{1, 2}'
+    // parses an 'expr_any' for each listed field after 'first_tk', the type
+    // name or none at '{', e.g. 'point' of 'point{1, 2}'
     expr_type(parse_toc& tc, tokenizer& tz, const token& first_tk,
               const type& tp);
 
@@ -596,10 +596,11 @@ class expr_type final : public statement {
                      write_plan& plan) const -> void;
 
   private:
-    // zeroes 'size_bytes' bytes that no listed field writes, 'offset' bytes
-    // into the instance at 'at'; padding too, so that instances compare equal
-    // byte by byte; 'covered' are the unlisted fields among the bytes, none
-    // for padding
+    // appends a step that zeroes 'size_bytes' bytes, none for 0, that no
+    // listed field writes, 'offset' bytes into the instance at 'at'; padding
+    // too, so that instances compare equal byte by byte; 'what' names the
+    // bytes in the comment line; 'covered' are the unlisted fields among the
+    // bytes, none for padding
     auto plan_unwritten(const part_location& at, const std::string_view what,
                         const size_t offset, const size_t size_bytes,
                         std::vector<access_path> covered,
