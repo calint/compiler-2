@@ -36,7 +36,7 @@
 //   memory       'copy_block', 'store_bytes', 'zero' unrolled or with
 //                'rep', the bulk operations with 'rsi', 'rdi' and 'rcx'
 //   comparisons  'compare_and_branch', 'store_condition', 'memory_equal'
-//   checks       'emit_bounds_check' with 'test_sign' and
+//   checks       'emit_bounds_check' with 'check_lower_bound' and
 //                'check_upper_bound', 'check_divisor', 'check_shift_count',
 //                'check_copy_overlap', 'emit_frame_capacity_check', the
 //                overflow checks 'branch_on_overflow' and 'check_byte_product',
@@ -495,7 +495,7 @@ class machine_x86_64 final : public machine {
         -> void override {
 
         if (bytes.size() > immediate_store_threshold_bytes_ and
-            not is_any_held(bulk_registers_)) {
+            not is_any_unavailable(bulk_registers_)) {
 
             const std::string label{add_constant(bytes)};
 
@@ -585,7 +585,7 @@ class machine_x86_64 final : public machine {
                            const bounds_plan& plan) -> void override {
 
         for (const operand& value : plan.sign_tested) {
-            test_sign(site, value);
+            check_lower_bound(site, value);
         }
 
         if (plan.upper) {
@@ -1146,14 +1146,14 @@ class machine_x86_64 final : public machine {
         restore_call_registers(indent, saved);
     }
 
-    // 'left' holds the product of two bytes at the default width, which fits
-    // a byte when its low byte sign extended equals it; that extension
-    // overwrites 'right', the factor no longer needed
-    auto check_byte_product(const emit_site site, const operand& left,
-                            const operand& right) -> void {
+    // 'wide_product' holds the product of two bytes at the default width,
+    // which fits a byte when its low byte sign extended equals it; that
+    // extension overwrites 'wide_factor', no longer needed
+    auto check_byte_product(const emit_site site, const operand& wide_product,
+                            const operand& wide_factor) -> void {
 
-        mov(site, right, sized_operand(left, size_byte_));
-        cmp(site, right, left);
+        mov(site, wide_factor, sized_operand(wide_product, size_byte_));
+        cmp(site, wide_factor, wide_product);
 
         branch_to_failure(site, condition::ne, overflow_failure_);
     }
@@ -1222,6 +1222,12 @@ class machine_x86_64 final : public machine {
         assembler_.label(site.indent, not_minus_one);
 
         comment(site, "division check end");
+    }
+
+    // a negative value is out of bounds
+    auto check_lower_bound(const emit_site site, const operand& value) -> void {
+        cmp(site, value, immediate(0));
+        branch_to_failure(site, condition::s, bounds_failure_);
     }
 
     // a count in 'rcx' below zero or not below the width jumps to the failure
@@ -1317,25 +1323,25 @@ class machine_x86_64 final : public machine {
         // is the result
         const bool is_in_place{product.is_register()};
 
-        const operand left{
+        const operand wide_product{
             is_in_place ? register_view(product, default_type())
                         : alloc_scratch_register(site, default_type()),
         };
 
-        const operand right{
+        const operand wide_factor{
             alloc_scratch_register(site, default_type()),
         };
 
-        mov(site, left, product);
-        mov(site, right, factor);
-        emit_op(site, op::imul, left, right);
+        mov(site, wide_product, product);
+        mov(site, wide_factor, factor);
+        emit_op(site, op::imul, wide_product, wide_factor);
 
         if (check.enabled) {
-            check_byte_product(site, left, right);
+            check_byte_product(site, wide_product, wide_factor);
         }
 
         if (not is_in_place) {
-            mov(site, product, left);
+            mov(site, product, wide_product);
         }
     }
 
@@ -1560,7 +1566,9 @@ class machine_x86_64 final : public machine {
     }
 
     // the bulk registers of 'rep movsb' and 'repe cmpsb': 'rcx' the count in
-    // bytes, 'rsi' the address of 'to_rsi' and 'rdi' that of 'to_rdi'
+    // bytes, which 'emit_count' sets in elements, 'rsi' the address of
+    // 'to_rsi' and 'rdi' that of 'to_rdi'; freed by the 'operation_scope' of
+    // the caller
     auto load_bulk_registers(
         const emit_site site, const size_t element_size_bytes,
         const std::function_ref<void(const operand&)> emit_count,
@@ -1740,14 +1748,8 @@ class machine_x86_64 final : public machine {
             return false;
         }
 
-        return not is_any_held(named) or
+        return not is_any_unavailable(named) or
                part_instructions > 2 * rep_form_instructions_;
-    }
-
-    // a negative value is out of bounds
-    auto test_sign(const emit_site site, const operand& value) -> void {
-        cmp(site, value, immediate(0));
-        branch_to_failure(site, condition::s, bounds_failure_);
     }
 
     //
@@ -1817,7 +1819,8 @@ class machine_x86_64 final : public machine {
         return src.immediate() == 0;
     }
 
-    // the qwords, then the remaining dword, word and byte
+    // the qwords, one 'repe cmpsq' when many, then the remaining dword, word
+    // and byte
     [[nodiscard]] static auto memory_equal_compares(const size_t size_bytes)
         -> std::vector<op> {
 

@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 515 (2026-11-20, bug hunt: the passes on the emitted
+    lines; design: how registers are handed out and given back,
+    'register_pool.hpp' and the scopes of 'machine.hpp'; readability: a
+    newcomer walks the second half of 'machine_x86_64.hpp')
+    => bug hunt: no defect; a model generator of inlined, noinline and
+       mixed functions with 'mut' scalars and arrays, callees writing
+       globals, early returns, 'break' and 'continue', stored bools
+       branched on, the array built-ins and narrow arrays, under ten option
+       sets with the rv32i images compared with llvm's, 300 padded around
+       the 4 KiB branch reach and a sweep across it in 8 B steps: 7750
+       programs, 191000 runs; 30 mutants, 23 caught by the suites and the
+       far jump scripts, 7 equivalent or not reached
+    => design: allocating writes its listing comment in 'push_allocation'
+       like freeing in 'pop_allocation'; 'alloc_scratch_register_from' is
+       folded into 'alloc_scratch_register' with a 'reusable' mask (-4
+       lines, listings equal); 'is_any_held' renamed 'is_any_unavailable'
+       and 'first_unused_scratch_register' 'first_free_scratch_register',
+       so "held" is allocated, "unavailable" allocated or protected and
+       "free" not unavailable (the round 415 item updated); six ideas kept
+       with reasons
+    => readability: 'test_sign' renamed 'check_lower_bound', it branches
+       to the failure like 'check_upper_bound'; the operands of
+       'check_byte_product' named 'wide_product' and 'wide_factor', the
+       product is computed before; two comments ('load_bulk_registers'
+       sets the count in elements and its caller frees the registers,
+       'memory_equal_compares' with 'repe cmpsq'); 58 functions, 3
+       predictions wrong
 [x] easy: round 514 (2026-11-20, bug hunt: register pressure after the
     register changes of rounds 491 to 513; design: the x86_64 assembler,
     'assembler_x86_64.hpp'; readability: a newcomer walks the first half of

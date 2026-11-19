@@ -709,8 +709,8 @@ class machine {
 
             const uint32_t address{machine_.registers_mask(src)};
 
-            return machine_.alloc_scratch_register_from(site, type_ref,
-                                                        address & ~saved_mask_);
+            return machine_.alloc_scratch_register(site, type_ref,
+                                                   address & ~saved_mask_);
         }
 
         // the registers of 'value' are not picked for scratch until the scope
@@ -1831,12 +1831,30 @@ class machine {
         return make_register_operand(register_name, type_ref);
     }
 
-    // the first free register in the scratch order of the backend, freed by
-    // its 'operation_scope' too
+    // the first register in the scratch order of the backend that is free or
+    // in 'reusable', registers an operation protects but no one holds (see
+    // 'operation_scope::alloc_load_register'); freed by its 'operation_scope'
+    // too
     [[nodiscard]] auto alloc_scratch_register(const emit_site site,
-                                              const type& type_ref) -> operand {
+                                              const type& type_ref,
+                                              const uint32_t reusable = 0)
+        -> operand {
 
-        return alloc_scratch_register_from(site, type_ref, 0);
+        const std::optional<std::string_view> register_name{
+            first_free_scratch_register(reusable),
+        };
+
+        if (not register_name) {
+            throw out_of_registers_error(site.src_loc_tk);
+        }
+
+        push_allocation(site, *register_name,
+                        register_pool::holder_kind::scratch);
+
+        state_.max_scratch_registers = std::max(
+            state_.max_scratch_registers, state_.registers.scratch_count());
+
+        return make_register_operand(*register_name, type_ref);
     }
 
     // the handler of a check: without the line it prints 'panic: NAME' and
@@ -1884,9 +1902,9 @@ class machine {
     }
 
     // the first register in the scratch order of the backend that is free or
-    // in 'reusable', none when all are held
+    // in 'reusable', none when no one is
     [[nodiscard]] auto
-    first_unused_scratch_register(const uint32_t reusable = 0) const
+    first_free_scratch_register(const uint32_t reusable = 0) const
         -> std::optional<std::string_view> {
 
         for (const std::string_view register_name : scratch_registers()) {
@@ -1916,7 +1934,8 @@ class machine {
 
     // one of the registers 'named' is allocated or protected
     [[nodiscard]] auto
-    is_any_held(const std::span<const std::string_view> named) const -> bool {
+    is_any_unavailable(const std::span<const std::string_view> named) const
+        -> bool {
 
         return std::ranges::any_of(named,
                                    [&](const std::string_view name) -> bool {
@@ -2002,8 +2021,6 @@ class machine {
     // backend uses by name
     auto reserve_named_register(const emit_site site,
                                 const std::string_view register_name) -> void {
-
-        comment(site, "allocate named register {}", register_name);
 
         if (is_register_unavailable(register_name)) {
             throw register_in_use_error(site.src_loc_tk, register_name);
@@ -2134,32 +2151,6 @@ class machine {
     //
     // class methods
     //
-
-    // the first register in the scratch order that is free or in 'reusable',
-    // registers the operation protects but no one holds
-    [[nodiscard]] auto alloc_scratch_register_from(const emit_site site,
-                                                   const type& type_ref,
-                                                   const uint32_t reusable)
-        -> operand {
-
-        const std::optional<std::string_view> register_name{
-            first_unused_scratch_register(reusable),
-        };
-
-        if (not register_name) {
-            throw out_of_registers_error(site.src_loc_tk);
-        }
-
-        comment(site, "allocate scratch register -> {}", *register_name);
-
-        push_allocation(site, *register_name,
-                        register_pool::holder_kind::scratch);
-
-        state_.max_scratch_registers = std::max(
-            state_.max_scratch_registers, state_.registers.scratch_count());
-
-        return make_register_operand(*register_name, type_ref);
-    }
 
     // the register of the count that 'read' and 'write' return, not allocated
     // again when an argument register holds it
@@ -2650,6 +2641,12 @@ class machine {
                          const std::string_view register_name,
                          const register_pool::holder_kind holder) -> void {
 
+        if (holder == register_pool::holder_kind::scratch) {
+            comment(site, "allocate scratch register -> {}", register_name);
+        } else {
+            comment(site, "allocate named register {}", register_name);
+        }
+
         state_.registers.push({
             .index{pool_index(register_name)},
             .src_loc_tk{site.src_loc_tk},
@@ -2773,8 +2770,6 @@ class machine {
     // for, e.g. the variables base from 'start' to 'finish'
     auto reserve_backend_register(const std::string_view register_name)
         -> void {
-
-        comment({token{}, 0}, "allocate named register {}", register_name);
 
         push_allocation({token{}, 0}, register_name,
                         register_pool::holder_kind::backend);

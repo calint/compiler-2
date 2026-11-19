@@ -1397,7 +1397,7 @@ class machine_rv32i : public machine {
         //       whenever the call is made; 'ra' comes before them and can hold
         //       a value
 
-        assert(not is_any_held(io_routine_clobbered_));
+        assert(not is_any_unavailable(io_routine_clobbered_));
 
         assembler_.call(indent, label, "a7");
         mark_used(label);
@@ -2745,7 +2745,7 @@ class machine_rv32i : public machine {
 
     // a jump grown beyond 1 MiB needs a register without a live value
     [[nodiscard]] auto far_jump_register() const -> std::string_view {
-        return first_unused_scratch_register().value_or(std::string_view{});
+        return first_free_scratch_register().value_or(std::string_view{});
     }
 
     // a copy or a compare of two arrays is unrolled up to the threshold, and
