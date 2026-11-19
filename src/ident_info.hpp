@@ -87,7 +87,8 @@ struct storage_address {
 // register
 struct in_storage {
     // set when the storage is placed ('storage_layout'); empty in the parse,
-    // where the name resolves against the variables base ('toc::memory_at')
+    // where the name resolves against the variables base
+    // ('ident_resolver::memory_at')
     std::optional<storage_address> address;
     // the storage holds the address of the variable, e.g. a parameter of a
     // noinline body
@@ -303,7 +304,7 @@ class ident_info final {
     }
 
     // the register that holds the value, or the storage operand, e.g.
-    // '[rbp + 8]'
+    // '[rbp + 8]'; of a held address, the slot that holds it
     [[nodiscard]] auto operand() const -> const ::operand& {
         if (const register_part* const reg{
                 std::get_if<register_part>(&part_),

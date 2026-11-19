@@ -307,7 +307,8 @@ class stmt_identifier final : public statement {
 
       private:
         // adds the element index of 'cur_elem' to 'address', which has no
-        // index yet, keeping its base and displacement
+        // index yet, keeping its base; a constant the index leaves out goes
+        // into the displacement
         [[nodiscard]] auto
         add_index(const ident_elem& cur_elem, const ident_info& cur_info,
                   bool is_range, const std::optional<operand>& start_register,

@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 504 (2026-11-19, bug hunt: the input and output
+    built-ins on every target; design: 'expr_any.hpp', how a value of any
+    kind is classified and dispatched; readability: a newcomer walks
+    'stmt_identifier_impl.hpp' and 'ident_info.hpp')
+    => bug hunt: no defect; a model generator of 'read' and 'write' of
+       arrays of every width, records, 'dat' strings and fields at
+       run-time indexes, counts and starts at 0, 1, n - 1, n and past the
+       end from literals, calls and conversions, calls that mark the order
+       of the arguments, good and bad descriptors, long and empty input
+       lines and the end of input, sector calls on a card image, 'exit'
+       with codes from -256 to 1000, each direct, inlined and noinline
+       under seven option sets on the four targets: 3400 programs, 275600
+       runs, 60 probes of aliasing and folding; 15 mutants, 13 caught,
+       two not observable by programs alike on every target
+    => design: 'is_whole_generic_call' takes the token and kind that
+       'parse_variant' classified instead of classifying it again;
+       'builtin_value' renamed 'zero_value', it takes an 'expr_zero';
+       'plan_writes' reads the element list once (listings equal); six
+       ideas kept with reasons (the size check gives its own message,
+       the operand parser classifies each element itself)
+    => readability: three comments ('add_index' puts a constant the index
+       leaves out into the displacement, the operand of a held address is
+       its slot, 'in_storage::address' points at
+       'ident_resolver::memory_at'); 67 functions, 4 predictions wrong
 [x] easy: round 503 (2026-11-19, bug hunt: whole programs of ordinary
     size mixing every feature; design: function definitions and bodies,
     'stmt_def_func.hpp' and 'stmt_def_func_param.hpp'; readability: a

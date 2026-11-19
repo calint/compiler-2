@@ -450,11 +450,11 @@ class expr_any final : public statement {
             return;
         }
 
-        if (const array_prefix* const prefix{array_prefix_of()}) {
-            prefix->size.check_where_written(tc);
-        }
-
         const element_list& list{std::get<element_list>(form_)};
+
+        if (list.prefix) {
+            list.prefix->size.check_where_written(tc);
+        }
 
         const size_t count{list.elements.size()};
 
@@ -985,18 +985,6 @@ class expr_any final : public statement {
         }
     }
 
-    // a built-in value whose first element 'first' is already parsed, e.g.
-    // the zero value 'i8', 'bool' or '{}'
-    [[nodiscard]] static auto builtin_value(parse_toc& tc, tokenizer& tz,
-                                            std::unique_ptr<statement> first)
-        -> expr_variant {
-
-        return expr_arith{tc, tz,
-                          expr_arith::options::implied(list_start_precedence,
-                                                       std::move(first),
-                                                       nullptr)};
-    }
-
     // compiled as a branch condition, which needs no register for its value
     static auto check_folded_condition(compile_toc& tc,
                                        const expr_bool& condition) -> void {
@@ -1087,14 +1075,13 @@ class expr_any final : public statement {
 
     // a call of a generic function or method without type arguments is the
     // whole value, e.g. 'make()' of 'b = make()' or 't.to()' of 'b = t.to()',
-    // its result type is that of the destination
-    [[nodiscard]] static auto is_whole_generic_call(parse_toc& tc,
-                                                    const tokenizer& tz)
-        -> bool {
+    // its result type is that of the destination; 'tk' is the first token,
+    // of kind 'tm', 'tz' is after it
+    [[nodiscard]] static auto
+    is_whole_generic_call(parse_toc& tc, const token& tk, const term_kind tm,
+                          const tokenizer& tz) -> bool {
 
         tokenizer probe{tz};
-        const token tk{probe.next_token()};
-        const term_kind tm{classify_term(tc, tk, probe)};
 
         const bool is_generic{
             tm == term_kind::generic_call or
@@ -1239,7 +1226,7 @@ class expr_any final : public statement {
             throw_known_type(tk, tp.name(), "{}");
         }
 
-        return builtin_value(tc, tz, std::make_unique<expr_zero>(tp, tk));
+        return zero_value(tc, tz, std::make_unique<expr_zero>(tp, tk));
     }
 
     // the value of a single value at the type 'tp': an instance, a zero value,
@@ -1270,9 +1257,8 @@ class expr_any final : public statement {
 
         assert_not_aggregate(tc, tz, tp, tk, tm);
 
-        tz.put_back_token(tk);
-
         if (not tp.is_bool()) {
+            tz.put_back_token(tk);
             return parse_arith_value(tc, tz, tp);
         }
 
@@ -1280,8 +1266,10 @@ class expr_any final : public statement {
         // destination for its result, e.g. 'b = make()', as in a number and
         // an instance
         const type* const result_type{
-            is_whole_generic_call(tc, tz) ? &tp : nullptr,
+            is_whole_generic_call(tc, tk, tm, tz) ? &tp : nullptr,
         };
+
+        tz.put_back_token(tk);
 
         return parse_condition(tc, tz, result_type);
     }
@@ -1305,7 +1293,7 @@ class expr_any final : public statement {
                 tz, "'{}' is a whole value, an operator cannot follow it"};
         }
 
-        return builtin_value(
+        return zero_value(
             tc, tz,
             std::make_unique<expr_zero>(tp, open_brace_tk, close_brace_tk));
     }
@@ -1340,6 +1328,18 @@ class expr_any final : public statement {
         }
 
         return list.prefix->size.array_size();
+    }
+
+    // the zero value of a built-in type as a list of one element, e.g. the
+    // 'i8' of 'var x = i8', the 'bool' of 'var b = bool' or the '{}' of
+    // 'n = {}'
+    [[nodiscard]] static auto zero_value(parse_toc& tc, tokenizer& tz,
+                                         std::unique_ptr<expr_zero> zero)
+        -> expr_variant {
+
+        return expr_arith{tc, tz,
+                          expr_arith::options::implied(
+                              list_start_precedence, std::move(zero), nullptr)};
     }
 };
 
