@@ -1,0 +1,7 @@
+
+6541.baz:8:9: variable 'capacity' hides the parameter 'capacity' declared at 7:13
+    var capacity = 1
+        ^~~~~~~~
+6541.baz:10:6: instantiated by
+type ilist = list<i32, 4>
+     ^~~~~

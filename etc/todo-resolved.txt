@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 512 (2026-11-19, bug hunt: programs of several files
+    and the locations of errors and panics; design: scopes and name
+    resolution, 'toc.hpp'; readability: a newcomer walks the first half of
+    'expr_any.hpp')
+    => bug hunt: no defect; a generator of a main file and 1 to 4 library
+       files in oddly named directories, included through './', '../',
+       repeatedly and in cycles, with CRLF, tabs, long lines and UTF-8,
+       calling inline, noinline and generic functions, each with one
+       planted error or failure at a known place, run from four working
+       directories, its location, the include chain, the frames and the
+       printed source line and caret checked: 2500 programs, 4350 runs, 18
+       probes (symlinks, a byte order mark, a missing '}' at the end of an
+       included file, odd file names in panics); 23 mutants, two missed by
+       the suite: "already defined at" relative to the main file and a CR
+       kept in the printed source line; 'test-cli.sh' checks both
+    => design: a parameter of a method hides a generic constant of its
+       type of the same name, as the lookup finds the variable first, but
+       'scope::var_role' and 'assert_not_hiding_signature' asked the
+       constants first and said a body variable hides the generic
+       parameter; both ask the variable first: test 6541; eight ideas kept
+       with reasons (all resolution already goes through
+       'scope_stack::lookup', a 'let' is named after its initializer folds)
+    => readability: three comments ('parse_array_prefix' is none when no
+       prefix is written, 'instance_literal' is asked only of a single
+       value, 'array_size' is the size folded at the parse) and the
+       parameters 'array_count' that may differ from 'array_count()'
+       renamed 'dst_count' like in 'plan_writes'; 33 functions, 3
+       predictions wrong
 [x] easy: round 511 (2026-11-19, bug hunt: strings, character literals
     and text; design: how the parser decides what a statement or a
     definition is; readability: a newcomer walks 'stmt_def_dat.hpp' and

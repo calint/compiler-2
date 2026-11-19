@@ -535,7 +535,10 @@ class scope final {
 
         assert(is_func());
 
-        if (has_const(name)) {
+        // note: a parameter hides a constant of the generic type of its
+        //       method, as in 'scope_stack::lookup'
+
+        if (not has_var(name)) {
             return "generic parameter";
         }
 
@@ -2189,16 +2192,18 @@ class definition_checks final {
             return;
         }
 
-        // note: a known 'n' of a 'foo' is a constant
-        const bool is_const{outer_scp.has_const(name)};
+        // note: a known 'n' of a 'foo' is a constant; a parameter hides a
+        //       constant of the generic type of its method
 
-        if (not is_const and not outer_scp.has_var(name)) {
+        const bool is_var{outer_scp.has_var(name)};
+
+        if (not is_var and not outer_scp.has_const(name)) {
             return;
         }
 
         const token& decl_tk{
-            is_const ? outer_scp.get_const(name).src_loc_tk
-                     : outer_scp.get_var(name).src_loc_tk,
+            is_var ? outer_scp.get_var(name).src_loc_tk
+                   : outer_scp.get_const(name).src_loc_tk,
         };
 
         throw compile_error{

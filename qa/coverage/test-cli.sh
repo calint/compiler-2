@@ -465,6 +465,7 @@ CLI_SOURCE_LINE_ENDS() {
     expect_exit_1 "$BIN" gen-crlf.baz >gen.s 2>err
     grep -Fq "is not a number" err
     grep -q $'\r' err && fail
+    grep -Fq '\x0d' err && fail
     # a tab stays a tab in front of the mark
     sed 's/^    /\t/' 0830.baz >gen-tab.baz
     expect_exit_1 "$BIN" gen-tab.baz >gen.s 2>err
@@ -592,6 +593,10 @@ CLI_COMMENT_LOCATIONS() {
         "$PWD" >gen-abs-main.baz
     expect_exit_1 "$BIN" gen-abs-main.baz >gen.s 2>err
     grep -Fq "$PWD/gen-abs-lib.baz:2:11:" err
+    # a place named in a message has the file name as given, as the place of
+    # the error has, not the name relative to the main file
+    (cd include && expect_exit_1 "$BIN" ../0897.baz >../gen.s 2>../err)
+    grep -Fq "dup.baz:3:6: function 'add' already defined at base.baz:1:6" err
     rm -f gen-abs-lib.baz gen-abs-main.baz gen-abs-panic.baz
     echo ok
 }

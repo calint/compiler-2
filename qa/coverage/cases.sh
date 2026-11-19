@@ -3799,6 +3799,10 @@ SRC=1176 && COMPERR
 # not
 SRC=1177 && EXP=0 && RUN
 
+# a variable of a method body named like a parameter that hides a constant of
+# the generic type hides the parameter
+SRC=6541 && COMPERR
+
 # a constant hides a type of its name
 SRC=1178 && EXP=0 && RUN
 

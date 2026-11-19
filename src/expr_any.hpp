@@ -70,8 +70,8 @@ class stmt_array_size final : public statement {
     // class methods
     //
 
-    // the written size, at least 1 (checked when parsed), e.g. the '4' of
-    // 'i8[4]'; asked only when 'has_value'
+    // the size folded when parsed, at least 1, e.g. 4 of 'i8[4]' or of
+    // 'i8[n * 2]' for 'n' 2; asked only when 'has_value'
     [[nodiscard]] auto array_size() const -> size_t;
 
     // folds the size again where its value is written, so that its checks see
@@ -389,8 +389,8 @@ class expr_any final : public statement {
         return {};
     }
 
-    // the single value when it is an instance literal, null for a copy or
-    // the result of a call
+    // the single value when it is an instance literal, else null; not asked
+    // of a string or a list
     [[nodiscard]] auto instance_literal() const -> const expr_type* {
         return std::get_if<expr_type>(&value_variant());
     }
@@ -510,9 +510,9 @@ class expr_any final : public statement {
     }
 
     // the copy size comes from the source, so its length must equal
-    // 'array_count', the destination length; unchecked when either is unknown
+    // 'dst_count', the destination length; unchecked when either is unknown
     auto assert_whole_array_copy_lengths_match(
-        const toc& tc, const std::optional<size_t> array_count) const -> void {
+        const toc& tc, const std::optional<size_t> dst_count) const -> void {
 
         const ident_info src_info{make_ident_info(tc, *operand_path())};
 
@@ -523,14 +523,14 @@ class expr_any final : public statement {
 
         const std::optional<size_t> src_len{src_info.array_len()};
 
-        if (not array_count or not src_len or *array_count == *src_len) {
+        if (not dst_count or not src_len or *dst_count == *src_len) {
             return;
         }
 
         throw compile_error{
             tok(), std::format("destination array size {} does not match "
                                "source size {}",
-                               *array_count, *src_len)};
+                               *dst_count, *src_len)};
     }
 
     // the steps that write the value at 'dst'; the length of an unsized
@@ -614,10 +614,10 @@ class expr_any final : public statement {
         return list;
     }
 
-    // e.g. 'i8[3]' in 'i8[3]{1, 2}' names the element type that '{1, 2}' takes
-    // from the destination, and the size unless it is 'i8[]'; '[3]{1, 2}' has
-    // the default type; none when the destination gives both; rejected where
-    // the type is known ('from_destination')
+    // e.g. the 'i8[3]' of 'i8[3]{1, 2}', which names the element type and the
+    // size ('i8[]' names no size), or the '[3]' of '[3]{1, 2}' at the default
+    // type; none when no prefix is written, e.g. '{1, 2}' or 'a'; rejected
+    // where the destination gives the type ('from_destination')
     [[nodiscard]] auto parse_array_prefix(parse_toc& tc, tokenizer& tz,
                                           const type& tp,
                                           const literal_typing typing)
@@ -752,12 +752,12 @@ class expr_any final : public statement {
     // 'listed_count' of the array at 'at' are written
     auto plan_remaining_elements(const part_location& at,
                                  const size_t listed_count,
-                                 const size_t array_count,
-                                 write_plan& plan) const -> void {
+                                 const size_t dst_count, write_plan& plan) const
+        -> void {
 
         const type& element_type{get_type()};
 
-        const size_t remaining_count{array_count - listed_count};
+        const size_t remaining_count{dst_count - listed_count};
 
         if (remaining_count == 0) {
             return;
@@ -783,15 +783,15 @@ class expr_any final : public statement {
                 },
             },
             .covered{
-                {at.elements_path(listed_count, array_count)},
+                {at.elements_path(listed_count, dst_count)},
             },
         });
     }
 
     // the string is stored and the rest of the array is zeroed like unlisted
-    // elements; 'array_count' is empty when the size is not known
+    // elements; 'dst_count' is empty when the size is not known
     auto plan_string(const token& string_tk, const part_location& at,
-                     const std::optional<size_t> array_count,
+                     const std::optional<size_t> dst_count,
                      write_plan& plan) const -> void {
 
         std::string bytes{string_tk.string_bytes()};
@@ -799,9 +799,9 @@ class expr_any final : public statement {
         const size_t size_bytes{bytes.size()};
 
         // the parser could not check the size of an unsized destination
-        if (array_count and size_bytes > *array_count) {
+        if (dst_count and size_bytes > *dst_count) {
             throw compile_error{string_tk,
-                                string_overflows(size_bytes, *array_count)};
+                                string_overflows(size_bytes, *dst_count)};
         }
 
         // an empty string has nothing to store
@@ -820,14 +820,14 @@ class expr_any final : public statement {
         }
 
         // the bytes after the string are not known
-        if (not array_count) {
+        if (not dst_count) {
             return;
         }
 
         // note: an 'i8' element is one byte, so the string length counts the
         //       listed elements
 
-        plan_remaining_elements(at, size_bytes, *array_count, plan);
+        plan_remaining_elements(at, size_bytes, *dst_count, plan);
     }
 
     // a single value: an instance literal is written field by field, any
@@ -949,11 +949,11 @@ class expr_any final : public statement {
         }
     }
 
-    // a string fills only an 'i8' array, one of 'array_count' when known
+    // a string fills only an 'i8' array, one of 'dst_count' when known
     static auto assert_string_fits(const type& string_element_type,
                                    const token& string_tk,
                                    const type& element_type,
-                                   const std::optional<size_t> array_count)
+                                   const std::optional<size_t> dst_count)
         -> void {
 
         const size_t size_bytes{string_tk.string_bytes().size()};
@@ -969,12 +969,12 @@ class expr_any final : public statement {
         // note: an empty string that would give a declaration its size is
         //       rejected there, e.g. 'var s = ""' ('initializer_declaration')
 
-        if (not array_count or size_bytes <= *array_count) {
+        if (not dst_count or size_bytes <= *dst_count) {
             return;
         }
 
         throw compile_error{string_tk,
-                            string_overflows(size_bytes, *array_count)};
+                            string_overflows(size_bytes, *dst_count)};
     }
 
     // e.g. the '.x' of 'i8{}.x', as of '1.x'; 'tz' is after the value
@@ -1301,21 +1301,20 @@ class expr_any final : public statement {
     // the parse checks a string for a known length ('assert_string_fits'),
     // the plan one for an unsized destination ('plan_string')
     [[nodiscard]] static auto string_overflows(const size_t size_bytes,
-                                               const size_t array_count)
+                                               const size_t dst_count)
         -> std::string {
 
         return std::format("string of {} is too long for array of size {}",
-                           counted(size_bytes, "byte"), array_count);
+                           counted(size_bytes, "byte"), dst_count);
     }
 
     // the parse checks a list of a known length when it is full
     // ('parse_braced_items'), the plan one of an unsized destination, whose
     // length the call gives
-    [[nodiscard]] static auto too_many_elements(const size_t array_count)
+    [[nodiscard]] static auto too_many_elements(const size_t dst_count)
         -> std::string {
 
-        return std::format("too many elements for array of size {}",
-                           array_count);
+        return std::format("too many elements for array of size {}", dst_count);
     }
 
     // the size the prefix of a list gives, e.g. the 4 of 'i8[4]{1, 2}', empty

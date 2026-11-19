@@ -1,0 +1,14 @@
+# a variable of a method body named like a parameter that hides a constant
+# of the generic type names the parameter in its error
+type list<T type, capacity> {
+    array T[capacity],
+    len,
+}
+func list.f(capacity i32) {
+    var capacity = 1
+}
+type ilist = list<i32, 4>
+func main() {
+    var l = ilist
+    l.f(2)
+}
