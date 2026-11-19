@@ -364,20 +364,27 @@ class bulk_operands final {
         return element_type;
     }
 
+    // the count when it is constant, none for a run-time count
+    [[nodiscard]] auto constant_count(const toc& tc) const
+        -> std::optional<int64_t> {
+
+        return count().constant_value(tc);
+    }
+
     // the bytes of the elements a constant count covers, none for a run-time
     // count; 'check' put a constant count in the bounds of both arrays
     [[nodiscard]] auto constant_size_bytes(const toc& tc,
                                            const type& element_type) const
         -> std::optional<size_t> {
 
-        const std::optional<int64_t> constant_count{count().constant_value(tc)};
+        const std::optional<int64_t> elements{constant_count(tc)};
 
-        if (not constant_count) {
+        if (not elements) {
             return std::nullopt;
         }
 
         return product_storage_size(element_type.size_bytes(),
-                                    static_cast<size_t>(*constant_count));
+                                    static_cast<size_t>(*elements));
     }
 
     [[nodiscard]] auto first() const -> const stmt_identifier& {

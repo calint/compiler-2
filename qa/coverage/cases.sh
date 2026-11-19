@@ -3110,6 +3110,11 @@ SRC=0970 && EXP=0 && OPTS="--checks=overlap" RUN_ERR
 # --checks=overlap: destination starts inside the source
 SRC=0971 && EXP=251 && OPTS="--checks=overlap" RUN_ERR
 
+# --checks=overlap: copies whose constant starts, and count where it matters,
+# keep the destination out of the source copy as without the check, which
+# they do not take; 'test-cli.sh' compares the listings
+SRC=6580 && EXP=0 && OPTS="--checks=overlap" RUN
+
 # --checks=overlap: destination starts inside the source, runtime count
 SRC=0972 && EXP=251 && OPTS="--checks=overlap" RUN_ERR
 
@@ -3410,7 +3415,7 @@ SRC=1065 && EXP=7 && RUN
 # arguments are resolved, like the arguments of a generic type
 SRC=1066 && COMPERR
 
-# the instance 'f<a,b>' of a generic function and the instance 'f.a<b>' of a
+# the instance 'f<a, b>' of a generic function and the instance 'f.a<b>' of a
 # generic method of the type 'f' get labels that differ
 SRC=1067 && EXP=3 && RUN
 
@@ -3570,9 +3575,9 @@ if [[ $MACHINE == x86_64 ]]; then SRC=1113 && COMPERR; fi
 # registers that the outer call holds
 SRC=1114 && COMPERR
 
-# a count from a call that copies within an array, with the overlap check the
-# copy is a loop at run time; x86: the inner copy needs 'rsi', which the outer
-# copy holds
+# a count from a call that copies within an array from a run-time start, with
+# the overlap check the copy is a loop at run time; x86: the inner copy needs
+# 'rsi', which the outer copy holds
 if [[ $MACHINE == x86_64 ]]; then
     SRC=1115 && OPTS="--checks=noub" COMPERR
 else
@@ -8267,6 +8272,8 @@ if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=
 # '--vars' passes, 16 B less panics; x86_64 has other frame sizes
 if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=0 && OPTS="--vars=320 --checks=frame" RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=254 && OPTS="--vars=304 --checks=frame" RUN_ERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=6221 && EXP=0 && OPTS="--vars=544 --checks=frame" RUN; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=6221 && EXP=254 && OPTS="--vars=528 --checks=frame" RUN_ERR; fi
 
 # --checks=upper,line: a run-time start and count whose end passes the largest
 # 32-bit int fail the bounds check of the range, on rv32i the end is compared
@@ -8317,3 +8324,17 @@ SRC=6522 && EXP=0 && RUN
 # a string continued after a backslash is one line in the comments of the
 # listing, without its line end, also a crlf one
 SRC=6540 && DIFFPY
+
+# --checks=upper,line: the bounds check of a run-time start and count of
+# 'write' names the line of the start, not the line of the count
+SRC=6581 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
+
+# --checks=lower: the index 'i - 2' is checked whole, not 'i' with the '- 2'
+# folded into the address
+SRC=6582 && EXP=255 && OPTS="--checks=lower,line" RUN_ERR
+
+# --checks=noub: the stack check is on with the frame check, a recursion whose
+# frames fit in '--vars' panics on a stack of 4 KB; x86_64 and rv32i have no
+# stack check
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6583 && EXP=250 && OPTS="--stack=4096 --checks=noub,line" RUN_ERR; fi
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=6583 && EXP=0 && OPTS="--checks=noub,line" RUN; fi

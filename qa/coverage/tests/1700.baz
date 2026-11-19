@@ -1,5 +1,5 @@
-# the same through two instances of one generic function: 'f<W2,W1>' cannot
-# call back 'f<W1,W2>' that instantiates it
+# the same through two instances of one generic function: 'f<W2, W1>' cannot
+# call back 'f<W1, W2>' that instantiates it
 
 type W1 {v}
 

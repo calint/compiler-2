@@ -1,0 +1,20 @@
+# a program whose checked operations cannot fail compiles with the checks to
+# the code it has without them: copies whose constant starts, and count where
+# it matters, keep the destination out of the source, constant shift counts,
+# divisors and indexes; 'test-cli.sh' compares the listings
+func assert(err, ok bool) { if not ok exit(err) }
+
+func main() {
+    var a = i32[6]{1, 2, 3, 4, 5, 6}
+    var n = 2
+    array_copy(a[2], a, n)
+    assert(1, a[0] == 3 and a[1] == 4 and a[2] == 3)
+    array_copy(a, a, 6)
+    array_copy(a, a[3], 3)
+    assert(2, a[3] == 3 and a[4] == 4 and a[5] == 3)
+    var b = i8[9]{1, 2, 3, 4, 5, 6, 7, 8, 9}
+    array_copy(b[1], b, 8)
+    assert(3, b[0] == 2 and b[7] == 9 and b[8] == 9)
+    var x = a[1]
+    assert(4, x << 3 == 32 and x >> 1 == 2 and x / 3 == 1 and x % 3 == 1)
+}

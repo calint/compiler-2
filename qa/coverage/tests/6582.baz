@@ -1,0 +1,11 @@
+# --checks=lower: an index with a constant addend is checked whole, 'i - 2'
+# with 'i' 1 is below the array, not 'i' with the '- 2' in the address
+func noinline id(x) res {
+    res = x
+}
+
+func main() {
+    var a = i32[4]{1, 2, 3, 4}
+    var i = id(1)
+    exit(a[i - 2])
+}

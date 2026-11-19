@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <ostream>
 
@@ -55,11 +56,12 @@ class stmt_builtin_array_copy final : public statement {
         };
 
         // the overlap check compares the addresses of the loop at run time
-        // where the paths may overlap; a call rejects arguments that may share
-        // storage ('stmt_call::assert_no_shared_storage'), e.g. two 'mut'
-        // parameters bound to one array
+        // where the destination may start inside the source; a call rejects
+        // arguments that may share storage
+        // ('stmt_call::assert_no_shared_storage'), e.g. two 'mut' parameters
+        // bound to one array
         const bool checks_overlap{
-            tc.checks().overlap and may_overlap(tc),
+            tc.checks().overlap and may_start_inside_source(tc),
         };
 
         bulk_operands::argument_emitters emit{operands_, tc, tok()};
@@ -95,17 +97,49 @@ class stmt_builtin_array_copy final : public statement {
     }
 
   private:
-    // the two arrays may share bytes, e.g. 'array_copy(a[0], a[1], n)' but
-    // not 'array_copy(s.a, s.b, n)'
+    // the destination may start inside the source, e.g.
+    // 'array_copy(a[0], a[1], n)' but not 'array_copy(s.a, s.b, n)', nor
+    // from constant starts in one array a copy down, 'array_copy(a[1], a, n)',
+    // or past the end of a constant count, 'array_copy(a, a[2], 2)'
     // note: the 'upper' check of the count keeps each copy inside the range
     //       of its path, from its start element to the end of the array
-    [[nodiscard]] auto may_overlap(const toc& tc) const -> bool {
+    [[nodiscard]] auto may_start_inside_source(const toc& tc) const -> bool {
         const std::optional<storage_path> src{operands_.first().storage(tc)};
         const std::optional<storage_path> dst{operands_.second().storage(tc)};
 
         // note: both are arrays of variables, a constant is not written
         assert(src and dst);
 
-        return src->may_overlap(*dst);
+        if (not src->may_overlap(*dst)) {
+            return false;
+        }
+
+        // note: two paths of one element type that may overlap and have no
+        //       run-time index name the same array, an array cannot hold its
+        //       own element type deeper
+
+        if (src->path.has_run_time_index() or dst->path.has_run_time_index()) {
+            return true;
+        }
+
+        const std::optional<int64_t> src_start{
+            operands_.first().constant_start_index(tc),
+        };
+
+        const std::optional<int64_t> dst_start{
+            operands_.second().constant_start_index(tc),
+        };
+
+        if (not src_start or not dst_start) {
+            return true;
+        }
+
+        if (*dst_start <= *src_start) {
+            return false;
+        }
+
+        const std::optional<int64_t> count{operands_.constant_count(tc)};
+
+        return not count or *dst_start < *src_start + *count;
     }
 };

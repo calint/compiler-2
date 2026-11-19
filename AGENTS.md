@@ -141,8 +141,9 @@
   bugs, round after round; implement what is recommended. Refactoring is
   allowed, large ones too, when the design improves. The loop ends when two
   rounds in a row of fresh agents (a bug hunt in an area not hunted recently,
-  a design simplification, a newcomer readability walk) find nothing to
-  apply; what needs approval does not count.
+  a design simplification, a newcomer readability walk) fix no defect and
+  change no design; new tests, comments and renames do not count, nor does
+  what needs approval.
 - Until the design is judged done, the loop takes no items from
   `etc/todo.txt`: rounds look for design, readability and bugs; findings
   that are not done go there.

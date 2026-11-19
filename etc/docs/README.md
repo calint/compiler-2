@@ -1112,10 +1112,11 @@ method name".
 
 #### 2.10.3 Call: the instance
 
-The instance is named by the generic name and the type names, e.g.
-'make<str>' or 'tokenizer.to<name>'. A label has no '<', '>' or ',', so there
-it is 'tokenizer.to..name'. The '..' keeps two instances apart: a name has no
-'..', so 'f<a,b>' is 'f..a.b' and the method instance 'f.a<b>' is 'f.a..b'.
+The instance is named by the generic name and the type names, spelled as an
+instance of a generic type is, e.g. 'make<str>', 'tokenizer.to<name>' or
+'f<a, b>'. A label has no '<', '>', ',' or ' ', so there it is
+'tokenizer.to..name'. The '..' keeps two instances apart: a name has no '..',
+so 'f<a, b>' is 'f..a.b' and the method instance 'f.a<b>' is 'f.a..b'.
 
 An existing instance is used as it is, so each combination of types is
 compiled once. Otherwise the definition is read again from its start with
@@ -2213,7 +2214,7 @@ constants out of range, and the code the run-time checks.
 | division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0954-0957, 1757-1759 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift', from 'expr_arith::emit_operation') | 'shift' | 0964-0966 |
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_check') | 'overflow' | 0977, 0978, 0983 |
-| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy', where the paths may overlap, 3.5) | 'overlap' | 0970-0972 |
+| 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy', where the paths may overlap, 3.5, and constant starts in one array and a constant count do not keep the destination out of the source) | 'overlap' | 0970-0972 |
 | the variables of a noinline call past '--vars' | deep noinline recursion | run time ('machine::check_frame_capacity' from 'noinline_call::populate_frame', 4.1) | 'frame' | 0405, 0406, 0426 |
 | the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'machine::call_function'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0974-0976 |
 
@@ -2229,8 +2230,11 @@ without '--checks': a write past an array goes on silently, a division by zero
 stops the program with a floating point exception, a shift by 65 shifts by 1
 because the machine masks the count to the width of the operation (6 bits for
 a 64-bit one on x86_64, 5 for a narrower one and on rv32i) and a signed
-overflow wraps, also a constant one. Such a
-result depends on the target. With 'noub' each of them stops at a panic that
+overflow wraps, also a constant one; an 'array_copy' whose destination
+starts inside its source copies in blocks of the target, e.g. 'array_copy(a,
+a[1], 3)' of '{1, 2, 3, 4}' gives '{1, 1, 2, 2}' on x86_64 with a constant
+count and '{1, 1, 1, 1}' with a run-time one and on rv32i. Such a result
+depends on the target and on inlining. With 'noub' each of them stops at a panic that
 names the check, e.g. 'panic: bounds'.
 
 A panic prints its message on a line of its own after the output of the

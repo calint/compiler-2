@@ -1299,8 +1299,8 @@ class stmt_def_func final : public statement {
         return path;
     }
 
-    // a label has no '<', '>' or ',', e.g. 'tokenizer.to<name>' is
-    // 'tokenizer.to..name'; a name has no '..', so 'f<a,b>' ('f..a.b') and
+    // a label has no '<', '>', ',' or ' ', e.g. 'tokenizer.to<name>' is
+    // 'tokenizer.to..name'; a name has no '..', so 'f<a, b>' ('f..a.b') and
     // the method instance 'f.a<b>' ('f.a..b') differ; a path follows a name
     // after '..' too, which a generic name and a plain name of the same
     // function or method cannot both take, so the function 'h' for array
@@ -1316,7 +1316,7 @@ class stmt_def_func final : public statement {
                 label += "..";
             } else if (ch == ',') {
                 label.push_back('.');
-            } else if (ch != '>') {
+            } else if (ch != '>' and ch != ' ') {
                 label.push_back(ch);
             }
         }
@@ -1457,7 +1457,7 @@ class func_instantiator final {
         tc.mark_generic_func_instantiated(generic_name);
 
         std::string name{
-            generic_func_instance_name(generic_name, type_args),
+            generic_instance_text(generic_name, type_args),
         };
 
         // note: an instance is a function, no generic one has its name

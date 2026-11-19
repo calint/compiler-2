@@ -284,34 +284,9 @@ struct generic_arg {
     }
 };
 
-// the two spellings of an instance: a function instance is a function named
-// by 'generic_func_instance_name', e.g. 'tokenizer.to<name>'; a type instance
-// is a type named by its alias, the errors in it show it as
-// 'generic_instance_text', e.g. 'list<i8, 8>'
-
-// e.g. 'tokenizer.to<name>' for the generic 'tokenizer.to'
-[[nodiscard]] inline auto
-generic_func_instance_name(const std::string_view generic_name,
-                           const std::span<const generic_arg> type_args)
-    -> std::string {
-
-    std::string name{generic_name};
-    name += '<';
-
-    for (const generic_arg& type_arg : type_args) {
-        if (name.back() != '<') {
-            name += ',';
-        }
-
-        name += type_arg.type_ref().name();
-    }
-
-    name += '>';
-
-    return name;
-}
-
-// e.g. 'list<i8, 8>', how the errors found in an instance name it
+// the spelling of an instance, e.g. 'list<i8, 8>' in the errors of a type
+// instance, which is a type named by its alias, and 'tokenizer.to<name>', the
+// name of a function instance
 [[nodiscard]] inline auto
 generic_instance_text(const std::string_view generic_name,
                       const std::span<const generic_arg> args) -> std::string {
@@ -403,15 +378,6 @@ class generic_trace final {
         return trace;
     }
 };
-
-// the name of the method 'method' of the type 'type_name', e.g. 'str.print'
-// for 'print' of 'str'; of a generic type as written, e.g. 'text.print'
-[[nodiscard]] inline auto method_name_of(const std::string_view type_name,
-                                         const std::string_view method)
-    -> std::string {
-
-    return std::format("{}.{}", type_name, method);
-}
 
 // a type with parameters, e.g. 'type list<T type, capacity> {...}'. an alias
 // 'type str = list<i8, 8>' parses the fields again from 'fields_tk' with the

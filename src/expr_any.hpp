@@ -755,6 +755,9 @@ class expr_any final : public statement {
                                  const size_t dst_count, write_plan& plan) const
         -> void {
 
+        // note: a longer list or string was rejected before
+        assert(listed_count <= dst_count);
+
         const type& element_type{get_type()};
 
         const size_t remaining_count{dst_count - listed_count};
@@ -866,13 +869,14 @@ class expr_any final : public statement {
                                      const type& tp, const token& tk,
                                      const term_kind tm) -> void {
 
-        // a user type or an instance literal, e.g. 'x = point' or
-        // 'x = point{1, 2}' for an 'i8' 'x'; a condition may compare an
-        // instance literal, which the comparison rejects
+        // e.g. 'pt{1, 2}.x', also where a 'bool' is expected
         if (tm == term_kind::instance_literal and is_literal_reached_into(tz)) {
             throw_instance_literal_not_operand(tk, tk.text());
         }
 
+        // a user type or an instance literal, e.g. 'x = point' or
+        // 'x = point{1, 2}' for an 'i8' 'x'; a condition may compare an
+        // instance literal, which the comparison rejects
         if (is_instance_value(tm, tz) or
             (tm == term_kind::instance_literal and not tp.is_bool())) {
 
@@ -1329,9 +1333,9 @@ class expr_any final : public statement {
         return list.prefix->size.array_size();
     }
 
-    // the zero value of a built-in type as a list of one element, e.g. the
-    // 'i8' of 'var x = i8', the 'bool' of 'var b = bool' or the '{}' of
-    // 'n = {}'
+    // the zero value of a built-in type as an 'expr_arith' of one operand,
+    // e.g. the 'i8' of 'var x = i8', the 'bool' of 'var b = bool' or the '{}'
+    // of 'n = {}'
     [[nodiscard]] static auto zero_value(parse_toc& tc, tokenizer& tz,
                                          std::unique_ptr<expr_zero> zero)
         -> expr_variant {

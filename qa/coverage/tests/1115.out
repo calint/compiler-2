@@ -1,6 +1,6 @@
 
 1115.baz:6:5: register rsi is always used by the operation at 14:5 and is needed here too, compute the operand that needs it with 'let' before that operation
-    array_copy(destination, destination, 1)
+    array_copy(destination, destination[source[0] - 1], 1)
     ^~~~~~~~~~
 1115.baz:14:37: called from 'nested(source, destination)'
     array_copy(source, destination, nested(source, destination))

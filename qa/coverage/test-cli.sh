@@ -319,6 +319,19 @@ CLI_CHECKS_LIST() {
     echo ok
 }
 
+CLI_CHECKS_UNFAILING() {
+    echo -n "cli checks that cannot fail: "
+    # the checked operations of 6580.baz cannot fail, so the checks leave its
+    # code as it is without them; its run-time count is bounds checked
+    local target
+    for target in x86_64 rv32i rv32i-fpga; do
+        baz_at "$target" 6580.baz >out 2>err
+        baz_at "$target" --checks=noub,line,-upper,-lower 6580.baz >gen.s 2>err
+        cmp -s gen.s out
+    done
+    echo ok
+}
+
 CLI_FILE_ERRORS() {
     echo -n "cli unreadable source and unwritable image: "
     expect_exit_1 "$BIN" missing-source.baz >gen.s 2>err
@@ -1262,6 +1275,7 @@ CLI_SHARED_BASE_COPY
 CLI_ROUTINE_INDENT
 CLI_CHECKS_NOUB
 CLI_CHECKS_LIST
+CLI_CHECKS_UNFAILING
 CLI_FILE_ERRORS
 CLI_FPGA_MEMORY
 CLI_QEMU_STACK

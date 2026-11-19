@@ -47,7 +47,8 @@
 //                   of a noinline call, while the register trace
 //                   ('compile_toc::scope_entry', 'register_trace') and
 //                   'compile_error::call_frame' use it for a call level
-//   tables          'type_table', 'function_table'
+//   tables          'type_table', 'function_table' and 'method_name_of',
+//                   the name of a method in it
 //   'data_table'    the dats ('placed_dat') and the read-only constants
 //   'scope_stack'   the scopes from the globals to the innermost scope and
 //                   'lookup', the one rule of what a name means
@@ -789,6 +790,16 @@ class type_table final {
                            });
     }
 };
+
+// the name of the method 'method' of the type 'type_name' in
+// 'function_table', e.g. 'str.print' for 'print' of 'str'; of a generic type
+// as written, e.g. 'text.print'
+[[nodiscard]] inline auto method_name_of(const std::string_view type_name,
+                                         const std::string_view method)
+    -> std::string {
+
+    return std::format("{}.{}", type_name, method);
+}
 
 // the functions of the program: the defined ones and the instances of
 // generic ones

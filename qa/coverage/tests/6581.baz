@@ -1,0 +1,15 @@
+# --checks=upper,line: the bounds check of a run-time start and count of
+# 'write' names the line of the start, the count is on a line of its own
+func noinline id(x) res {
+    res = x
+}
+
+func main() {
+    var buf = "abcd"
+    var n = id(2)
+    var start = id(3)
+    var w = write(1, buf,
+        n,
+        start)
+    exit(w)
+}

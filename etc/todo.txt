@@ -10,6 +10,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[p] easy: (round 513, the checks matrix) need approval: an 'array_copy'
+    with constant starts and count whose destination starts inside its
+    source can only panic with '--checks=overlap' (e.g. test 0971), like a
+    constant index past the end, which is rejected at compile time; rejecting
+    it too would remove behavior: such programs run without the check and
+    give the target's block copy (docs 8.2); proposed: reject it at compile
+    time as "the destination starts inside the source"
 [ ] easy: (round 502, shifts and unary operators) without the overflow
     check a literal with unary ops is checked by its value wrapped at 64
     bits: with '--checks=noub,-overflow' on x86_64 'r = v + -~9223372036854775807'
@@ -1639,7 +1646,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
        receiver ('add_constants')
     => a constant is never deduced: a function with one is always called
        with '<...>'
-    => the instance name and label get the values ('f<name,8>',
+    => the instance name and label get the values ('f<name, 8>',
        'f.name.8'); a negative value puts '-' in a label
     => gain is only a size in the body ('var buf = i8[n]'): a value is a
        plain parameter, 'a T[]' already gives one instance per length, a

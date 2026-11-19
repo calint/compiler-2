@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 513 (2026-11-19, bug hunt: the '--checks' options as a
+    matrix; design: generics as a whole; readability: a newcomer walks the
+    second half of 'expr_any.hpp')
+    => bug hunt: no wrong or missing check; a model generator of steps
+       that can each fail one check (overflow, division, shift, bounds in
+       every form, overlap, frame, stack) in 'main', inlined, noinline and
+       nested helpers, folded arguments, conditions, loops and skipped
+       code, under 8 to 26 check sets in every spelling, the first enabled
+       check expected and a disabled one its documented result: 560
+       programs, 23100 runs; an 'array_copy' with constant starts that
+       cannot overlap (a copy down, adjacent, onto itself) still got the
+       overlap check and lost its unrolled copy:
+       'may_start_inside_source' decides from the constant starts and
+       count, 44 listings smaller (0970 from 155 to 94 instructions on
+       x86_64, 284 to 156 on rv32i), test 1115 keeps its register clash
+       with a run-time start: test 6580 and 'CLI_CHECKS_UNFAILING'; 23
+       mutants, four missed by every suite: tests 6581 (the io range line),
+       6582 (a trailing addend folded under 'lower'), 6583 (the stack
+       check with 'noub') and two exact '--vars' cases of 6221 on x86_64;
+       docs 8.2 says what an unchecked overlapping copy gives; rejecting a
+       constant overlap at compile time: todo, need approval
+    => design: each rule of generics is decided once; function instances
+       are spelled like type instances, 'f<a, b>', and
+       'generic_func_instance_name' is gone (labels unchanged, 4 tests
+       differ in the spelling only); 'method_name_of' moved to 'toc.hpp'
+       next to the table it names; a comment named a 'generic_table' that
+       does not exist; eight ideas kept with reasons
+    => readability: a comment of 'assert_not_aggregate' that drifted above
+       the wrong 'if' moved back, 'zero_value' is an 'expr_arith' of one
+       operand, an assert that the listed elements fit in
+       'plan_remaining_elements'; 34 functions, 3 predictions wrong
 [x] easy: round 512 (2026-11-19, bug hunt: programs of several files
     and the locations of errors and panics; design: scopes and name
     resolution, 'toc.hpp'; readability: a newcomer walks the first half of

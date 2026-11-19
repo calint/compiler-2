@@ -163,7 +163,7 @@ class generic_call {
     token name_tk_;
     // e.g. 'tokenizer.to'
     std::string generic_name_;
-    // kept by 'generic_table', a body defines no generic function
+    // kept by 'generic_registry', a body defines no generic function
     const generic_func_info* generic_{};
     // one per type parameter, null until deduced; a type parameter that the
     // result is declared with starts as the type the call is assigned to,

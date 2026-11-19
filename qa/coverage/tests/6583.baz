@@ -1,0 +1,14 @@
+# --checks=noub on rv32i-qemu and rv32i-fpga: the stack check is on with the
+# frame check, a recursion whose frames fit in '--vars' overflows a stack of
+# 4 KB; x86_64 and rv32i have no stack check and finish it
+func noinline down(n) res {
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = down(n - 1) + 1
+}
+
+func main() {
+    exit(down(1000) - 1000)
+}
