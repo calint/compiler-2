@@ -779,9 +779,7 @@ class expr_any final : public statement {
                                     size_bytes),
                     },
                     .offset{listed_count * element_type.size_bytes()},
-                    .value_type{&element_type},
                     .size_bytes{size_bytes},
-                    .alignment{element_type.alignment()},
                 },
             },
             .covered{

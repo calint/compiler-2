@@ -342,11 +342,9 @@ struct bytes_write {
 struct zero_fill {
     token src_loc_tk;
     std::string comment;
-    // from the start of the part, at which the operand has 'value_type'
+    // from the start of the part
     size_t offset{};
-    const type* value_type{};
     size_t size_bytes{};
-    size_t alignment{};
 };
 
 // a comment line written before the steps it describes, e.g. "copy field
@@ -414,11 +412,15 @@ inline auto emit_write_plan(compile_toc& tc, const write_plan& plan,
         }
 
         if (const zero_fill* const zero{std::get_if<zero_fill>(&step.action)}) {
+            // the instance or the element type of the array at the part
+            const type& part_type{part_dst.type_ref()};
+
             x.comment({zero->src_loc_tk, tc.indent()}, zero->comment);
 
             x.zero({zero->src_loc_tk, tc.indent()},
-                   part_dst.operand_at(zero->offset, *zero->value_type),
-                   zero->size_bytes, zero->alignment);
+                   part_dst.operand_at(zero->offset, part_type),
+                   zero->size_bytes,
+                   offset_alignment(zero->offset, part_type.alignment()));
 
             continue;
         }
@@ -614,11 +616,7 @@ class expr_type final : public statement {
                     .src_loc_tk{tok()},
                     .comment{std::format("zero {}: {} B", what, size_bytes)},
                     .offset{offset},
-                    .value_type{&get_type()},
                     .size_bytes{size_bytes},
-                    .alignment{
-                        offset_alignment(offset, get_type().alignment()),
-                    },
                 },
             },
             .covered{std::move(covered)},

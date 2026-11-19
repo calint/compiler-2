@@ -1896,15 +1896,15 @@ class machine {
     }
 
     // the first register in the scratch order of the backend that is free or
-    // in 'consumed', none when all are held
+    // in 'reusable', none when all are held
     [[nodiscard]] auto
-    first_unused_scratch_register(const uint32_t consumed = 0) const
+    first_unused_scratch_register(const uint32_t reusable = 0) const
         -> std::optional<std::string_view> {
 
         for (const std::string_view register_name : scratch_registers()) {
             const uint32_t mask{register_mask(register_name)};
 
-            if ((consumed & mask) != 0 or
+            if ((reusable & mask) != 0 or
                 not state_.registers.is_unavailable(mask)) {
 
                 return register_name;
@@ -1914,7 +1914,7 @@ class machine {
         return std::nullopt;
     }
 
-    // the scratch registers of the backend that are free
+    // the number of scratch registers of the backend that are free
     [[nodiscard]] auto free_scratch_register_count() const -> size_t {
         const std::ptrdiff_t count{
             std::ranges::count_if(scratch_registers(),
@@ -2167,15 +2167,15 @@ class machine {
     // class methods
     //
 
-    // the first register in the scratch order that is free or in 'consumed',
+    // the first register in the scratch order that is free or in 'reusable',
     // registers the operation protects but no one holds
     [[nodiscard]] auto alloc_scratch_register_from(const emit_site site,
                                                    const type& type_ref,
-                                                   const uint32_t consumed)
+                                                   const uint32_t reusable)
         -> operand {
 
         const std::optional<std::string_view> register_name{
-            first_unused_scratch_register(consumed),
+            first_unused_scratch_register(reusable),
         };
 
         if (not register_name) {
@@ -2313,7 +2313,7 @@ class machine {
         };
     }
 
-    // the largest value of the default type, at which bounds are compared
+    // the largest value of the default type, the type of an index and a count
     [[nodiscard]] auto default_signed_max() const -> uint64_t {
         return (uint64_t{1} << (default_type().size_bits() - 1)) - 1;
     }
@@ -2742,8 +2742,8 @@ class machine {
         pop_allocation({token{}, 0}, pool_index(register_name));
     }
 
-    // the failure of 'handler' reports its line, e.g. not a frame overflow,
-    // which is not at a statement
+    // with '--checks=line', the failure of 'handler' reports its line, e.g.
+    // not a frame overflow, which is not at a statement
     [[nodiscard]] auto reports_line(const failure_handler& handler) const
         -> bool {
 

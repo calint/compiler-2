@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 499 (2026-11-19, bug hunt: methods and receivers;
+    design: instance and array literals, how a value is written in parts;
+    readability: a newcomer walks the last third of 'machine.hpp')
+    => bug hunt: no defect; a model generator with a summary per method of
+       what it reads and writes of the receiver, the parameters and the
+       globals, receivers that are locals, globals, fields three levels
+       deep, elements at run-time indexes and 'foo' elements, methods
+       calling methods of 'self' and its fields, methods that may alias
+       the receiver, record results into overlapping destinations,
+       constructors calling methods, generic methods, noinline recursion,
+       calls in conditions and arguments: 6150 accepted and 1100 rejected
+       programs, 57700 runs, probes of order, aliasing and definite
+       assignment; 10 mutants of the aliasing and receiver code all caught
+    => design: each part of a literal is planned in one place and written
+       in one place; 'zero_fill' loses 'value_type' and 'alignment', which
+       'emit_write_plan' takes from the part like 'emit_bytes_write'
+       (checked equal over the suite first; -4 lines, listings equal);
+       seven ideas kept with reasons ('dat' folds at the parse, a literal
+       zeroes only its top-level gaps, the parse checks of a string
+       overflow serve 'dat')
+    => readability: the 'consumed' mask of 'alloc_scratch_register_from'
+       renamed 'reusable', it may be picked; three comments
+       ('free_scratch_register_count' is a number, 'default_signed_max'
+       is the type of an index and a count, 'reports_line' needs
+       '--checks=line'); 56 functions, 4 predictions wrong
 [x] easy: round 498 (2026-11-19, bug hunt: arrays and indexing, the
     bounds checks after the refactor of round 497; design: the second half
     of the rv32i backend, 'machine_rv32i.hpp'; readability: a newcomer
