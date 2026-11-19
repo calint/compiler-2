@@ -71,9 +71,7 @@ inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,
 
         const path_field* const field{std::get_if<path_field>(&next)};
 
-        // only the last element reaches to the end of its array
-        narrow_to_element(tc, prefix,
-                          field == nullptr ? reach_ : path_reach::element);
+        narrow_to_element(tc, prefix, starts_range(field == nullptr));
 
         // the path so far is resolved as the receiver
         if (const method_tokens* const method{
@@ -241,7 +239,7 @@ inline auto stmt_identifier::constant_start_index(const toc& tc) const
 
 inline auto stmt_identifier::narrow_to_element(const toc& tc,
                                                const ident_info& array_info,
-                                               const path_reach reach) -> void {
+                                               const bool is_range) -> void {
 
     if (not is_array_element()) {
         return;
@@ -250,8 +248,7 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
     // an index out of bounds is rejected here, before a check that uses the
     // accessed bytes reports it otherwise, e.g. as a read of an unset result
     const std::optional<int64_t> constant_index{
-        checked_constant_index(tc, elems_.size() - 1, array_info,
-                               reach == path_reach::to_end),
+        checked_constant_index(tc, elems_.size() - 1, array_info, is_range),
     };
 
     const std::optional<size_t> array_len{array_info.array_len()};
@@ -259,45 +256,36 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
     // note: 'checked_constant_index' rejected a negative index and one past the
     //       end, the end itself starts the empty range of a zero count
 
-    // an unsized array parameter: a constant element or start is known, its
-    // bytes are not; they matter only for a result, which has a length
-    if (constant_index and not array_len) {
-        const size_t index{static_cast<size_t>(*constant_index)};
-
-        if (reach == path_reach::to_end) {
-            access_path_.add_index_range(index, access_path::run_time_end);
-        } else {
-            access_path_.add_fixed_index(index);
-        }
-
-        return;
-    }
-
-    if (not constant_index or not array_len or
-        std::cmp_equal(*constant_index, *array_len)) {
+    if (not constant_index or
+        (array_len and std::cmp_equal(*constant_index, *array_len))) {
 
         access_path_.add_run_time_index();
         return;
     }
 
     const size_t index{static_cast<size_t>(*constant_index)};
+
+    // a range of an unsized array parameter reaches to the end its call gives
+    const size_t range_end{
+        is_range ? array_len.value_or(access_path::run_time_end) : index + 1,
+    };
+
+    access_path_.add_index_range(index, range_end);
+
+    // the bytes of an unsized array parameter are not known; they matter only
+    // for a result, which has a length
+    if (not array_len) {
+        return;
+    }
+
     const size_t element_size_bytes{array_info.type_ref().size_bytes()};
     const size_t element_offset{index * element_size_bytes};
 
-    if (reach == path_reach::to_end) {
-        access_path_.add_index_range(index, *array_len);
-    } else {
-        access_path_.add_fixed_index(index);
-    }
-
     // the last element keeps the padding after the array
-    const bool is_to_end{
-        reach == path_reach::to_end or *array_len == index + 1,
-    };
-
-    narrow_accessed_bytes(
-        element_offset, is_to_end ? accessed_bytes_.size_bytes - element_offset
-                                  : element_size_bytes);
+    narrow_accessed_bytes(element_offset,
+                          range_end == *array_len
+                              ? accessed_bytes_.size_bytes - element_offset
+                              : element_size_bytes);
 }
 
 inline auto stmt_identifier::parse_element(parse_toc& tc, tokenizer& tz,

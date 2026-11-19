@@ -1,0 +1,4 @@
+
+6460.baz:13:9: result 'res' is read before it is set
+    foo res.xs {
+        ^~~

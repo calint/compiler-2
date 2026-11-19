@@ -1,0 +1,22 @@
+# a 'foo' over an array of the result reads every element, so the elements
+# must be set before it, also when only one is not
+
+type buf {
+    xs i8[3],
+    n,
+}
+
+func fill() res buf {
+    res.xs[0] = 1
+    res.xs[1] = 2
+    res.n = 0
+    foo res.xs {
+        res.n = res.n + e
+    }
+    res.xs[2] = 3
+}
+
+func main() {
+    var b = fill()
+    exit(b.n)
+}

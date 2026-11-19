@@ -8281,3 +8281,10 @@ SRC=6440 && COMPERR
 # the start of a bulk operand at a constant index of an unsized array reaches
 # from that element on, so a global element before it is not shared
 SRC=6441 && EXP=52 && RUN
+
+# a 'foo' over an array of the result reads every element, so all must be set
+# before it
+SRC=6460 && COMPERR
+
+# the 'else' after a branch true at the parse reads no unset result
+SRC=6461 && COMPERR

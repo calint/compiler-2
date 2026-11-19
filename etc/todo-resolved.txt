@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 507 (2026-11-19, bug hunt: definite assignment and
+    reads of unwritten storage; design: how a path is built and what it
+    reaches, 'stmt_identifier.hpp' and 'access_path.hpp'; readability: a
+    newcomer walks 'stmt_builtin_foo.hpp', 'stmt_loop.hpp' and
+    'stmt_loop_jump.hpp')
+    => bug hunt: no defect; a model of every leaf of the result with its
+       padding on every path (if chains, constants known at the parse,
+       'loop' and 'foo' with 'break' and 'continue', returns, 'exit'),
+       results set by fields, elements, literals, copies from calls, 'mut'
+       parameters and methods, each result compared whole after a call
+       that left its frame nonzero, the fpga memory filled with 0xff:
+       17600 programs (7434 accepted, 10166 rejected with the expected
+       line), 199000 runs; 26 mutants, 23 caught by the suite: a 'foo'
+       over a result not checked for unset bytes: test 6460; the 'else'
+       after a branch true at the parse not checked: test 6461
+    => design: "only the last index starts a range" decided once
+       ('starts_range') instead of in the constructor and 'compile_lea';
+       'narrow_to_element' takes whether it is a range and builds every
+       element and range with one 'add_index_range' (-8 lines, listings
+       and errors equal); five ideas kept with reasons (the end of a sized
+       array as an empty range would accept more programs)
+    => readability: 'is_count_end_reachable' renamed
+       'is_reachable_after_count'; two comments (the path is ended after
+       'join_loop' when the count left it unreached, the parse walk does
+       not fold the count); 21 functions, 4 predictions wrong
 [x] easy: round 506 (2026-11-19, bug hunt: aliasing and overlap; design:
     the checks that run at compile time, 'ub_assigned.hpp', 'ub_reads.hpp'
     and 'ub_order.hpp'; readability: a newcomer walks 'register_pool.hpp'

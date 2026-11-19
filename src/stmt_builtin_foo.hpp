@@ -85,7 +85,7 @@ class stmt_builtin_foo final : public statement {
         };
 
         // e.g. not after 'foo a, stop() { }' with 'stop' an inlined 'exit'
-        const bool is_count_end_reachable{tc.is_reachable()};
+        const bool is_reachable_after_count{tc.is_reachable()};
 
         const compile_toc::scope_entry foo{
             tc,
@@ -127,7 +127,8 @@ class stmt_builtin_foo final : public statement {
         tc.join_loop(runs_body ? loop_end::when_stepped
                                : loop_end::also_when_done);
 
-        if (not is_count_end_reachable) {
+        // 'join_loop' does not see that the count left the loop unreached
+        if (not is_reachable_after_count) {
             tc.end_path();
         }
     }
@@ -139,6 +140,7 @@ class stmt_builtin_foo final : public statement {
             count_->count.assert_result_set_before_read(flow);
         }
 
+        // the count is not folded here, see 'assignment_flow::trace_loop'
         flow.trace_loop(code_, loop_end::also_when_done);
     }
 

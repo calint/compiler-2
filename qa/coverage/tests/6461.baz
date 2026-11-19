@@ -1,0 +1,14 @@
+# the 'else' after a branch true at the parse never runs and is checked as if
+# it ran, so it reads no unset result
+
+func f(k) res {
+    if true {
+        res = 1
+    } else {
+        res = res + k
+    }
+}
+
+func main() {
+    exit(f(2))
+}

@@ -628,10 +628,7 @@ class stmt_identifier final : public statement {
                 return;
             }
 
-            // only the last index starts a range
-            const bool is_range{
-                step.is_last and reach_ == path_reach::to_end,
-            };
+            const bool is_range{starts_range(step.is_last)};
 
             const std::optional<int64_t> constant_index{
                 checked_constant_index(tc, step.elem_pos, cur_info, is_range),
@@ -1070,11 +1067,12 @@ class stmt_identifier final : public statement {
         };
     }
 
-    // the index of the last path element parsed, 'array_info' its array; an
-    // array element that is not known leaves the whole array as the accessed
-    // range and adds a run-time index to 'access_path_'
+    // the index of the last path element parsed, 'array_info' its array,
+    // 'is_range' when it starts a range; an array element that is not known
+    // leaves the whole array as the accessed range and adds a run-time index
+    // to 'access_path_'
     auto narrow_to_element(const toc& tc, const ident_info& array_info,
-                           path_reach reach) -> void;
+                           bool is_range) -> void;
 
     // a field covers its trailing padding so that assigning every field
     // assigns the whole instance; the last field keeps the padding after the
@@ -1117,6 +1115,12 @@ class stmt_identifier final : public statement {
     }
 
     auto source_path_to(std::ostream& os) const -> void;
+
+    // only the index of the last element starts a range, e.g. the '1' of
+    // 'g[1]' in 'array_copy(s, g[1], 3)', not the '0' of 'g[0].v'
+    [[nodiscard]] auto starts_range(const bool is_last) const -> bool {
+        return is_last and reach_ == path_reach::to_end;
+    }
 
     //
     // statics
