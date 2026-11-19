@@ -1,6 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 509 (2026-11-19, bug hunt: what is written besides the
+    code, the listing comments, panic lines, the register report and
+    '--reproduce-source'; design: the noinline call from both sides;
+    readability: a newcomer walks the first half of 'assembler_rv32i.hpp')
+    => bug hunt: no defect in the listings or the report; generators of
+       programs with known lines (chains of inlined, noinline and generic
+       functions, included files, tabs, CRLF, comments, split statements,
+       one run-time failure each) checked against every listing comment,
+       label, allocation pair and number of the register report, with
+       nasm and llvm-mc: 2200 programs, 22000 runs, the whole suite as
+       CRLF, with tabs and with comments everywhere; 19 mutants, 17 caught
+       by the suite: a CR counted as a line break: test 6500; a run-time
+       'foo' count named by the array: test 6501; the run-time range check
+       of 'read' and 'write' with a constant start tests only the count
+       but named the start, which the compile accepted: it names a
+       run-time start, else the count, as 'array_copy' and the compile
+       time check do (test 2462 now names the count)
+    => design: the stack check of a noinline call ran in 'populate_frame'
+       while the registers of the argument addresses were held and
+       reserved more than the call saves; it runs in
+       'machine::call_function' with the saved registers (the round 496
+       item, below), 430 rv32i-qemu and rv32i-fpga listings change, no
+       growth; 'populate_frame' writes the slots itself; seven ideas kept
+       with reasons (the slot offsets agree since the slots are the first
+       allocations of the frame)
+    => readability: two comments ('write_resolved' writes the sections
+       before the variables, 'instruction_size' is in bytes so a pseudo
+       counts as what it expands to); 81 functions, 2 predictions wrong
+[x] easy: (round 496, the bare-metal limits) the stack check of a noinline
+    call reserves the registers allocated at the check, also those the call
+    does not save: a recursion of 2 parameters reserves 48 B where 32 B are
+    pushed, test 6220 64 B where 48 B are; stricter than needed, the
+    verdict is fixed at compile time and alike on rv32i-qemu and
+    rv32i-fpga; an optimization of the limit, not measured further
+    => done (2026-11-19, round 509): the check runs in
+       'machine::call_function' with the registers the call saves; test
+       6220 fits 720 B and panics at 704 B
 [x] easy: round 508 (2026-11-19, bug hunt: global variables and whole
     program state; design: conditions and branches, 'stmt_if.hpp' and the
     branch compile of 'expr_bool.hpp'; readability: a newcomer walks

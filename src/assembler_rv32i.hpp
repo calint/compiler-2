@@ -831,9 +831,9 @@ class assembler_rv32i final : public assembler {
         return image.bases.at(variables) + image.sizes.at(variables);
     }
 
-    // 'binary' receives the sections as one image from address zero, the
-    // text follows only when the image was written, so a failing build
-    // writes nothing
+    // 'binary' receives the sections before the variables as one image from
+    // address zero, the text follows only when the image was written, so a
+    // failing build writes nothing
     auto write_resolved(std::ostream& os, std::ostream& binary) const -> void {
         assert(jumps_resolved_);
 
@@ -1004,7 +1004,7 @@ class assembler_rv32i final : public assembler {
         return true;
     }
 
-    // pseudo instructions count as the ones they expand to
+    // in bytes, so 'instructions_in' counts a pseudo as the ones it expands to
     [[nodiscard]] auto instruction_size() const -> size_t override {
         return one_instruction_bytes;
     }

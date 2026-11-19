@@ -1981,6 +1981,10 @@ SRC=0616 && EXP=0 && RUN
 # foo count larger than the array fails the upper bound check
 SRC=0617 && EXP=255 && RUN_ERR
 
+# the bounds check of a run-time 'foo' count on a line of its own names the
+# line of the count
+SRC=6501 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
+
 # negative foo count fails the lower bound check
 SRC=0618 && EXP=255 && RUN_ERR
 
@@ -7344,6 +7348,9 @@ SRC=2431 && EXP=5 && DIFFNOPT
 # part of it
 SRC=2410 && EXP=0 && RUN
 
+# a crlf line end counts one line, the panic names the line of the check
+SRC=6500 && EXP=255 && OPTS="--checks=upper,line" RUN_ERR
+
 # a character literal ends at its line, a quote on a later line does not close
 # it
 SRC=2411 && COMPERR
@@ -7474,7 +7481,7 @@ SRC=2460 && COMPERR
 SRC=2461 && EXP=0 && RUN
 
 # a constant start moves the range of a count known at run time, the panic
-# names the line of the start
+# names the line of the count, which the check tests
 SRC=2462 && EXP=255 && RUN_ERR
 
 # an element of 7 bytes does not divide the sector, which leaves 1 byte
@@ -8249,8 +8256,8 @@ SRC=6161 && EXP=0 && RUN
 
 # --checks=stack: a recursion that keeps values in registers across its calls
 # fits a stack of exactly what the checks reserve, 16 B less panics
-if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=0 && OPTS="--stack=736 --checks=stack" RUN; fi
-if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=250 && OPTS="--stack=720 --checks=stack" RUN_ERR; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=0 && OPTS="--stack=720 --checks=stack" RUN; fi
+if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=250 && OPTS="--stack=704 --checks=stack" RUN_ERR; fi
 
 # --checks=frame: a recursion whose last frame ends exactly at the end of
 # '--vars' passes, 16 B less panics; x86_64 has other frame sizes

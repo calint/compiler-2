@@ -1439,10 +1439,11 @@ address    | result address         |    the callee's frame base
    register, sets the frame base to the frame address, calls and restores
    them.
 4. With '--checks=frame' the call checks that the callee frame fits in the
-   variables ('machine::check_frame_capacity', '--vars'), with
+   variables ('machine::check_frame_capacity', '--vars'), in
+   'noinline_call::populate_frame' before the slots are written; with
    '--checks=stack' on the bare-metal targets that the call fits in the
-   stack ('machine::check_stack_capacity'), both in
-   'noinline_call::populate_frame' before the slots are written.
+   stack ('machine::check_stack_capacity'), in 'machine::call_function'
+   before the registers are saved, for the registers it saves.
 
 The body is compiled for the first call that needs it. An error in the body
 carries that call as a frame ('noinline_body::call_tk', added by
@@ -2214,7 +2215,7 @@ constants out of range, and the code the run-time checks.
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_check') | 'overflow' | 0977, 0978, 0983 |
 | 'array_copy' whose destination starts inside the source | 'array_copy(a, a[1], 3)' | run time ('machine::copy_elements' with the overlap check of 'stmt_builtin_array_copy', where the paths may overlap, 3.5) | 'overlap' | 0970-0972 |
 | the variables of a noinline call past '--vars' | deep noinline recursion | run time ('machine::check_frame_capacity' from 'noinline_call::populate_frame', 4.1) | 'frame' | 0405, 0406, 0426 |
-| the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'noinline_call::populate_frame'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0974-0976 |
+| the stack of a noinline call | deep noinline recursion | run time on rv32i-qemu and rv32i-fpga ('machine::check_stack_capacity' from 'machine::call_function'); on x86_64 and rv32i the operating system stops the program | 'stack' | 0974-0976 |
 
 'noub' turns on every check of the table: 'upper', 'lower', 'frame',
 'division', 'shift', 'overlap', 'stack' and 'overflow'.

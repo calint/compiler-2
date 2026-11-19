@@ -1295,10 +1295,10 @@ class inline_call final {
 //      asserts it); the body for the array lengths is asked for
 //      ('compile_toc::add_noinline_body') and compiled after 'main'
 //      ('stmt_def_func::emit_noinline_body')
-//   3. the addresses are written to the callee frame ('populate_frame': the
-//      frame and stack checks and 'write_frame_slots', which returns the
-//      receiver address the callee finds in a register) and the function is
-//      called
+//   3. the addresses are written to the callee frame after the frame check
+//      ('populate_frame', which returns the receiver address the callee finds
+//      in a register) and the function is called ('machine::call_function',
+//      which checks the stack)
 class noinline_call final {
     call_site call_{};
 
@@ -1433,9 +1433,10 @@ class noinline_call final {
     }
 
     // the slots of the callee frame at 'frame_address' get the addresses of
-    // the result and the arguments, the registers that hold them stay
-    // allocated until the frame is populated; returns the receiver address
-    // of 'write_frame_slots'
+    // the result and the arguments, not the values stored at them; the
+    // registers that hold them stay allocated until the frame is populated;
+    // returns the address the callee finds in a register, none when no slot
+    // is in it
     [[nodiscard]] auto populate_frame(
         compile_toc& tc, const destination& dst,
         const std::span<const ident_info> arguments,
@@ -1445,30 +1446,14 @@ class noinline_call final {
 
         machine& x{tc.machine()};
 
-        x.check_frame_capacity({call_.tk, tc.indent()}, frame_address,
-                               call_.func->frame_size_label(array_lengths));
-
         // note: 'held' is not released yet, so the scratch registers of the
         //       check do not take a register that holds an argument address
 
-        x.check_stack_capacity({call_.tk, tc.indent()});
-
-        return write_frame_slots(tc, frame_address, dst, arguments);
-    }
-
-    // each slot holds an address, not the value stored at that address;
-    // returns the address the callee finds in a register, none when no slot
-    // is in it
-    [[nodiscard]] auto
-    write_frame_slots(compile_toc& tc, const operand& frame_address,
-                      const destination& dst,
-                      const std::span<const ident_info> arguments) const
-        -> std::optional<operand> {
+        x.check_frame_capacity({call_.tk, tc.indent()}, frame_address,
+                               call_.func->frame_size_label(array_lengths));
 
         operand slot_address{frame_address};
         std::optional<operand> receiver_address;
-
-        machine& x{tc.machine()};
 
         for (const frame_slot& slot : call_.func->frame_slots()) {
             // the callee finds it in a register, it has no slot

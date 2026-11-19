@@ -176,7 +176,7 @@ struct target_description {
 //                  'call_target', 'return_function', 'exit'
 //   checks         'checks' (what '--checks' turns on, each check emits
 //                  nothing when its option is off), 'check_bounds',
-//                  'check_frame_capacity', 'check_stack_capacity'
+//                  'check_frame_capacity'; 'call_function' checks the stack
 //   versions       'emit_most_efficient', 'dry_run', 'is_dry_run'
 //   comments       'comment'
 //   target         'default_type', 'address_size_bytes',
@@ -1061,7 +1061,8 @@ class machine {
 
     // 'receiver_address' is the address the callee finds in
     // 'receiver_register', none when the register is not used; 'name' is the
-    // callee's for the register report
+    // callee's for the register report; the stack capacity is checked for
+    // the registers the call saves
     auto call_function(const emit_site site, const std::string_view name,
                        const std::string_view label,
                        const operand& frame_address,
@@ -1084,6 +1085,8 @@ class machine {
                 .saved{saved.size()},
             });
         }
+
+        check_stack_capacity(site, saved.size(), receiver_address);
 
         if (not saved.empty()) {
             comment(site, "before call: save allocated registers");
@@ -1242,28 +1245,6 @@ class machine {
         emit_frame_capacity_check(site, frame_address, frame_size_label);
 
         comment(site, "frame capacity check end");
-    }
-
-    // jumps to the stack overflow handler when a noinline call, made with the
-    // registers allocated now, does not fit in the stack; nothing when the
-    // check is off, which it is on a target that is not 'is_stack_bounded'
-    auto check_stack_capacity(const emit_site site) -> void {
-        if (not options_.checks.stack) {
-            return;
-        }
-
-        assert(is_stack_bounded());
-
-        comment(site, "stack capacity check begin");
-
-        // note: the scratch registers of the check are freed after the end
-        //       comment
-
-        const operation_scope scope{*this};
-
-        emit_stack_capacity_check(site);
-
-        comment(site, "stack capacity check end");
     }
 
     // what '--checks' turns on, with the checks the target cannot honor off
@@ -1781,7 +1762,9 @@ class machine {
     // the compare and branch of 'check_stack_capacity', between its begin and
     // end comments; only a target that 'is_stack_bounded' has a stack limit
     virtual auto
-    emit_stack_capacity_check([[maybe_unused]] const emit_site site) -> void {
+    emit_stack_capacity_check([[maybe_unused]] const emit_site site,
+                              [[maybe_unused]] const size_t saved_count)
+        -> void {
 
         std::unreachable();
     }
@@ -2015,26 +1998,6 @@ class machine {
         return 0;
     }
 
-    // the registers a 'noinline' call saves: the allocated ones but the
-    // variables base, which the callee uses too; by their names in the
-    // output
-    [[nodiscard]] auto registers_saved_by_call() const
-        -> std::vector<std::string_view> {
-
-        const size_t variables_base{pool_index(variables_base_register())};
-
-        std::vector<std::string_view> saved;
-        for (const register_pool::allocation& allocated :
-             state_.registers.allocations()) {
-
-            if (allocated.index != variables_base) {
-                saved.push_back(register_display_name(allocated.index));
-            }
-        }
-
-        return saved;
-    }
-
     // 'alloc_named_register' without an operand, for a register that the
     // backend uses by name
     auto reserve_named_register(const emit_site site,
@@ -2231,6 +2194,37 @@ class machine {
 
             assert(is_handler or output.defines_label(routine));
         }
+    }
+
+    // jumps to the stack overflow handler when a noinline call that saves
+    // 'saved_count' registers does not fit in the stack; nothing when the
+    // check is off, which it is on a target that is not 'is_stack_bounded';
+    // the registers of 'receiver_address', free once the frame is written,
+    // are kept for 'load_receiver_address'
+    auto check_stack_capacity(const emit_site site, const size_t saved_count,
+                              const std::optional<operand>& receiver_address)
+        -> void {
+
+        if (not options_.checks.stack) {
+            return;
+        }
+
+        assert(is_stack_bounded());
+
+        comment(site, "stack capacity check begin");
+
+        // note: the scratch registers of the check are freed after the end
+        //       comment
+
+        operation_scope scope{*this};
+
+        if (receiver_address) {
+            scope.protect(*receiver_address);
+        }
+
+        emit_stack_capacity_check(site, saved_count);
+
+        comment(site, "stack capacity check end");
     }
 
     // of two versions, the one to keep and why, e.g. 'kept the second of two
@@ -2735,6 +2729,26 @@ class machine {
         assert(not index or *index < std::numeric_limits<uint32_t>::digits);
 
         return index ? uint32_t{1} << *index : 0;
+    }
+
+    // the registers a 'noinline' call saves: the allocated ones but the
+    // variables base, which the callee uses too; by their names in the
+    // output
+    [[nodiscard]] auto registers_saved_by_call() const
+        -> std::vector<std::string_view> {
+
+        const size_t variables_base{pool_index(variables_base_register())};
+
+        std::vector<std::string_view> saved;
+        for (const register_pool::allocation& allocated :
+             state_.registers.allocations()) {
+
+            if (allocated.index != variables_base) {
+                saved.push_back(register_display_name(allocated.index));
+            }
+        }
+
+        return saved;
     }
 
     // frees a register of 'reserve_backend_register'

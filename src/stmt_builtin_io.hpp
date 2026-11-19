@@ -345,9 +345,13 @@ class stmt_builtin_io final : public statement {
 
         const expr_any* const start_arg{start_argument()};
 
-        // the start, or the count when there is none
+        // the argument the check tests: a run-time start, else the count,
+        // which a constant start leaves checked alone
+        // ('bounds_range::of_range'), as the compile-time check names it
         const expr_any& checked_arg{
-            start_arg != nullptr ? *start_arg : *count_argument(),
+            start_arg != nullptr and not start.is_immediate()
+                ? *start_arg
+                : *count_argument(),
         };
 
         machine& x{tc.machine()};

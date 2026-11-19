@@ -1241,11 +1241,10 @@ class machine_rv32i : public machine {
         assembler_.switch_section(section::text);
     }
 
-    // a call saves the registers allocated now, the registers of the arguments
-    // included, so the bound is not below what the call pushes; the callee
-    // pushes 'leaf_stack_bytes' more without a check of its own
-    auto emit_stack_capacity_check(const emit_site site) -> void override {
-        const size_t saved_count{registers_saved_by_call().size()};
+    // the call pushes 'saved_count' registers, the callee its return address
+    // and 'leaf_stack_bytes' more without a check of its own
+    auto emit_stack_capacity_check(const emit_site site,
+                                   const size_t saved_count) -> void override {
 
         const size_t call_bytes{
             saved_registers_size_bytes(saved_count) + frame_save_bytes_ +
