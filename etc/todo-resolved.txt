@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 502 (2026-11-19, bug hunt: shifts, bitwise and unary
+    operators; design: what the front end hands the backend about a name,
+    'ident_info.hpp' and 'operand.hpp'; readability: a newcomer walks
+    'expr_bool.hpp')
+    => bug hunt: no defect; a model generator of operator lists in baz
+       precedence with unary chains, every width, edge values, shift
+       counts from -1 to 2^32 + 1 constant and run-time, nested
+       conversions, mixed widths, multiplies by powers of two, compared
+       and passed lists, inlined and noinline, typed 'let' spellings,
+       under 'noub', without overflow, without shift and without checks:
+       95000 programs, 410000 runs; deep nesting holding 'rcx'; 27
+       mutants, 25 caught, two equivalent; the 64-bit edge of a literal
+       checked by its value without the overflow check: todo
+    => design: 'var_address::by_call' renamed 'computed' and
+       'is_address_by_call' 'is_address_computed', destinations take it
+       too; 'in_storage' holds an optional 'storage_address' instead of an
+       offset and a base register that is empty before placement (-4
+       lines, listings equal); a note that 'ident_info::field' of an
+       address held in a slot is walked from the root (an assert that it
+       is not reached fired at test 0066); nine ideas kept with reasons
+    => readability: four comments ('constant_value' applies the element's
+       'not's, 'make_memory_operand_info' gives the info of a side compared
+       as memory, 'side_of' folds every side at its own type,
+       'truth_test_operand' uses the destination only when it is a
+       register); 74 functions, 4 predictions wrong
 [x] easy: round 501 (2026-11-19, bug hunt: inlined calls against
     noinline ones; design: the test and QA scripts of 'qa/coverage';
     readability: a newcomer walks the second half of 'expr_arith.hpp')

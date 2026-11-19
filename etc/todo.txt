@@ -10,6 +10,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 502, shifts and unary operators) without the overflow
+    check a literal with unary ops is checked by its value wrapped at 64
+    bits: with '--checks=noub,-overflow' on x86_64 'r = v + -~9223372036854775807'
+    of 'i64' is accepted and gives the minimum ('unary_ops::evaluate_constant'
+    in 'stmt_identifier::assert_constant_fits' turns '-(INT64_MIN)' back into
+    it), while the 'i32' spelling with 2147483647 is rejected as not
+    fitting; with 'noub' both are rejected; no undefined behavior, the
+    64-bit edge of "a literal is checked by its value"; a fix would check
+    the negation of the 64-bit minimum as not fitting
 [ ] easy: (round 496, the bare-metal limits) the stack check of a noinline
     call reserves the registers allocated at the check, also those the call
     does not save: a recursion of 2 parameters reserves 48 B where 32 B are

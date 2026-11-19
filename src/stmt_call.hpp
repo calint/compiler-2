@@ -734,7 +734,7 @@ struct call_site {
         const ident_info info{tc.resolve_declared(tk, name)};
 
         // note: a declared variable resolves to its storage
-        assert(not info.is_address_by_call());
+        assert(not info.is_address_computed());
 
         return destination::of_name(
             info,
@@ -1275,7 +1275,7 @@ class inline_call final {
 
         const ident_info& bound{binding.info};
 
-        return bound.is_address_by_call() and
+        return bound.is_address_computed() and
                not bound.operand().index_register().empty();
     }
 };

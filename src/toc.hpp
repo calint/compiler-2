@@ -1374,12 +1374,6 @@ class storage_layout final {
         size_t next_offset_bytes{};
     };
 
-    // the base register and the displacement of an operand at storage
-    struct storage_address {
-        std::string_view base_register;
-        int64_t offset{};
-    };
-
     std::reference_wrapper<const ::machine> machine_;
     std::reference_wrapper<scope_stack> scopes_;
     std::reference_wrapper<const data_table> data_;
@@ -1457,9 +1451,7 @@ class storage_layout final {
             address_at(location.is_in_frame, offset_bytes),
         };
 
-        in_storage& stored{std::get<in_storage>(var.placement)};
-        stored.offset = address.offset;
-        stored.base_register = address.base_register;
+        std::get<in_storage>(var.placement).address = address;
 
         if (location.is_in_frame) {
             // note: the frame is within the data and variables checked above
@@ -1550,9 +1542,7 @@ class storage_layout final {
 
         const storage_address address{address_past_dat(dat.offset_bytes)};
 
-        in_storage& stored{std::get<in_storage>(var.placement)};
-        stored.offset = address.offset;
-        stored.base_register = address.base_register;
+        std::get<in_storage>(var.placement).address = address;
     }
 
     auto restore_peaks(const peaks& saved) -> void {
@@ -2037,7 +2027,7 @@ class ident_resolver final {
     //
 
     // the memory of a variable at 'placement'; storage not placed yet (at the
-    // parse) has no base register of its own and uses 'base_register'
+    // parse) has no address of its own and is at 'base_register'
     [[nodiscard]] static auto memory_at(const var_placement& placement,
                                         const std::string_view base_register,
                                         const type& value_type) -> operand {
@@ -2054,11 +2044,14 @@ class ident_resolver final {
 
         const in_storage& stored{std::get<in_storage>(placement)};
 
-        const std::string_view memory_base{
-            stored.base_register.empty() ? base_register : stored.base_register,
-        };
+        if (not stored.address) {
+            return operand::mem(base_register, {}, 1, 0, value_type);
+        }
 
-        return operand::mem(memory_base, {}, 1, stored.offset, value_type);
+        const storage_address& address{*stored.address};
+
+        return operand::mem(address.base_register, {}, 1, address.offset,
+                            value_type);
     }
 };
 

@@ -258,8 +258,8 @@ class expr_bool_op final : public statement {
         return std::nullopt;
     }
 
-    // the value when the sides fold, which 'compile_branch' emits as a
-    // constant, empty when evaluated at run time
+    // the value after the element's 'not's when the sides fold, which
+    // 'compile_branch' emits as a constant, empty when evaluated at run time
     [[nodiscard]] auto constant_value(const toc& tc) const
         -> std::optional<bool> {
 
@@ -864,7 +864,8 @@ class expr_bool_op final : public statement {
                            not stored->info.type_ref().is_builtin());
     }
 
-    // memory is compared, so a constant has nothing to compare
+    // the 'ident_info' of a side compared as memory, never a constant, which
+    // has no storage
     [[nodiscard]] static auto
     make_memory_operand_info(const toc& tc, const stmt_identifier& identifier)
         -> ident_info {
@@ -932,9 +933,9 @@ class expr_bool_op final : public statement {
         return operand::imm(side.folded->value, expr.get_type());
     }
 
-    // a side computed at run time in a register of its own type, so a
-    // constant side folds at that width and is checked there, e.g. the '300'
-    // of 'e < i8(1) + 300' does not fit 'i8'
+    // a side folded at its own type, the width of the register it is computed
+    // in at run time, so a constant is checked there, e.g. the '300' of
+    // 'e < i8(1) + 300' does not fit 'i8'
     [[nodiscard]] static auto side_of(const toc& tc, const expr_arith& node)
         -> comparison_side {
 
@@ -963,8 +964,8 @@ class expr_bool_op final : public statement {
                         source_text(mirrored(op)), trimmed_source(lhs))};
     }
 
-    // the value compared with 0, a computed one in the register of the
-    // destination
+    // the value compared with 0, a computed one in the destination when that
+    // is a register
     [[nodiscard]] static auto
     truth_test_operand(compile_toc& tc, const comparison_side& condition,
                        const machine::comparison_action& action,

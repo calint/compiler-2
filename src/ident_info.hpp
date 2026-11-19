@@ -4,7 +4,8 @@
 //
 //   'read_only_cause'  why a name cannot be written
 //   'folded_value'     a value known at compile time
-//   'in_storage', 'at_address_register', 'in_value_register',
+//   'storage_address', 'in_storage', 'at_address_register',
+//   'in_value_register',
 //   'var_placement'    where a variable lives
 //   'var_info'         what a variable is declared as
 //   'var_address'      what the operand of a variable is
@@ -76,14 +77,18 @@ struct folded_value {
     }
 };
 
+// the base register and the displacement of an operand at storage
+struct storage_address {
+    std::string_view base_register;
+    int64_t offset{};
+};
+
 // e.g. a global or a local 'var', in storage at an offset from a base
 // register
 struct in_storage {
-    // the base register and the offset from it, set when the storage is
-    // placed ('storage_layout'); before, in the parse, 'base_register' is
-    // empty and the name resolves against the variables base ('toc::memory_at')
-    int64_t offset{};
-    std::string_view base_register;
+    // set when the storage is placed ('storage_layout'); empty in the parse,
+    // where the name resolves against the variables base ('toc::memory_at')
+    std::optional<storage_address> address;
     // the storage holds the address of the variable, e.g. a parameter of a
     // noinline body
     bool holds_address{};
@@ -179,7 +184,7 @@ enum class var_address : uint8_t {
     held,
     // an address computed for an argument of a call or for a destination,
     // e.g. '[rbp + r15 * 8 + 16]' for the argument 'rooms[i]'
-    by_call,
+    computed,
 };
 
 // what a name resolves to: a constant, a register or storage, with the type
@@ -234,7 +239,7 @@ class ident_info final {
         ident_info result{*this};
         var_part& var{std::get<var_part>(result.part_)};
         var.operand = address;
-        var.address = var_address::by_call;
+        var.address = var_address::computed;
         return result;
     }
 
@@ -250,6 +255,8 @@ class ident_info final {
 
     // the field 'fld' of the instance a variable names, its operand moved by
     // the offset of the field; a constant or a register has no fields
+    // note: of an address held in a slot the operand is not the field's,
+    //       'stmt_identifier::needs_compile_lea' walks it from the root
     [[nodiscard]] auto field(const type_field& fld) const -> ident_info {
         ident_info result{*this};
         var_part& var{std::get<var_part>(result.part_)};
@@ -267,9 +274,9 @@ class ident_info final {
         return var != nullptr and var->address == var_address::held;
     }
 
-    [[nodiscard]] auto is_address_by_call() const -> bool {
+    [[nodiscard]] auto is_address_computed() const -> bool {
         const var_part* const var{std::get_if<var_part>(&part_)};
-        return var != nullptr and var->address == var_address::by_call;
+        return var != nullptr and var->address == var_address::computed;
     }
 
     [[nodiscard]] auto is_array() const -> bool { return shape().is_array(); }
@@ -410,7 +417,7 @@ class destination final {
     struct stored_name {
         // its operand is the address written; an address computed for it,
         // e.g. of an indexed element or loaded from a slot, is final
-        // ('var_address::by_call'), the name need not be resolved again
+        // ('var_address::computed'), the name need not be resolved again
         ident_info info;
         storage_path storage{};
     };

@@ -635,7 +635,7 @@ class stmt_def_func final : public statement {
                     const ident_info& bound{binding.info};
 
                     // with the address the call computed when it did
-                    if (bound.is_address_by_call()) {
+                    if (bound.is_address_computed()) {
                         x.comment({call_tk, tc.indent()},
                                   "bind {} -> {} (address: {})", binding.from,
                                   binding.text, bound.operand().address_text());
@@ -1326,8 +1326,7 @@ class stmt_def_func final : public statement {
 
         if (frame == nullptr) {
             return in_storage{
-                .offset{},
-                .base_register{},
+                .address{},
                 .holds_address{},
             };
         }
@@ -1342,8 +1341,7 @@ class stmt_def_func final : public statement {
         }
 
         return in_storage{
-            .offset{},
-            .base_register{},
+            .address{},
             .holds_address{true},
         };
     }
