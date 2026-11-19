@@ -89,12 +89,7 @@ class tokenizer final {
             return std::nullopt;
         }
 
-        const std::string_view ws_before{next_whitespace()};
-        const size_t at_line{at_line_};
-        const size_t bgn_ix{char_ix_};
-        ++char_ix_;
-
-        return finish_token(ws_before, at_line, bgn_ix);
+        return next_delimiter_token(1);
     }
 
     // reads the word 'word' when it is next, the cursor stays when not, e.g.
@@ -255,20 +250,13 @@ class tokenizer final {
         return *tk;
     }
 
-    // the token of the operator that the caller saw with 'peek_operator', with
-    // the whitespace before it; the whitespace after it belongs to what
-    // follows
+    // the token of the operator that the caller saw with 'peek_operator'
     [[nodiscard]] auto seen_operator() -> token {
-        const std::string_view ws_before{next_whitespace()};
-        const std::string_view text{operator_at_cursor()};
+        const size_t op_size{peek_operator().size()};
 
-        assert(not text.empty());
+        assert(op_size != 0);
 
-        const size_t at_line{at_line_};
-        const size_t bgn_ix{char_ix_};
-        char_ix_ += text.size();
-
-        return token{file_ix_, ws_before, bgn_ix, text, "", at_line};
+        return next_delimiter_token(op_size);
     }
 
     // skips the braced block that starts at the next '{' with its nested
@@ -482,6 +470,16 @@ class tokenizer final {
         return ch;
     }
 
+    // the token of the 'size' characters after the whitespace, e.g. the
+    // '<<' of ' << 2'
+    [[nodiscard]] auto next_delimiter_token(const size_t size) -> token {
+        const std::string_view ws_before{next_whitespace()};
+        const size_t at_line{at_line_};
+        const size_t bgn_ix{char_ix_};
+        char_ix_ += size;
+        return finish_token(ws_before, at_line, bgn_ix);
+    }
+
     // the next line's indentation and comments belong to the next token, the
     // whitespace at the end of the source stays with the last token
     // e.g. ' # c\n    y' gives ' # c\n', the indentation of 'y' stays
@@ -589,18 +587,17 @@ class tokenizer final {
                 continue;
             }
 
-            // a line end after the backslash continues a string, a
-            // character literal is unterminated there
-            const bool is_line_end{peek_char() == '\n' or peek_char() == '\r'};
+            // the escape may be a quote; a continuation continues a string,
+            // a character literal is unterminated there
+            const token::escape esc{token::escape_at(src_, char_ix_ - 1)};
 
-            if (is_line_end and not is_string) {
+            if (esc.is_continuation and not is_string) {
                 continue;
             }
 
-            // the escaped character may be a quote; a carriage return is
-            // followed by a line feed ('assert_source_well_formed')
-            std::ignore = accept_char('\r');
-            skip_char();
+            for (size_t i{}; i < esc.size; ++i) {
+                skip_char();
+            }
         }
     }
 

@@ -1,6 +1,36 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 500 (2026-11-19, bug hunt: the command line and its
+    option combinations; design: the tokenizer and the tokens,
+    'tokenizer.hpp' and 'token.hpp'; readability: a newcomer walks the first
+    half of 'expr_arith.hpp')
+    => bug hunt: no defect in the compiler; a generator of command lines
+       mixing every option with repeated and conflicting values, options a
+       target does not read, malformed numbers, unknown flags and odd file
+       arguments, run on the normal and the sanitizer builds: 11000 runs,
+       every rejection exits 1 with a message and leaves no file, every
+       accepted line compiles alike to its canonical form; probes of sizes
+       at their limits, unwritable and linked images, full and closed
+       output streams; 39 mutants of the option parsing, 4 missed by
+       'test-cli.sh': it now checks the '0X' prefix, a flag given a value
+       and a '--report=' that clears the earlier ones ('--reproduce-source'
+       doing nothing shows only through another defect); 'test-cli.sh'
+       left two rv32i images in 'tests/' from its register report checks,
+       which now write 'gen-rv32i.bin'
+    => design: what a backslash escapes is decided once, the tokenizer asks
+       'token::escape_at'; operators and one-character tokens share
+       'next_delimiter_token' and 'finish_token' like every other token;
+       'read_func_result' peeks instead of putting back; the generic
+       argument check asks 'is_type_args_next' (-5 lines, listings and
+       reproduced sources equal); nine ideas kept with reasons (the
+       one-caller helpers name a step, the '}' and 'else' checks give
+       their own messages)
+    => readability: a comment that a first step takes 'first_op', so a
+       dividend is a run of its own; the 'divisor' of 'merged_divisor'
+       renamed 'previous', it may be any step; the comment of
+       'compile_without_trailing_addend' says the caller compiles when it
+       returns empty; 30 functions, 3 predictions wrong
 [x] easy: round 499 (2026-11-19, bug hunt: methods and receivers;
     design: instance and array literals, how a value is written in parts;
     readability: a newcomer walks the last third of 'machine.hpp')

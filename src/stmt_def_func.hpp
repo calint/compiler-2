@@ -375,13 +375,11 @@ inline auto assert_plain_result_type(const parse_toc& tc, tokenizer& tz,
 [[nodiscard]] inline auto read_func_result(const parse_toc& tc, tokenizer& tz)
     -> std::optional<func_result> {
 
-    const token name_tk{tz.next_token()};
-
-    if (not name_tk.is_word()) {
-        tz.put_back_token(name_tk);
+    if (not tz.peek_token().is_word()) {
         return std::nullopt;
     }
 
+    const token name_tk{tz.next_token()};
     const token type_tk{tz.next_token()};
 
     // 'self' is the result of a constructor

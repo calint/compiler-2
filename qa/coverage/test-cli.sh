@@ -422,6 +422,9 @@ CLI_REGISTER_REPORT() {
     grep -Fq "register use at the peak" out
     grep -Fq "per callee, the most registers one call holds itself" out
     grep -Fq "register use at the peak" gen.s && fail
+    # a later '--report' replaces the earlier ones, an empty one turns them off
+    "$BIN" --report=registers --report= 0825.baz >out 2>err
+    cmp -s gen.s out
     # 0753.baz: the peak is in a function with a body of its own
     "$BIN" --report=registers 0753.baz >out 2>err
     grep -Fq "calls of functions with a body of their own save the registers" out
@@ -443,10 +446,10 @@ CLI_REGISTER_REPORT() {
     # 14 scratch registers on x86_64 and 29 of 30 on rv32i here
     "$BIN" --report=registers 0402.baz >out 2>err
     grep -Fq "register use at the peak: 3 of 13 registers live" out
-    "$BIN" --target=rv32i --report=registers 0001.baz >out 2>err
+    baz_at rv32i --report=registers 0001.baz >out 2>err
     grep -Fq "register use at the peak: 4 of 29 registers live" out
     # also when no other register is held
-    "$BIN" --target=rv32i --report=registers 0136.baz >out 2>err
+    baz_at rv32i --report=registers 0136.baz >out 2>err
     grep -Fq "register use at the peak: 0 of 29 registers live" out
     echo ok
 }
@@ -1185,8 +1188,12 @@ CLI_NESTED_TYPE_CHAIN() {
 }
 
 CLI -h 0
+# a flag takes no value
+CLI --nopt=1 1 --help
+CLI --reproduce-source= 1 --help
 CLI --vars=65536 0 --help
 CLI --vars=0x10000 0 --help
+CLI --vars=0X10000 0 --help
 CLI --vars= 1 --help
 CLI --vars=0 1 --help
 CLI --vars=-16 1 --help

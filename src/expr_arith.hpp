@@ -46,6 +46,7 @@ class arith_steps final {
     // an operation of a list: an element, or merged constants when 'element'
     // is null
     struct step {
+        // a first step takes 'expr_arith::first_op', e.g. 'assign' in 'a / 2'
         arithmetic_operator op{arithmetic_operator::assign};
         const statement* element{};
         std::optional<int64_t> value; // set when the step is a constant
@@ -260,13 +261,13 @@ class arith_steps final {
     }
 
     // '(b / m) / n' is 'b / (m * n)' while the product fits the width
-    [[nodiscard]] static auto merged_divisor(const step& divisor,
+    [[nodiscard]] static auto merged_divisor(const step& previous,
                                              const step& next,
                                              const type& width_type)
         -> std::optional<int64_t> {
 
         const std::optional<int64_t> current_divisor{
-            mergeable_divisor(divisor),
+            mergeable_divisor(previous),
         };
 
         const std::optional<int64_t> next_divisor{mergeable_divisor(next)};
@@ -698,7 +699,7 @@ class expr_arith final : public statement {
     //
 
     // compiles the list without its trailing added constant and returns that
-    // constant, empty when the list is compiled whole by 'compile'
+    // constant, empty when nothing is compiled and the caller uses 'compile'
     //   'ix + 1'  =>  compiles 'ix', returns 1
     //   'ix - 2'  =>  compiles 'ix', returns -2
     // only an index asks, into a fresh register of the default type, so of
