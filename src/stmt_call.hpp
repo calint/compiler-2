@@ -152,11 +152,11 @@ parse_array_param_argument(parse_toc& tc, tokenizer& tz,
 //
 // 'written_instance' reads '<...>' and makes the instance before the
 // arguments are parsed. without '<' the call deduces: 'stmt_call' parses the
-// arguments left to right, each at its 'param_type', which deduces a type
-// parameter at its deducing argument from the type that argument tells
-// ('argument_type', 'value_type') or from the destination, and gives a
-// parameter of a fixed type that type ('fixed_param_type'); an argument
-// whose type is not known is read by 'parse_untyped_argument';
+// arguments left to right, each at the type 'deduce_param_type' gives, which
+// deduces a type parameter at its deducing argument from the type that
+// argument tells ('argument_type', 'value_type') or from the destination,
+// and gives a parameter of a fixed type that type ('fixed_param_type'); an
+// argument whose type is not known is read by 'parse_untyped_argument';
 // 'instantiate' makes the instance after the arguments
 class generic_call {
     // e.g. 'to' of 'tz.to()', the errors of the deduction are located at it
@@ -200,54 +200,6 @@ class generic_call {
         }
     }
 
-    [[nodiscard]] auto generic_name() const -> std::string_view {
-        return generic_name_;
-    }
-
-    // after the arguments, the name of the instance of the deduced types, an
-    // existing one is reused; a type parameter still not deduced, e.g. the
-    // 'T' of 'var m = make(2)', is "cannot deduce"
-    [[nodiscard]] auto instantiate(parse_toc& tc) const -> std::string {
-        const std::span<const token> param_tks{
-            generic_->signature.type_param_tks,
-        };
-
-        std::vector<generic_arg> type_args;
-        type_args.reserve(param_tks.size());
-
-        for (const auto [param_tk, arg_type] :
-             std::views::zip(param_tks, deduced_)) {
-
-            if (arg_type == nullptr) {
-                throw_cannot_deduce(param_tk);
-            }
-
-            type_args.push_back({
-                .param_tk{param_tk},
-                .value{arg_type},
-            });
-        }
-
-        return func_instantiator::instantiate_func(tc, name_tk_, generic_name_,
-                                                   type_args);
-    }
-
-    // a type was deduced from the argument at 'index', which 'param_type' read
-    [[nodiscard]] auto is_deducing_argument(const size_t index) const -> bool {
-        return std::ranges::contains(deducing_args_, index);
-    }
-
-    // e.g. 'x U' of '(x U)', counted without a receiver
-    [[nodiscard]] auto param(const size_t index) const
-        -> const generic_signature_param& {
-
-        return generic_->signature.params.at(index);
-    }
-
-    [[nodiscard]] auto param_count() const -> size_t {
-        return generic_->signature.params.size();
-    }
-
     // the type that the argument at 'index', read at 'tz', is parsed at: the
     // type of its parameter in the instance; the deducing argument of a type
     // parameter, the first declared with it, deduces it when it tells a type
@@ -255,8 +207,8 @@ class generic_call {
     // destination stays, see the constructor; null when not known: a type
     // parameter not deduced, which 'instantiate' reports, or a name that is
     // no type there, which the instance rejects
-    [[nodiscard]] auto param_type(parse_toc& tc, const tokenizer& tz,
-                                  const size_t index) -> const type* {
+    [[nodiscard]] auto deduce_param_type(parse_toc& tc, const tokenizer& tz,
+                                         const size_t index) -> const type* {
 
         const generic_signature_param& p{param(index)};
 
@@ -293,13 +245,63 @@ class generic_call {
         return arg_type;
     }
 
-    // the argument at 'tz' of a parameter whose type 'param_type' does not
-    // know, parsed as in a call without type parameters as far as no type is
-    // needed: at the type it tells, else without a type like the initializer
-    // of a 'var'. a literal that takes its type from the parameter, e.g.
-    // '{1, 2}', is skipped unchecked; the error of one that is not whole,
-    // e.g. '{1, 2} + 1', depends on that type, so the instance is made
-    // there, which reports the type not known. 'tz' ends after the argument
+    [[nodiscard]] auto generic_name() const -> std::string_view {
+        return generic_name_;
+    }
+
+    // after the arguments, the name of the instance of the deduced types, an
+    // existing one is reused; a type parameter still not deduced, e.g. the
+    // 'T' of 'var m = make(2)', is "cannot deduce"
+    [[nodiscard]] auto instantiate(parse_toc& tc) const -> std::string {
+        const std::span<const token> param_tks{
+            generic_->signature.type_param_tks,
+        };
+
+        std::vector<generic_arg> type_args;
+        type_args.reserve(param_tks.size());
+
+        for (const auto [param_tk, arg_type] :
+             std::views::zip(param_tks, deduced_)) {
+
+            if (arg_type == nullptr) {
+                throw_cannot_deduce(param_tk);
+            }
+
+            type_args.push_back({
+                .param_tk{param_tk},
+                .value{arg_type},
+            });
+        }
+
+        return func_instantiator::instantiate_func(tc, name_tk_, generic_name_,
+                                                   type_args);
+    }
+
+    // a type was deduced from the argument at 'index', which
+    // 'deduce_param_type' read
+    [[nodiscard]] auto is_deducing_argument(const size_t index) const -> bool {
+        return std::ranges::contains(deducing_args_, index);
+    }
+
+    // e.g. 'x U' of '(x U)', counted without a receiver
+    [[nodiscard]] auto param(const size_t index) const
+        -> const generic_signature_param& {
+
+        return generic_->signature.params.at(index);
+    }
+
+    [[nodiscard]] auto param_count() const -> size_t {
+        return generic_->signature.params.size();
+    }
+
+    // the argument at 'tz' of a parameter whose type 'deduce_param_type' does
+    // not know, parsed as in a call without type parameters as far as no type
+    // is needed: at the type it tells, else without a type like the
+    // initializer of a 'var'. a literal that takes its type from the
+    // parameter, e.g. '{1, 2}', is skipped unchecked; the error of one that is
+    // not whole, e.g. '{1, 2} + 1', depends on that type, so the instance is
+    // made there, which reports the type not known. 'tz' ends after the
+    // argument
     // note: the parse records nothing that outlives the error that follows
     auto parse_untyped_argument(parse_toc& tc, tokenizer& tz) const -> void {
         tokenizer scan{tz};
@@ -1484,8 +1486,9 @@ class noinline_call final {
                             const std::span<const ident_info> arguments)
         -> void {
 
-        // note: 'stmt_call::compile' checked the result, a result in a
+        // note: 'stmt_call::assert_result_type' checked the result, one in a
         //       register or widened goes through a temporary
+        //       ('call_site::has_result_temporary')
 
         if (func.has_result()) {
             assert(dst.storage());
@@ -2527,7 +2530,7 @@ class stmt_call final : public statement {
         }
 
         const type* const param_type{
-            deduction.param_type(tc, tz, arg_index),
+            deduction.deduce_param_type(tc, tz, arg_index),
         };
 
         // e.g. the '1' of 'f(1, 2)' for 'func f<T type>(a T, b T)', 'T' is

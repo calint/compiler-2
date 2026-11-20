@@ -287,8 +287,8 @@ enum class operator_family : uint8_t {
 // the facts of a binary arithmetic operator: its spelling, the machine
 // method, how tightly it binds (a higher precedence first), whether the
 // constant passes may move and merge its constants, the constant that leaves
-// a value unchanged, the constant that decides the result, and whether its low
-// bits depend on higher bits of an operand, which a narrower width would lose
+// a value unchanged, the constant that decides the result, and whether its
+// result keeps its low bits at another width ('statement::keeps_low_bits')
 struct binary_operator_traits {
     arithmetic_operator op{};
     std::string_view text;
@@ -297,7 +297,10 @@ struct binary_operator_traits {
     bool is_regroupable{};
     std::optional<int64_t> identity;
     std::optional<int64_t> absorbing;
-    bool reads_high_bits{};
+    // not when they depend on higher bits of an operand, which a narrower
+    // width would lose, nor for '<<', whose count is checked against the
+    // width it is computed at
+    bool keeps_low_bits{};
 };
 
 inline constexpr auto binary_operators{
@@ -310,7 +313,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{true},
             .identity{0},
             .absorbing{},
-            .reads_high_bits{},
+            .keeps_low_bits{true},
         },
         {
             .op{arithmetic_operator::subtract},
@@ -320,7 +323,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{true},
             .identity{0},
             .absorbing{},
-            .reads_high_bits{},
+            .keeps_low_bits{true},
         },
         {
             .op{arithmetic_operator::multiply},
@@ -330,7 +333,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{true},
             .identity{1},
             .absorbing{0},
-            .reads_high_bits{},
+            .keeps_low_bits{true},
         },
         {
             .op{arithmetic_operator::divide},
@@ -340,7 +343,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{},
             .identity{1},
             .absorbing{},
-            .reads_high_bits{true},
+            .keeps_low_bits{},
         },
         {
             .op{arithmetic_operator::remainder},
@@ -350,7 +353,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{},
             .identity{},
             .absorbing{},
-            .reads_high_bits{true},
+            .keeps_low_bits{},
         },
         {
             .op{arithmetic_operator::bit_and},
@@ -360,7 +363,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{true},
             .identity{-1},
             .absorbing{0},
-            .reads_high_bits{},
+            .keeps_low_bits{true},
         },
         {
             .op{arithmetic_operator::bit_or},
@@ -370,7 +373,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{true},
             .identity{0},
             .absorbing{-1},
-            .reads_high_bits{},
+            .keeps_low_bits{true},
         },
         {
             .op{arithmetic_operator::bit_xor},
@@ -380,7 +383,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{true},
             .identity{0},
             .absorbing{},
-            .reads_high_bits{},
+            .keeps_low_bits{true},
         },
         {
             .op{arithmetic_operator::shift_left},
@@ -390,7 +393,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{},
             .identity{0},
             .absorbing{},
-            .reads_high_bits{},
+            .keeps_low_bits{},
         },
         {
             .op{arithmetic_operator::shift_right},
@@ -400,7 +403,7 @@ inline constexpr auto binary_operators{
             .is_regroupable{},
             .identity{0},
             .absorbing{},
-            .reads_high_bits{true},
+            .keeps_low_bits{},
         },
     }),
 };

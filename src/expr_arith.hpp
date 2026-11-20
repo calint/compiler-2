@@ -92,6 +92,18 @@ class arith_steps final {
         return steps;
     }
 
+    // the operator a run led by 'op' merges its constants with: '-' adds
+    // the negated value, 'assign' when the run is not regroupable
+    [[nodiscard]] static auto run_operator(const arithmetic_operator op)
+        -> arithmetic_operator {
+
+        if (op == arithmetic_operator::subtract) {
+            return arithmetic_operator::add;
+        }
+
+        return is_regroupable(op) ? op : arithmetic_operator::assign;
+    }
+
   private:
     //
     // statics
@@ -199,11 +211,7 @@ class arith_steps final {
                           const type& width_type) -> void {
 
         // subtracted constants are subtracted from an added constant
-        const arithmetic_operator op{
-            run.front().op == arithmetic_operator::subtract
-                ? arithmetic_operator::add
-                : run.front().op,
-        };
+        const arithmetic_operator op{run_operator(run.front().op)};
 
         if (not is_regroupable(op)) {
             merged.append_range(run);
@@ -657,12 +665,8 @@ class expr_arith final : public statement {
     //       than the width its count was checked at ('assert_not_narrowed');
     //       'compile_step' does not check the count again
     [[nodiscard]] auto keeps_low_bits() const -> bool override {
-        for (const spelled_operator<arithmetic_operator>& spelled : ops_) {
-            const arithmetic_operator o{spelled.op};
-
-            if (traits_of(o).reads_high_bits or
-                o == arithmetic_operator::shift_left) {
-
+        for (const spelled_operator<arithmetic_operator>& o : ops_) {
+            if (not traits_of(o.op).keeps_low_bits) {
                 return false;
             }
         }
@@ -1023,14 +1027,7 @@ class expr_arith final : public statement {
             return arithmetic_operator::assign;
         }
 
-        const arithmetic_operator first{ops_.front().op};
-
-        if (first == arithmetic_operator::subtract) {
-            return arithmetic_operator::add;
-        }
-
-        return arith_steps::is_regroupable(first) ? first
-                                                  : arithmetic_operator::assign;
+        return arith_steps::run_operator(ops_.front().op);
     }
 
     // one element that a memory destination takes without measuring a

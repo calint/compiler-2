@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 532 (2026-11-20, bug hunt: records as values; design:
+    arithmetic expressions, 'expr_arith.hpp'; readability: a newcomer walks
+    'stmt_call.hpp')
+    => bug hunt: no defect; a model generator of whole-record copies
+       between locals, dats, fields and elements, instance literals full,
+       partial, nested and zero with run-time elements, calls with effects
+       and reads of the destination, results and literals as arguments,
+       'mut' and unsized parameters, '==' and '!=' of records and arrays
+       stored and branched, types with a padding gap after every 'i8':
+       11600 programs, 90700 runs; 150 layouts of 1 to 40 bytes at odd and
+       even offsets, comparisons nested in 'and', 'or' and 'not', dats of
+       odd sizes on fpga: 14300 runs; 14 mutants, each caught by the suite
+    => design: the operator trait 'reads_high_bits' becomes
+       'keeps_low_bits', which also holds the left shift that
+       'expr_arith::keeps_low_bits' tested on its own;
+       'arith_steps::run_operator' gives the operator a run of constants
+       merges with, which 'first_op' and 'merge_run' each worked out
+       (listings equal); ten ideas kept with reasons
+    => readability: 'generic_call::param_type' renamed
+       'deduce_param_type', it records the deduced type; the note of
+       'noinline_call::assert_call' names the check it relies on; 71
+       functions, 2 predictions wrong
 [x] easy: round 531 (2026-11-20, bug hunt: the io built-ins 'read' and
     'write'; design: the versions and dry runs; readability: a newcomer
     walks 'ub_order.hpp' and 'ub_reads.hpp')
