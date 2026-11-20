@@ -10,6 +10,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 527, the output side) three small differences in the
+    listing text: on x86_64 a comment without a location starts one column
+    later than one with a location ('comment_start' at indent above 0 would
+    align them, 2 lines of 'prog.s'); padding between dats is 'padding {}
+    B' and inside an instance 'zero padding: {} B'; the variables base the
+    backend holds is commented "allocate named register rbp" ('s0' on
+    rv32i) where 'register_pool::holder_kind' calls it a backend register;
+    each a report change of a few lines
 [ ] easy: (round 518, the built-ins, needs an extreme input)
     'stmt_builtin_array_length::fold' applies its unary ops with
     'evaluate_constant', not wrapped to the use and with no overflow check

@@ -312,10 +312,9 @@ class bulk_operands final {
                           const bool checks_ranges,
                           const machine::address_use use) -> void {
 
-            machine& x{tc_.machine()};
+            array.comment_source(tc_);
 
-            x.comment({array.tok(), tc_.indent()},
-                      statement::trimmed_source(array));
+            machine& x{tc_.machine()};
 
             machine::held_registers walk{x, {src_loc_tk_, tc_.indent()}};
 

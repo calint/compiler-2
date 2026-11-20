@@ -1414,8 +1414,8 @@ class machine_rv32i : public machine {
             .max_storage_bytes{assembler_rv32i::address_space_bytes},
             .has_indexed_addressing{false},
 
-            // note: 'scale_index' shifts by any power of two, a type stays
-            //       below the 4 GiB address space
+            // note: the lowering of an address shifts by any power of two, a
+            //       type stays below the 4 GiB address space
 
             .max_index_scale_bytes{assembler_rv32i::address_space_bytes},
             .max_padding_gaps_zeroed_one_by_one{

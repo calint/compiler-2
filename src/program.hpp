@@ -346,8 +346,8 @@ class program final {
         machine& x{tc.machine()};
 
         x.emit_runtime();
+        x.emit_read_only_constants(tc.data().constants());
 
-        emit_read_only_data(tc);
         emit_data_section(tc);
     }
 
@@ -514,18 +514,6 @@ class program final {
 
             body.func->emit_noinline_body(tc, body);
         }
-    }
-
-    static auto emit_read_only_data(compile_toc& tc) -> void {
-        // no section switches without read-only constants
-        if (tc.data().constants().empty()) {
-            return;
-        }
-
-        machine& x{tc.machine()};
-
-        x.comment({token{}, 0}, "");
-        x.emit_read_only_constants(tc.data().constants());
     }
 
     // the directory as the file system resolves it ('resolved_path'), so

@@ -25,8 +25,8 @@
 // including the data directives and sections, so 'machine' writes the data
 // layout once
 //
-// sections: 'switch_section' starts one of 'section', a subclass writes its
-// directive ('add_section_directive'), a line keeps the section it is added
+// sections: 'switch_section' starts one of 'section' with the directive a
+// subclass names ('section_directive'), a line keeps the section it is added
 // to ('line::which') and the rv32i image is indexed by it; sizes and entries
 // count only in code
 //
@@ -425,7 +425,7 @@ class assembler {
     // e.g. back to the code after the data of a failure handler
     auto switch_section(const section which) -> void {
         current_section_ = which;
-        add_section_directive(which);
+        add_text(std::string{section_directive(which)});
     }
 
   protected:
@@ -614,9 +614,6 @@ class assembler {
     // virtual methods
     //
 
-    // the line that starts 'which'
-    virtual auto add_section_directive(const section which) -> void = 0;
-
     // folds the copy that starts 'block' into the lines after it, see above
     // the class; false when the first line is no copy or the copy is kept
     virtual auto fold_copy(std::span<line> block) -> bool = 0;
@@ -637,6 +634,10 @@ class assembler {
     // tests the value 'set' stored, false when it does not
     [[nodiscard]] virtual auto retest_branch(const line& set, const line& test,
                                              line& branch) -> bool = 0;
+
+    // the line that starts 'which'
+    [[nodiscard]] virtual auto section_directive(const section which) const
+        -> std::string_view = 0;
 
     //
     // class methods

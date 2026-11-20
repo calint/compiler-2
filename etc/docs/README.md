@@ -247,9 +247,11 @@ Invariants the code relies on:
    the target, so '--nopt' decides no verdict but the fit of a larger image
    in the device memory), the report is added as comments, the assembly is
    written, the rv32i targets also write the binary image. An image or a
-   listing that cannot be written whole, e.g. on a full disk, leaves no
-   image: the file is removed, also through a symbolic link, but not a device
-   or a pipe ('machine_rv32i::remove_image').
+   listing that cannot be written whole, e.g. on a full disk or to a reader
+   that stops early (the compiler ignores 'SIGPIPE'), leaves no image: the
+   file is removed, also through a symbolic link, but not a device or a pipe
+   ('machine_rv32i::remove_image'). The image names no source file, not the
+   sd card and not the file of stdout ('check_output_files').
 
 ### 1.3 Names during compile: scopes and bindings
 

@@ -945,22 +945,6 @@ class assembler_rv32i final : public assembler {
     // overridden methods
     //
 
-    auto add_section_directive(const section which) -> void override {
-        // indexed by 'section'
-        constexpr auto directives{
-            std::to_array<std::string_view>({
-                ".text",
-                ".section .rodata",
-                ".data",
-                ".bss",
-            }),
-        };
-
-        static_assert(directives.size() == section_count_);
-
-        add_text(std::string{directives.at(section_index(which))});
-    }
-
     // note: the reads of 'copied' up to the instruction that writes it take
     //       'source', which holds the same value: no line in between writes
     //       'source', jumps or calls, and the block has no entry, so no other
@@ -1052,6 +1036,24 @@ class assembler_rv32i final : public assembler {
         -> bool override {
 
         return false;
+    }
+
+    [[nodiscard]] auto section_directive(const section which) const
+        -> std::string_view override {
+
+        // indexed by 'section'
+        constexpr auto directives{
+            std::to_array<std::string_view>({
+                ".text",
+                ".section .rodata",
+                ".data",
+                ".bss",
+            }),
+        };
+
+        static_assert(directives.size() == section_count_);
+
+        return directives.at(section_index(which));
     }
 
     //

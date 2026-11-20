@@ -1161,6 +1161,8 @@ class machine {
         use_result(result);
     }
 
+    // whether a memory operand may scale its index by 'size_bytes', which the
+    // addressing mode encodes or the lowering of the address shifts by
     [[nodiscard]] auto can_lower_index_scale(const size_t size_bytes) const
         -> bool {
 
@@ -1254,7 +1256,7 @@ class machine {
         return options_.checks;
     }
 
-    // a comment line after the source location of 'site', none for a
+    // a comment line after the source location of 'site', without one for a
     // synthetic token or a standalone backend call; the text is made
     // printable, it may quote the source, e.g. a raw NUL that ends a line for
     // nasm
@@ -1390,12 +1392,18 @@ class machine {
         return choice.keeps_first;
     }
 
-    // leaves the read-only data section current
+    // after the runtime, leaves the read-only data section current; no
+    // section switch without constants
     auto emit_read_only_constants(
         const std::span<const read_only_constant> constants) -> void {
 
+        if (constants.empty()) {
+            return;
+        }
+
         assembler& output{output_.get()};
 
+        output.comment(0, "");
         output.switch_section(section::rodata);
         for (const read_only_constant& constant : constants) {
             // note: a byte alignment needs no directive
@@ -1451,7 +1459,7 @@ class machine {
         mark_used(target_.routines.exit);
     }
 
-    // the register 'exit' takes its code in when the code is computed
+    // the register 'exit' takes its code in, where the front end computes it
     [[nodiscard]] auto exit_code_register() const -> std::string_view {
         return target_.target_calls.arguments.front();
     }
@@ -1636,6 +1644,7 @@ class machine {
         };
     }
 
+    // none when the variables base register points at 'dat'
     [[nodiscard]] auto variables_base_past_vars_bytes() const
         -> std::optional<size_t> {
 
@@ -1747,8 +1756,8 @@ class machine {
     }
 
     // writes 'message' at 'message_label' to stderr, for the failure handlers,
-    // which run after all allocations; it keeps 'report_line_register', which
-    // the stub of a line loaded before it
+    // which hold no register: it may change any but 'report_line_register',
+    // which the stub of a line loaded before it
     virtual auto emit_panic_message(const std::string_view message_label,
                                     const std::string_view message) -> void = 0;
 

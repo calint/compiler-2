@@ -6,6 +6,7 @@
 #include <array>
 #include <cassert>
 #include <charconv>
+#include <csignal>
 #include <cstddef>
 #include <cstdio>
 #include <exception>
@@ -1085,7 +1086,8 @@ auto check_reproduced_source(const program& prg, const source_files& files)
 }
 
 // the files the compile and the program write replace none they read: the
-// image no source file and not the sd card, the sd card no source file
+// image no source file and not the sd card, the sd card no source file; the
+// image is not the listing on stdout either
 // note: after the parse, which read the includes into 'files'
 auto check_output_files(const target_name& target, const source_files& files,
                         const machine::target_options& resolved) -> void {
@@ -1096,6 +1098,14 @@ auto check_output_files(const target_name& target, const source_files& files,
     if (target.writes_image and files.contains(binary)) {
         throw option_error{std::format("invalid --bin: {} is a source file",
                                        in_quotes(binary))};
+    }
+
+    // note: '/dev/stdout' names the file that stdout writes to, e.g. the one
+    //       of '> prog.s'
+
+    if (target.writes_image and names_same_file(binary, "/dev/stdout")) {
+        throw option_error{
+            std::format("invalid --bin: {} is stdout", in_quotes(binary))};
     }
 
     if (target.writes_image and target.reads_sd_card and
@@ -1184,6 +1194,15 @@ auto compile_to_stdout(const options& opts, source_files& files) -> void {
 auto main(const int argc, const char** const argv) -> int {
     // a counted view of a pointer is a span that the compiler accepts as safe
     const std::span<const char*> args{std::views::counted(argv, argc)};
+
+    // a reader that closes the pipe early makes a write fail instead of
+    // stopping the compiler, so the listing that is cut short removes its
+    // image and exits with 1 like one to a full disk
+    [[maybe_unused]] const auto previous_handler{std::signal(SIGPIPE, SIG_IGN)};
+
+    // note: 'SIGPIPE' is a valid signal, so the handler is set
+
+    assert(previous_handler != SIG_ERR);
 
     // a message that cannot be written, e.g. to a full or closed stderr,
     // throws from 'std::print'; the exit code still tells the failure

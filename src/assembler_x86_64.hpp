@@ -433,22 +433,6 @@ class assembler_x86_64 final : public assembler {
     // overridden methods
     //
 
-    auto add_section_directive(const section which) -> void override {
-        // indexed by 'section'
-        constexpr auto directives{
-            std::to_array<std::string_view>({
-                "section .text",
-                "section .rodata",
-                "section .data",
-                "section .bss.vars nobits alloc write",
-            }),
-        };
-
-        static_assert(directives.size() == section_count_);
-
-        add_text(std::string{directives.at(std::to_underlying(which))});
-    }
-
     // todo: the lines are text, a copy is folded once they are structured
     auto fold_copy([[maybe_unused]] const std::span<line> block)
         -> bool override {
@@ -511,6 +495,24 @@ class assembler_x86_64 final : public assembler {
         replace_text(branch, jump_text(jump->cc, branch.jump->target));
 
         return true;
+    }
+
+    [[nodiscard]] auto section_directive(const section which) const
+        -> std::string_view override {
+
+        // indexed by 'section'
+        constexpr auto directives{
+            std::to_array<std::string_view>({
+                "section .text",
+                "section .rodata",
+                "section .data",
+                "section .bss.vars nobits alloc write",
+            }),
+        };
+
+        static_assert(directives.size() == section_count_);
+
+        return directives.at(std::to_underlying(which));
     }
 
     //

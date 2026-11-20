@@ -338,6 +338,9 @@ CLI_FILE_ERRORS() {
     # an error without a place in the source starts with 'error: ' like an
     # option error
     grep -Fq "error: cannot open file 'missing-source.baz'" err
+    # a directory opens but cannot be read
+    expect_exit_1 "$BIN" . >gen.s 2>err
+    grep -Fxq "error: cannot read file '.'" err
     expect_exit_1 "$BIN" --target=rv32i --bin=missing-directory/gen-rv32i.bin 0015.baz >gen.s 2>err
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file 'missing-directory/gen-rv32i.bin'" err
@@ -386,6 +389,20 @@ CLI_FILE_ERRORS() {
     expect_exit_1 "$BIN" --target=rv32i --bin=/dev/full 0015.baz >gen.s 2>err
     [[ ! -s gen.s ]]
     grep -Fq "cannot write file '/dev/full'" err
+    # the image is not the file of the listing, also named through stdout
+    expect_exit_1 "$BIN" --target=rv32i --bin=./gen.s 0015.baz >gen.s 2>err
+    grep -Fq "invalid --bin: './gen.s' is stdout" err
+    [[ ! -s gen.s ]]
+    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=/dev/stdout 0015.baz >gen.s 2>err
+    grep -Fq "invalid --bin: '/dev/stdout' is stdout" err
+    # a reader that stops early cuts the listing short like a full disk, the
+    # image is removed; 0064.baz has a listing larger than the pipe buffer, so
+    # the compiler writes after the reader is gone
+    rm -f gen-full.bin
+    "$BIN" --target=rv32i --bin=gen-full.bin 0064.baz 2>err | head -c 1 >/dev/null
+    [[ ${PIPESTATUS[0]} -eq 1 ]]
+    grep -Fq "error: cannot write the assembly to stdout" err
+    [[ ! -e gen-full.bin ]]
     # a help that cannot be written says so, also when larger than a block
     expect_exit_1 "$BIN" --help >/dev/full 2>err
     grep -Fq "cannot write the help to stdout" err
@@ -1096,6 +1113,29 @@ CLI_OPTION_MESSAGES() {
     echo ok
 }
 
+# an option given again replaces its earlier value
+CLI_REPEATED_OPTIONS() {
+    echo -n "cli repeated options: "
+    # the stack check shows the stack size in the listing
+    local fpga=(--target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack)
+    "$BIN" --target=rv32i-fpga --target=x86_64 0418.baz >gen.s 2>err
+    "$BIN" 0418.baz >out 2>err
+    cmp -s gen.s out
+    "$BIN" --vars=0x20000 --vars=0x10000 0418.baz >gen.s 2>err
+    cmp -s gen.s out
+    "$BIN" "${fpga[@]}" --stack=0x2000 --memory=0x100000 2145.baz >out 2>err
+    "$BIN" "${fpga[@]}" --stack=0x1000 --stack=0x2000 --memory=0x200000 --memory=0x100000 2145.baz >gen.s 2>err
+    cmp -s gen.s out
+    rm -f gen-rv32i.bin gen-other.bin
+    "$BIN" --target=rv32i --bin=gen-other.bin --bin=gen-rv32i.bin 0418.baz >gen.s 2>err
+    [[ -s gen-rv32i.bin && ! -e gen-other.bin ]]
+    "$BIN" --sdcard=other.img --sdcard=last.img 1048.baz >gen.s 2>err
+    grep -Fq "last.img" gen.s
+    grep -Fq "other.img" gen.s && fail
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
 # the options only some targets read are rejected by the others, also when
 # '--target' comes after them
 CLI_TARGET_OPTIONS() {
@@ -1289,6 +1329,7 @@ CLI_QEMU_STACK
 CLI_SMALL_STACK
 CLI_OPTION_MESSAGES
 CLI_TARGET_OPTIONS
+CLI_REPEATED_OPTIONS
 CLI_VARS_RANGE
 CLI_STACK_HANDLER
 CLI_NOINLINE_REPORT

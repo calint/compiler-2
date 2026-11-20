@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 527 (2026-11-20, bug hunt: the command line and option
+    combinations; design: the output side, comments, sections and the
+    assembler's directives; readability: a newcomer walks the middle third
+    of 'machine.hpp')
+    => bug hunt: two defects; a generator of command lines with every
+       option, malformed values, files that are directories, links, devices
+       and outputs, on the sanitizer and the plain build: 7400 runs, 70
+       probes, 53 mutants
+       1. '--bin' naming the file of stdout ('> prog.s', '/dev/stdout')
+          exited 0 with the image or the listing lost; 'check_output_files'
+          rejects it like the image naming a source or the sd card ("invalid
+          --bin: 'prog.s' is stdout"); '--bin=/dev/null >/dev/null' is
+          rejected too, as '--bin' and '--sdcard' both '/dev/null' are
+       2. a reader that closes the pipe early killed the compiler by
+          'SIGPIPE' (exit 141) and left the image; 'main' ignores 'SIGPIPE',
+          so the write fails as on a full disk: exit 1 and the image removed
+       test-cli.sh checks both, a directory source and that a repeated
+       option keeps its last value (6 mutants survived); docs 1.2
+    => design: the source comment of a node is 'comment_source' in the
+       three places that built it by hand; 'emit_read_only_constants'
+       writes its own separator as 'begin_data' does; the assemblers say
+       the text of a section directive and 'switch_section' writes it
+       (listings equal); three wording differences of the listing to
+       'etc/todo.txt' (report changes)
+    => readability: a wrong note fixed (rv32i shifts a power of two scale
+       where it lowers an address, 'scale_index' multiplies), comments on
+       'can_lower_index_scale' and 'variables_base_past_vars_bytes',
+       'emit_panic_message', 'exit_code_register' and 'comment' reworded;
+       84 functions, 5 predictions wrong
 [x] easy: round 526 (2026-11-20, bug hunt: methods and receivers after
     the binding change of round 521; design: the rv32i target variants;
     readability: a newcomer walks the first third of 'machine.hpp')
