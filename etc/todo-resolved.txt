@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 524 (2026-11-20, bug hunt: the fuzz-combos finding of
+    round 523, a program timing out on rv32i-fpga; design: declarations
+    and assignment, 'stmt_def_var.hpp' and 'stmt_assign_var.hpp';
+    readability: a newcomer walks the last third of 'stmt_call.hpp')
+    => bug hunt: no compiler defect; the program reads 72 times and the
+       fuzz harness ('fuzzlib.run_uart') ended the uart input with 64 end
+       of transmission bytes, one taken by each read at the end of the
+       input, so the uart waited for input until the timeout; the harness
+       now sends 256 KiB ('UART_END_OF_INPUT'), more than the fuzzers'
+       200000 model steps let a program read; the nine findings are
+       removed; a manual "CPU error 1305" came from a sector read past
+       '/dev/null' as the card
+    => design: when a 'let' folds is decided by 'stmt_def_const::fold_let',
+       not by the part 'var', 'let' and 'dat' share, and it asks the value
+       whether it is an array instead of taking a shape;
+       'initializer_declaration' reads the name and the '=' itself, so
+       'stmt_def_dat' and 'make_stmt_def_var' lose their copies (-4 lines,
+       listings equal); six ideas kept with reasons (a 'dat' hides its name
+       in its initializer, the compile types a folded 'let' as the parse
+       made it)
+    => readability: three comments ('constructor_func' runs from the
+       member initializers before 'func_', the 'index' of
+       'describe_argument' counts the receiver, 'read_argument_delimiter'
+       names the argument after the ','); 47 functions, 7 predictions
+       wrong
 [x] easy: round 523 (2026-11-20, bug hunt: compile-time values and
     constant data; design: the backend interface for arithmetic,
     'add_subtract', 'multiply', 'divide', 'shift' and their two

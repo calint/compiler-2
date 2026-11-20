@@ -2312,7 +2312,9 @@ class stmt_call final : public statement {
     [[nodiscard]] auto constructor_func(const parse_toc& tc) const
         -> const stmt_def_func& {
 
-        // note: only a constructor call asks
+        // note: only a constructor call asks, from the member initializers,
+        //       after 'constructor_' and before 'func_' is set
+
         assert(constructor_);
 
         const token& name_tk{constructor_->name_tk};
@@ -2362,6 +2364,7 @@ class stmt_call final : public statement {
         return tc.get_func_or_throw(name_tk, name);
     }
 
+    // 'index' counts the receiver, the text does not
     [[nodiscard]] auto describe_argument(const size_t index) const
         -> std::string {
 
@@ -2553,7 +2556,7 @@ class stmt_call final : public statement {
                                            : literal_typing::from_destination);
     }
 
-    // e.g. the ',' of 'f(a, b)'
+    // e.g. the ',' of 'f(a, b)', before the argument at 'arg_index'
     auto read_argument_delimiter(tokenizer& tz, const size_t arg_index,
                                  const std::string_view param_name) -> void {
 

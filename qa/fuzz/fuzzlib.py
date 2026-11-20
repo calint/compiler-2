@@ -31,6 +31,12 @@ COMPILE_TIMEOUT = 120
 SLOW_COMPILE = 60
 RUN_TIMEOUT = 5
 OUTPUT_LIMIT = 1 << 20
+# the end of transmission bytes after the input of a uart target, one for each
+# read at the end of the input, which there waits for one where x86_64 returns
+# 0 (README chapter 8)
+# note: more than the 200000 steps a model of 'fuzz-combos.py' and
+#       'fuzz-whole.py' runs, each read is at least one step
+UART_END_OF_INPUT = b"\x04" * (1 << 18)
 
 # a sanitizer report ends the compiler with these exit codes
 SANITIZER_EXIT = {98, 99}
@@ -390,8 +396,7 @@ def run_uart(compiler, path, options, work, target, name, stdin, cwd=None,
              sdcard=os.devnull):
     # compile for rv32i-qemu or rv32i-fpga and run the image in a qemu system
     # or the emulator, a panic ends on the uart: (compile result, outcome)
-    # the uart takes the input followed by end of transmission bytes, each
-    # read at the end of the input takes one
+    # the uart takes the input followed by 'UART_END_OF_INPUT'
     assert target in UART_TARGETS
     image = os.path.join(work, f"{name}-{target}.bin")
     c = compile_source(compiler, path,
@@ -403,7 +408,8 @@ def run_uart(compiler, path, options, work, target, name, stdin, cwd=None,
         command = QEMU_SYSTEM + [image]
     else:
         command = [EMULATOR, image, sdcard]
-    r = run(command, RUN_TIMEOUT, cwd=cwd, stdin_bytes=stdin + b"\x04" * 64)
+    r = run(command, RUN_TIMEOUT, cwd=cwd,
+            stdin_bytes=stdin + UART_END_OF_INPUT)
     return c, outcome_fpga(r)
 
 

@@ -42,11 +42,15 @@
 // named like its type, e.g. 'dat point = point{1, 2}'
 enum class name_in_initializer : uint8_t { visible, hidden };
 
-// the type and the array size that an initializer gives a definition, e.g.
-// 'var a = i8[]{1, 2}' or 'dat p = point{1, 2}', and its value at them; the
-// initializer is parsed once to learn them and again at them
+// the name of a definition, its '=' and the type and the array size that its
+// initializer gives, e.g. 'var a = i8[]{1, 2}' or 'dat p = point{1, 2}', and
+// its value at them; the initializer is parsed once to learn them and again
+// at them
 class initializer_declaration final {
     token name_tk_;
+    // after the name, where a destination that names it continues
+    tokenizer at_name_;
+    token equals_tk_;
     name_in_initializer name_visibility_{};
     const type* type_{};
     // of unknown length only while the initializer that gives the length is
@@ -54,17 +58,24 @@ class initializer_declaration final {
     array_shape shape_;
 
   public:
-    // 'tz' is at the initializer, after the '=', and is left there for
-    // 'parse_value'
-    initializer_declaration(parse_toc& tc, tokenizer& tz, const token& name_tk,
+    // 'tz' is at the name, after 'keyword', and is left at the initializer
+    // for 'parse_value'
+    initializer_declaration(parse_toc& tc, tokenizer& tz,
+                            const std::string_view keyword,
                             const name_in_initializer name_visibility)
-        : name_tk_{name_tk}, name_visibility_{name_visibility} {
+        : name_tk_{read_name(tc, tz)}, at_name_{tz},
+          equals_tk_{read_equals(tz, keyword, name_tk_)},
+          name_visibility_{name_visibility} {
 
         deduce_declaration(tc, tz);
 
         // note: both deductions reject an array whose size is not known
         assert(not shape_.is_length_unknown());
     }
+
+    // the destination is read where it ends at '=', past it the '[2]' in
+    // 'var a = [2]{}' would read as an index
+    [[nodiscard]] auto at_name() const -> tokenizer { return at_name_; }
 
     // the variable the definition declares, a 'var' or a 'dat'
     [[nodiscard]] auto declared_var() const -> var_info {
@@ -78,6 +89,10 @@ class initializer_declaration final {
             .foo_array{},
         };
     }
+
+    [[nodiscard]] auto equals_tk() const -> const token& { return equals_tk_; }
+
+    [[nodiscard]] auto name_tk() const -> const token& { return name_tk_; }
 
     // the value at the deduced type and size
     [[nodiscard]] auto parse_value(parse_toc& tc, tokenizer& tz) const
@@ -95,94 +110,7 @@ class initializer_declaration final {
         return std::move(*value);
     }
 
-    [[nodiscard]] auto shape() const -> array_shape { return shape_; }
-
     [[nodiscard]] auto type_ref() const -> const type& { return *type_; }
-
-    //
-    // statics
-    //
-
-    // the value of a 'let' declared as 'tp' when it folds, none for a 'var'
-    // or an array, which is not a constant; 'value' does not read the
-    // defined name, its parse rejected that ('scope::initializer')
-    [[nodiscard]] static auto fold_let(const toc& tc, const token& keyword_tk,
-                                       const expr_any& value, const type& tp,
-                                       const array_shape shape)
-        -> std::optional<folded_value> {
-
-        if (not keyword_tk.is_text("let") or shape.is_array()) {
-            return std::nullopt;
-        }
-
-        const bool is_default_type{tp.is_same(tc.builtins().default_type())};
-
-        // note: one untyped constant at the default type keeps its value
-        //       whole and is checked where it is used, as the literal it
-        //       names, e.g. 'let k = 0x80000000' on a target whose default
-        //       type is 'i32'; it is folded whole first, so '-m' of an 'm'
-        //       of -0x80000000 is 0x80000000 there; a list is computed and
-        //       checked at 'tp'
-
-        if (is_default_type and value.is_single_operand()) {
-            const std::optional<folded_value> whole{
-                value.fold(tc, tc.use_at(tc.builtins().i64())),
-            };
-
-            if (whole and not whole->is_typed()) {
-                return *whole;
-            }
-        }
-
-        const std::optional<folded_value> folded{
-            value.fold_checked(tc, tc.use_at(tp)),
-        };
-
-        if (not folded) {
-            return std::nullopt;
-        }
-
-        folded_value constant{*folded};
-
-        // note: untyped only at the default type, e.g. 'let k = 5' fits any
-        //       integer where it is used; 'let b = true' is a 'bool'
-
-        if (not constant.is_typed() and not is_default_type) {
-            constant.own_type = &tp;
-        }
-
-        return constant;
-    }
-
-    // the '=' after 'name_tk', 'keyword' starts the example of the error;
-    // the error is at the end of the name, the next token can be on another
-    // line
-    [[nodiscard]] static auto read_equals(tokenizer& tz,
-                                          const std::string_view keyword,
-                                          const token& name_tk) -> token {
-
-        // e.g. 'var x == 1', a comparison is not the '=' of an initializer
-        if (not tz.is_lone_equals_next()) {
-            throw compile_error{
-                name_tk.end_position(),
-                std::format("expected '=' followed by an initializer, "
-                            "e.g. '{} x = i32'",
-                            keyword)};
-        }
-
-        return tz.seen_char_token('=');
-    }
-
-    // the name of a definition, e.g. the 'x' of 'var x = 1'
-    [[nodiscard]] static auto read_name(const parse_toc& tc, tokenizer& tz)
-        -> token {
-
-        const token name_tk{tz.next_token()};
-
-        tc.assert_valid_unqualified_name(name_tk);
-
-        return name_tk;
-    }
 
   private:
     // sets the type and size, e.g. 'var s = "hi"' is an 'i8' array of 2
@@ -385,6 +313,36 @@ class initializer_declaration final {
 
         return &tc.get_type_or_throw(tk);
     }
+
+    // the '=' after 'name_tk', 'keyword' starts the example of the error;
+    // the error is at the end of the name, the next token can be on another
+    // line
+    [[nodiscard]] static auto read_equals(tokenizer& tz,
+                                          const std::string_view keyword,
+                                          const token& name_tk) -> token {
+
+        // e.g. 'var x == 1', a comparison is not the '=' of an initializer
+        if (not tz.is_lone_equals_next()) {
+            throw compile_error{
+                name_tk.end_position(),
+                std::format("expected '=' followed by an initializer, "
+                            "e.g. '{} x = i32'",
+                            keyword)};
+        }
+
+        return tz.seen_char_token('=');
+    }
+
+    // the name of a definition, e.g. the 'x' of 'var x = 1'
+    [[nodiscard]] static auto read_name(const parse_toc& tc, tokenizer& tz)
+        -> token {
+
+        const token name_tk{tz.next_token()};
+
+        tc.assert_valid_unqualified_name(name_tk);
+
+        return name_tk;
+    }
 };
 
 // a 'let' whose initializer folds to a constant, e.g. 'let n = 2 * 3' or
@@ -400,13 +358,14 @@ class stmt_def_const final : public statement {
   public:
     // the constant is declared during the parse so later statements can name
     // it, e.g. as an array size
-    stmt_def_const(parse_toc& tc, const token& keyword_tk, const token& name_tk,
-                   const token& equals_tk, const type& tp, expr_any initializer,
-                   const folded_value& constant)
-        : statement{keyword_tk}, name_tk_{name_tk}, equals_tk_{equals_tk},
+    stmt_def_const(parse_toc& tc, const token& keyword_tk,
+                   const initializer_declaration& declaration,
+                   expr_any initializer, const folded_value& constant)
+        : statement{keyword_tk}, name_tk_{declaration.name_tk()},
+          equals_tk_{declaration.equals_tk()},
           initializer_{std::move(initializer)}, constant_{constant} {
 
-        set_type(tp);
+        set_type(declaration.type_ref());
 
         tc.add_const(name_tk_, name_tk_.text(), constant_);
     }
@@ -434,9 +393,8 @@ class stmt_def_const final : public statement {
         // note: folded at the declared type like the parse, where it wraps
         //       without the overflow check, e.g. 'x + 1' of an 'i8' 127
 
-        assert(folded_value::value_of(initializer_declaration::fold_let(
-                   tc, tok(), initializer_, get_type(), array_shape{})) ==
-               constant_.value);
+        assert(folded_value::value_of(fold_let(tc, tok(), initializer_,
+                                               get_type())) == constant_.value);
 
         // note: the compile of a 'var' checks the elements of a condition
         //       after the one that decides it, so does this
@@ -451,6 +409,60 @@ class stmt_def_const final : public statement {
     auto trace_assignment(assignment_flow& flow) const -> void override {
         initializer_.assert_result_set_before_read(flow);
     }
+
+    //
+    // statics
+    //
+
+    // the value of a 'let' declared as 'tp' when it folds, none for a 'var'
+    // or an array, which is not a constant; 'value' does not read the
+    // defined name, its parse rejected that ('scope::initializer')
+    [[nodiscard]] static auto fold_let(const toc& tc, const token& keyword_tk,
+                                       const expr_any& value, const type& tp)
+        -> std::optional<folded_value> {
+
+        if (not keyword_tk.is_text("let") or value.is_array()) {
+            return std::nullopt;
+        }
+
+        const bool is_default_type{tp.is_same(tc.builtins().default_type())};
+
+        // note: one untyped constant at the default type keeps its value
+        //       whole and is checked where it is used, as the literal it
+        //       names, e.g. 'let k = 0x80000000' on a target whose default
+        //       type is 'i32'; it is folded whole first, so '-m' of an 'm'
+        //       of -0x80000000 is 0x80000000 there; a list is computed and
+        //       checked at 'tp'
+
+        if (is_default_type and value.is_single_operand()) {
+            const std::optional<folded_value> whole{
+                value.fold(tc, tc.use_at(tc.builtins().i64())),
+            };
+
+            if (whole and not whole->is_typed()) {
+                return *whole;
+            }
+        }
+
+        const std::optional<folded_value> folded{
+            value.fold_checked(tc, tc.use_at(tp)),
+        };
+
+        if (not folded) {
+            return std::nullopt;
+        }
+
+        folded_value constant{*folded};
+
+        // note: untyped only at the default type, e.g. 'let k = 5' fits any
+        //       integer where it is used; 'let b = true' is a 'bool'
+
+        if (not constant.is_typed() and not is_default_type) {
+            constant.own_type = &tp;
+        }
+
+        return constant;
+    }
 };
 
 // e.g. 'var x = i32(0)', the initializer gives the type; a 'let' that does not
@@ -461,16 +473,13 @@ class stmt_def_var final : public statement {
     stmt_assign_var assign_var_;
 
   public:
-    // 'at_name' is the tokenizer after the name, where the destination
-    // continues
-    stmt_def_var(parse_toc& tc, const token& keyword_tk, tokenizer at_name,
-                 const token& equals_tk,
+    stmt_def_var(parse_toc& tc, const token& keyword_tk,
                  const initializer_declaration& declaration, expr_any value)
         : statement{keyword_tk},
           declared_{declared_var(keyword_tk, declaration)},
           assign_var_{
-              declare_and_assign(tc, declared_, at_name, equals_tk,
-                                 std::move(value)),
+              declare_and_assign(tc, declared_, declaration.at_name(),
+                                 declaration.equals_tk(), std::move(value)),
           } {
 
         set_type(declaration.type_ref());
@@ -524,8 +533,8 @@ class stmt_def_var final : public statement {
         -> std::optional<folded_value> {
 
         std::optional<folded_value> constant{
-            initializer_declaration::fold_let(tc, tok(), assign_var_.value(),
-                                              get_type(), declared_.shape),
+            stmt_def_const::fold_let(tc, tok(), assign_var_.value(),
+                                     get_type()),
         };
 
         if (constant and not constant->is_typed()) {
@@ -577,36 +586,24 @@ class stmt_def_var final : public statement {
 inline auto make_stmt_def_var(parse_toc& tc, const token& keyword_tk,
                               tokenizer& tz) -> std::unique_ptr<statement> {
 
-    const token name_tk{initializer_declaration::read_name(tc, tz)};
-
-    // the destination is read where it ends at '=', past it the '[2]' in
-    // 'var a = [2]{}' would read as an index
-    const tokenizer at_name{tz};
-
-    const token equals_tk{
-        initializer_declaration::read_equals(tz, keyword_tk.text(), name_tk),
-    };
-
     const initializer_declaration declaration{
         tc,
         tz,
-        name_tk,
+        keyword_tk.text(),
         name_in_initializer::visible,
     };
 
     expr_any value{declaration.parse_value(tc, tz)};
 
     const std::optional<folded_value> constant{
-        initializer_declaration::fold_let(
-            tc, keyword_tk, value, declaration.type_ref(), declaration.shape()),
+        stmt_def_const::fold_let(tc, keyword_tk, value, declaration.type_ref()),
     };
 
     if (constant) {
-        return std::make_unique<stmt_def_const>(
-            tc, keyword_tk, name_tk, equals_tk, declaration.type_ref(),
-            std::move(value), *constant);
+        return std::make_unique<stmt_def_const>(tc, keyword_tk, declaration,
+                                                std::move(value), *constant);
     }
 
-    return std::make_unique<stmt_def_var>(tc, keyword_tk, at_name, equals_tk,
-                                          declaration, std::move(value));
+    return std::make_unique<stmt_def_var>(tc, keyword_tk, declaration,
+                                          std::move(value));
 }

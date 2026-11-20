@@ -70,9 +70,8 @@ class stmt_def_dat final : public statement {
         }
     };
 
-    token name_tk_;
-    token equals_tk_;
-    // the type and size the initializer gives, the name is not in scope
+    // the name, the '=' and the type and size the initializer gives, the name
+    // is not in scope
     initializer_declaration declaration_;
     expr_any initializer_;
     elem root_elem_{};
@@ -80,9 +79,7 @@ class stmt_def_dat final : public statement {
   public:
     stmt_def_dat(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk},
-          name_tk_{initializer_declaration::read_name(tc, tz)},
-          equals_tk_{initializer_declaration::read_equals(tz, "dat", name_tk_)},
-          declaration_{tc, tz, name_tk_, name_in_initializer::hidden},
+          declaration_{tc, tz, "dat", name_in_initializer::hidden},
           initializer_{declaration_.parse_value(tc, tz)},
           root_elem_{fold_data(tc, declaration_.type_ref(), initializer_)} {
 
@@ -107,8 +104,8 @@ class stmt_def_dat final : public statement {
 
     auto source_to(std::ostream& os) const -> void override {
         statement::source_to(os);
-        name_tk_.source_to(os);
-        equals_tk_.source_to(os);
+        declaration_.name_tk().source_to(os);
+        declaration_.equals_tk().source_to(os);
         initializer_.source_to(os);
     }
 
@@ -132,9 +129,11 @@ class stmt_def_dat final : public statement {
     // the initial values, in the data section after the code; 'compile' only
     // declares the name
     auto compile_data(compile_toc& tc) const -> void {
+        const token& name_tk{declaration_.name_tk()};
+
         machine& x{tc.machine()};
 
-        x.comment({name_tk_, 0}, name_tk_.text());
+        x.comment({name_tk, 0}, name_tk.text());
         compile_data_elem(x, get_type(), root_elem_);
     }
 
