@@ -1,6 +1,32 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 521 (2026-11-20, bug hunt: generics after the changes of
+    rounds 512 to 519; design: the inlined call, 'inline_call' and
+    'call_site'; readability: a newcomer walks the second half of
+    'stmt_identifier.hpp')
+    => bug hunt: no defect; a generator writing each program with generics
+       and expanded by hand, generic types with a constant named like a
+       global, based types, methods before and after aliases with
+       parameters named like the constant, local arrays and 'let's folded
+       per instance, generic methods written and deduced across
+       instances, globals a type parameter hides, nested and
+       destination-deduced generic functions, each inline, noinline and
+       mixed under six option sets: 2760 programs, 66240 runs, 190 probes;
+       30 mutants, one missed by every suite: the definition order not put
+       back after a nested instance lets the outer body see a later
+       definition: test 6760
+    => design: 'inline_call::bind_argument' decides every binding of an
+       argument (a place, a temporary, a name held in a register, a
+       constant or a register value); 'destination::bound_info' gives the
+       result's binding for a register destination too, so 'bind_result'
+       and 'param_binding::make_register' go (-25 lines, listings equal);
+       six ideas kept with reasons (a register name copied through
+       'bind_expression' would cost a register)
+    => readability: three comments ('record_assignment' tracks only a path
+       from the result, 'compile_checked_index' leaves out a trailing
+       constant only without bounds checks, 'operand_of' punctuation); 44
+       functions, 2 predictions wrong
 [x] easy: round 520 (2026-11-20, bug hunt: control flow after the
     changes of rounds 505 to 509; design: how a path is compiled to an
     operand, the compile side of 'stmt_identifier.hpp'; readability: a

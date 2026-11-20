@@ -234,20 +234,6 @@ struct param_binding {
             .text{std::string{text}},
         };
     }
-
-    // 'text' is how the comments show it, the register or the name that
-    // held it
-    [[nodiscard]] static auto make_register(const std::string_view name,
-                                            const operand& reg,
-                                            const std::string_view text)
-        -> param_binding {
-
-        return {
-            .from{std::string{name}},
-            .info{ident_info::make_register(reg)},
-            .text{std::string{text}},
-        };
-    }
 };
 
 // a constant of a scope: a 'let' that folds, the 'n' of a 'foo' or a

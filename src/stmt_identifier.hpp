@@ -768,7 +768,7 @@ class stmt_identifier final : public statement {
     // the root is the result of the function the path was parsed in
     [[nodiscard]] auto names_result() const -> bool { return names_result_; }
 
-    // the operand of what this path names, a variable, the registers of a
+    // the operand of what this path names, a variable; the registers of a
     // computed address go into 'held'
     [[nodiscard]] auto operand_of(compile_toc& tc,
                                   machine::held_registers& held) const
@@ -789,7 +789,8 @@ class stmt_identifier final : public statement {
         return one_line_source::of(ss.view());
     }
 
-    // a run-time index does not prove which element is written
+    // only a path from the result is tracked, and a run-time index does not
+    // prove which element is written
     auto record_assignment(assignment_flow& flow) const -> void {
         if (not names_result_ or not is_exact_access()) {
             return;
@@ -1204,10 +1205,10 @@ class stmt_identifier final : public statement {
         }
     }
 
-    // the index goes into 'index_register', returns the constant a trailing
-    // '+ c' or '- c' leaves out for the displacement, e.g. 'ix + 1' compiles
-    // 'ix' and returns 1, only without bounds checks since they check the sum
-    // in the register
+    // the index goes into 'index_register'; without bounds checks a trailing
+    // '+ c' or '- c' is left out and returned for the displacement, e.g.
+    // 'ix + 1' compiles 'ix' and returns 1; bounds checks check the whole sum
+    // in the register and return 0
     [[nodiscard]] static auto
     compile_checked_index(compile_toc& tc, const expr_any& index_expr,
                           const operand& index_register,

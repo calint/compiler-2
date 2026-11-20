@@ -1,0 +1,7 @@
+
+6760.baz:9:22: 'size' not found
+    res = inner(x) + size
+                     ^~~~
+6760.baz:15:10: instantiated by 'outer<i8>'
+    exit(outer(i8(1)))
+         ^~~~~

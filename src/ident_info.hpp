@@ -448,10 +448,17 @@ class destination final {
         return result;
     }
 
-    // what the result of an inlined call stands for when this is its
-    // destination: the storage at the address computed for it, or as resolved
-    [[nodiscard]] auto bound_info() const -> const ident_info& {
-        // note: a register destination is bound as a register
+    // what a name bound to this destination stands for, e.g. the result of
+    // an inlined call: the register, or the storage at the address computed
+    // for it, or as resolved
+    [[nodiscard]] auto bound_info() const -> ident_info {
+        if (const held_register* const held{
+                std::get_if<held_register>(&place_),
+            }) {
+
+            return ident_info::make_register(held->reg);
+        }
+
         return stored().info;
     }
 

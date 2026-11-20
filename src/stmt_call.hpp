@@ -874,6 +874,66 @@ class inline_call final {
         };
     }
 
+    // a place is bound at its address, an instance value without a place in
+    // a temporary ('call_site::is_argument_temporary'), a variable in a
+    // register as it is, any other value by 'bind_expression'
+    [[nodiscard]] auto bind_argument(compile_toc& tc, const size_t index,
+                                     machine::held_registers& held) const
+        -> param_binding {
+
+        const expr_any& arg{call_.args.at(index)};
+        const stmt_def_func_param& param{call_.func->params().at(index)};
+        const std::optional<place>& arg_place{call_.places.at(index)};
+
+        // note: 'stmt_call::assert_argument_type' checked the type, an array
+        //       argument is a place
+        //       ('parse_array_param_argument')
+
+        assert(arg_place or not param.is_array());
+
+        if (arg_place) {
+            const stmt_identifier& ident{*arg_place->ident};
+
+            // an argument with an index or an address held in a slot keeps
+            // the address computed here, e.g. '[rbp + r14 * 4 + 205]',
+            // '[r15 + r14]' or simply '[r15]'
+            // note: the address registers stay allocated until the inlined
+            //       body is compiled
+            const ident_info bound{
+                ident.info_at_address(tc, held),
+            };
+
+            return param_binding::make_name(param.name(), bound,
+                                            ident.path_text());
+        }
+
+        // note: a temporary is made here, in the order of the arguments, and
+        //       named per call, so each level of an inlined recursion binds
+        //       its own
+
+        if (call_.is_argument_temporary(index)) {
+            const destination temporary{
+                call_.make_argument_temporary(tc, index),
+            };
+
+            return param_binding::make_name(
+                param.name(), temporary.bound_info(), temporary.text());
+        }
+
+        // e.g. 'x' bound to a register of the caller; a constant, which the
+        // callee's own constants would shadow, is folded
+        if (const stmt_identifier* const ident{arg.bare_path()}) {
+            const ident_info info{make_ident_info(tc, *ident)};
+
+            if (info.is_register()) {
+                return param_binding::make_name(param.name(), info,
+                                                ident->path_text());
+            }
+        }
+
+        return bind_expression(tc, arg, param, held);
+    }
+
     // the bindings of the arguments of the inlined body, in their order
     [[nodiscard]] auto bind_arguments(compile_toc& tc,
                                       machine::held_registers& held) const
@@ -881,26 +941,8 @@ class inline_call final {
 
         std::vector<param_binding> arguments;
 
-        for (const auto [i, arg, param, arg_place] :
-             std::views::zip(std::views::iota(size_t{}), call_.args,
-                             call_.func->params(), call_.places)) {
-
-            // note: a temporary is made here, in the order of the arguments,
-            //       and named per call, so each level of an inlined recursion
-            //       binds its own
-
-            if (call_.is_argument_temporary(i)) {
-                const destination temporary{
-                    call_.make_argument_temporary(tc, i),
-                };
-
-                arguments.push_back(param_binding::make_name(
-                    param.name(), temporary.bound_info(), temporary.text()));
-
-                continue;
-            }
-
-            arguments.push_back(bind_argument(tc, arg, param, arg_place, held));
+        for (size_t i{}; i < call_.args.size(); ++i) {
+            arguments.push_back(bind_argument(tc, i, held));
         }
 
         return arguments;
@@ -1116,12 +1158,14 @@ class inline_call final {
 
         call_bindings bindings{};
 
-        // the result names the destination, so the widths must agree
+        // the result names the destination, e.g. the scratch register of an
+        // expression or a variable, so the widths must agree
         if (const std::optional<func_result>& result{call_.func->result()}) {
 
             assert(dst.type_ref().is_same(call_.func->result_type()));
 
-            bindings.result = bind_result(dst, *result);
+            bindings.result = param_binding::make_name(
+                result->name_tk.text(), dst.bound_info(), dst.text());
         }
 
         bindings.arguments = bind_arguments(tc, held);
@@ -1164,51 +1208,6 @@ class inline_call final {
     // statics
     //
 
-    // a place is bound at its address, a variable in a register as it is,
-    // any other value by 'bind_expression'; an instance value without a place
-    // is in a temporary ('call_site::is_argument_temporary')
-    [[nodiscard]] static auto
-    bind_argument(compile_toc& tc, const expr_any& arg,
-                  const stmt_def_func_param& param,
-                  const std::optional<place>& arg_place,
-                  machine::held_registers& held) -> param_binding {
-
-        // note: 'stmt_call::assert_argument_type' checked the type, an array
-        //       argument is a place
-        //       ('parse_array_param_argument')
-
-        assert(arg_place or not param.is_array());
-
-        if (arg_place) {
-            const stmt_identifier& ident{*arg_place->ident};
-
-            // an argument with an index or an address held in a slot keeps
-            // the address computed here, e.g. '[rbp + r14 * 4 + 205]',
-            // '[r15 + r14]' or simply '[r15]'
-            // note: the address registers stay allocated until the inlined
-            //       body is compiled
-            const ident_info bound{
-                ident.info_at_address(tc, held),
-            };
-
-            return param_binding::make_name(param.name(), bound,
-                                            ident.path_text());
-        }
-
-        // e.g. 'x' bound to a register of the caller; a constant, which the
-        // callee's own constants would shadow, is folded
-        if (const stmt_identifier* const ident{arg.bare_path()}) {
-            const ident_info info{make_ident_info(tc, *ident)};
-
-            if (info.is_register()) {
-                return param_binding::make_name(param.name(), info,
-                                                ident->path_text());
-            }
-        }
-
-        return bind_expression(tc, arg, param, held);
-    }
-
     // a constant when the value folds, which lets the inlined body be decided
     // at compile time, else a register that holds the value
     [[nodiscard]] static auto bind_expression(compile_toc& tc,
@@ -1236,25 +1235,8 @@ class inline_call final {
 
         arg.compile(tc, destination::of_register(reg));
 
-        return param_binding::make_register(param.name(), reg,
-                                            reg.register_name());
-    }
-
-    // the result name of the function refers to the destination
-    [[nodiscard]] static auto bind_result(const destination& dst,
-                                          const func_result& result)
-        -> param_binding {
-
-        const std::string_view name{result.name_tk.text()};
-
-        // e.g. the scratch register of an expression, or a parameter that
-        // stands for one
-        if (dst.is_register()) {
-            return param_binding::make_register(name, dst.operand(),
-                                                dst.text());
-        }
-
-        return param_binding::make_name(name, dst.bound_info(), dst.text());
+        return param_binding::make_name(
+            param.name(), ident_info::make_register(reg), reg.register_name());
     }
 
     // a limit ends the recursion, not the check, except the inlining limit of

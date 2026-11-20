@@ -8358,3 +8358,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=6700 && COMPERR; fi
 
 # a constant exit code past 255 is rejected
 SRC=6680 && COMPERR
+
+# a generic body sees the definitions before it also after an instance made
+# inside it ends
+SRC=6760 && COMPERR

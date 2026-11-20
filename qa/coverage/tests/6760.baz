@@ -1,0 +1,16 @@
+# the body of a generic function sees the definitions before it also after
+# an instance made inside it ends: 'size' is defined after 'outer'
+
+func inner<T type>(x T) res int {
+    res = int(x)
+}
+
+func outer<T type>(x T) res int {
+    res = inner(x) + size
+}
+
+let size = 5
+
+func main() {
+    exit(outer(i8(1)))
+}
