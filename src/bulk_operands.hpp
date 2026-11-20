@@ -247,6 +247,7 @@ class bulk_operands final {
                     continue;
                 }
 
+                // note: an earlier start is freed only after this one
                 if (not held.is_walked) {
                     return;
                 }

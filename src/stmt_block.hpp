@@ -128,7 +128,7 @@ class stmt_block final : public statement {
         return not open_brace_tk_;
     }
 
-    // a block without braces is one statement, none at the end of the source
+    // a block without braces is one statement
     auto parse_single_statement(parse_toc& tc, tokenizer& tz) -> void {
         if (const std::optional<token> close_brace_tk{
                 tz.accept_char_token('}'),
@@ -140,9 +140,10 @@ class stmt_block final : public statement {
 
         const token tk{tz.next_token()};
 
+        // e.g. the source ended after 'loop', inside the braces of a function
+        // body
         if (tk.is_none()) {
-            tz.assert_not_at_delimiter();
-            return;
+            tz.throw_unclosed_block();
         }
 
         // e.g. the 'else' of 'if a == 1 else {...}', a branch without code

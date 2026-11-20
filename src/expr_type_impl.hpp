@@ -44,11 +44,13 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
     const parse_toc::parse_nesting_scope nesting{tc, tz};
 
     const term_kind tm{classify_term(tc, tk, tz)};
-    const bool is_bare{tm == term_kind::user_type};
+    const bool is_bare_user_type{tm == term_kind::user_type};
 
     // e.g. 'point{x, y}' names the type that '{x, y}' takes from the
     // destination
-    const bool is_typed_literal{tm == term_kind::instance_literal or is_bare};
+    const bool is_typed_literal{
+        tm == term_kind::instance_literal or is_bare_user_type,
+    };
 
     // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
     if (is_bare_builtin_type(tm, tz)) {
@@ -68,7 +70,7 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
     }
 
     // e.g. 'var p = point', no fields are listed
-    if (is_bare) {
+    if (is_bare_user_type) {
         assert_value_ends(tz, tk, value_kind::instance, tp);
         return expr_type{tk, tp};
     }

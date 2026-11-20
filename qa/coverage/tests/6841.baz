@@ -1,0 +1,16 @@
+# the range of the second array is checked on its own: a compare of a
+# constant count whose first range fits and whose second range from a
+# run-time start passes the end panics
+
+func main() {
+    var a = i32[8]
+    var b = i32[4]
+    var i = 1
+    if not arrays_equal(a, b[i], 3) {
+        exit(1)
+    }
+    i = 2
+    if arrays_equal(a, b[i], 3) {
+        exit(2)
+    }
+}

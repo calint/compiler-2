@@ -8362,3 +8362,11 @@ SRC=6680 && COMPERR
 # a generic body sees the definitions before it also after an instance made
 # inside it ends
 SRC=6760 && COMPERR
+
+# the range of the destination is checked on its own: a run-time count whose
+# source range fits and whose destination range passes the end panics
+SRC=6840 && EXP=255 && RUN_ERR
+
+# the range of the second array is checked on its own: a constant count whose
+# first range fits and whose second range passes the end panics
+SRC=6841 && EXP=255 && RUN_ERR

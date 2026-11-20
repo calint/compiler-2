@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 525 (2026-11-20, bug hunt: arrays and indexing after
+    the path and overlap changes of rounds 497 to 520; design: blocks and
+    statement lists, 'stmt_block.hpp'; readability: a newcomer walks
+    'bulk_operands.hpp' and 'expr_type_impl.hpp')
+    => bug hunt: no defect; a model generator of arrays of every width and
+       of records in one to three dimensions, local and 'dat', indexes
+       from constants, typed variables with addends, calls with effects,
+       'array_length' of unsized parameters, 'array_copy' and
+       'arrays_equal' at every depth with every start and count, biased to
+       overlap across run-time outer indexes, each with one possible fault,
+       under nine check sets and three '--versions': 9000 programs, 139000
+       runs, probes of addends past 32 bits and the 12-bit offsets, arrays
+       of 2^31 and 2^32 elements; 18 mutants: without the range check of
+       the second array of 'array_copy' and 'arrays_equal' the suite
+       passed: tests 6840 and 6841
+    => design: a body without braces at the end of the source raises the
+       unclosed block error itself, so such a body always holds one
+       statement (listings and errors equal); the rules of blocks are
+       decided once each, the parse and the compile walk statements alike
+       where they should; the stray '}' keeps its own message (round 500)
+    => readability: the local 'is_bare' of 'parse_instance' renamed
+       'is_bare_user_type'; a note that 'free_done_starts' stops at a start
+       whose walk is running, the earlier ones sit under its registers; 33
+       functions, 2 predictions wrong
 [x] easy: round 524 (2026-11-20, bug hunt: the fuzz-combos finding of
     round 523, a program timing out on rv32i-fpga; design: declarations
     and assignment, 'stmt_def_var.hpp' and 'stmt_assign_var.hpp';
