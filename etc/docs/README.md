@@ -1195,7 +1195,9 @@ that is checked is the code that is emitted. A name in an argument, a side of
 a comparison or a bulk or io argument is read where it is used, after the
 later operands, so a call in a later operand that may write it is rejected
 ('assert_not_written_later'); an arithmetic list reads each operand at its
-place.
+place. The check takes every read of an earlier operand, also of one that is
+computed first, so 'add(p.a + 1, p.incget())' and 'p.get() == p.incget()' are
+rejected though they would read before the write: stricter than needed.
 
 Each node states its operands in evaluation order in its 'visit_operands', and
 the walks of the checks follow from it; its 'compile' emits them in that order,

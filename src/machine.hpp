@@ -450,8 +450,9 @@ class machine {
     // scratch registers of its operands, e.g. the address registers of a
     // path, and a register it needs by name, e.g. that of the exit code; it
     // frees them in reverse when it goes out of scope, with the site it was
-    // made with. like 'operation_scope' for the backend, but it frees only
-    // what was added to it
+    // made with, and what was allocated after them is freed by then. like
+    // 'operation_scope' for the backend, but it frees only what was added to
+    // it
     //
     // note: an error leaves the registers allocated: a version or a dry run
     //       that catches it puts the state back, any other error stops the
@@ -626,6 +627,7 @@ class machine {
     struct equality_request {
         size_t alignment{};
         operand dst;
+        // 'dst' receives 1 when they differ, else when they are equal
         bool inverted{};
     };
 
@@ -908,7 +910,7 @@ class machine {
     // an enabled check makes a signed result that does not fit the width of
     // 'dst' jump to the overflow failure handler, also in 'multiply' and
     // 'unary'; a constant 'src' that keeps 'dst', e.g. an added 0, is folded
-    // away before, also for 'bitwise'
+    // away by the front end, also for 'bitwise'
     virtual auto add_subtract(const emit_site site,
                               const arithmetic_operator operation,
                               const operand& dst, const operand& src,

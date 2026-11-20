@@ -8370,3 +8370,7 @@ SRC=6840 && EXP=255 && RUN_ERR
 # the range of the second array is checked on its own: a constant count whose
 # first range fits and whose second range passes the end panics
 SRC=6841 && EXP=255 && RUN_ERR
+
+# what a method writes through a method of its receiver is in its record:
+# passing a part of the receiver that the inner call writes is rejected
+SRC=6860 && COMPERR

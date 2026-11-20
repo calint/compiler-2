@@ -1,0 +1,22 @@
+# what a call of a method writes through its receiver is in the record of the
+# body that makes it: 'bump' writes 'self.p.x' through 'self.p.inc()', so
+# passing 'y.p' to 'bump' of 'y' is rejected
+
+type point { x, y }
+
+type box { p point, k }
+
+func mut point.inc() {
+    self.x = self.x + 1
+}
+
+func mut box.bump(o point) res {
+    self.p.inc()
+    res = o.x
+}
+
+func main() {
+    var y = box
+    var r = y.bump(y.p)
+    exit(r)
+}

@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 526 (2026-11-20, bug hunt: methods and receivers after
+    the binding change of round 521; design: the rv32i target variants;
+    readability: a newcomer walks the first third of 'machine.hpp')
+    => bug hunt: no defect; a model generator of records three levels deep
+       with methods 'mut' or not, noinline or not, constructors, record
+       results and recursion, bodies calling methods of 'self', fields,
+       parameters and globals, 'foo' over records, calls in arguments and
+       conditions, with verdicts from per-method summaries of reads and
+       writes, inline, noinline and mixed under five option sets on three
+       targets: 2500 programs, 54000 runs; 12 mutants: without what a
+       method writes through a method of its receiver the suite passed:
+       test 6860; docs 3.1 say the order check takes every read of an
+       earlier operand, so 'add(p.a + 1, p.incget())' is rejected, stricter
+       than needed
+    => design: the bare-metal 'finish_target' compares the end of the
+       variables with 'stack_limit_address', which 'bare_metal_target'
+       works out, instead of a second stack bottom as a size with its
+       assert (-2 lines, listings and images equal); six ideas kept with
+       reasons (the backend keeps the stack against memory check for an
+       explicit '--stack')
+    => readability: three comments ('held_registers' frees from the top of
+       the allocation stack, what came after is freed by then, a constant
+       that keeps the destination is folded by the front end,
+       'equality_request::inverted'); 36 functions, 3 predictions wrong
 [x] easy: round 525 (2026-11-20, bug hunt: arrays and indexing after
     the path and overlap changes of rounds 497 to 520; design: blocks and
     statement lists, 'stmt_block.hpp'; readability: a newcomer walks
