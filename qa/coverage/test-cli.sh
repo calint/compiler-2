@@ -891,6 +891,10 @@ CLI_FPGA_MEMORY() {
     # it is an option error, reported before the source is read
     expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x1000 missing.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack" err
+    # an option the backend rejects also comes before reading the source
+    expect_exit_1 "$BIN" --target=rv32i-fpga --stack=16 missing.baz >gen.s 2>err
+    grep -Fq "invalid --stack" err
+    grep -Fq "cannot" err && fail
     # a stack larger than the memory is rejected before a stack check of a
     # 'noinline' call is generated with it
     expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack --stack=$((memory_size + 16)) 0981.baz >gen.s 2>err

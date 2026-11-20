@@ -307,23 +307,8 @@ template <class Row, size_t row_count>
     return *found;
 }
 
-// the backend checks the stack against the memory without knowing which was
-// given, a default stack that does not fit is the memory's error
-auto check_default_stack_fits(const options& opts) -> void {
-    if (not opts.memory_size_bytes or opts.stack_size_bytes or
-        *opts.memory_size_bytes >= default_stack_size_bytes) {
-
-        return;
-    }
-
-    throw option_error{
-        std::format("invalid --memory: {} B is smaller than the default stack "
-                    "of {} B, give a smaller --stack",
-                    *opts.memory_size_bytes, default_stack_size_bytes)};
-}
-
-// an option of the target rows, e.g. '--stack' and 'reads_stack'
-struct target_option {
+// an option that only some targets read, e.g. '--stack' and 'reads_stack'
+struct target_specific_option {
     std::string_view name;
     bool target_name::* reads{};
     bool given{};
@@ -332,23 +317,23 @@ struct target_option {
 // an option that the chosen target does not read is an error, e.g. '--stack'
 // with 'x86_64'
 auto check_target_reads(const options& opts) -> void {
-    const std::array<target_option, 4> target_options{
-        target_option{
+    const std::array<target_specific_option, 4> specific_options{
+        target_specific_option{
             .name{"--stack"},
             .reads{&target_name::reads_stack},
             .given{opts.stack_size_bytes.has_value()},
         },
-        target_option{
+        target_specific_option{
             .name{"--memory"},
             .reads{&target_name::reads_memory},
             .given{opts.memory_size_bytes.has_value()},
         },
-        target_option{
+        target_specific_option{
             .name{"--sdcard"},
             .reads{&target_name::reads_sd_card},
             .given{opts.sd_card_file_name.has_value()},
         },
-        target_option{
+        target_specific_option{
             .name{"--bin"},
             .reads{&target_name::writes_image},
             .given{opts.binary_file_name.has_value()},
@@ -357,7 +342,7 @@ auto check_target_reads(const options& opts) -> void {
 
     const target_name& chosen{*opts.target};
 
-    for (const target_option& option : target_options) {
+    for (const target_specific_option& option : specific_options) {
         if (not option.given or chosen.*option.reads) {
             continue;
         }
@@ -379,7 +364,24 @@ auto check_target_reads(const options& opts) -> void {
     }
 }
 
-// decimal or 0x hexadecimal, 'option' is named in the error messages
+// the backend checks the stack against the memory without knowing which was
+// given, a default stack that does not fit is the memory's error
+// note: after 'check_target_reads', so a given memory is that of 'rv32i-fpga'
+auto check_default_stack_fits(const options& opts) -> void {
+    if (not opts.memory_size_bytes or opts.stack_size_bytes or
+        *opts.memory_size_bytes >= default_stack_size_bytes) {
+
+        return;
+    }
+
+    throw option_error{
+        std::format("invalid --memory: {} B is smaller than the default stack "
+                    "of {} B, give a smaller --stack",
+                    *opts.memory_size_bytes, default_stack_size_bytes)};
+}
+
+// decimal or 0x hexadecimal, a nonzero multiple of 'alignment'; 'option' is
+// named in the error messages
 [[nodiscard]] auto parse_size_bytes(const std::string_view text,
                                     const std::string_view option,
                                     const size_t alignment) -> size_t {
@@ -1140,17 +1142,20 @@ auto compile_to_stdout(const options& opts, source_files& files) -> void {
         opts.src_file_name.value_or(default_src_file_name),
     };
 
-    files.load(std::string{src_file_name}, std::nullopt);
-
     const target_name& target{*opts.target};
 
     const machine::target_options resolved{
         make_target_options(opts, src_file_name),
     };
 
+    // note: the backend checks its options and keeps 'files' unread, so an
+    //       option error comes before an error of reading the source
+
     const std::unique_ptr<machine> backend{
         target.make(files, resolved),
     };
+
+    files.load(std::string{src_file_name}, std::nullopt);
 
     program prg{*backend, files, opts.vars_size_bytes};
 

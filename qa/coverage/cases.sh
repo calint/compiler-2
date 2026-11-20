@@ -8374,3 +8374,7 @@ SRC=6841 && EXP=255 && RUN_ERR
 # what a method writes through a method of its receiver is in its record:
 # passing a part of the receiver that the inner call writes is rejected
 SRC=6860 && COMPERR
+
+# a 'continue' does not reach the end of a 'loop': with a constant argument the
+# 'break' folds away and the recursion after the loop is not expanded
+SRC=6900 && EXP=6 && RUN

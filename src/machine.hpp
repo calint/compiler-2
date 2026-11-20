@@ -2433,9 +2433,9 @@ class machine {
             emit_exit_routine();
         }
 
-        // note: after 'exit', so that 'exit' can follow the report of a line,
-        //       which writes and exits, as its next code; a helper or a sector
-        //       routine still comes between them
+        // note: after 'exit', so that the jump of the report of a line to
+        //       'exit' is removed as a jump to next code, unless a helper or a
+        //       sector routine comes between them
 
         const bool is_read_used{is_used(routines.read)};
         const bool is_write_used{is_used(routines.write)};
@@ -2607,8 +2607,8 @@ class machine {
         return pool;
     }
 
-    // the scratch registers a 'noinline' body can use, which holds the
-    // variables base and the frame base from its start
+    // the number of scratch registers a 'noinline' body can use, which holds
+    // the variables base and the frame base from its start
     [[nodiscard]] auto noinline_body_register_count() const -> size_t {
         return scratch_register_count(noinline_body_pool().allocations());
     }

@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 528 (2026-11-20, bug hunt: loops and control flow after
+    the blocks change of round 525; design: the driver, 'main.cpp';
+    readability: a newcomer walks the last third of 'machine.hpp')
+    => bug hunt: no defect; a model generator replaying the parse walk of
+       paths and interpreting the program: 'loop', 'foo', 'if' chains four
+       deep, 'break', 'continue', 'return' and 'exit' guarded and bare,
+       bodies without braces, calls with effects in conditions and counts,
+       folded branches of inlined calls, far jumps on rv32i, statements
+       after an ended path and results read before set: 1060 programs,
+       30000 runs; 25 mutants: a compiled 'continue' recorded as a 'break'
+       passed the suite: test 6900
+    => design: the source is read after the backend is made, so every
+       option error comes before an error of reading the source
+       ('--target=rv32i-fpga --stack=16 missing.baz' named the file;
+       test-cli.sh); 'check_default_stack_fits' below 'check_target_reads'
+       with a note that it relies on it; the driver's 'target_option'
+       renamed 'target_specific_option' (one letter from
+       'machine::target_options'); 'parse_size_bytes' says nonzero; seven
+       ideas kept with reasons
+    => readability: the note of 'emit_used_routines' says the jump of the
+       report of a line to 'exit' goes as a jump to next code; the comment
+       of 'noinline_body_register_count' says a number; 57 functions, 2
+       predictions wrong
 [x] easy: round 527 (2026-11-20, bug hunt: the command line and option
     combinations; design: the output side, comments, sections and the
     assembler's directives; readability: a newcomer walks the middle third
