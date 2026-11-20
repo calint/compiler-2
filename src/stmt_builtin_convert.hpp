@@ -100,8 +100,8 @@ class stmt_builtin_convert final : public statement {
     // a constant of the type, which wraps at the width of its use: the
     // argument folded like a list at W, where it wraps, narrowed to the type,
     // then the conversion's own unary ops apply at the width it is used at,
-    // at least that of the type, e.g. 'i16' for '-i8(-128)' in an 'i16' list,
-    // where under the overflow check a result that does not fit is an error
+    // e.g. 'i16' for '-i8(-128)' in an 'i16' list, where under the overflow
+    // check a result that does not fit is an error
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
@@ -116,10 +116,11 @@ class stmt_builtin_convert final : public statement {
             return std::nullopt;
         }
 
-        // note: an untyped constant converts whole, e.g. 'i32(0xfedc1234)' on
-        //       a target whose default type is 'i32', a list is a list at W
+        // note: a single operand is not narrowed: W is at least its type, and
+        //       an untyped constant converts whole, e.g. 'i32(0xfedc1234)' on
+        //       a target whose default type is 'i32'; a list is a list at W
 
-        if (arg->is_typed() or not argument().is_single_operand()) {
+        if (not argument().is_single_operand()) {
             argument().assert_not_narrowed(tc, width_type());
         }
 
@@ -128,10 +129,15 @@ class stmt_builtin_convert final : public statement {
         };
 
         const type& use_width{use.width_ref()};
-        const type& result_type{*wider(get_type(), use_width)};
+
+        // note: a use narrower than the type is the argument of an outer
+        //       conversion, which wraps, e.g. the 'i16' of 'i8(-i16(k))'
+
+        assert(not use.checks_overflow or
+               not get_type().is_wider_than(use_width));
 
         const int64_t value{
-            get_unary_ops().evaluate_at(converted, result_type,
+            get_unary_ops().evaluate_at(converted, use_width,
                                         use.checks_overflow),
         };
 

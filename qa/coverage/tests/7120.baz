@@ -1,0 +1,10 @@
+func main() {
+    var big = i8[6000]
+    var v = i32[4]
+    var i = 1
+    v[i] = 3
+    var a = 9
+    var x = 10
+    var r = a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + (a + x / v[i]))))))))))))))))))))))))))
+    exit(r)
+}

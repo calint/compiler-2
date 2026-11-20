@@ -1,0 +1,36 @@
+# a 'bool' argument of a conversion inside a narrower conversion is copied
+# before the inner unary ops apply: the '-' of 'i8(-i16(t()))' gives -1 for a
+# true 't()', with an inlined and a noinline call
+
+func inlined(x i8) res bool {
+    res = x > 0
+}
+
+func noinline called(x i8) res bool {
+    res = x > 0
+}
+
+func main() {
+    var v = i8(1)
+    var r = i8(-i16(inlined(v)))
+    if r != -1 {
+        exit(1)
+    }
+
+    r = i8(~i32(called(v)))
+    if r != -2 {
+        exit(2)
+    }
+
+    var w = i16(-i32(called(v)))
+    if w != -1 {
+        exit(3)
+    }
+
+    w = i16(-~i32(inlined(v)))
+    if w != 2 {
+        exit(4)
+    }
+
+    exit(0)
+}

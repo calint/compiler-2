@@ -8248,11 +8248,14 @@ if [[ $MACHINE != x86_64 ]]; then SRC=6060 && EXP=7 && RUN; fi
 # the script prints the report and the most scratch registers of the footer
 SRC=6061 && DIFFPY
 
-# rv32i: a remainder into the temporary of a noinline call argument needs a
-# register for its result while the helper keeps 'a0' and 'a1': out of
-# scratch registers with one free but kept by the operation, which the report
-# counts
-if [[ $MACHINE != x86_64 ]]; then SRC=6062 && COMPERR; fi
+# rv32i: a remainder into the temporary of a noinline call argument takes a
+# register for its result while the helper keeps only its first argument
+if [[ $MACHINE != x86_64 ]]; then SRC=6062 && EXP=37 && RUN; fi
+
+# rv32i: a far element as the divisor deep in an expression, the helper keeps
+# 'a0' while the address is built: out of scratch registers with one free but
+# kept by the operation, which the report counts
+if [[ $MACHINE != x86_64 ]]; then SRC=7120 && COMPERR; fi
 
 # rv32i: a product whose factor is an element of an array past 2 KiB of
 # variables, with the nesting holding the scratch registers before 'a7': the
@@ -8418,3 +8421,7 @@ SRC=7040 && COMPERR
 # run-time index of the array iterates the element of the index before the
 # call, inlined and noinline
 SRC=7060 && EXP=0 && RUN
+
+# a 'bool' call result converted inside a narrower conversion is copied out of
+# its register before the inner unary ops apply, e.g. 'i8(-i16(t()))' is -1
+SRC=7100 && EXP=0 && RUN

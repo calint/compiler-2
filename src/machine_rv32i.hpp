@@ -1608,7 +1608,7 @@ class machine_rv32i : public machine {
             throw out_of_registers_error(site.src_loc_tk);
         }
 
-        operation_scope scope{*this, dst, src};
+        const operation_scope scope{*this, dst, src};
 
         const helper_spec& spec{helper_spec_of(routine)};
 
@@ -1617,12 +1617,6 @@ class machine_rv32i : public machine {
         const std::vector<std::string_view> saved{
             live_clobbered(spec.clobbers, dst),
         };
-
-        // the arguments, the checks and the restore use these by name, so no
-        // scratch register is one of them
-        for (const std::string_view name : spec.clobbers) {
-            scope.protect(make_register_operand(name, default_type()));
-        }
 
         // note: variables and frames are based on 's0' and 's1', and the save
         //       area moves 'sp'
@@ -2337,7 +2331,8 @@ class machine_rv32i : public machine {
             src.is_register() and src.register_name() != value.register_name(),
         };
 
-        // note: the negation fits too, one of the two 'addi' takes it
+        // note: the negation fits too, the operation or the recovery of the
+        //       first operand in 'emit_checked_with_one_register' adds it
 
         const bool is_small_constant{
             constant.has_value() and
@@ -2450,8 +2445,8 @@ class machine_rv32i : public machine {
 
         const comparison_operator taken{action.branched_operation()};
 
-        // only 'blt' and 'bge' exist: 'x > y' branches as 'y < x' and
-        // 'x <= y' as 'y >= x'
+        // of the signed ordering branches only 'blt' and 'bge' exist: 'x > y'
+        // branches as 'y < x' and 'x <= y' as 'y >= x'
         const bool swapped{swaps_operands(taken)};
 
         const comparison_operator branched{swapped ? mirrored(taken) : taken};
@@ -2536,6 +2531,9 @@ class machine_rv32i : public machine {
                         const std::string_view result, const operand& left,
                         const operand& right,
                         const std::optional<int64_t> immediate) -> void {
+
+        // note: the threshold of 'comparison_immediate' already turned '>'
+        //       and '<=' into a test of '<'
 
         // encodable thresholds avoid materializing a constant register
         if (immediate.has_value()) {
@@ -2739,7 +2737,8 @@ class machine_rv32i : public machine {
         assembler_.label(site.indent, check_passed_.name);
     }
 
-    // a jump grown beyond 1 MiB needs a register without a live value
+    // a jump grown beyond 1 MiB needs a register without a live value, empty
+    // when none is free: the jump then borrows 't0'
     [[nodiscard]] auto far_jump_register() const -> std::string_view {
         return first_free_scratch_register().value_or(std::string_view{});
     }
@@ -2892,6 +2891,9 @@ class machine_rv32i : public machine {
         } else {
             copy_value(site, first_argument, first_value);
         }
+
+        // a far address of 'src' is not built in the first argument
+        const operation_scope first_kept{*this, first_argument};
 
         copy_value(site, second_argument, src);
     }
@@ -3565,7 +3567,8 @@ class machine_rv32i : public machine {
         assembler_.label(walk.site.indent, after_head_.name);
     }
 
-    // steps of 'width' bytes until 'src' reaches 'end'
+    // steps of 'width' bytes until 'src' reaches 'end', at least one: the
+    // callers skip an empty walk
     auto walk_runtime_loop(const runtime_walk& walk, const std::string_view end,
                            const size_t width) -> void {
 

@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 537 (2026-11-21, bug hunt: the conversion built-ins;
+    design: the calls of the backends to their own routines; readability:
+    a newcomer walks the second half of 'machine_rv32i.hpp')
+    => bug hunt: no defect; a model generator with exact widths per target
+       of conversions of constants, 'let's and run-time values, nested with
+       unary operators, as typed arguments of inlined and noinline calls,
+       indexes, 'foo' and 'write' counts, field initializers and sides of
+       comparisons, under 'noub', 'overflow' alone and no checks: 38000
+       programs, 100000 runs; 29 mutants: the 'bool' scratch of a
+       conversion argument passed the suite (an assert on rv32i): test
+       7100; two equivalent mutants proved by asserts let 'fold' compute
+       the unary operators at the width of the use and check every list
+       argument, with an assert and a note of why
+    => design: the rv32i arithmetic helper protected every register it
+       changes for the whole call, round 536 judged that it never fails:
+       without it test 6063 exits 30, not 65; only the first argument needs
+       it while the address of the second is built; 6062 is now accepted
+       and exits 37, 7120 keeps "kept by the operation" covered; 18
+       listings change, a remainder in another register, the same
+       instructions (-3 lines); the round 536 note in 'etc/todo.txt'
+       corrected; seven ideas kept with reasons
+    => readability: 'far_jump_register' may name none, the jump borrows
+       't0'; the note of 'emit_checked_add_subtract' names the right
+       'addi'; only the signed ordering branches lack '>'; 'emit_less_than'
+       relies on the threshold of 'comparison_immediate';
+       'walk_runtime_loop' runs at least once; 103 functions, 5
+       predictions wrong
 [x] easy: (round 535, registers) the note of 'register_pool::holder_of'
     says 'register_in_use_error' never meets a register protected and not
     allocated; 'call_function' (receiver 'r11') and the rv32i helper
