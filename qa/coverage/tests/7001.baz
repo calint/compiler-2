@@ -1,0 +1,14 @@
+# the buffer that 'sector_read' fills is written, not read: filling the result
+# before it is set does not read it
+
+type block { data i8[512] }
+
+func noinline load(sector) res block {
+    sector_read(sector, res.data)
+    res = {}
+}
+
+func main() {
+    var b = load(1)
+    exit(b.data[0] + 7)
+}

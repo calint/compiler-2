@@ -1,0 +1,20 @@
+without descriptors (0, 1)
+  exit code: 38
+  output: b''
+  errors: b'not to the card\n'
+  card start: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+without descriptors (0, 2)
+  exit code: 38
+  output: b'not to the card\n'
+  errors: b''
+  card start: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+without descriptors (1, 2)
+  exit code: 22
+  output: b''
+  errors: b''
+  card start: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+without descriptors (0, 1, 2)
+  exit code: 13
+  output: b''
+  errors: b''
+  card start: b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'

@@ -1098,6 +1098,31 @@ class expr_bool final : public statement {
         }
     }
 
+    // a condition whose value folded is not compiled, its elements are
+    // compiled like skipped code for their checks, as a branch condition,
+    // which needs no register for its value
+    auto check_folded(compile_toc& tc) const -> void {
+        tc.check_skipped([&] -> void {
+            // note: two targets as an 'if', the same one for both would store
+            //       the value
+
+            const std::string true_label{tc.unique_label(tok(), "bool")};
+            const std::string false_label{compile_toc::end_label(true_label)};
+
+            std::ignore = compile_branches(tc,
+                                           {
+                                               .if_false{false_label},
+                                               .if_true{true_label},
+                                           },
+                                           {});
+
+            machine& x{tc.machine()};
+
+            x.label(tc.indent(), true_label);
+            x.label(tc.indent(), false_label);
+        });
+    }
+
     // branches to 'targets' and stores the value in 'dst', empty when only
     // branching, e.g. the condition of an 'if'; returns what the compile
     // found out about the value without running it, empty when the run

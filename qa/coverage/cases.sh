@@ -3911,6 +3911,10 @@ SRC=1206 && DIFFPY
 # checked by its calls, not in a function that is never called
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=1207 && EXP=0 && SDCARD=1M RUN; fi
 
+# the buffer that 'sector_read' fills is written, not read, also a result that
+# is not set yet
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=7001 && EXP=7 && SDCARD=1M RUN; fi
+
 # a negative constant index is rejected also for an unsized array parameter in
 # a function that is never called
 SRC=1208 && COMPERR
@@ -8033,6 +8037,14 @@ SRC=3454 && COMPERR
 # program started without one of them does not reach the image with 'read' or
 # 'write', and a panic does not print into it
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=3470 && SDCARD=1M DIFFPY; fi
+
+# also without two or all three of them, when the lowest free descriptor after
+# the open is another standard one
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=7000 && SDCARD=1M DIFFPY; fi
+
+# x86_64 and rv32i: a card image that shrinks after it is opened makes the
+# transfer of a sector it no longer holds short, which panics
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=7002 && SDCARD=1M DIFFPY; fi
 
 # a character that looks like a space or like nothing and is no space of
 # Unicode is escaped in a message: the braille blank, a variation selector

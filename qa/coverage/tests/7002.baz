@@ -1,0 +1,15 @@
+# a card image that shrinks after it is opened: the image no longer holds a
+# sector below the size seen at the open, its transfer is short and panics
+# 'sd card'; the script truncates the image once the first transfer is done
+
+dat block = i8[512]
+dat line = i8[1]
+dat opened = "opened\n"
+
+func main() {
+    sector_read(1, block)
+    write(1, opened)
+    var got = read(0, line)
+    sector_read(1, block)
+    exit(got + 20)
+}

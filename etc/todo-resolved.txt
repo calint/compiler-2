@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 533 (2026-11-20, bug hunt: the sector built-ins; design:
+    boolean expressions, 'expr_bool.hpp'; readability: a newcomer walks
+    'expr_arith.hpp')
+    => bug hunt: no defect; a model generator of card images with partial
+       last sectors, buffers of every width and of records as locals,
+       globals, dats, fields, elements and unsized parameters, sectors from
+       literals, narrow variables, sums and calls, interleaved reads and
+       writes in deep expressions, faults past the end, under seven option
+       sets on x86_64, rv32i, fpga and qemu: 6300 programs, 70000 runs;
+       probes of missing, read-only, short and device images; 23 mutants:
+       a short transfer not detected, the card descriptor allowed at 0 to 2
+       and the buffer of 'sector_read' taken as read passed the suite:
+       tests 7000 (closed standard descriptors), 7001, 7002 (card truncated
+       during the run); one acceptance to 'etc/todo.txt'
+    => design: the check of a folded condition is
+       'expr_bool::check_folded', next to 'compile_value' and its label
+       scheme, instead of a static of 'expr_any' (-3 lines, listings
+       equal); a stored computed 'bool' through a scratch register and the
+       two sources of the default type of '0' and '1' to 'etc/todo.txt';
+       nine ideas kept with reasons
+    => readability: the stale comment of 'expr_arith::keeps_low_bits'
+       removed, its example is on the trait; the local 'current_divisor'
+       of 'merged_divisor' renamed 'previous_divisor'; 62 functions, 2
+       predictions wrong
 [x] easy: round 532 (2026-11-20, bug hunt: records as values; design:
     arithmetic expressions, 'expr_arith.hpp'; readability: a newcomer walks
     'stmt_call.hpp')

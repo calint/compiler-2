@@ -10,6 +10,22 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 533, sectors) a result filled by 'sector_read' does not
+    count as set: 'func noinline load(s) res block { sector_read(s,
+    res.data) res.size = 512 }' is rejected "may return without setting
+    its result 'res'"; 'sector_read' fills the whole range or panics,
+    unlike 'read', so 'ub_assigned' could count a constant range as set;
+    a special case of the built-in in the walk
+[ ] easy: (round 533, booleans) a stored list that ends in a computed
+    'bool' ('var b = c and f(y)') computes it in a scratch register and
+    copies it to a destination in memory; computing it there would pass the
+    resolved 'destination' through six functions of 'expr_bool' down to
+    'truth_test_operand' for one 'mov' and one scratch register per such
+    list; not measured, a listing change
+[ ] easy: (round 533, consistency) the default type of the '0' and '1'
+    immediates is taken from 'x.default_type()' in some places and from
+    'tc.builtins().default_type()' in others; one source across all
+    sources
 [ ] easy: (round 530, globals) 'dat g = g' says "'g' not found" where
     'var g = g' says "'g' is read in its own initializer"; both are
     rejected, one message would name the cause for both

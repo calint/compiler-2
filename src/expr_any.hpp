@@ -989,39 +989,11 @@ class expr_any final : public statement {
         }
     }
 
-    // compiled as a branch condition, which needs no register for its value
-    static auto check_folded_condition(compile_toc& tc,
-                                       const expr_bool& condition) -> void {
-
-        tc.check_skipped([&] -> void {
-            // note: two targets as an 'if', the same one for both would store
-            //       the value
-
-            const std::string true_label{
-                tc.unique_label(condition.tok(), "bool"),
-            };
-
-            const std::string false_label{compile_toc::end_label(true_label)};
-
-            std::ignore = condition.compile_branches(tc,
-                                                     {
-                                                         .if_false{false_label},
-                                                         .if_true{true_label},
-                                                     },
-                                                     {});
-
-            machine& x{tc.machine()};
-
-            x.label(tc.indent(), true_label);
-            x.label(tc.indent(), false_label);
-        });
-    }
-
     static auto check_folded_conditions_of(compile_toc& tc,
                                            const expr_variant& value) -> void {
 
         if (const expr_bool* const condition{std::get_if<expr_bool>(&value)}) {
-            check_folded_condition(tc, *condition);
+            condition->check_folded(tc);
             return;
         }
 

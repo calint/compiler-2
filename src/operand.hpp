@@ -299,7 +299,7 @@ struct binary_operator_traits {
     std::optional<int64_t> absorbing;
     // not when they depend on higher bits of an operand, which a narrower
     // width would lose, nor for '<<', whose count is checked against the
-    // width it is computed at
+    // width it is computed at, e.g. 'a << 9' is defined at 'i16', not 'i8'
     bool keeps_low_bits{};
 };
 

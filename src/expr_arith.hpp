@@ -272,24 +272,24 @@ class arith_steps final {
                                              const type& width_type)
         -> std::optional<int64_t> {
 
-        const std::optional<int64_t> current_divisor{
+        const std::optional<int64_t> previous_divisor{
             mergeable_divisor(previous),
         };
 
         const std::optional<int64_t> next_divisor{mergeable_divisor(next)};
 
-        if (not current_divisor or not next_divisor) {
+        if (not previous_divisor or not next_divisor) {
             return std::nullopt;
         }
 
-        if (constant_arith::overflows_width(*current_divisor,
+        if (constant_arith::overflows_width(*previous_divisor,
                                             arithmetic_operator::multiply,
                                             *next_divisor, width_type)) {
 
             return std::nullopt;
         }
 
-        return *current_divisor * *next_divisor;
+        return *previous_divisor * *next_divisor;
     }
 };
 
@@ -658,12 +658,6 @@ class expr_arith final : public statement {
         };
     }
 
-    // '/', '%' and '>>' read the high bits of their operands; a '<<' count
-    // is checked against the width it is computed at, and a count not below
-    // a narrower width is defined only at the wider one
-    // note: false for a shift, so a conversion computes a shift no narrower
-    //       than the width its count was checked at ('assert_not_narrowed');
-    //       'compile_step' does not check the count again
     [[nodiscard]] auto keeps_low_bits() const -> bool override {
         for (const spelled_operator<arithmetic_operator>& o : ops_) {
             if (not traits_of(o.op).keeps_low_bits) {

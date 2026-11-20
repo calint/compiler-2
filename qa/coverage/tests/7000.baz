@@ -1,0 +1,16 @@
+# a program started without two or three standard descriptors: the card image
+# takes none of their numbers, also when the lowest free one after the open is
+# another standard one, so 'write' to a closed one returns -9 and does not
+# reach the image; the script runs the program without each pair and without
+# all three
+
+dat block = i8[512]
+dat text = "not to the card\n"
+
+func main() {
+    sector_read(0, block)
+    var out = write(1, text)
+    var err = write(2, text)
+    var got = read(0, block, 4)
+    exit(out + err + got + 40)
+}
