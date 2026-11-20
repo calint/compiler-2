@@ -65,7 +65,7 @@
 //                                temporary is
 //                                'call_site::is_argument_temporary'
 //   'param_binding'              inlined: what the parameter stands for
-//                                ('inline_call::make_bindings')
+//                                ('inline_call::bind_argument')
 //   'ident_info'                 noinline: the variable passed, or the
 //                                temporary that holds the value, at its
 //                                address ('noinline_call::compile_arguments',
@@ -232,7 +232,7 @@ class generic_call {
                                                    type_args);
     }
 
-    // a type was deduced from the argument at 'index'
+    // a type was deduced from the argument at 'index', which 'param_type' read
     [[nodiscard]] auto is_deducing_argument(const size_t index) const -> bool {
         return std::ranges::contains(deducing_args_, index);
     }
@@ -801,10 +801,10 @@ struct call_site {
 //      ('compile_widened'), a block holds the temporaries of the call when
 //      it has any ('call_site::compile_with_temporaries')
 //   2. 'compile_with_bindings': the bindings of the result and the arguments
-//      ('make_bindings'), an argument of an instance type without a place,
-//      e.g. an instance literal or a call result, is made in a temporary
-//      ('call_site::is_argument_temporary'), an indexed argument may get its
-//      address in a register, the shorter of two versions
+//      ('make_bindings', 'bind_argument'), an argument of an instance type
+//      without a place, e.g. an instance literal or a call result, is made in
+//      a temporary ('call_site::is_argument_temporary'), an indexed argument
+//      may get its address in a register, the shorter of two versions
 //      ('compile_body_with_address_registers')
 //   3. 'compile_body': the body in place with the bindings
 //      ('stmt_def_func::compile_inlined')
@@ -907,9 +907,7 @@ class inline_call final {
                                             ident.path_text());
         }
 
-        // note: a temporary is made here, in the order of the arguments, and
-        //       named per call, so each level of an inlined recursion binds
-        //       its own
+        // note: a temporary is made here, in the order of the arguments
 
         if (call_.is_argument_temporary(index)) {
             const destination temporary{
@@ -920,8 +918,8 @@ class inline_call final {
                 param.name(), temporary.bound_info(), temporary.text());
         }
 
-        // e.g. 'x' bound to a register of the caller; a constant, which the
-        // callee's own constants would shadow, is folded
+        // e.g. 'x' bound to a register of the caller; a named constant is
+        // folded by 'bind_expression', the callee's constants would shadow it
         if (const stmt_identifier* const ident{arg.bare_path()}) {
             const ident_info info{make_ident_info(tc, *ident)};
 

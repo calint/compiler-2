@@ -907,6 +907,13 @@ CLI_FPGA_MEMORY() {
     # the largest memory below the devices is accepted
     "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 0418.baz >gen.s 2>err
     [[ ! -s err ]]
+    # the stack and frame checks compare addresses unsigned, a stack limit at
+    # 2 GiB or more is not negative; the emulator has too little memory to
+    # run it
+    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 --stack=0x80000000 --checks=stack,frame 0974.baz >gen.s 2>err
+    [[ ! -s err ]]
+    grep -Eq "^ +bltu [a-z0-9]+, [a-z0-9]+, baz_stack_overflow$" gen.s
+    grep -Eq "^ +bltu [a-z0-9]+, [a-z0-9]+, baz_frame_overflow$" gen.s
     echo "ok (image $image_size B, vars up to $vars_fit B)"
 }
 

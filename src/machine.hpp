@@ -398,7 +398,8 @@ class machine {
         // the most scratch registers in use
         size_t max_scratch_registers{};
         // the routines, helpers and failure handlers the code uses, by label;
-        // emitted after the code, see 'mark_used'
+        // emitted after the code, see 'mark_used'; a handler that reports the
+        // line is in 'failure_locations_' instead
         std::set<std::string, std::less<>> used_routines;
         // inside 'dry_run': nothing is kept, so no comment is built
         bool is_dry_run{};
@@ -1879,15 +1880,14 @@ class machine {
         }
     }
 
-    // the label a failed check at 'src_loc_tk' jumps to, 'handler' marked
-    // used: the handler, or with the line the stub of the line, which loads
-    // the line for the entry of the handler for the file
+    // the label a failed check at 'src_loc_tk' jumps to: the handler, marked
+    // used, or with the line the stub of the line, recorded, which loads the
+    // line for the entry of the handler for the file
     [[nodiscard]] auto failure_target(const failure_handler& handler,
                                       const token& src_loc_tk) -> std::string {
 
-        mark_used(handler.label);
-
         if (not reports_line(handler)) {
+            mark_used(handler.label);
             return std::string{handler.label};
         }
 
@@ -2172,18 +2172,7 @@ class machine {
         const assembler& output{output_.get()};
 
         for (const std::string& routine : state_.used_routines) {
-            // note: the code marks the handlers, they are emitted first and a
-            //       handler that reports lines is under the labels of its lines
-
-            const bool is_handler{
-                std::ranges::any_of(
-                    failure_handlers_,
-                    [&](const failure_handler& handler) -> bool {
-                        return handler.label == routine;
-                    }),
-            };
-
-            assert(is_handler or output.defines_label(routine));
+            assert(output.defines_label(routine));
         }
     }
 
@@ -2387,11 +2376,17 @@ class machine {
         emit_message_data(message_label, message);
     }
 
-    // the handlers that the code branches to, see 'mark_used'; before
+    // the handlers that the code branches to, see 'failure_target'; before
     // 'emit_used_routines', a handler marks the routines it calls
     auto emit_used_failure_handlers() -> void {
         for (const failure_handler& handler : failure_handlers_) {
-            if (not is_used(handler.label)) {
+            const bool has_failures{
+                is_used(handler.label) or
+                    std::ranges::contains(failure_locations_, handler.label,
+                                          &failure_location::handler_label),
+            };
+
+            if (not has_failures) {
                 continue;
             }
 

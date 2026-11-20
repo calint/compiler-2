@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 522 (2026-11-20, bug hunt: the bare-metal images and the
+    limits '--memory', '--vars' and '--stack' after the stack check moved
+    into 'call_function'; design: how a run-time check fails, its handler,
+    labels, message and exit code; readability: a newcomer walks the first
+    third of 'stmt_call.hpp')
+    => bug hunt: no defect; an instrumented emulator for the fpga and qemu
+       layouts reporting stores outside the variables and the stack, the
+       stack pointer below the limit and loads of unwritten memory, checked
+       against qemu; generators of noinline recursion with 0 to 24 live
+       values, receivers, records and helpers searched to the smallest
+       '--stack', images that fit exactly, receivers in every storage form
+       and the smallest '--vars' on four targets: 1150 stack programs, 360
+       image programs, 500 receiver programs, 540 frame programs on four
+       targets; the bounds are exact (the deepest failing division with
+       saved helper registers lands on the limit); 14 mutants, two caught
+       only by the generator (the stack and frame compares made signed,
+       which needs a memory above 2 GiB): 'test-cli.sh' pins the unsigned
+       compares; an image may fit with '--stack=4096' and not with 4080,
+       as the 'li' of a limit off a 4 KiB boundary takes two instructions,
+       the messages stay right
+    => design: a failure that reports its line is not marked used, its
+       handler's label is never defined; a handler is emitted when used or
+       with recorded failures, and 'assert_used_routines_emitted' loses its
+       exception (-5 lines, listings equal); nine ideas kept with reasons
+       (frame and stack panics without a line are a behavior, the sd card
+       handler is marked after the handlers are emitted)
+    => readability: five comments (the 'param_binding' row and the class
+       header name 'bind_argument', 'is_deducing_argument' needs
+       'param_type' first, a named constant is folded by 'bind_expression',
+       the temporary note keeps the order of the arguments); 37 functions,
+       5 predictions wrong
 [x] easy: round 521 (2026-11-20, bug hunt: generics after the changes of
     rounds 512 to 519; design: the inlined call, 'inline_call' and
     'call_site'; readability: a newcomer walks the second half of
