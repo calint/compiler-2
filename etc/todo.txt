@@ -10,6 +10,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 518, the built-ins, needs an extreme input)
+    'stmt_builtin_array_length::fold' applies its unary ops with
+    'evaluate_constant', not wrapped to the use and with no overflow check
+    of a negation; a length is 0 to the maximum of 'int', so only a '-~'
+    chain on a length within a few of the maximum overflows: with
+    'type t { a i8[0x7fffffff] }', 'var v = t[1]', '--target=rv32i
+    --vars=0x80000000', 'let k = -~array_length(v[0].a)' is accepted under
+    'noub' (exit 2) while 'array_length(v[0].a) + 1' is rejected as
+    overflowing; the value matches the wrapped run-time one, only the
+    verdict differs; a fix folds like 'stmt_identifier::fold'
+    ('evaluate_at' at the use, then 'wrap_to_width'), patch kept in round
+    518's scratch as 'array-length-fold-at-use.patch'
 [p] easy: (round 513, the checks matrix) need approval: an 'array_copy'
     with constant starts and count whose destination starts inside its
     source can only panic with '--checks=overlap' (e.g. test 0971), like a

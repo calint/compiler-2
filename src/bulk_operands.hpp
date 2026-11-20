@@ -86,7 +86,7 @@ class bulk_operands final {
         argument_emitters(const bulk_operands& operands, compile_toc& tc,
                           const token& src_loc_tk)
             : operands_{operands}, tc_{tc}, src_loc_tk_{src_loc_tk},
-              constant_count_{operands.count().constant_value(tc)} {}
+              constant_count_{operands.constant_count(tc)} {}
 
         argument_emitters(const argument_emitters&) = delete;
         argument_emitters(argument_emitters&&) = delete;
@@ -388,11 +388,11 @@ class bulk_operands final {
     }
 
     [[nodiscard]] auto first() const -> const stmt_identifier& {
-        return *args_.at(0).bare_path();
+        return args_.array_at(0);
     }
 
     [[nodiscard]] auto second() const -> const stmt_identifier& {
-        return *args_.at(1).bare_path();
+        return args_.array_at(1);
     }
 
     auto source_to(std::ostream& os) const -> void { args_.source_to(os); }
@@ -407,14 +407,14 @@ class bulk_operands final {
   private:
     // a run-time count is left to the bounds check at run time
     auto assert_constant_count_in_bounds(const toc& tc) const -> void {
-        const std::optional<int64_t> constant_count{count().constant_value(tc)};
+        const std::optional<int64_t> elements{constant_count(tc)};
 
-        if (not constant_count) {
+        if (not elements) {
             return;
         }
 
-        first().assert_count_in_bounds(tc, count().tok(), *constant_count);
-        second().assert_count_in_bounds(tc, count().tok(), *constant_count);
+        first().assert_count_in_bounds(tc, count().tok(), *elements);
+        second().assert_count_in_bounds(tc, count().tok(), *elements);
     }
 
     [[nodiscard]] auto count() const -> const expr_any& { return args_.at(2); }

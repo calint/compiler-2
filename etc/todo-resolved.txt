@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 518 (2026-11-20, bug hunt: the built-in functions and
+    how they fold; design: the built-in statements as a family;
+    readability: a newcomer walks the middle of 'toc.hpp')
+    => bug hunt: no defect in ordinary programs; model generators of
+       'array_copy' and 'arrays_equal' with every start and count form,
+       'array_length' of locals, fields and unsized parameters under every
+       unary op and operator, copies down inside one array and between
+       field arrays, 110 probes: 51000 runs; 13 mutants: 'exit(256)' had
+       no test (6680); a '-~' chain on 'array_length' of an array of
+       2^31 - 1 elements escapes the overflow verdict: todo, extreme input;
+       the overlap check of 'array_copy' compares the constant starts also
+       across a run-time index or an unsized parameter, two overlapping
+       paths of one type name one array (a call rejects the others): the
+       check goes from 0101, 1751 and 6441 (0101 from 58 to 24
+       instructions on x86_64, 106 to 49 on rv32i)
+    => design: 'exit' checks its constant code with 'constant_value' like
+       the other built-ins, so rv32i says "constant '-2147483649' does not
+       fit 'int'" instead of quoting the wrapped value: test 6700;
+       'builtin_arguments::array_at' asserts the path at an array position
+       for 'array_length', 'bulk_operands' and the io built-ins;
+       'bulk_operands' reads a constant count through 'constant_count';
+       eight ideas kept with reasons (the conversions parse their own
+       argument, only the io calls need 'assert_call_in_func')
+    => readability: the comment of 'assert_name_free' says a scope declares
+       a name once; 57 functions, 6 predictions wrong
 [x] easy: round 517 (2026-11-20, bug hunt: integer widths and
     conversions; design: arithmetic lists, 'expr_arith.hpp'; readability: a
     newcomer walks the first third of 'toc.hpp')

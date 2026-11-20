@@ -1,0 +1,6 @@
+# rv32i: a constant exit code that does not fit 'int' is rejected as such, not
+# by its wrapped value
+
+func main() {
+    exit(-2147483649)
+}

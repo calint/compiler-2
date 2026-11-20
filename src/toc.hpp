@@ -2136,9 +2136,9 @@ class definition_checks final {
                         in_quotes(param_tk.text()), what, where(name_tk))};
     }
 
-    // a scope declares a variable or a constant of a name, not both, and the
-    // body of a function repeats no parameter or the result; 'what' names
-    // the kind of the declaration, e.g. "constant"
+    // a scope declares a name once, as a variable or a constant, and the body
+    // of a function repeats no parameter or the result; 'what' names the kind
+    // of the declaration, e.g. "constant"
     auto assert_name_free(const token& src_loc_tk, const std::string_view what,
                           const std::string_view name) const -> void {
 

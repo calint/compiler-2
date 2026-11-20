@@ -77,11 +77,12 @@ class stmt_builtin_exit final : public statement {
     auto assert_constant_code_fits(const toc& tc) const -> void {
         const expr_any& code_arg{args_.at(0)};
 
-        const std::optional<folded_value> code{
-            code_arg.fold(tc, tc.use_at(tc.builtins().default_type())),
-        };
+        // note: a constant that does not fit the default type is rejected
+        //       as narrowed, not reported by its wrapped value
 
-        if (not code or (code->value >= 0 and code->value <= max_code_)) {
+        const std::optional<int64_t> code{code_arg.constant_value(tc)};
+
+        if (not code or (*code >= 0 and *code <= max_code_)) {
             return;
         }
 
@@ -89,6 +90,6 @@ class stmt_builtin_exit final : public statement {
             code_arg.tok(),
             std::format("exit code {} is outside 0 to {}, the operating "
                         "system keeps only the low 8 bits",
-                        code->value, max_code_)};
+                        *code, max_code_)};
     }
 };

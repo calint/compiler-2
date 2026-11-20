@@ -1600,6 +1600,19 @@ class builtin_arguments final {
         }
     }
 
+    // the argument at one of the 'array_indexes' the constructor got, an
+    // array or an element of one
+    [[nodiscard]] auto array_at(const size_t index) const
+        -> const stmt_identifier& {
+
+        const stmt_identifier* const path{args_.at(index).bare_path()};
+
+        // note: 'read_argument' made a path argument at each array index
+        assert(path != nullptr);
+
+        return *path;
+    }
+
     [[nodiscard]] auto at(const size_t index) const -> const expr_any& {
         return args_.at(index);
     }

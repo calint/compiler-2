@@ -114,13 +114,12 @@ class stmt_builtin_array_copy final : public statement {
             return false;
         }
 
-        // note: two paths of one element type that may overlap and have no
-        //       run-time index name the same array, an array cannot hold its
-        //       own element type deeper
-
-        if (src->path.has_run_time_index() or dst->path.has_run_time_index()) {
-            return true;
-        }
+        // note: two paths of one element type that overlap name the same
+        //       array, an array cannot hold its own element type deeper; with
+        //       a run-time index before the start, e.g. 's[j].v[1]', or the
+        //       open range of an unsized parameter they name it or none, so
+        //       the starts compare in one array; a call rejects arguments
+        //       that may share storage, which would start at other elements
 
         const std::optional<int64_t> src_start{
             operands_.first().constant_start_index(tc),

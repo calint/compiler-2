@@ -8351,3 +8351,10 @@ SRC=6662 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
 
 # --checks=overflow: the argument of a conversion of typed constants wraps
 SRC=6663 && EXP=0 && OPTS="--checks=overflow" RUN
+
+# rv32i: a constant exit code that does not fit 'int' is rejected as such, not
+# by its wrapped value
+if [[ $MACHINE != x86_64 ]]; then SRC=6700 && COMPERR; fi
+
+# a constant exit code past 255 is rejected
+SRC=6680 && COMPERR

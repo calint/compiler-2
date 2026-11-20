@@ -313,7 +313,7 @@ class stmt_builtin_io final : public statement {
     // the array the call transfers, read as an array argument by
     // 'builtin_arguments'
     [[nodiscard]] auto buffer_path() const -> const stmt_identifier& {
-        return *args_.at(buffer_index_).bare_path();
+        return args_.array_at(buffer_index_);
     }
 
     // the run-time check of 'count' elements from 'start', each an immediate

@@ -123,7 +123,7 @@ class stmt_builtin_array_length final : public statement {
 
   private:
     [[nodiscard]] auto array() const -> const stmt_identifier& {
-        return *args_.at(0).bare_path();
+        return args_.array_at(0);
     }
 
     [[nodiscard]] auto array_info(const toc& tc) const -> ident_info {
