@@ -1,0 +1,7 @@
+
+include/unclosed.baz:3:12: expected '}' to close block
+    res = 3
+           ^
+7141.baz:3:9: included from
+include "include/unclosed.baz"
+        ^~~~~~~~~~~~~~~~~~~~~~

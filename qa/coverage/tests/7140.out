@@ -1,0 +1,7 @@
+
+include/lone-cr.baz:3:12: a carriage return is not followed by a line feed
+    res = 3\x0d}
+           ^~~~
+7140.baz:3:9: included from
+include "include/lone-cr.baz"
+        ^~~~~~~~~~~~~~~~~~~~~

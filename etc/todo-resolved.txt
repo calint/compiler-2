@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 538 (2026-11-21, bug hunt: includes and sources in
+    several files; design: generics; readability: a newcomer walks
+    'stmt_builtin_convert.hpp' and 'stmt_builtin_exit.hpp')
+    => bug hunt: no defect; a generator that cuts every single-file test
+       into 2 to 9 files in a random include tree keeping the line numbers,
+       with cycles, repeated includes, paths through links and '..', names
+       with spaces and unicode, CRLF and mixed endings, run from three
+       directories, comparing results, listings and error locations with
+       the single file: 13300 programs, 28000 compiles, a share under
+       asan; probes of odd files, links, devices and names; 30 mutants:
+       the well-formed check and the end-of-file location of an included
+       file passed the suite: tests 7140 (a lone carriage return in an
+       include), 7141 (a block left open at the end of an include)
+    => design: 'func_instantiator::instantiate_func' returns the instance
+       it found or made, the callers no longer look its name up again; the
+       type parameters of a generic function are 'generic_param's as those
+       of a type, so 'resolve_generic_args' resolves the arguments of both
+       (-6 lines, listings equal); 'generic_signature::type_param_index';
+       five ideas kept with reasons
+    => readability: the two examples of 'fold' were wrong (the assert's
+       narrower use is an element of an outer conversion's argument, the
+       last wrap is of the unary operators); 22 functions, 2 predictions
+       wrong
 [x] easy: round 537 (2026-11-21, bug hunt: the conversion built-ins;
     design: the calls of the backends to their own routines; readability:
     a newcomer walks the second half of 'machine_rv32i.hpp')

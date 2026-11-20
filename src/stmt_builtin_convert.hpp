@@ -130,8 +130,9 @@ class stmt_builtin_convert final : public statement {
 
         const type& use_width{use.width_ref()};
 
-        // note: a use narrower than the type is the argument of an outer
-        //       conversion, which wraps, e.g. the 'i16' of 'i8(-i16(k))'
+        // note: a use narrower than the type is in the argument of an outer
+        //       conversion, which wraps, e.g. the 'i16' of
+        //       'i8(i8(1) + i16(300))', which is then rejected as narrowed
 
         assert(not use.checks_overflow or
                not get_type().is_wider_than(use_width));
@@ -141,8 +142,8 @@ class stmt_builtin_convert final : public statement {
                                         use.checks_overflow),
         };
 
-        // a narrower width keeps the low bits, e.g. 44 of the 'i16' 300 of
-        // 'i8(i16(k))'
+        // the ops wrap at the width of the use, e.g. -128 for the
+        // '-i8(-128)' of 'i8(-i8(-128))'
         return folded_value{
             .value{constant_arith::wrap_to_width(value, use_width)},
             .own_type{&get_type()},

@@ -176,7 +176,7 @@ class generic_call {
   public:
     // the instance that a call with '<...>' names
     struct written {
-        std::string func_name;
+        const stmt_def_func* func{};
         // e.g. '<', 'name' and '>' in 'tz.to<name>()'
         std::vector<token> generic_tks;
     };
@@ -191,9 +191,11 @@ class generic_call {
         : name_tk_{name_tk}, generic_name_{generic_name},
           generic_{&tc.generics().get_func(generic_name)} {
 
-        for (const token& param_tk : generic_->signature.type_param_tks) {
+        for (const generic_param& type_param :
+             generic_->signature.type_params) {
+
             const bool is_result_type{
-                generic_->signature.is_result_type(param_tk.text()),
+                generic_->signature.is_result_type(type_param.name_tk.text()),
             };
 
             deduced_.push_back(is_result_type ? expected_type : nullptr);
@@ -212,21 +214,15 @@ class generic_call {
 
         const generic_signature_param& p{param(index)};
 
-        const std::span<const token> type_param_tks{
-            generic_->signature.type_param_tks,
+        const std::optional<size_t> type_param{
+            generic_->signature.type_param_index(p.type_name),
         };
 
-        const auto param_tk{
-            std::ranges::find(type_param_tks, p.type_name, &token::text),
-        };
-
-        if (param_tk == type_param_tks.end()) {
+        if (not type_param) {
             return fixed_param_type(tc, p);
         }
 
-        const type*& arg_type{
-            deduced_.at(static_cast<size_t>(param_tk - type_param_tks.begin())),
-        };
+        const type*& arg_type{deduced_.at(*type_param)};
 
         // e.g. the 'b' of 'same(a, b)', 'a' told 'T' or nothing
         if (generic_->signature.deducing_param(p.type_name) != index) {
@@ -249,26 +245,26 @@ class generic_call {
         return generic_name_;
     }
 
-    // after the arguments, the name of the instance of the deduced types, an
-    // existing one is reused; a type parameter still not deduced, e.g. the
-    // 'T' of 'var m = make(2)', is "cannot deduce"
-    [[nodiscard]] auto instantiate(parse_toc& tc) const -> std::string {
-        const std::span<const token> param_tks{
-            generic_->signature.type_param_tks,
+    // after the arguments, the instance of the deduced types, an existing one
+    // is reused; a type parameter still not deduced, e.g. the 'T' of
+    // 'var m = make(2)', is "cannot deduce"
+    [[nodiscard]] auto instantiate(parse_toc& tc) const
+        -> const stmt_def_func& {
+
+        const std::span<const generic_param> params{
+            generic_->signature.type_params,
         };
 
         std::vector<generic_arg> type_args;
-        type_args.reserve(param_tks.size());
+        type_args.reserve(params.size());
 
-        for (const auto [param_tk, arg_type] :
-             std::views::zip(param_tks, deduced_)) {
-
+        for (const auto [param, arg_type] : std::views::zip(params, deduced_)) {
             if (arg_type == nullptr) {
-                throw_cannot_deduce(param_tk);
+                throw_cannot_deduce(param.name_tk);
             }
 
             type_args.push_back({
-                .param_tk{param_tk},
+                .param_tk{param.name_tk},
                 .value{arg_type},
             });
         }
@@ -357,9 +353,9 @@ class generic_call {
         };
 
         return {
-            .func_name{
-                func_instantiator::instantiate_func(tc, name_tk, generic_name,
-                                                    type_args),
+            .func{
+                &func_instantiator::instantiate_func(tc, name_tk, generic_name,
+                                                     type_args),
             },
             .generic_tks{args.list_tks},
         };
@@ -556,34 +552,19 @@ class generic_call {
                            const std::span<const token> arg_tks)
         -> std::vector<generic_arg> {
 
-        const std::span<const token> param_tks{
-            tc.generics().get_func(generic_name).signature.type_param_tks,
+        const std::span<const generic_param> params{
+            tc.generics().get_func(generic_name).signature.type_params,
         };
 
-        if (arg_tks.size() != param_tks.size()) {
+        if (arg_tks.size() != params.size()) {
             throw compile_error{
                 name_tk, std::format("generic function {} takes {}, got {}",
                                      in_quotes(generic_name),
-                                     counted(param_tks.size(), "type argument"),
+                                     counted(params.size(), "type argument"),
                                      arg_tks.size())};
         }
 
-        std::vector<generic_arg> type_args;
-        type_args.reserve(arg_tks.size());
-
-        for (const auto [param_tk, arg_tk] :
-             std::views::zip(param_tks, arg_tks)) {
-
-            type_args.push_back({
-                .param_tk{param_tk},
-                .value{
-                    &resolve_type_arg(tc, generic_name, param_tk.text(),
-                                      arg_tk),
-                },
-            });
-        }
-
-        return type_args;
+        return resolve_generic_args(tc, generic_name, params, arg_tks);
     }
 };
 
@@ -2489,7 +2470,7 @@ class stmt_call final : public statement {
         close_paren_tk_ = tz.expect_char_token(')', missing_close_paren_text);
 
         if (deduction) {
-            func_ = &tc.get_func_or_throw(tok(), deduction->instantiate(tc));
+            func_ = &deduction->instantiate(tc);
 
             // note: an argument parsed without a type is not in 'args_', its
             //       parameter has a type parameter not deduced or a type the
@@ -2642,7 +2623,7 @@ class stmt_call final : public statement {
 
         generic_tks_ = std::move(instance.generic_tks);
 
-        func_ = &tc.get_func_or_throw(tok(), instance.func_name);
+        func_ = instance.func;
 
         return std::nullopt;
     }

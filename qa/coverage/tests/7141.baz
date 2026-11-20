@@ -1,0 +1,7 @@
+# an error at the end of an included file that ends with a line feed is shown
+# after its last token
+include "include/unclosed.baz"
+
+func main() {
+    exit(three())
+}

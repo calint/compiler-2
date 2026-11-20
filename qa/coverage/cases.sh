@@ -8425,3 +8425,10 @@ SRC=7060 && EXP=0 && RUN
 # a 'bool' call result converted inside a narrower conversion is copied out of
 # its register before the inner unary ops apply, e.g. 'i8(-i16(t()))' is -1
 SRC=7100 && EXP=0 && RUN
+
+# a carriage return without a line feed in an included file is rejected
+SRC=7140 && COMPERR
+
+# an error at the end of an included file that ends with a line feed is shown
+# after its last token
+SRC=7141 && COMPERR

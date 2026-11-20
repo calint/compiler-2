@@ -444,8 +444,9 @@ struct generic_signature_param {
 // at its definition, e.g. '<U type>(x U) res U' of 'func box.f<U type>(x U)
 // res U'; the types are resolved by each instance
 struct generic_signature {
-    // its own, e.g. 'U', not the parameters of the generic type 'box'
-    std::vector<token> type_param_tks;
+    // its own, all types, e.g. 'U', not the parameters of the generic type
+    // 'box'
+    std::vector<generic_param> type_params;
     std::vector<generic_signature_param> params;
     // none without a result
     std::optional<func_result> result;
@@ -480,6 +481,20 @@ struct generic_signature {
 
         return result and result->type_tk and
                result->type_tk->is_text(type_param);
+    }
+
+    // the index of the type parameter named 'name', none when no type
+    // parameter has that name
+    [[nodiscard]] auto type_param_index(const std::string_view name) const
+        -> std::optional<size_t> {
+
+        for (size_t i{}; i < type_params.size(); ++i) {
+            if (type_params.at(i).name_tk.is_text(name)) {
+                return i;
+            }
+        }
+
+        return std::nullopt;
     }
 };
 
@@ -596,7 +611,7 @@ class generic_registry final {
     auto add_method(const generic_func_info& info) -> void {
         assert(not info.receiver);
 
-        if (not info.signature.type_param_tks.empty()) {
+        if (not info.signature.type_params.empty()) {
             instantiable_funcs_.push_back(info.report_name);
         }
 

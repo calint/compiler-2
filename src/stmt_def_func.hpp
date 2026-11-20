@@ -83,7 +83,7 @@ struct func_head {
     // to, e.g. 'str.print' for 'text.print' when 'text' names 'str'
     std::string name;
     // e.g. 'T' of '<T type>'
-    std::vector<token> type_param_tks;
+    std::vector<generic_param> type_params;
     // none until it is read, e.g. after 'list.add' of 'func list.add('
     std::optional<token> open_paren_tk;
 
@@ -100,8 +100,8 @@ struct func_head {
                                 "'main' cannot be declared 'noinline'"};
         }
 
-        if (not type_param_tks.empty()) {
-            throw compile_error{type_param_tks.front(),
+        if (not type_params.empty()) {
+            throw compile_error{type_params.front().name_tk,
                                 "'main' cannot have type parameters"};
         }
     }
@@ -153,7 +153,7 @@ struct func_head {
 
     // kept as text, its instances are the functions
     [[nodiscard]] auto is_generic() const -> bool {
-        return is_generic_type_method() or not type_param_tks.empty();
+        return is_generic_type_method() or not type_params.empty();
     }
 
     // e.g. 'func text.print()' of the generic type 'text'
@@ -205,7 +205,7 @@ struct func_head {
 
         // e.g. 'func tokenizer.to<T type>()' or 'func text.to<T type>()'
         if (not head.open_paren_tk and tz.peek_char_after_whitespace() == '<') {
-            head.type_param_tks = read_type_params(tc, tz);
+            head.type_params = read_type_params(tc, tz);
             head.open_paren_tk = tz.accept_char_token('(');
         }
 
@@ -231,7 +231,7 @@ struct func_head {
 
         // a constructor is called as 'point.at(...)', there is no place for
         // type arguments
-        if (not type_param_tks.empty()) {
+        if (not type_params.empty()) {
             throw compile_error{self_tk,
                                 std::format("constructor {} cannot have type "
                                             "parameters",
@@ -346,11 +346,11 @@ struct func_head {
     // e.g. '<T type, U type>', a generic function has type parameters only
     [[nodiscard]] static auto read_type_params(const parse_toc& tc,
                                                tokenizer& tz)
-        -> std::vector<token> {
+        -> std::vector<generic_param> {
 
-        std::vector<token> param_tks;
+        std::vector<generic_param> params{generic_param::parse(tz)};
 
-        for (const generic_param& param : generic_param::parse(tz)) {
+        for (const generic_param& param : params) {
             // the name first, the kind is suggested with it
             parse_toc::assert_valid_name(param.name_tk);
 
@@ -367,11 +367,9 @@ struct func_head {
                                 "parameters, write '{} type'",
                                 param.name_tk.text())};
             }
-
-            param_tks.emplace_back(param.name_tk);
         }
 
-        return param_tks;
+        return params;
     }
 };
 
@@ -532,7 +530,7 @@ class stmt_def_func final : public statement {
         //       head names the instance's receiver type, e.g. 'str.print'
 
         assert(not head.is_generic_type_method());
-        assert(instance_ or head.type_param_tks.empty());
+        assert(instance_ or head.type_params.empty());
 
         parse_signature(tc, tz);
 
@@ -1434,12 +1432,12 @@ class func_instantiator final {
 
     // the instance of the generic function for the type arguments, e.g.
     // 'tokenizer.to<name>' of 'func tokenizer.to<T type>()', made at the first
-    // call that needs it, returns its name
+    // call that needs it
     [[nodiscard]] static auto
     instantiate_func(parse_toc& tc, const token& call_tk,
                      const std::string_view generic_name,
                      const std::span<const generic_arg> type_args)
-        -> std::string {
+        -> const stmt_def_func& {
 
         // note: the reference stays valid while the instance is parsed, a body
         //       defines no generic function
@@ -1449,27 +1447,25 @@ class func_instantiator final {
         // note: the call checked the count of written type arguments, a
         //       deduction gives one per parameter
 
-        assert(type_args.size() == generic.signature.type_param_tks.size());
+        assert(type_args.size() == generic.signature.type_params.size());
 
         // the generic functions that no call instantiates are listed in the
         // usage report
         tc.mark_generic_func_instantiated(generic_name);
 
-        std::string name{
+        const std::string name{
             generic_instance_text(generic_name, type_args),
         };
 
         // note: an instance is a function, no generic one has its name
-        if (tc.funcs().has(name)) {
-            return name;
+        if (not tc.funcs().has(name)) {
+            // an error in the instance reports the call that needed it, like
+            // the frames of a generic type instance
+            parse_instance(tc, generic, type_args, name,
+                           generic_trace{call_tk, name});
         }
 
-        // an error in the instance reports the call that needed it, like the
-        // frames of a generic type instance
-        parse_instance(tc, generic, type_args, name,
-                       generic_trace{call_tk, name});
-
-        return name;
+        return *tc.funcs().get(name).def;
     }
 
     // the methods defined so far for a new instance of a generic type and its
@@ -1518,7 +1514,7 @@ class func_instantiator final {
         generic_func_info generic{method};
         generic.receiver = receiver;
 
-        if (generic.signature.type_param_tks.empty()) {
+        if (generic.signature.type_params.empty()) {
             parse_instance(tc, generic, {}, std::move(name), std::nullopt);
             return;
         }
@@ -1651,8 +1647,8 @@ class stmt_def_func_generic final : public statement {
                                          const generic_signature& signature)
         -> void {
 
-        for (const token& param_tk : signature.type_param_tks) {
-            assert_type_param_apart(tc, head, signature, param_tk);
+        for (const generic_param& param : signature.type_params) {
+            assert_type_param_apart(tc, head, signature, param.name_tk);
         }
 
         // e.g. 'T' of 'func box.f(T)' of 'type box<T type>'
@@ -1729,7 +1725,7 @@ class stmt_def_func_generic final : public statement {
         -> generic_signature {
 
         generic_signature signature{
-            .type_param_tks{head.type_param_tks},
+            .type_params{head.type_params},
             .params{},
             .result{},
         };

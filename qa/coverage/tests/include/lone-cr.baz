@@ -1,0 +1,3 @@
+# a carriage return without a line feed, rejected when the file is loaded
+func three() res {
+    res = 3}

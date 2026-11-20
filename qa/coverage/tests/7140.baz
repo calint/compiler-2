@@ -1,0 +1,7 @@
+# a carriage return without a line feed in an included file is rejected as in
+# the main file
+include "include/lone-cr.baz"
+
+func main() {
+    exit(three())
+}

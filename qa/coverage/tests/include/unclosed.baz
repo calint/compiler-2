@@ -1,0 +1,3 @@
+# a block that the end of the file leaves open
+func three() res {
+    res = 3
