@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 529 (2026-11-20, bug hunt: integer arithmetic of mixed
+    widths after the 'multiply' change of round 523 and the absorbing
+    constants of round 513; design: the tables of names, 'toc.hpp';
+    readability: a newcomer walks 'main.cpp')
+    => bug hunt: no defect; a model generator with exact widths over i8,
+       i16, i32, int and i64, lets, conversions, unary operators, nested
+       lists, inlined and noinline calls, fields and elements, special
+       constants (0, 1, -1, powers of two, absorbing) under four check sets
+       and three '--versions' on three targets: 7000 programs, 86000 runs;
+       exhaustive edge pairs of all ten operators over every combination of
+       widths: 5300 programs; 18 mutants: merged constant factors not
+       wrapped at the width of the list passed the suite: test 6920
+    => design: 'name_meaning' holds the declaration 'lookup' found, so the
+       six users no longer look the name up again in its scope; the kind
+       enum and its three predicates are gone (-10 lines, listings equal);
+       eight ideas kept with reasons
+    => readability: 'parse_file_name' says it rejects only an empty name;
+       the local 'option' of 'parse_checks' renamed 'name', it holds a
+       check; 48 functions, 3 predictions wrong
 [x] easy: round 528 (2026-11-20, bug hunt: loops and control flow after
     the blocks change of round 525; design: the driver, 'main.cpp';
     readability: a newcomer walks the last third of 'machine.hpp')

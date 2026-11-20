@@ -428,7 +428,7 @@ auto check_default_stack_fits(const options& opts) -> void {
     return parsed_size_bytes;
 }
 
-// 'option' is named in the error message
+// an empty name is an error, its message names 'option'
 [[nodiscard]] auto parse_file_name(const std::string_view text,
                                    const std::string_view option)
     -> std::string_view {
@@ -552,23 +552,23 @@ static_assert([] -> bool {
     std::vector<bool check_options::*> disabled;
 
     for (const auto part : checks | std::views::split(',')) {
-        std::string_view option{part};
+        std::string_view name{part};
 
-        if (option.empty()) {
+        if (name.empty()) {
             continue;
         }
 
-        const std::string_view written{option};
-        const bool is_disable{option.starts_with('-')};
+        const std::string_view written{name};
+        const bool is_disable{name.starts_with('-')};
 
-        if (is_disable or option.starts_with('+')) {
-            option.remove_prefix(1);
+        if (is_disable or name.starts_with('+')) {
+            name.remove_prefix(1);
             // note: 1 because the sign is not part of the name
         }
 
         // e.g. '-noub' disables every check that 'noub' enables
         const std::vector<bool check_options::*> members{
-            checks_named(option, written),
+            checks_named(name, written),
         };
 
         if (is_disable) {

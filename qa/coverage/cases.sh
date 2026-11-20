@@ -8378,3 +8378,6 @@ SRC=6860 && COMPERR
 # a 'continue' does not reach the end of a 'loop': with a constant argument the
 # 'break' folds away and the recursion after the loop is not expanded
 SRC=6900 && EXP=6 && RUN
+
+# constants merged without the overflow check wrap at the width of the list
+SRC=6920 && EXP=0 && RUN

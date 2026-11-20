@@ -949,28 +949,20 @@ class data_table final {
     }
 };
 
-// what a name means where it is used, see 'scope_stack::lookup'
+// what a name means where it is used, see 'scope_stack::lookup': the
+// declaration it names, at most one of them, valid while the scopes are
+// unchanged
 struct name_meaning {
-    enum class kind : uint8_t { none, variable, binding, constant };
-
-    kind what{kind::none};
+    const var_info* variable{};
+    const param_binding* binding{};
+    const const_info* constant{};
     // the scope that declares the name
     size_t scope_index{};
 
-    [[nodiscard]] auto is_binding() const -> bool {
-        return what == kind::binding;
-    }
-
-    [[nodiscard]] auto is_constant() const -> bool {
-        return what == kind::constant;
-    }
-
     // a name that has a value hides a type or a generic function of that name,
     // a call 'f()' still calls the function
-    [[nodiscard]] auto is_value() const -> bool { return what != kind::none; }
-
-    [[nodiscard]] auto is_variable() const -> bool {
-        return what == kind::variable;
+    [[nodiscard]] auto is_value() const -> bool {
+        return variable != nullptr or binding != nullptr or constant != nullptr;
     }
 };
 
@@ -1037,11 +1029,11 @@ class scope_stack final {
 
         const name_meaning meaning{lookup(name)};
 
-        if (not meaning.is_constant()) {
+        if (meaning.constant == nullptr) {
             return std::nullopt;
         }
 
-        return scopes_.at(meaning.scope_index).get_const(name).constant;
+        return meaning.constant->constant;
     }
 
     [[nodiscard]] auto count() const -> size_t { return scopes_.size(); }
@@ -1158,7 +1150,7 @@ class scope_stack final {
 
         const name_meaning meaning{lookup(name)};
 
-        return meaning.is_variable() and
+        return meaning.variable != nullptr and
                meaning.scope_index == func_scope_index() and
                current_func_scope().is_result(name);
     }
@@ -1336,21 +1328,27 @@ class scope_stack final {
 
         if (scp.has_var(name)) {
             return {
-                .what{name_meaning::kind::variable},
+                .variable{&scp.get_var(name)},
+                .binding{},
+                .constant{},
                 .scope_index{index},
             };
         }
 
         if (scp.has_binding(name)) {
             return {
-                .what{name_meaning::kind::binding},
+                .variable{},
+                .binding{&scp.get_binding(name)},
+                .constant{},
                 .scope_index{index},
             };
         }
 
         if (scp.has_const(name)) {
             return {
-                .what{name_meaning::kind::constant},
+                .variable{},
+                .binding{},
+                .constant{&scp.get_const(name)},
                 .scope_index{index},
             };
         }
@@ -1862,15 +1860,13 @@ class ident_resolver final {
             return resolve_literal(src_loc_tk, ident);
         }
 
-        const scope& scp{scopes_.get().at(meaning.scope_index)};
-
         // the argument was resolved where the call is made
-        if (meaning.is_binding()) {
-            return scp.get_binding(ident).info;
+        if (meaning.binding != nullptr) {
+            return meaning.binding->info;
         }
 
-        if (meaning.is_constant()) {
-            const folded_value& constant{scp.get_const(ident).constant};
+        if (meaning.constant != nullptr) {
+            const folded_value& constant{meaning.constant->constant};
 
             // an untyped constant reads at the default type
             const type& constant_type{
@@ -1883,13 +1879,13 @@ class ident_resolver final {
 
         // e.g. the 'a' of 'var a = a[0]'; rejected here, its type is not
         // known yet and would report another mistake
-        if (scp.is_initializer()) {
+        if (scopes_.get().at(meaning.scope_index).is_initializer()) {
             throw compile_error{src_loc_tk,
                                 std::format("{} is read in its own initializer",
                                             in_quotes(ident))};
         }
 
-        return resolve_var(scp.get_var(ident));
+        return resolve_var(*meaning.variable);
     }
 
     // the storage that 'name' with 'path' reaches, as a root variable and a
@@ -1914,25 +1910,19 @@ class ident_resolver final {
         //       caller is rejected at the call, see
         //       'stmt_call::assert_no_shared_storage'
 
-        if (meaning.is_binding()) {
-            const ident_info& bound{
-                scopes_.get().at(meaning.scope_index).get_binding(name).info,
-            };
-
-            if (not bound.is_var()) {
+        if (meaning.binding != nullptr) {
+            if (not meaning.binding->info.is_var()) {
                 return std::nullopt;
             }
 
             return named;
         }
 
-        if (not meaning.is_variable()) {
+        if (meaning.variable == nullptr) {
             return std::nullopt;
         }
 
-        const var_info& var{
-            scopes_.get().at(meaning.scope_index).get_var(name),
-        };
+        const var_info& var{*meaning.variable};
 
         // note: the array was resolved to its root variable when the 'foo'
         //       was made, the callee of a call in the 'foo' does not see 'e'

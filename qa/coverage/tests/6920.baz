@@ -1,0 +1,12 @@
+# constants merged without the overflow check wrap at the width of the list:
+# '100 * 3' of an 'i8' is 44, '65536 * 65536' of an 'i32' is 0, which then
+# decides the product
+func main() {
+    var a = i8(1)
+    var b = a * 100 * 3
+    if b != 44 { exit(1) }
+    var c = i32(3)
+    var d = c * 65536 * 65536 + 7
+    if d != 7 { exit(2) }
+    exit(0)
+}
