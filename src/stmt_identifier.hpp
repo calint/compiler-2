@@ -273,7 +273,8 @@ class stmt_identifier final : public statement {
         size_t owned_from_{};
         // where the caller prefers the address, none without a preference
         std::optional<operand> address_register_;
-        // kept between the indexes of the path while it is not in the way
+        // the register of the last run-time index, reused by the next one
+        // unless a fold made it the base ('fold_register')
         std::optional<operand> index_register_;
 
       public:
@@ -284,14 +285,12 @@ class stmt_identifier final : public statement {
               owned_from_{held.registers().size()},
               address_register_{std::move(address_register)} {}
 
-        // the address after the index of 'cur_elem', a constant index, which
-        // the caller checked, goes into the displacement and any other one
-        // into an index register; 'is_range' when the index starts a range,
-        // 'start_register' then receives a run-time index
+        // the address after the run-time index of 'cur_elem', which goes into
+        // an index register; 'is_range' when the index starts a range,
+        // 'start_register' then receives the index
         [[nodiscard]] auto
-        indexed_element(const ident_elem& cur_elem,
-                        std::optional<int64_t> constant_index,
-                        const ident_info& cur_info, bool is_range,
+        indexed_element(const ident_elem& cur_elem, const ident_info& cur_info,
+                        bool is_range,
                         const std::optional<operand>& start_register,
                         const operand& address) -> operand;
 
@@ -372,8 +371,8 @@ class stmt_identifier final : public statement {
             return folded_into;
         }
 
-        // the memory at the address that 'address_slot' holds, loaded into a
-        // new owned register
+        // the memory at the address that 'address_slot' holds; the address
+        // is loaded into a new owned register
         [[nodiscard]] auto load_held_address(const operand& address_slot)
             -> operand {
 
@@ -571,15 +570,14 @@ class stmt_identifier final : public statement {
                                         in_quotes(trimmed_source(*this)))};
     }
 
-    // every index is a constant within its array, e.g. the '1' of
-    // 'array_length(hs[1].v)', whose result no index changes; 'what' names
-    // the built-in in the message
+    // every index is a constant, e.g. the '1' of 'array_length(hs[1].v)',
+    // whose result no index changes; 'what' names the built-in in the message
     auto assert_constant_indexes(const toc& tc, std::string_view what) const
         -> void;
 
-    // every constant index is within its array as the compile resolves it,
-    // e.g. the '5' of 'array_length(x[5].a)' with 'x' an unsized array
-    // parameter, whose length only its call gives
+    // every index, a constant ('assert_constant_indexes'), is within its
+    // array as the compile resolves it, e.g. the '5' of 'array_length(x[5].a)'
+    // with 'x' an unsized array parameter, whose length only its call gives
     auto assert_constant_indexes_in_bounds(const toc& tc) const -> void;
 
     // a constant count of a bulk operation that starts at this path, see
@@ -638,9 +636,20 @@ class stmt_identifier final : public statement {
                 step.is_last ? request.start_register : std::nullopt,
             };
 
-            address =
-                builder.indexed_element(*step.elem, constant_index, cur_info,
-                                        is_range, start_register, address);
+            // a constant index stays in the operand like a field offset
+            if (constant_index) {
+                // note: the caller checks the range from a constant start
+                assert(not start_register);
+
+                address.increment_offset(
+                    address_offset(static_cast<size_t>(*constant_index) *
+                                   cur_info.type_ref().size_bytes()));
+
+                return;
+            }
+
+            address = builder.indexed_element(*step.elem, cur_info, is_range,
+                                              start_register, address);
         });
 
         // note: the type the parse resolved is that of the last element
@@ -765,16 +774,12 @@ class stmt_identifier final : public statement {
                                   machine::held_registers& held) const
         -> operand {
 
-        const ident_info info{make_ident_info(tc, *this)};
+        const ident_info info{info_at_address(tc, held)};
 
         // note: a constant is folded by the caller, each by its own policy
         assert(not info.is_const());
 
-        if (not needs_compile_lea(info)) {
-            return info.operand();
-        }
-
-        return compile_lea(tc, held, {});
+        return info.operand();
     }
 
     // the path as written, with indexes but without unary operators

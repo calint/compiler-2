@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 520 (2026-11-20, bug hunt: control flow after the
+    changes of rounds 505 to 509; design: how a path is compiled to an
+    operand, the compile side of 'stmt_identifier.hpp'; readability: a
+    newcomer walks the first half of 'stmt_identifier.hpp')
+    => bug hunt: no defect; a model generator of 'loop' and 'foo' nested
+       four deep with every kind of count, 'break' and 'continue' at every
+       depth, returns and exits in loops, helpers and conditions,
+       conditions folded at the parse and at the compile, unset reads and
+       unreachable statements that must be rejected, a share that panics,
+       each as generated, inlined and noinline under six option sets on
+       x86_64 and rv32i and on the bare-metal targets: 18000 programs,
+       330000 runs; 18 mutants, 17 caught by the suite, the eighteenth
+       equivalent (the '!= 0' of 'runs_body' only documents the rule)
+    => design: 'operand_of' goes through 'info_at_address', so one place
+       chooses between the resolved operand and 'compile_lea'; a constant
+       index is a displacement step in 'compile_lea' next to the field
+       offset and 'path_address' keeps the steps with registers (-9
+       lines, listings equal); seven ideas kept with reasons
+    => readability: four comments ('assert_constant_indexes' checks that
+       indexes are constants, the bounds come after, 'load_held_address'
+       loads the address, 'index_register_' holds the last run-time
+       index); 31 functions, 4 predictions wrong
 [x] easy: round 519 (2026-11-20, bug hunt: user types, records compared
     whole with their padding; design: the driver, 'main.cpp',
     'program.hpp' and 'source_files.hpp'; readability: a newcomer walks

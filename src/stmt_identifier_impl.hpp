@@ -450,23 +450,9 @@ inline auto stmt_identifier::compile_checked_index(
 }
 
 inline auto stmt_identifier::path_address::indexed_element(
-    const ident_elem& cur_elem, const std::optional<int64_t> constant_index,
-    const ident_info& cur_info, const bool is_range,
+    const ident_elem& cur_elem, const ident_info& cur_info, const bool is_range,
     const std::optional<operand>& start_register, const operand& address)
     -> operand {
-
-    if (constant_index) {
-        // note: the caller checks the range from a constant start
-        assert(not start_register);
-
-        operand folded{address};
-
-        folded.increment_offset(
-            address_offset(static_cast<size_t>(*constant_index) *
-                           cur_info.type_ref().size_bytes()));
-
-        return folded;
-    }
 
     // an operand holds one index, so an earlier one is folded first
     operand base{address};
