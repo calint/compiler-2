@@ -8413,3 +8413,8 @@ SRC=7020 && EXP=0 && OPTS="--vars=512 --checks=frame" RUN
 # 'main' with parameters is reported before a later error of its signature,
 # the error furthest left comes first
 SRC=7040 && COMPERR
+
+# the array of a 'foo' is taken before its count: a count whose call writes the
+# run-time index of the array iterates the element of the index before the
+# call, inlined and noinline
+SRC=7060 && EXP=0 && RUN

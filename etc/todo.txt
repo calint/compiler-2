@@ -10,6 +10,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 535, registers) rv32i 'emit_target_call' reserves 'a7'
+    by name around 'call_io_routine', which already asserts 'a3' to 'a6'
+    free, and 'a7' comes after them in the allocation order; the
+    bare-metal 'emit_stderr_write' and x86_64 'syscall' reserve nothing;
+    dropping the reservation and extending the assert to 'a7': 96 listings
+    of rv32i-fpga lose 544 comment lines (allocate and free of 'a7'), no
+    instruction changes, the register report no longer shows 'a7' named
+    during the call although the routine changes it; a report change
+[ ] easy: (round 535, registers) the note of 'register_pool::holder_of'
+    says 'register_in_use_error' never meets a register protected and not
+    allocated; 'call_function' (receiver 'r11') and the rv32i helper
+    clobber protection come close without a named reservation; to verify
 [ ] easy: (round 533, sectors) a result filled by 'sector_read' does not
     count as set: 'func noinline load(s) res block { sector_read(s,
     res.data) res.size = 512 }' is rejected "may return without setting
@@ -190,6 +202,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     branches in 'toc.hpp' ('storage_of', 'resolve_var') and
     'declare_loop_names'; about -50 lines; removes an optimization: a load
     and a store per iteration on rv32i, growth not measured
+    => round 535: with the counter always in memory, the 48 programs of 300
+       generated ones that x86_64 rejected for lack of registers (nested
+       'foo', a division needing 'rdx') compile
 [p] easy: need approval (round 396): drop the preferred address register
     of a bulk address ('machine::address_emitter', threaded through
     'argument_emitters::address_of', 'walk_address', 'lea_request',

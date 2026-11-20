@@ -124,8 +124,9 @@ struct func_head {
     // the rules of the signature 'params' and 'result' after this head that
     // need no types, checked for every kind of definition: 'mut' needs a
     // receiver, 'main' takes no arguments, the result is named apart from
-    // the parameters and 'self' is the result of a constructor; in source
-    // order, so the error furthest left comes first
+    // the parameters and 'self' is the result of a constructor; checked in
+    // source order, though a generic signature and the types of the
+    // parameters are checked before them
     auto assert_signature(const stmt_def_func_param::syntax_list& params,
                           const std::optional<func_result>& result) const
         -> void {
@@ -1128,6 +1129,8 @@ class stmt_def_func final : public statement {
 
     // the result 'name [type]' after the parameters 'list', without one the
     // type is 'void'
+    // note: the signature is checked before the type is resolved, 'self'
+    //       takes the receiver type, which only a constructor has
     auto parse_result(parse_toc& tc,
                       const stmt_def_func_param::syntax_list& list,
                       tokenizer& tz) -> void {

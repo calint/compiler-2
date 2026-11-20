@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 535 (2026-11-21, bug hunt: 'foo' over arrays; design:
+    register allocation; readability: a newcomer walks 'stmt_def_func.hpp')
+    => bug hunt: no defect; a model generator of 'foo' over arrays of every
+       width and of records as locals, dats, fields, outer elements at
+       constant and run-time index, results and unsized parameters,
+       writing 'e', its fields and the array, calls that write the array,
+       the outer index or 'e', nested 'foo', counts constant, run-time, 0,
+       out of range and from calls: 3960 programs, 119000 runs; 120 probes;
+       22 mutants: the array address taken after the count passed the
+       suite: test 7060; a measurement for the round 396 item
+    => design: the rv32i scratch registers leave out 's0', the variables
+       base the backend always holds, as x86_64 leaves out 'rbp' (counts
+       and the report total unchanged); 'machine::free_held_registers'
+       moved into 'held_registers' as 'free_all', next to its only user
+       (listings equal); the 'a7' reservation around an rv32i io call and
+       a note of 'register_pool::holder_of' to 'etc/todo.txt'; seven ideas
+       kept with reasons
+    => readability: a note that 'parse_result' checks the signature before
+       resolving the type ('self' takes the receiver type); the comment of
+       'func_head::assert_signature' no longer says the error furthest
+       left comes first, a generic signature and parameter types are
+       checked before it; 77 functions, 1 prediction wrong
 [x] easy: round 534 (2026-11-20, bug hunt: noinline frames and the
     'stack' and 'frame' checks; design: function definitions,
     'stmt_def_func.hpp'; readability: a newcomer walks 'expr_bool.hpp')

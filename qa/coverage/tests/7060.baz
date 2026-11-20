@@ -1,0 +1,44 @@
+# the array of a 'foo' is taken before its count is evaluated: a count whose
+# call writes the index of the array leaves the array iterated unchanged,
+# inlined and noinline
+type row {
+    v i8[3],
+}
+
+func set_index(j mut int, v int, count int) res int {
+    j = v
+    res = count
+}
+
+func noinline set_index_far(j mut int, v int, count int) res int {
+    j = v
+    res = count
+}
+
+func main() {
+    var rows = row[]{{{1, 2, 3}}, {{10, 20, 30}}, {{40, 50, 60}}}
+    var j = 0
+    var s = 0
+    foo rows[j].v, set_index(j, 1, 2) {
+        s = s + e
+    }
+    if s != 3 or j != 1 {
+        exit(1)
+    }
+
+    s = 0
+    foo rows[j].v, set_index_far(j, 2, 3) {
+        s = s + e
+    }
+    if s != 60 or j != 2 {
+        exit(2)
+    }
+
+    s = 0
+    foo rows[j].v, set_index(j, 1, 1) + j {
+        s = s + e
+    }
+    if s != 40 + 50 {
+        exit(3)
+    }
+}

@@ -478,7 +478,7 @@ class machine {
                 return;
             }
 
-            machine_.free_held_registers(site_, registers_);
+            free_all();
         }
 
         // a register that the calling convention fixes, held until the scope
@@ -518,8 +518,22 @@ class machine {
         // frees the registers before the scope ends, e.g. before a call
         // that would save them as live
         auto release() -> void {
-            machine_.free_held_registers(site_, registers_);
+            free_all();
             registers_.clear();
+        }
+
+      private:
+        // frees the registers in reverse, they are the top of the pool
+        auto free_all() -> void {
+            for (const operand& reg : registers_ | std::views::reverse) {
+                // note: the backend releases its own registers by name
+                assert(machine_.state_.registers.top().holder !=
+                       register_pool::holder_kind::backend);
+
+                const size_t index{machine_.pool_index(reg.register_name())};
+
+                machine_.pop_allocation(site_, index);
+            }
         }
     };
 
@@ -2472,19 +2486,6 @@ class machine {
                            printable(locations_.relative_name(file_ix)));
     }
 
-    // frees what a 'held_registers' holds, in reverse
-    auto free_held_registers(const emit_site site,
-                             const std::span<const operand> registers) -> void {
-
-        for (const operand& reg : registers | std::views::reverse) {
-            // note: the backend releases its own registers by name
-            assert(state_.registers.top().holder !=
-                   register_pool::holder_kind::backend);
-
-            pop_allocation(site, pool_index(reg.register_name()));
-        }
-    }
-
     // the register 'name' is allocated or protected, it may hold a live value
     [[nodiscard]] auto
     is_register_unavailable(const std::string_view name) const -> bool {
@@ -2779,7 +2780,8 @@ class machine {
     }
 
     // the scratch registers that can hold values beside the ones the backend
-    // holds itself in 'allocations', e.g. the variables base 's0' on rv32i
+    // holds itself in 'allocations', e.g. the frame base 's1' on rv32i in a
+    // 'noinline' body
     [[nodiscard]] auto scratch_register_count(
         const std::span<const register_pool::allocation> allocations) const
         -> size_t {

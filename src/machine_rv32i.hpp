@@ -142,15 +142,17 @@ class machine_rv32i : public machine {
     static constexpr size_t byte_size_bytes_{1};
     static constexpr size_t half_size_bytes_{2};
 
-    static constexpr std::array<std::string_view, 30> scratch_registers_{
-        "t0", "t1", "t2", "t3", "t4", "t5", "t6", "s0",  "s1",  "s2",
-        "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "tp",
-        "gp", "ra", "a1", "a2", "a3", "a4", "a5", "a6",  "a7",  "a0",
+    static constexpr std::array<std::string_view, 29> scratch_registers_{
+        "t0", "t1", "t2", "t3", "t4", "t5", "t6",  "s1",  "s2", "s3",
+        "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "tp", "gp",
+        "ra", "a1", "a2", "a3", "a4", "a5", "a6",  "a7",  "a0",
     };
 
     // note: ascending t and s names keep generated code readable while argument
     //       registers stay late to avoid builtin conflicts and 'a0' stays last
-    //       because syscalls overwrite it with their result
+    //       because syscalls overwrite it with their result; not the
+    //       variables base 's0', which the backend holds from 'start' to
+    //       'finish'
 
     // the instructions of an access of 1, 2 or 4 bytes and what comments call
     // a sequence of them
