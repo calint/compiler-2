@@ -10,6 +10,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 530, globals) 'dat g = g' says "'g' not found" where
+    'var g = g' says "'g' is read in its own initializer"; both are
+    rejected, one message would name the cause for both
 [ ] easy: (round 527, the output side) three small differences in the
     listing text: on x86_64 a comment without a location starts one column
     later than one with a location ('comment_start' at indent above 0 would
@@ -1145,7 +1148,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     node<n> { a n }'); one more lookup in 'parse_toc::get_type_or_throw'
     could say "'n' is a constant, not a type", as the reverse case has its
     own message
-[ ] medium: user decision (round 229 UL1): 'p.get() < p.bump()' is
+[p] medium: user decision (round 229 UL1): 'p.get() < p.bump()' is
     rejected ("'p' may be written by the call of 'bump' in a later
     operand"), also 'rd(p.x) < bumpx(p.x)' and 'add2(p.get(), p.bump())',
     while the earlier call has read 'p' when it returns; skipping the reads
@@ -1164,6 +1167,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
        w())' inlined and 'noinline', 's(id(g), w())', 's({g.x, g.y},
        w())', 'r(g) > w()'; also 'p.get() < p.bump()'; the proof for
        every node kind is still to do
+    => round 530 proof per node kind, by reading each compile: a
+       comparison computes a side that is not a bare path into a scratch
+       register first ('non_immediate_operand'), io puts the descriptor in
+       its register first, the earlier operands of the bulk built-ins are
+       array paths, a call computes an argument without a bare path at its
+       place ('argument_places'); the index reads of a bare path stay
+       checked; prototype '/tmp/.../r530/proposal-bare-path-late-reads.patch'
+       (+5 lines and a note): the 12 tests of "may be written by the call"
+       keep their verdict, 10 forms accepted inlined and 'noinline' with
+       the left-to-right result on x86_64 and rv32i under every
+       '--versions' (132 runs); README 3.1 would state the rule instead of
+       "stricter than needed"; need approval
 [ ] medium: user decision (round 226 UF1): inlined calls that double per
     level have no limit, each limit bounds only one path (64 calls of a
     name, 256 scopes), e.g. 'func r(v mut, n)' calling 'r(v, n - 1)' twice

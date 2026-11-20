@@ -4,7 +4,6 @@
 #include <format>
 #include <optional>
 #include <span>
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -157,11 +156,10 @@ assert_written_not_reached(const toc& tc, const statement& item,
 }
 
 // 'earlier' reads nothing that 'write', an effect of an operand computed
-// after it, reaches; 'writer' says where the call is in the message, e.g. "a
-// later argument"
+// after it, reaches; 'operand' is the word the message uses for that operand
 inline auto assert_not_read_before(const toc& tc, const node_operand& earlier,
                                    const call_effect& write,
-                                   const std::string_view writer) -> void {
+                                   const std::string_view operand) -> void {
 
     visit_operand_reads(earlier, [&](const stmt_identifier& read) -> void {
         if (not read.may_reach(tc, write.storage)) {
@@ -170,10 +168,10 @@ inline auto assert_not_read_before(const toc& tc, const node_operand& earlier,
 
         throw compile_error{
             read.tok(),
-            std::format("{} may be written by the call of {} in {}, use a "
-                        "temporary variable",
+            std::format("{} may be written by the call of {} in a later {}, "
+                        "use a temporary variable",
                         in_quotes(read.path_text()),
-                        in_quotes(write.call_tk.text()), writer)};
+                        in_quotes(write.call_tk.text()), operand)};
     });
 }
 
@@ -194,8 +192,6 @@ inline auto assert_not_written_later(const toc& tc, const auto& node,
     node.visit_operands(
         [&operands](const node_operand& o) -> void { operands.push_back(o); });
 
-    const std::string writer{std::format("a later {}", operand)};
-
     for (size_t k{1}; k < operands.size(); ++k) {
         operands.at(k).node->visit_call_effects(
             tc, [&](const call_effect& effect) -> void {
@@ -206,7 +202,7 @@ inline auto assert_not_written_later(const toc& tc, const auto& node,
                 for (const node_operand& earlier :
                      std::span{operands}.first(k)) {
 
-                    assert_not_read_before(tc, earlier, effect, writer);
+                    assert_not_read_before(tc, earlier, effect, operand);
                 }
             });
     }

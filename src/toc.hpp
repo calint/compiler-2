@@ -1142,7 +1142,8 @@ class scope_stack final {
     }
 
     // 'name' means the result of the innermost function, not a name that
-    // hides it, e.g. the 'e' of a 'foo' over the result
+    // hides it, e.g. the 'e' of a 'foo' over the result; called at the parse,
+    // where the result is a variable (an inlined call binds it instead)
     [[nodiscard]] auto names_result(const std::string_view name) const -> bool {
         if (not is_in_func()) {
             return false;
@@ -1271,6 +1272,7 @@ class scope_stack final {
         return scopes_.at(func_scope_index());
     }
 
+    // the innermost function scope; one is open, see 'is_in_func'
     [[nodiscard]] auto func_scope_index() const -> size_t {
         for (size_t i{scopes_.size()}; i > 0; --i) {
             if (scopes_.at(i - 1).is_func()) {

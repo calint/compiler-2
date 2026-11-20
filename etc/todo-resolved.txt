@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 530 (2026-11-20, bug hunt: globals, 'dat' and the
+    lookup of names after 'name_meaning' of round 529; design: the order
+    and read checks, 'ub_order.hpp' and 'ub_reads.hpp'; readability: a
+    newcomer walks the scopes and lookups of 'toc.hpp')
+    => bug hunt: no defect; model generators of records, arrays and
+       nested records of every width as 'var' and 'dat' with full,
+       partial, zero, typed and string initializers, padding past the
+       12-bit reach, globals read and written by inlined and noinline
+       functions and recursion, names hiding globals at every depth:
+       6400 programs, 73000 runs; 'var' against 'dat' of the same
+       initializer: 3500 seeds; the smallest '--vars' of 150 programs;
+       150 probes of aliasing with globals; 21 mutants, each caught by the
+       suite on a target; one message difference to 'etc/todo.txt'
+    => design: 'assert_not_read_before' takes the word of the operand
+       and writes "in a later" itself as 'assert_not_written_later' does
+       (-4 lines, listings equal); checking only the earlier operands that
+       are read late (bare paths): the proof per node kind and a prototype
+       added to the round 229 item, now '[p]' need approval; five ideas
+       kept with reasons
+    => readability: 'names_result' runs at the parse, where the result is
+       a variable; 'func_scope_index' needs an open function scope; 91
+       functions, 7 predictions wrong
 [x] easy: round 529 (2026-11-20, bug hunt: integer arithmetic of mixed
     widths after the 'multiply' change of round 523 and the absorbing
     constants of round 513; design: the tables of names, 'toc.hpp';
