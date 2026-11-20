@@ -1,6 +1,39 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 535, registers) the note of 'register_pool::holder_of'
+    says 'register_in_use_error' never meets a register protected and not
+    allocated; 'call_function' (receiver 'r11') and the rv32i helper
+    clobber protection come close without a named reservation; to verify
+    => verified (2026-11-21, round 536): a register is protected and not
+       allocated only for the operands of a backend operation while it is
+       lowered, and for those 'held_registers::release' gives up before a
+       backend operation without a callback into the front end; neither
+       reserves a named register; the 'r11' of 'call_function' sees only
+       'address_of', which reserves none; no 'holder_of' assert in 240000
+       runs, a share under asan
+[x] easy: round 536 (2026-11-21, bug hunt: the edge of the register
+    supply; design: access paths and identifiers; readability: a newcomer
+    walks the first half of 'machine_rv32i.hpp')
+    => bug hunt: no defect; a generator that deepens right-nested
+       expressions until every option list rejects them, over division
+       and shifts, calls, methods at run-time receiver indexes, io and
+       sector calls, bulk built-ins and nested 'foo', in eight contexts
+       under up to four 'foo' loops, on three targets, a share under asan:
+       33500 programs, 240000 runs, every rejection a documented message;
+       a far jump with no free scratch register at depth 27; 12 mutants,
+       four equivalent on reachable programs (two to 'etc/todo.txt', one
+       needing an extreme input); the note of 'register_pool::holder_of'
+       holds
+    => design: no change; 'storage_path::is_same' compares root and path
+       as 'add_binding' compares paths, used by 'body_uses::add_global'
+       (listings equal); an empty range at the end of an array as an index
+       step would change acceptance, left; ten ideas kept with reasons
+    => readability: a note that the complement of a sign extended register
+       is sign extended; 'check_fits_width' says its value is the exact
+       result of a narrow operation; "the overflow flag"; 84 functions, 3
+       predictions wrong
+
 [x] easy: round 535 (2026-11-21, bug hunt: 'foo' over arrays; design:
     register allocation; readability: a newcomer walks 'stmt_def_func.hpp')
     => bug hunt: no defect; a model generator of 'foo' over arrays of every

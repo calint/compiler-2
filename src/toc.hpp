@@ -155,9 +155,7 @@ class body_uses final {
         -> void {
 
         for (global_use& u : globals_) {
-            if (u.storage.root.is_same(storage.root) and
-                u.storage.path.is_same(storage.path)) {
-
+            if (u.storage.is_same(storage)) {
                 u.is_written = u.is_written or is_written;
                 return;
             }

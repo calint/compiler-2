@@ -912,6 +912,8 @@ class machine_rv32i : public machine {
         assembler_.xori(site.indent, loaded.value.register_name(),
                         loaded.value.register_name(), -1);
 
+        // note: the complement of a sign extended register is sign extended
+
         store_operation_result(site.indent, dst, loaded.address, loaded.value,
                                false);
     }
@@ -1742,9 +1744,9 @@ class machine_rv32i : public machine {
         comment(site, "division check end");
     }
 
-    // the register holds a sign extended result of a narrow operation, which
-    // fits when sign extending its low bits gives it back; 'extended' is a
-    // register the check may change
+    // 'value' holds the exact result of a narrow operation on sign extended
+    // operands, which fits when sign extending its low bits gives it back;
+    // 'extended' is a register the check may change
     auto check_fits_width(const emit_site site, const std::string_view value,
                           const size_t width_bytes,
                           const std::string_view extended) -> void {
@@ -1754,8 +1756,8 @@ class machine_rv32i : public machine {
         branch_to_failure(site, op::bne, extended, value, overflow_failure_);
     }
 
-    // after the checked multiply helper: the flag is in 'a1', the product in
-    // 'a0' must fit the width of the destination
+    // after the checked multiply helper: the overflow flag is in 'a1', the
+    // product in 'a0' must fit the width of the destination
     auto check_multiply_result(const emit_site site, const operand& dst)
         -> void {
 

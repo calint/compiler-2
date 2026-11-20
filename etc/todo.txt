@@ -18,10 +18,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
     of rv32i-fpga lose 544 comment lines (allocate and free of 'a7'), no
     instruction changes, the register report no longer shows 'a7' named
     during the call although the routine changes it; a report change
-[ ] easy: (round 535, registers) the note of 'register_pool::holder_of'
-    says 'register_in_use_error' never meets a register protected and not
-    allocated; 'call_function' (receiver 'r11') and the rv32i helper
-    clobber protection come close without a named reservation; to verify
+    => round 536: without the reservation 3600 generated programs keep
+       their results: 'a1', an argument of the io call, comes before 'a7'
+       in the scratch order, so a call that would find 'a7' held is
+       rejected on 'a1' first; likewise the rv32i helper's clobber
+       protection never meets a named reservation (its loads build far
+       addresses in 'a0' and 'a1' themselves)
+[ ] easy: (round 536, registers, needs an extreme input) without keeping
+    the receiver register in 'call_function', x86_64 goes wrong only with
+    a frame address past 4 GiB ('--vars=0x100000000', an
+    'i8[2500000000]' variable, 7 values live: exit 3), where the address
+    is lowered through 'r11'; rv32i builds a far frame address in 's1'
 [ ] easy: (round 533, sectors) a result filled by 'sector_read' does not
     count as set: 'func noinline load(s) res block { sector_read(s,
     res.data) res.size = 512 }' is rejected "may return without setting

@@ -182,6 +182,10 @@ struct storage_path {
         return result;
     }
 
+    [[nodiscard]] auto is_same(const storage_path& other) const -> bool {
+        return root.is_same(other.root) and path.is_same(other.path);
+    }
+
     // true when both may name the same bytes, a read of other bytes or of
     // another variable is not
     [[nodiscard]] auto may_overlap(const storage_path& other) const -> bool {
