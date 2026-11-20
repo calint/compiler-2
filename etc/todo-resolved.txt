@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 523 (2026-11-20, bug hunt: compile-time values and
+    constant data; design: the backend interface for arithmetic,
+    'add_subtract', 'multiply', 'divide', 'shift' and their two
+    implementations; readability: a newcomer walks the middle third of
+    'stmt_call.hpp')
+    => bug hunt: no defect; one constant expression of literals, unary
+       ops, typed and untyped 'let's, wrapping conversions, 'array_length'
+       and every operator placed in 30 positions that must agree, on two
+       targets with and without checks: 25000 programs, 43000 runs; probes
+       of the bulk and io built-ins at the type limits, typed constants on
+       either side of a comparison, immediates at the encoding edges,
+       displacements past 2 and 4 KiB, lists with absorbed negations; 14
+       mutants, all caught by the suite (four on one target only)
+    => design: a constant that alone decides the result ('* 0', '& 0',
+       '| -1') is decided in the front end with
+       'binary_operator_traits::absorbing', next to the identity rule;
+       'factor_kind::zero' of 'machine::multiply' and the rv32i
+       'yields_constant' go; listings of 0513, 0726 and 1712 change in
+       their comments, x86_64 0726 stores with 'mov' where it did 'and'
+       and 'or' (two instructions of 3 B more each); eight ideas kept with
+       reasons
+    => readability: four comments ('bind_expression' checks what the fold
+       skips, 'missing_after_argument_text' is the error when neither ','
+       nor ')' follows, a constructor comment and a note rewrapped); 44
+       functions, 6 predictions wrong
 [x] easy: round 522 (2026-11-20, bug hunt: the bare-metal images and the
     limits '--memory', '--vars' and '--stack' after the stack check moved
     into 'call_function'; design: how a run-time check fails, its handler,

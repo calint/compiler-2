@@ -940,7 +940,8 @@ class expr_arith final : public statement {
 
     // a step with a value: a constant element, its value folded by
     // 'make_steps', or constants the passes merged, e.g. the '+ 8' of
-    // 'a + 3 + 5'; a constant that changes nothing does not reach the backend
+    // 'a + 3 + 5'; a constant that changes nothing does not reach the backend,
+    // one that decides the result is copied
     auto emit_constant_step(compile_toc& tc, const destination& dst,
                             const step& s) const -> void {
 
@@ -959,6 +960,18 @@ class expr_arith final : public statement {
             x.comment({src_loc_tk, tc.indent()},
                       "src: folded constant {} is {} and changes nothing",
                       in_quotes(s.folded_source), step_value);
+
+            return;
+        }
+
+        // e.g. 'a * 0' is 0 and 'a | -1' is -1, which no check fails
+        if (traits_of(s.op).absorbing == step_value) {
+            x.comment({src_loc_tk, tc.indent()},
+                      "src: folded constant {} is {} and decides the result",
+                      in_quotes(s.folded_source), step_value);
+
+            x.copy_value({src_loc_tk, tc.indent()}, dst.operand(),
+                         constant_operand(dst, step_value));
 
             return;
         }

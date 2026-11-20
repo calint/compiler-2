@@ -1546,14 +1546,6 @@ class machine_rv32i : public machine {
 
         assert_folded(instruction, dst, constant);
 
-        if (constant.has_value() and
-            yields_constant(instruction, *constant,
-                            dst.type_ref().size_bytes())) {
-
-            store_constant_result(site, dst, *constant);
-            return;
-        }
-
         const operation_scope scope{*this, dst, src};
 
         const loaded_destination loaded{
@@ -3032,8 +3024,8 @@ class machine_rv32i : public machine {
         return operand::mem(pointer.register_name(), {}, 1, 0, default_type());
     }
 
-    // a constant factor that 'multiply' does not resolve, not zero, one,
-    // minus one or a power of two, as shifts and adds
+    // a constant factor that 'multiply' does not resolve, not one, minus one
+    // or a power of two, as shifts and adds
     auto multiply_by_shifts_and_adds(const emit_site site,
                                      const operand& product,
                                      const uint32_t multiplier,
@@ -4404,14 +4396,5 @@ class machine_rv32i : public machine {
 
             walk.access(part.width, moved);
         }
-    }
-
-    // 'x op constant' is 'constant': and-ing zero or or-ing all bits
-    [[nodiscard]] static auto yields_constant(const op instruction,
-                                              const int32_t constant,
-                                              const size_t width) -> bool {
-
-        return (instruction == op::and_op and constant == 0) or
-               (instruction == op::or_op and has_all_bits(constant, width));
     }
 };

@@ -608,7 +608,6 @@ class machine {
 
     // how a constant factor multiplies, decided at its width
     enum class factor_kind : uint8_t {
-        zero,
         one,
         // all low bits set
         minus_one,
@@ -1502,9 +1501,9 @@ class machine {
         return target_.max_storage_bytes;
     }
 
-    // a constant factor is resolved at the width of 'product': zero clears,
-    // one needs no code, minus one negates and an unchecked power of two is a
-    // shift, the other factors go to 'emit_multiply'
+    // a constant factor is resolved at the width of 'product': one needs no
+    // code, minus one negates and an unchecked power of two is a shift, the
+    // other factors go to 'emit_multiply'
     auto multiply(const emit_site site, const operand& product,
                   const operand& factor, const factor_use use,
                   const runtime_check& check = {}) -> void {
@@ -1520,10 +1519,10 @@ class machine {
             classify_factor(*bits, product.type_ref().size_bits()),
         };
 
-        if (factor_info.kind == factor_kind::zero) {
-            copy_value(site, product, operand::imm(0, product.type_ref()));
-            return;
-        }
+        // note: the front end folds a factor of 0 ('absorbing') and an
+        //       element size is not 0
+
+        assert(factor_info.multiplier != 0);
 
         if (factor_info.kind == factor_kind::one) {
             return;
@@ -1731,8 +1730,8 @@ class machine {
         -> void = 0;
 
     // a multiplication that 'multiply' did not resolve: a run-time factor, a
-    // constant one that is not zero, one, minus one or a power of two, or a
-    // checked power of two
+    // constant one that is not one, minus one or a power of two, or a checked
+    // power of two
     virtual auto emit_multiply(const emit_site site, const operand& product,
                                const operand& factor, const factor_use use,
                                const runtime_check& check) -> void = 0;
@@ -2076,9 +2075,7 @@ class machine {
 
         factor_kind kind{factor_kind::other};
 
-        if (multiplier == 0) {
-            kind = factor_kind::zero;
-        } else if (multiplier == 1) {
+        if (multiplier == 1) {
             kind = factor_kind::one;
         } else if (multiplier == mask) {
             kind = factor_kind::minus_one;

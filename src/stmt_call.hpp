@@ -886,8 +886,7 @@ class inline_call final {
         const std::optional<place>& arg_place{call_.places.at(index)};
 
         // note: 'stmt_call::assert_argument_type' checked the type, an array
-        //       argument is a place
-        //       ('parse_array_param_argument')
+        //       argument is a place ('parse_array_param_argument')
 
         assert(arg_place or not param.is_array());
 
@@ -1219,7 +1218,9 @@ class inline_call final {
         };
 
         if (folded) {
-            // note: as a noinline call, which compiles every argument
+            // note: what the fold skips is checked, as a noinline call
+            //       compiles every argument
+
             arg.check_folded_conditions(tc);
 
             return param_binding::make_constant(param.name(), param.get_type(),
@@ -1696,7 +1697,7 @@ class builtin_arguments final {
     // statics
     //
 
-    // what may follow the argument numbered 'count'
+    // the error when neither ',' nor ')' follows the argument numbered 'count'
     [[nodiscard]] static auto
     missing_after_argument_text(const size_t count, const size_t min_count,
                                 const size_t max_count) -> std::string {
@@ -1863,7 +1864,7 @@ class stmt_call final : public statement {
     token close_paren_tk_;
 
   public:
-    // 'tz' is after the name, before its '<' or '('. 'expected_type' is the
+    // 'tz' is after the name, before its '<' or '('; 'expected_type' is the
     // type the call is assigned to, it tells a type parameter that is the
     // result, e.g. 'x.f = tz.to()'
     stmt_call(parse_toc& tc, unary_ops uops, const token& tk, tokenizer& tz,
