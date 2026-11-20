@@ -1,0 +1,9 @@
+# --checks=overflow: a product written to the element it multiplies panics
+func main() {
+    var a = i16[4]
+    var i = 1
+    a[i] = 256
+    var b = i16(256)
+    a[i] = a[i] * (b + 0)
+    exit(a[i])
+}

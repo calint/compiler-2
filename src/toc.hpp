@@ -222,6 +222,7 @@ struct param_binding {
         };
     }
 
+    // 'info' as the caller resolved it, e.g. a place at a computed address
     [[nodiscard]] static auto make_name(const std::string_view name,
                                         const ident_info& info,
                                         const std::string_view text)
@@ -300,7 +301,7 @@ class scope final {
         std::string call_path;
 
         // the label to jump to when exiting an inlined function
-        std::string ret_label;
+        std::string return_label;
 
         // the parameters and the result of an inlined call, see
         // 'param_binding'
@@ -406,10 +407,6 @@ class scope final {
         return loop().continue_label;
     }
 
-    [[nodiscard]] auto func_ret_label() const -> std::string_view {
-        return func_part().ret_label;
-    }
-
     [[nodiscard]] auto get_binding(const std::string_view name) const
         -> const param_binding& {
 
@@ -512,6 +509,10 @@ class scope final {
         return loop().reach;
     }
 
+    [[nodiscard]] auto return_label() const -> std::string_view {
+        return func_part().return_label;
+    }
+
     [[nodiscard]] auto takes_from_call() const -> bool {
         return func_part().takes_from_call;
     }
@@ -573,8 +574,8 @@ class scope final {
                         std::move(return_label));
     }
 
-    // the body of a loop named by its label, a 'continue' jumps to
-    // 'continue_label'
+    // the body of a loop named by its label: a 'break' jumps to the
+    // 'compile_toc::end_label' of 'name', a 'continue' to 'continue_label'
     [[nodiscard]] static auto loop(const std::string_view name,
                                    std::string continue_label) -> scope {
 
@@ -648,7 +649,7 @@ class scope final {
         scp.func_ = function_part{
             .kind{kind},
             .call_path{std::move(call_path)},
-            .ret_label{std::move(return_label)},
+            .return_label{std::move(return_label)},
             .bindings{},
             .reach{func_reach{}},
             .is_without_call{},
@@ -1311,7 +1312,8 @@ class scope_stack final {
         return scopes_.at(*index);
     }
 
-    // the index of the innermost 'loop' or 'foo' of the function
+    // the index of the innermost 'loop' or 'foo' of the function; a function
+    // scope is open, a statement is only parsed in a body
     [[nodiscard]] auto innermost_loop_index() const -> std::optional<size_t> {
         for (size_t i{scopes_.size()}; i > 0; --i) {
             const scope& scp{scopes_.at(i - 1)};
@@ -1328,6 +1330,7 @@ class scope_stack final {
         std::unreachable();
     }
 
+    // also true for a name that is not a global
     [[nodiscard]] auto is_global_visible(const std::string_view name) const
         -> bool {
 
@@ -1665,6 +1668,7 @@ class storage_layout final {
     auto assert_vars_capacity(const token& src_loc_tk, const var_info& var,
                               const size_t allocated_size_bytes) const -> void {
 
+        // note: no wrap, the variables in use fit, each was checked here
         if (allocated_size_bytes <=
             vars_capacity_bytes_ - used_vars_size_bytes()) {
 

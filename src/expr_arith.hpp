@@ -51,9 +51,9 @@ class arith_steps final {
         const statement* element{};
         std::optional<int64_t> value; // set when the step is a constant
         std::string folded_source;    // e.g. '* 3 * 2' for the comment
-        // the element is a lone negation of a stored value, e.g. '-b', which
-        // pass 3 moves after a constant and add or subtract absorbs
-        bool is_negated_operand{};
+        // add or subtract absorbs the lone negation of a stored element, e.g.
+        // the '-b' of 'a - -b', which pass 3 moves after a constant
+        bool is_negation_absorbed{};
     };
 
     //
@@ -121,11 +121,9 @@ class arith_steps final {
             return;
         }
 
-        const bool is_negated{
-            first.op == arithmetic_operator::add and first.is_negated_operand,
-        };
+        if (first.op != arithmetic_operator::subtract and
+            not first.is_negation_absorbed) {
 
-        if (first.op != arithmetic_operator::subtract and not is_negated) {
             return;
         }
 
@@ -223,7 +221,7 @@ class arith_steps final {
             .element{},
             .value{identity},
             .folded_source{},
-            .is_negated_operand{},
+            .is_negation_absorbed{},
         };
 
         bool has_constant{};
@@ -1069,7 +1067,9 @@ class expr_arith final : public statement {
                 .folded_source{
                     std::format("{} {}", source_text(op), trimmed_source(e)),
                 },
-                .is_negated_operand{is_negated_operand(tc, e)},
+                .is_negation_absorbed{
+                    is_negation_absorbed(tc, dst, op, e, folded),
+                },
             });
         }
 
@@ -1264,27 +1264,19 @@ class expr_arith final : public statement {
         const arithmetic_operator op{s.op};
         const statement& src{*s.element};
 
-        // note: the element is stored, a literal or a constant name folds
-        //       into a constant step; the rewrite hides an overflow of the
-        //       negation, the check computes it
-
-        const bool is_negation_absorbed{
-            arith_steps::is_additive(op) and
-                not tc.overflow_check(dst).enabled and s.is_negated_operand,
-        };
-
         const stmt_identifier& ident{*src.operand_path()};
 
         const bool has_unary_ops{not ident.get_unary_ops().is_empty()};
 
         machine& x{tc.machine()};
 
-        x.comment({src.tok(), tc.indent()}, "{}",
-                  stored_operand_comment(is_negation_absorbed, has_unary_ops));
+        x.comment(
+            {src.tok(), tc.indent()}, "{}",
+            stored_operand_comment(s.is_negation_absorbed, has_unary_ops));
 
         machine::held_registers held{x, {src.tok(), tc.indent()}};
 
-        if (is_negation_absorbed) {
+        if (s.is_negation_absorbed) {
             const arithmetic_operator flipped{
                 op == arithmetic_operator::add ? arithmetic_operator::subtract
                                                : arithmetic_operator::add,
@@ -1323,7 +1315,7 @@ class expr_arith final : public statement {
     // the first step writes the destination, a later step that reads it
     // would read that; a name or literal first element is copied before
     // anything writes and its unary ops apply in place after the copy, a
-    // constant first step reads nothing; a read under another name counts,
+    // constant step reads nothing; a read under another name counts,
     // e.g. the 'e' of 'a[0] = e * 2 + e' in a 'foo a'
     // note: the steps are those 'compile_steps' emits in place, e.g. 'n = -n
     //       + 1' leads with the constant, then reads 'n'
@@ -1347,8 +1339,7 @@ class expr_arith final : public statement {
 
         return std::ranges::any_of(
             steps.subspan(1), [&tc, &dst](const step& s) -> bool {
-                return not arith_steps::is_merged(s) and
-                       reaches_destination(tc, *s.element, dst);
+                return not s.value and reaches_destination(tc, *s.element, dst);
             });
     }
 
@@ -1441,15 +1432,23 @@ class expr_arith final : public statement {
     }
 
     // add or subtract absorbs a lone negation: 'a - -b' is 'a + b'
-    [[nodiscard]] static auto is_negated_operand(const toc& tc,
-                                                 const statement& src) -> bool {
+    // note: the rewrite hides an overflow of the negation, the check computes
+    //       it
+    [[nodiscard]] static auto
+    is_negation_absorbed(const compile_toc& tc, const destination& dst,
+                         const arithmetic_operator op, const statement& src,
+                         const std::optional<folded_value>& folded) -> bool {
+
+        if (not arith_steps::is_additive(op) or folded or
+            tc.overflow_check(dst).enabled) {
+
+            return false;
+        }
 
         // a register or memory location, neither computed nor constant
         const stmt_identifier* const ident{src.operand_path()};
 
-        return ident != nullptr and
-               not make_ident_info(tc, *ident).is_const() and
-               ident->get_unary_ops().is_only_negated();
+        return ident != nullptr and ident->get_unary_ops().is_only_negated();
     }
 
     // note: asked of the operators after the first element, which are binary

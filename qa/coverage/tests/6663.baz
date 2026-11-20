@@ -1,0 +1,12 @@
+# --checks=overflow: the argument of a conversion of typed constants wraps
+let k = i8(100)
+let w = i16(300)
+func main() {
+    var r = i8(k * 2)
+    if r != -56 { exit(1) }
+    var s = i16(w * w)
+    if s != 24464 { exit(2) }
+    var t = i8(w * 1000)
+    if t != -32 { exit(3) }
+    exit(0)
+}

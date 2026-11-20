@@ -1,0 +1,6 @@
+# --checks=overflow: a product whose partial sums carry out of 32 bits panics
+func noinline mul(a i32, b i32) res i32 { res = a * b }
+func main() {
+    var x = mul(2147483647, 3)
+    exit(x)
+}

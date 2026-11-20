@@ -1,0 +1,7 @@
+# --checks=overflow: a product whose multiplicand loses its top bit panics,
+# also when the bits it keeps fit the width
+func noinline mul(a i32, b i32) res i32 { res = a * b }
+func main() {
+    var x = mul(0x40000001, 4)
+    exit(x)
+}

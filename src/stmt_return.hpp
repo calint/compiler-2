@@ -42,7 +42,7 @@ class stmt_return final : public statement {
         }
 
         // an inlined body ends where the call continues
-        x.branch(tc.indent(), func_scp.func_ret_label());
+        x.branch(tc.indent(), func_scp.return_label());
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

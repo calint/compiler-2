@@ -8338,3 +8338,16 @@ SRC=6582 && EXP=255 && OPTS="--checks=lower,line" RUN_ERR
 # stack check
 if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6583 && EXP=250 && OPTS="--stack=4096 --checks=noub,line" RUN_ERR; fi
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=6583 && EXP=0 && OPTS="--checks=noub,line" RUN; fi
+
+# --checks=overflow: a product whose partial sums carry out of 32 bits panics
+SRC=6660 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# --checks=overflow: a product whose multiplicand loses its top bit panics,
+# also when the bits it keeps fit the width
+SRC=6661 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# --checks=overflow: a product written to the element it multiplies panics
+SRC=6662 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# --checks=overflow: the argument of a conversion of typed constants wraps
+SRC=6663 && EXP=0 && OPTS="--checks=overflow" RUN

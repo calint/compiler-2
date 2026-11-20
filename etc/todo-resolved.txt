@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 517 (2026-11-20, bug hunt: integer widths and
+    conversions; design: arithmetic lists, 'expr_arith.hpp'; readability: a
+    newcomer walks the first third of 'toc.hpp')
+    => bug hunt: no defect; the round 505 model generator extended with
+       results wider than their parameters inside conversions with unary
+       ops, fields of global instances and elements as sources and
+       destinations, lists whose first element decides the type and
+       record literals checked per field: 46000 programs, 326000 runs;
+       immediates at the encoding edges of every operator and width:
+       360000 statements; 256 narrowing probes in 16 contexts; 28 mutants,
+       four missed by the suite: the carry and the multiplicand top bit of
+       the rv32i checked multiply (tests 6660, 6661), the x86_64 product in
+       memory losing its overflow branch (6662), the constant argument of
+       a conversion folded with the overflow check (6663)
+    => design: one owner for an absorbed negation: 'make_steps' sets
+       'step::is_negation_absorbed' (additive, not folded, overflow check
+       off, one '-') and 'lead_with_constant' and 'compile_stored_operand'
+       read it; the clobber rule skips a later step by its value like the
+       first (-1 line, listings equal); seven ideas kept with reasons (the
+       two folds reject differently, '* 1' reaches 'multiply' from
+       'scale_index')
+    => readability: 'ret_label' and 'func_ret_label' renamed
+       'return_label'; five comments (where a 'break' goes, a function
+       scope is open for 'innermost_loop_index', 'is_global_visible' is
+       true for a name that is no global, the capacity subtraction does
+       not wrap, 'make_name' binds the info as the caller resolved it);
+       154 functions, 6 predictions wrong
 [x] easy: round 516 (2026-11-20, bug hunt: malformed and near-valid
     programs in the front end after the changes of rounds 500 to 512;
     design: the rv32i assembler, 'assembler_rv32i.hpp'; readability: a
