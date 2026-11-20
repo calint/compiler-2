@@ -8405,3 +8405,11 @@ SRC=6961 && COMPERR
 # a constant start moves the address by all of its bytes, also past what an
 # rv32i immediate reaches
 SRC=6962 && DIFFINP
+
+# --checks=frame: the storage of a block skipped at compile time, compiled in a
+# dry run, is not part of the frame, eleven frames fit in 512 B
+SRC=7020 && EXP=0 && OPTS="--vars=512 --checks=frame" RUN
+
+# 'main' with parameters is reported before a later error of its signature,
+# the error furthest left comes first
+SRC=7040 && COMPERR

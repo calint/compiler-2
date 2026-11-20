@@ -459,8 +459,8 @@ class expr_bool_op final : public statement {
         return value;
     }
 
-    // the bytes are compared and the result is branched on as for a shorthand
-    // condition
+    // the bytes are compared into a 'bool' that holds the inversion of the
+    // action, then branched on as a shorthand that is not inverted
     auto
     compile_memory_comparison(compile_toc& tc, const comparison& cmp,
                               const machine::comparison_action& action) const
@@ -1103,8 +1103,8 @@ class expr_bool final : public statement {
     // which needs no register for its value
     auto check_folded(compile_toc& tc) const -> void {
         tc.check_skipped([&] -> void {
-            // note: two targets as an 'if', the same one for both would store
-            //       the value
+            // note: two labels as an 'if', one for both would store the value
+            //       and there is no 'dst'
 
             const std::string true_label{tc.unique_label(tok(), "bool")};
             const std::string false_label{compile_toc::end_label(true_label)};
@@ -1155,6 +1155,7 @@ class expr_bool final : public statement {
                 return std::nullopt;
             }
 
+            // note: the 'not's of the list apply after its elements decide it
             if (is_short_circuit(*value, false)) {
                 return *value != inverted;
             }

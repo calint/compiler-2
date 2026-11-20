@@ -88,7 +88,8 @@ struct func_head {
     std::optional<token> open_paren_tk;
 
     // no call gives 'main' type arguments or calls it out of line; its
-    // parameters and result follow, 'stmt_def_func' checks them
+    // parameters follow, 'assert_signature' checks them, and its result,
+    // 'stmt_def_func' checks it after the body
     auto assert_main_head() const -> void {
         if (name != reserved_names::main) {
             return;
@@ -121,10 +122,10 @@ struct func_head {
     }
 
     // the rules of the signature 'params' and 'result' after this head that
-    // need no types, checked for every kind of definition: the result is
-    // named apart from the parameters, 'self' is the result of a constructor
-    // and 'mut' needs a receiver; in source order, so the error furthest left
-    // comes first
+    // need no types, checked for every kind of definition: 'mut' needs a
+    // receiver, 'main' takes no arguments, the result is named apart from
+    // the parameters and 'self' is the result of a constructor; in source
+    // order, so the error furthest left comes first
     auto assert_signature(const stmt_def_func_param::syntax_list& params,
                           const std::optional<func_result>& result) const
         -> void {
@@ -132,6 +133,13 @@ struct func_head {
         const bool is_constructor{result and result->is_self()};
 
         assert_mut_has_receiver(is_constructor);
+
+        // e.g. 'func main(x) { x = 1 }' is rejected for its parameter, not
+        // for the write to it
+        if (name == reserved_names::main and not params.params.empty()) {
+            throw compile_error{params.params.front().name_tk,
+                                "'main' cannot have parameters"};
+        }
 
         if (result) {
             params.assert_result_not_named_like_param(result->name_tk);
@@ -519,7 +527,8 @@ class stmt_def_func final : public statement {
         : statement{src_loc_tk}, head_{head}, instance_{std::move(instance)} {
 
         // note: a generic definition is a 'stmt_def_func_generic', a head
-        //       with type parameters is read here only for an instance
+        //       with type parameters is read here only for an instance, whose
+        //       head names the instance's receiver type, e.g. 'str.print'
 
         assert(not head.is_generic_type_method());
         assert(instance_ or head.type_param_tks.empty());
@@ -884,15 +893,6 @@ class stmt_def_func final : public statement {
         }
     }
 
-    // no caller gives 'main' arguments; its head is checked by
-    // 'func_head::assert_main_head', its result by 'assert_main_has_no_result'
-    auto assert_main_signature() const -> void {
-        if (name() == reserved_names::main and not params_.empty()) {
-            throw compile_error{params_.front().tok(),
-                                "'main' cannot have parameters"};
-        }
-    }
-
     // every statement is reached and every path through the body sets the
     // result, also the end, which returns like a 'return' statement
     // note: without a result the type is 'void', of no bytes, which every
@@ -1040,8 +1040,8 @@ class stmt_def_func final : public statement {
             body_scope.mark_without_call();
 
             const bool takes_from_call{
-                array_param_count() != 0 or
-                    (is_inlined() and (not params_.empty() or has_result())),
+                is_inlined() ? not params_.empty() or has_result()
+                             : array_param_count() != 0,
             };
 
             if (takes_from_call) {
@@ -1161,10 +1161,6 @@ class stmt_def_func final : public statement {
         parse_params(tc, list);
 
         parse_result(tc, list, tz);
-
-        // before the body, e.g. 'func main(x) { x = 1 }' is rejected for its
-        // parameter, not for the write to it
-        assert_main_signature();
 
         // known only after the result: a constructor builds 'self' instead
         if (has_self_param()) {
@@ -1562,11 +1558,6 @@ class func_instantiator final {
             tokenizer& tz{reparse.tz()};
 
             const func_head head{func_head::read(tc, tz)};
-
-            // note: the head names the instance's receiver type, e.g.
-            //       'str.print'
-
-            assert(not head.is_generic_type_method());
 
             tc.add_func_instance(std::make_shared<stmt_def_func>(
                 tc, generic.func_tk, head, tz, instance));

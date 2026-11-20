@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 534 (2026-11-20, bug hunt: noinline frames and the
+    'stack' and 'frame' checks; design: function definitions,
+    'stmt_def_func.hpp'; readability: a newcomer walks 'expr_bool.hpp')
+    => bug hunt: no defect; a model generator of recursion 6 to 1500 deep
+       through inlined and noinline wrappers, locals of 1 B to 8 KiB,
+       registers held across calls, calls as arguments, constructors,
+       methods and array parameters, under six option sets on four
+       targets: 11400 programs, 131000 runs; the smallest '--stack' and
+       '--vars' of 900 programs searched per version with an emulator that
+       reports stores outside the variables and the stack: the 'stack'
+       boundary is always 48 B above the lowest store, none outside; an
+       x86_64 page oracle for frames; 17 mutants: a dry run that keeps its
+       frame peak passed the suite: test 7020; docs 8 say the depth 'stack'
+       stops at follows the kept version
+    => design: "'main' cannot have parameters" is checked with the other
+       rules of the signature in 'func_head::assert_signature', so the
+       error furthest left comes first ('func main(x) res foo {}' named the
+       type; test 7040); 'assert_main_signature' is gone (-5 lines); the
+       assert of 'parse_instance' that the constructor makes first is gone;
+       'frame_scope' reads by kind, an inlined function takes bindings, a
+       noinline one array lengths (listings equal); nine ideas kept
+    => readability: 'compile_memory_comparison' says its 'bool' holds the
+       inversion; the note of 'check_folded' says why two labels; a note
+       on the 'false' that 'constant_value' passes; 75 functions, 3
+       predictions wrong
 [x] easy: round 533 (2026-11-20, bug hunt: the sector built-ins; design:
     boolean expressions, 'expr_bool.hpp'; readability: a newcomer walks
     'expr_arith.hpp')

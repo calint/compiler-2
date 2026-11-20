@@ -1,0 +1,4 @@
+
+7040.baz:1:11: 'main' cannot have parameters
+func main(x) res foo {}
+          ^

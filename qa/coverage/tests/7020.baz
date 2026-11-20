@@ -1,0 +1,21 @@
+# --checks=frame: a block skipped at compile time is compiled in a dry run,
+# whose storage is not part of the frame: the eleven frames of 'down' fit in
+# 512 B of variables, with the 400 B of 'big' in the frame the last would not
+
+func noinline down(n) res {
+    if 1 == 2 {
+        var big = i8[400]
+        big[0] = i8(n)
+        res = int(big[0])
+        return
+    }
+    if n == 0 {
+        res = 0
+        return
+    }
+    res = down(n - 1) + 1
+}
+
+func main() {
+    exit(down(10) - 10)
+}

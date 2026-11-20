@@ -2150,7 +2150,8 @@ What depends on the target is listed here, nothing else does:
    'last' keep other versions than the default, and the frame size follows
    the kept version, 1.4), and a deep noinline recursion, which 'stack'
    stops on the bare-metal targets and the operating system on x86_64 and
-   rv32i (8.1); on rv32i linux the linker places the program, so
+   rv32i (8.1), at a depth that also follows the kept version through the
+   registers a call saves; on rv32i linux the linker places the program, so
    code, data and variables that fit in 4 GiB from address 0 can still fail
    the link, e.g. '--vars=0xffff0000' with 'ld.lld', which starts it at
    about 0x11000; on x86_64 '--vars' reaches 2^47 - 16, and variables
