@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 540 (2026-11-21, bug hunt: 'let' constants and their
+    folding; design: the assembler layer; readability: a newcomer walks
+    'program.hpp')
+    => bug hunt: one defect; a model generator of constant expressions of
+       every width and operator compared with the same expression over
+       variables, in an inlined and a noinline body, under 'noub' and no
+       checks: 41000 programs, 470000 runs; 150 probes; 16 mutants
+       1. the assert that round 537 put in 'stmt_builtin_convert::fold'
+          (a use narrower than the type only without the overflow check)
+          is reached: every element of a list is folded before the list
+          rejects a narrowed one, so 'let k = i8(1) + i32(5)', a 'dat', a
+          side of a comparison or an element of a literal under 'noub'
+          stopped on the assert; 'fold' checks overflow only where the
+          type is not wider than the use and leaves the narrowing to
+          'fold_checked'; 'stmt_identifier::fold' does the same for a
+          typed constant, so 'i8(1) + -j' with 'j' an 'i32' says narrowed,
+          not "overflows"; tests 7180 to 7182; docs 1.7
+       2. a constant remainder of negatives and a conversion wrapped at the
+          width of its use passed the suite as mutants: test 7183
+    => design: no change; four asserts say "not inside a version" as
+       'not is_capturing()' as the targets do; each optimization walks the
+       list once and no two routines decide the same fact about an
+       instruction; ten ideas kept with reasons
+    => readability: 'parse_definitions' says the file then moves to
+       'parsed_files_'; 21 functions, 2 predictions wrong
 [x] easy: round 539 (2026-11-21, bug hunt: boolean conditions and
     short-circuit evaluation; design: the top-level flow of a compile,
     'program.hpp'; readability: a newcomer walks 'generics.hpp' and

@@ -1,0 +1,22 @@
+# a constant remainder has the sign of the dividend, as computed at run time,
+# and a constant conversion wraps at its type also in a wider list, e.g. the
+# 'i8(300)' of 'i32(1) + i8(300)' is 44
+let r = -7 % -2
+let c = i32(1) + i8(300)
+
+func main() {
+    var a = -7
+    var b = -2
+
+    if r != a % b {
+        exit(1)
+    }
+
+    var w = 300
+
+    if c != i32(1) + i8(w) {
+        exit(2)
+    }
+
+    exit(c - 45)
+}

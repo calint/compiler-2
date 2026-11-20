@@ -1,0 +1,4 @@
+
+7180.baz:3:17: 'i32(5)' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+let k = i8(1) + i32(5)
+                ^~~

@@ -264,7 +264,7 @@ class assembler {
     // the lines added up to 'end_body' are a body of noinline 'function'
     // entered at 'label'
     auto begin_body(std::string function, std::string label) -> void {
-        assert(captures_.empty());
+        assert(not is_capturing());
 
         bodies_.push_back({
             .function{std::move(function)},
@@ -302,7 +302,7 @@ class assembler {
     }
 
     auto end_body() -> void {
-        assert(captures_.empty());
+        assert(not is_capturing());
         assert(not bodies_.empty());
 
         bodies_.back().end_line = lines_.size();
@@ -340,7 +340,7 @@ class assembler {
     [[nodiscard]] auto noinline_summaries() const
         -> std::vector<function_summary> {
 
-        assert(captures_.empty());
+        assert(not is_capturing());
 
         std::unordered_map<std::string_view, size_t> calls;
         for (const line& l : lines_) {
@@ -391,7 +391,7 @@ class assembler {
     // outside a jump, so the labels and the labels named outside jumps are
     // found once
     auto optimize(const bool is_jumps_optimized) -> void {
-        assert(captures_.empty());
+        assert(not is_capturing());
 
         const std::unordered_map<std::string_view, size_t> labels{
             label_lines(),

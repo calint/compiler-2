@@ -1,0 +1,4 @@
+
+7181.baz:5:22: '-i32(5)' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    if x == i8(1) + -i32(5) {
+                     ^~~

@@ -529,9 +529,19 @@ class stmt_identifier final : public statement {
 
         const folded_value& constant{info.constant()};
 
+        // note: a typed constant wider than its use is rejected as narrowed
+        //       after the fold like a variable, e.g. the '-j' of
+        //       'let k = i8(1) + -j' with 'j' an 'i32', so its ops wrap there
+
+        const bool is_narrowed{
+            constant.is_typed() and
+                constant.own_type->is_wider_than(use.width_ref()),
+        };
+
         const int64_t value{
             get_unary_ops().evaluate_at(constant.value, use.width_ref(),
-                                        use.checks_overflow),
+                                        use.checks_overflow and
+                                            not is_narrowed),
         };
 
         return folded_value{

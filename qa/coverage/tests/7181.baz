@@ -1,0 +1,9 @@
+# a conversion wider than the side of a comparison it is in is rejected as
+# narrowed, also under the overflow check
+func main() {
+    var x = i8(6)
+    if x == i8(1) + -i32(5) {
+        exit(1)
+    }
+    exit(0)
+}

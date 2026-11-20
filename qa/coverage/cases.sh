@@ -8432,3 +8432,19 @@ SRC=7140 && COMPERR
 # an error at the end of an included file that ends with a line feed is shown
 # after its last token
 SRC=7141 && COMPERR
+
+# a conversion wider than the list of a 'let' is rejected as narrowed, also
+# under the overflow check, which folds it at the width of the list
+SRC=7180 && OPTS="--checks=noub" COMPERR
+
+# a conversion wider than the side of a comparison is rejected as narrowed,
+# also under the overflow check
+SRC=7181 && OPTS="--checks=noub" COMPERR
+
+# a typed constant wider than the list of a 'let' is rejected as narrowed like
+# a variable, also when its negation overflows at the width of the list
+SRC=7182 && OPTS="--checks=noub" COMPERR
+
+# a constant remainder has the sign of the dividend as at run time, and a
+# constant conversion wraps at its type also in a wider list
+SRC=7183 && EXP=0 && RUN

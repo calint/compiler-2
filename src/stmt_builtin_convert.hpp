@@ -130,16 +130,16 @@ class stmt_builtin_convert final : public statement {
 
         const type& use_width{use.width_ref()};
 
-        // note: a use narrower than the type is in the argument of an outer
-        //       conversion, which wraps, e.g. the 'i16' of
-        //       'i8(i8(1) + i16(300))', which is then rejected as narrowed
+        // note: a use narrower than the type is rejected as narrowed after
+        //       the fold, e.g. the 'i32(5)' of 'let k = i8(1) + i32(5)' or
+        //       the 'i16' of 'i8(i8(1) + i16(300))', so its ops wrap there
 
-        assert(not use.checks_overflow or
-               not get_type().is_wider_than(use_width));
+        const bool checks_overflow{
+            use.checks_overflow and not get_type().is_wider_than(use_width),
+        };
 
         const int64_t value{
-            get_unary_ops().evaluate_at(converted, use_width,
-                                        use.checks_overflow),
+            get_unary_ops().evaluate_at(converted, use_width, checks_overflow),
         };
 
         // the ops wrap at the width of the use, e.g. -128 for the

@@ -1,0 +1,7 @@
+# a conversion wider than the list of a 'let' is rejected as narrowed, also
+# under the overflow check, which folds it at the width of the list
+let k = i8(1) + i32(5)
+
+func main() {
+    exit(i32(k))
+}

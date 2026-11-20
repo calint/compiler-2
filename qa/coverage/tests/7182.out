@@ -1,0 +1,4 @@
+
+7182.baz:4:18: '-j' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+let k = i8(1) + -j
+                 ^

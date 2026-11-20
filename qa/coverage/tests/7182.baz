@@ -1,0 +1,8 @@
+# a typed constant wider than the list of a 'let' is rejected as narrowed like
+# a variable, also when its negation overflows at the width of the list
+let j = i32(-128)
+let k = i8(1) + -j
+
+func main() {
+    exit(i32(k))
+}

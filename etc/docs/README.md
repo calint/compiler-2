@@ -630,7 +630,9 @@ inlined argument, the constant of a 'let'):
   'array_length', a list led by one, a list led by an untyped one that
   holds one, at the type of the list ('0 + k' with 'k' an 'i32' constant is
   an 'int', as with a variable 'k'), a 'let' of a type other than the
-  default type, e.g. 'let k = i8(3)' or 'let b = true'
+  default type, e.g. 'let k = i8(3)' or 'let b = true'; one wider than its
+  use is rejected as narrowed after the fold, its unary operators wrap there,
+  e.g. 'let k = i8(1) + i32(5)'
 - untyped: a literal or a 'let' of untyped values, checked by its value where
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not; a 'let'
   of one constant keeps it whole as its literal does, e.g. 'let u =

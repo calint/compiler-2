@@ -373,8 +373,8 @@ class program final {
         };
     }
 
-    // the definitions after the includes, 'tk' is the first of them; the
-    // statements of the file follow those of the files it included
+    // the definitions after the includes, 'tk' is the first of them; then the
+    // file moves to 'parsed_files_', after the files it included
     auto parse_definitions(parse_toc& tc, open_file& file, token tk) -> void {
         while (not tk.is_none()) {
             // a name is seen only after its definition, see
