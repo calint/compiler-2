@@ -1,0 +1,4 @@
+
+6961.baz:10:22: 'b' may be written by the call of 'fill' in a later argument, use a temporary variable
+    var n = write(1, b, 2, fill(b))
+                     ^

@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 531 (2026-11-20, bug hunt: the io built-ins 'read' and
+    'write'; design: the versions and dry runs; readability: a newcomer
+    walks 'ub_order.hpp' and 'ub_reads.hpp')
+    => bug hunt: no defect; a model generator of buffers that are locals,
+       globals, dats, fields and elements of records past the 12-bit
+       reach, every form of the call with starts and counts at 0, inside
+       and at the end, constant, run-time and folded, through inline and
+       noinline helpers, a run-time range fault at the end, stdin as a
+       file, a pipe, a pty, empty and the fpga uart: 6600 programs, 158000
+       runs; 150 probes; 28 mutants: the descriptor limit of 'write' ('ja'
+       for 'jae' on x86_64, the rv32i one but on fpga), the order check of
+       the io built-in and the address of a constant start past 2000 B
+       passed the suite: tests 6960 (descriptors 3 and 4 open), 6961, 6962
+    => design: 'statement::comment_source' no longer checks for a dry run,
+       'machine::comment' does; 'compile_toc::is_dry_run' is private, read
+       by 'add_noinline_body' only (-4 lines, listings equal, compile time
+       of roome equal); the save and restore of a version is one place per
+       layer; eight ideas kept with reasons
+    => readability: the parameter 'operand' of the two order checks
+       renamed 'operand_word', it is the word of the message beside a
+       vector of operands; the lambda parameter 'o' named 'operand'; 7
+       functions, 2 predictions wrong
 [x] easy: round 530 (2026-11-20, bug hunt: globals, 'dat' and the
     lookup of names after 'name_meaning' of round 529; design: the order
     and read checks, 'ub_order.hpp' and 'ub_reads.hpp'; readability: a

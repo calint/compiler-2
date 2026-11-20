@@ -8381,3 +8381,15 @@ SRC=6900 && EXP=6 && RUN
 
 # constants merged without the overflow check wrap at the width of the list
 SRC=6920 && EXP=0 && RUN
+
+# a descriptor above 2 is not served also when it is open: 'write' and 'read'
+# of 3 and 4, open to a file, return -9 and the file stays empty
+SRC=6960 && DIFFPY
+
+# 'write' reads its buffer at the call: a call in its count or start that may
+# write the buffer is rejected
+SRC=6961 && COMPERR
+
+# a constant start moves the address by all of its bytes, also past what an
+# rv32i immediate reaches
+SRC=6962 && DIFFINP

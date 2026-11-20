@@ -1,0 +1,19 @@
+# a descriptor above 2 is not served also when it is open: the script runs
+# the program with 3 and 4 open to a file, 'write' and 'read' of them return
+# -9 and the file stays empty
+
+dat text = "not to the file\n"
+
+func main() {
+    var buffer = i8[4]
+    var fd = 3
+    loop {
+        if fd == 5 break
+        if write(fd, text) != -9 exit(1)
+        if read(fd, buffer) != -9 exit(2)
+        fd = fd + 1
+    }
+    if write(3, text) != -9 exit(3)
+    if read(4, buffer, 1) != -9 exit(4)
+    write(1, text)
+}

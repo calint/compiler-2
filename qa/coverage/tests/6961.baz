@@ -1,0 +1,12 @@
+# 'write' reads its buffer at the call, after its later arguments: a call in
+# the count or the start that may write the buffer is rejected
+
+func noinline fill(b mut i8[]) res {
+    res = read(0, b, 2)
+}
+
+func main() {
+    var b = "abcd"
+    var n = write(1, b, 2, fill(b))
+    exit(n)
+}

@@ -3058,7 +3058,7 @@ struct usage_statistics {
 //   code           'add_read_only_constant', 'add_noinline_body',
 //                  'dry_run', 'check_skipped',
 //                  'emit_most_efficient', 'unique_label',
-//                  'is_dry_run', 'call_path_at',
+//                  'call_path_at',
 //                  'use_of', 'overflow_check' of a destination, the machine
 //   listing        'indent', 'indent_scope', 'end_label', 'continue_label'
 //   reachability   'is_reachable', 'end_path', 'record_break',
@@ -3079,7 +3079,7 @@ struct usage_statistics {
 //   'is_dry_run'              held by the machine, set by 'dry_run'
 //                             ('machine::dry_run'); read by
 //                             'add_noinline_body' (a body to check, not
-//                             emit) and by 'statement::comment_source'
+//                             emit) and by 'machine::comment'
 //   'scope::is_without_call'  set by 'stmt_def_func::frame_scope' without
 //                             array lengths and 'scope::main_func'; read for
 //                             the innermost function by 'check_skipped'
@@ -3500,14 +3500,6 @@ class compile_toc final : public toc {
     // the indent of the listing lines the code being compiled emits
     [[nodiscard]] auto indent() const -> size_t { return indent_; }
 
-    // inside 'dry_run', also in a version inside it: the code compiled is
-    // discarded, so a noinline call asks for a body to check, not to emit;
-    // the machine holds the mode with the state it puts back
-    [[nodiscard]] auto is_dry_run() const -> bool {
-        const ::machine& x{machine()};
-        return x.is_dry_run();
-    }
-
     // the code after the current statement of the function being compiled
     // runs on some path, the words of 'assignment_flow': 'end_path',
     // 'record_break', 'path_merge', and 'join_loop' for its 'trace_loop'; a
@@ -3678,6 +3670,14 @@ class compile_toc final : public toc {
             .storage{layout().peaks_now()},
             .reach{scopes().reach_state_now()},
         };
+    }
+
+    // inside 'dry_run', also in a version inside it: the code compiled is
+    // discarded, so a noinline call asks for a body to check, not to emit;
+    // the machine holds the mode with the state it puts back
+    [[nodiscard]] auto is_dry_run() const -> bool {
+        const ::machine& x{machine()};
+        return x.is_dry_run();
     }
 
     // a scope is pushed by 'scope_entry' and popped here with its storage; an

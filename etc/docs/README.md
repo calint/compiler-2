@@ -345,8 +345,8 @@ the longer of two versions after both are measured:
    scratch register, see 5.3
 
 A dry run writes no listing comments ('machine::comment' returns while
-'version_state::is_dry_run' is set), so it does not render the source it
-would quote; a version writes them, its lines may be kept.
+'version_state::is_dry_run' is set); a version writes them, its lines may be
+kept.
 
 What dropped code changed is put back by its owner, also when an error
 unwinds it:

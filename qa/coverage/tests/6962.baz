@@ -1,0 +1,22 @@
+# a constant start moves the address by all of its bytes, also past the 2047
+# that an rv32i immediate reaches, of an 'i8' and of an 'i32' array
+
+var bytes = i8[3000]
+
+func main() {
+    var words = i32[700]
+    bytes[2047] = 'a'
+    bytes[2048] = 'b'
+    bytes[2999] = '\n'
+    words[600] = 0x0a636261
+    write(1, bytes, 2, 2047)
+    write(1, bytes, 1, 2999)
+    write(1, words, 1, 600)
+    var got = read(0, bytes, 3, 2500)
+    if got != 3 exit(1)
+    if bytes[2500] != 'd' or bytes[2502] != '\n' exit(2)
+    write(1, bytes, 3, 2500)
+    got = read(0, words, 1, 650)
+    if got != 4 or words[650] != 0x0a7a7978 exit(3)
+    write(1, words, 1, 650)
+}
