@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 519 (2026-11-20, bug hunt: user types, records compared
+    whole with their padding; design: the driver, 'main.cpp',
+    'program.hpp' and 'source_files.hpp'; readability: a newcomer walks
+    the last part of 'toc.hpp')
+    => bug hunt: no defect; two model generators of types nested three
+       levels with fields of every width, arrays of records, generic
+       boxes, 'dat' and global records, full, partial and nested literals,
+       results written whole, by parts and leaf by leaf in shuffled order,
+       constructors and methods on paths at run-time indexes, the array
+       built-ins on parts, calls inside literals, a frame left at -1 before
+       each call, every record compared whole with '==': 4800 programs,
+       179000 runs, records of 1 to 4097 bytes, 25 probes; 20 mutants of
+       layout, zeroing, copy and compare, all caught by the suite
+    => design: stdout is written and checked one way
+       ('is_stdout_written') for the help, the version and the listing;
+       'main' is found once at the parse ('program::main_') where the
+       compile asked twice more behind a throw the parse made unreachable;
+       'source_files::load' reads and adds a file for 'main.cpp' and the
+       includes (listings and errors equal); eight ideas kept with reasons
+    => readability: 'uninstantiated_generics' renamed
+       'uninstantiated_generic_funcs', it holds functions only; a comment
+       that 'get_func_or_throw' finds no generic function, a note that
+       'nesting_' follows 'tz_'; 84 functions, 3 predictions wrong
 [x] easy: round 518 (2026-11-20, bug hunt: the built-in functions and
     how they fold; design: the built-in statements as a family;
     readability: a newcomer walks the middle of 'toc.hpp')

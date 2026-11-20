@@ -45,50 +45,6 @@ class source_files final {
     std::filesystem::path main_dir_;
 
   public:
-    // returns the index of the file, 'included_at' is none for the main file
-    auto add(std::string name, std::string text,
-             const std::optional<source_span> included_at) -> size_t {
-
-        std::error_code error;
-
-        const std::filesystem::path unresolved{
-            std::filesystem::absolute(std::filesystem::path{name}, error),
-        };
-
-        // e.g. a working directory that was removed, where '../x.baz' still
-        // opens
-        if (error) {
-            throw unlocated_error{
-                std::format("cannot resolve file {}, the working directory "
-                            "is not found",
-                            in_quotes(name))};
-        }
-
-        // the absolute path, its directory resolved ('resolved_path'), e.g.
-        // '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'
-        const std::filesystem::path resolved{resolved_path(unresolved)};
-
-        if (files_.empty()) {
-            main_dir_ = resolved.parent_path();
-        }
-
-        std::string relative_name{
-            resolved.lexically_relative(main_dir_).string(),
-        };
-
-        std::vector<size_t> line_begins{line_begins_of(text)};
-
-        files_.push_back({
-            .name{std::move(name)},
-            .text{std::move(text)},
-            .relative_name{std::move(relative_name)},
-            .line_begins{std::move(line_begins)},
-            .included_at{included_at},
-        });
-
-        return files_.size() - 1;
-    }
-
     // the column is 1-based, at a line end the one after its last character
     [[nodiscard]] auto column(const size_t file_ix, const size_t char_ix) const
         -> size_t {
@@ -131,6 +87,53 @@ class source_files final {
         return files_.at(file_ix).included_at;
     }
 
+    // reads the file and returns its index, 'included_at' is none for the
+    // main file
+    auto load(std::string name, const std::optional<source_span> included_at)
+        -> size_t {
+
+        std::string text{read_file(name)};
+
+        std::error_code error;
+
+        const std::filesystem::path unresolved{
+            std::filesystem::absolute(std::filesystem::path{name}, error),
+        };
+
+        // e.g. a working directory that was removed, where '../x.baz' still
+        // opens
+        if (error) {
+            throw unlocated_error{
+                std::format("cannot resolve file {}, the working directory "
+                            "is not found",
+                            in_quotes(name))};
+        }
+
+        // the absolute path, its directory resolved ('resolved_path'), e.g.
+        // '/w/include/x.baz' of 'lib/../include/x.baz' run from '/w'
+        const std::filesystem::path resolved{resolved_path(unresolved)};
+
+        if (files_.empty()) {
+            main_dir_ = resolved.parent_path();
+        }
+
+        std::string relative_name{
+            resolved.lexically_relative(main_dir_).string(),
+        };
+
+        std::vector<size_t> line_begins{line_begins_of(text)};
+
+        files_.push_back({
+            .name{std::move(name)},
+            .text{std::move(text)},
+            .relative_name{std::move(relative_name)},
+            .line_begins{std::move(line_begins)},
+            .included_at{included_at},
+        });
+
+        return files_.size() - 1;
+    }
+
     [[nodiscard]] auto name(const size_t file_ix) const -> std::string_view {
         return files_.at(file_ix).name;
     }
@@ -151,46 +154,6 @@ class source_files final {
     //
     // statics
     //
-
-    [[nodiscard]] static auto read_file(const std::string_view file_name)
-        -> std::string {
-
-        // a source is far smaller, the limit stops a file that never ends, e.g.
-        // a device, from using all the memory
-        constexpr size_t max_source_size_bytes{size_t{256} * 1024 * 1024};
-        constexpr size_t read_chunk_size_bytes{0x10000};
-
-        std::ifstream fs{std::string{file_name}};
-
-        if (not fs.is_open()) {
-            throw unlocated_error{
-                std::format("cannot open file {}", in_quotes(file_name))};
-        }
-
-        std::string contents;
-        std::array<char, read_chunk_size_bytes> chunk{};
-
-        while (
-            fs.read(chunk.data(), static_cast<std::streamsize>(chunk.size())) or
-            fs.gcount() > 0) {
-
-            contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
-
-            if (contents.size() > max_source_size_bytes) {
-                throw unlocated_error{std::format("file {} is larger than {} B",
-                                                  in_quotes(file_name),
-                                                  max_source_size_bytes)};
-            }
-        }
-
-        // a directory opens but cannot be read
-        if (fs.bad()) {
-            throw unlocated_error{
-                std::format("cannot read file {}", in_quotes(file_name))};
-        }
-
-        return contents;
-    }
 
     // the directory as the file system resolves it, as the file was opened:
     // a '..' after a symbolic link to a directory is the parent of the link's
@@ -232,6 +195,46 @@ class source_files final {
         }
 
         return begins;
+    }
+
+    [[nodiscard]] static auto read_file(const std::string_view file_name)
+        -> std::string {
+
+        // a source is far smaller, the limit stops a file that never ends, e.g.
+        // a device, from using all the memory
+        constexpr size_t max_source_size_bytes{size_t{256} * 1024 * 1024};
+        constexpr size_t read_chunk_size_bytes{0x10000};
+
+        std::ifstream fs{std::string{file_name}};
+
+        if (not fs.is_open()) {
+            throw unlocated_error{
+                std::format("cannot open file {}", in_quotes(file_name))};
+        }
+
+        std::string contents;
+        std::array<char, read_chunk_size_bytes> chunk{};
+
+        while (
+            fs.read(chunk.data(), static_cast<std::streamsize>(chunk.size())) or
+            fs.gcount() > 0) {
+
+            contents.append(chunk.data(), static_cast<size_t>(fs.gcount()));
+
+            if (contents.size() > max_source_size_bytes) {
+                throw unlocated_error{std::format("file {} is larger than {} B",
+                                                  in_quotes(file_name),
+                                                  max_source_size_bytes)};
+            }
+        }
+
+        // a directory opens but cannot be read
+        if (fs.bad()) {
+            throw unlocated_error{
+                std::format("cannot read file {}", in_quotes(file_name))};
+        }
+
+        return contents;
     }
 };
 

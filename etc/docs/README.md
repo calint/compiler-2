@@ -754,7 +754,7 @@ e.g. the register use at the failure that 'machine::register_error' adds.
    read as one of the code around it (5.3).
 3. A file that cannot be read is an 'unlocated_error', which
    'program::load_file' locates at its 'include'; so is a relative name in a
-   working directory that was removed ('source_files::add'). A file that
+   working directory that was removed ('source_files::load'). A file that
    starts with a byte order mark or has a carriage return without a line feed
    is rejected when it is loaded ('tokenizer::assert_source_well_formed').
 4. A message stays on its line and is valid UTF-8: a control byte, a byte

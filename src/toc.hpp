@@ -2344,7 +2344,7 @@ struct toc_tables final {
 //   both           'add_var' and 'add_const' (placed and commented only by
 //                  'compile_toc'), 'add_generic_const', 'resolve_declared',
 //                  'storage_of', 'use_at', 'overflow_check' without a
-//                  destination, 'get_main_or_throw'
+//                  destination
 //   tables         'builtins', 'checks', 'funcs', 'machine', 'scopes'
 //
 // the tables are read through these const accessors, a change goes through a
@@ -2395,17 +2395,6 @@ class toc {
 
     [[nodiscard]] auto funcs() const -> const function_table& {
         return tables().funcs;
-    }
-
-    // no token names a missing 'main'
-    [[nodiscard]] auto get_main_or_throw() const -> const stmt_def_func& {
-        const function_table& table{funcs()};
-
-        if (not table.has(reserved_names::main)) {
-            throw compile_error::file_level("function 'main' not found");
-        }
-
-        return *table.get(reserved_names::main).def;
     }
 
     [[nodiscard]] auto machine() const -> const ::machine& {
@@ -2837,6 +2826,7 @@ class parse_toc final : public toc {
         return tables().generics;
     }
 
+    // a function or an instance, e.g. 'f<i8>', not a generic one ('is_func')
     [[nodiscard]] auto get_func_or_throw(const token& src_loc_tk,
                                          const std::string_view name) const
         -> const stmt_def_func& {
@@ -3075,7 +3065,7 @@ struct usage_statistics {
     size_t max_body_vars_size_bytes{};
     size_t dat_size_bytes{};
     size_t dat_var_padding_bytes{};
-    std::vector<std::string> uninstantiated_generics;
+    std::vector<std::string> uninstantiated_generic_funcs;
 };
 
 // the context of the compile, made after the parse: the declarations are
@@ -3630,7 +3620,9 @@ class compile_toc final : public toc {
             .max_body_vars_size_bytes{t.storage.max_body_vars_size_bytes()},
             .dat_size_bytes{t.data.total_size_bytes()},
             .dat_var_padding_bytes{t.data.dat_var_padding_bytes()},
-            .uninstantiated_generics{t.generics.uninstantiated_func_names()},
+            .uninstantiated_generic_funcs{
+                t.generics.uninstantiated_func_names(),
+            },
         };
     }
 
@@ -3859,6 +3851,7 @@ class generic_reparse final {
     parse_toc::generic_scope scope_;
     tokenizer tz_;
     parse_toc::parse_nesting_scope nesting_;
+    // note: after 'tz_', whose next token locates a nesting error
 
   public:
     generic_reparse(parse_toc& tc, const size_t definition,

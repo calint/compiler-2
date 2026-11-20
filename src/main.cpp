@@ -23,7 +23,6 @@
 #include <string>
 #include <string_view>
 #include <system_error>
-#include <utility>
 #include <vector>
 
 // note: the headers kept without a use here hold the definitions that close
@@ -704,24 +703,21 @@ auto print_option_error(const std::string_view message) -> void {
     std::println(stderr, "use --help for usage information");
 }
 
+// whether what was written to 'std::cout' reached stdout, e.g. not a full disk
+// note: the flush reports a write that stdio buffered, e.g. to a closed stdout
+[[nodiscard]] auto is_stdout_written() -> bool {
+    std::cout.flush();
+    return static_cast<bool>(std::cout);
+}
+
 // 0 when 'text', named 'what' in the message, reached stdout, else 1 with a
 // message
-// note: the flush reports a write that stdio buffered, e.g. to a closed
-//       stdout; a text larger than the buffer already fails in 'std::print',
-//       which throws
 [[nodiscard]] auto written_to_stdout(const std::string_view text,
                                      const std::string_view what) -> int {
 
-    bool is_written{};
+    std::cout << text;
 
-    try {
-        std::print("{}", text);
-        is_written = std::fflush(stdout) == 0;
-    } catch (const std::system_error&) {
-        is_written = false;
-    }
-
-    if (is_written) {
+    if (is_stdout_written()) {
         return 0;
     }
 
@@ -1118,9 +1114,7 @@ auto check_output_files(const target_name& target, const source_files& files,
 // e.g. a full disk, the listing is incomplete, so the image written with it
 // is removed; an error before the output leaves an earlier image as it is
 auto check_listing_written(const machine& backend) -> void {
-    std::cout.flush();
-
-    if (std::cout) {
+    if (is_stdout_written()) {
         return;
     }
 
@@ -1136,9 +1130,7 @@ auto compile_to_stdout(const options& opts, source_files& files) -> void {
         opts.src_file_name.value_or(default_src_file_name),
     };
 
-    std::string src_text{source_files::read_file(src_file_name)};
-
-    files.add(std::string{src_file_name}, std::move(src_text), std::nullopt);
+    files.load(std::string{src_file_name}, std::nullopt);
 
     const target_name& target{*opts.target};
 

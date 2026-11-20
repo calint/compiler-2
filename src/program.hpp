@@ -9,7 +9,6 @@
 #include <ostream>
 #include <string>
 #include <system_error>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -122,7 +121,7 @@ class report_renderer final {
             .entries{},
         };
 
-        for (const std::string& name : usage.uninstantiated_generics) {
+        for (const std::string& name : usage.uninstantiated_generic_funcs) {
             section.entries.push_back({
                 .name{name},
                 .value{},
@@ -259,6 +258,8 @@ class program final {
     std::vector<parsed_file> parsed_files_;
     // the names and the storage of the program, see 'toc_tables'
     toc_tables tables_;
+    // the function the program starts at; never null after the constructor
+    const stmt_def_func* main_{};
 
   public:
     // the main file is the first of 'files', the included ones are added
@@ -273,9 +274,7 @@ class program final {
             parse_files(tc);
         }
 
-        // the program starts at 'main', its signature is checked where it is
-        // defined
-        std::ignore = tc.get_main_or_throw();
+        main_ = &parsed_main(tc);
     }
 
     auto build(std::ostream& os) -> void {
@@ -308,6 +307,22 @@ class program final {
     }
 
   private:
+    // the rules checked while compiling, e.g. a constant index in bounds,
+    // hold in every function without its calls too, also where a call folds
+    // the code away, so whether a program is accepted does not depend on its
+    // calls; this includes the instances that an alias of a generic type
+    // makes of its methods; 'main' takes nothing from a call and was
+    // compiled whole
+    auto check_function_bodies(compile_toc& tc) const -> void {
+        for (const stmt_def_func* const f : tc.funcs().defs()) {
+            // a noinline body without array lengths was checked as emitted
+            if (f != main_ and not tc.emitted_bodies().contains(*f, {})) {
+
+                f->check_body(tc);
+            }
+        }
+    }
+
     auto compile(compile_toc& tc) -> void {
         {
             const compile_toc::scope_entry root{tc, scope::block()};
@@ -322,7 +337,7 @@ class program final {
                 }
             }
 
-            tc.get_main_or_throw().compile_main(tc);
+            main_->compile_main(tc);
             emit_noinline_bodies(tc);
             check_function_bodies(tc);
             check_noinline_bodies(tc);
@@ -340,16 +355,11 @@ class program final {
     [[nodiscard]] auto load_file(const std::filesystem::path& path,
                                  const token& path_tk) -> size_t {
 
-        std::string text;
-
         try {
-            text = source_files::read_file(path.string());
+            return files_.get().load(path.string(), source_span::at(path_tk));
         } catch (const unlocated_error& e) {
             throw compile_error{path_tk, e.what()};
         }
-
-        return files_.get().add(path.string(), std::move(text),
-                                source_span::at(path_tk));
     }
 
     [[nodiscard]] auto opened_file(const size_t file_ix) const -> open_file {
@@ -454,24 +464,6 @@ class program final {
     // statics
     //
 
-    // the rules checked while compiling, e.g. a constant index in bounds,
-    // hold in every function without its calls too, also where a call folds
-    // the code away, so whether a program is accepted does not depend on its
-    // calls; this includes the instances that an alias of a generic type
-    // makes of its methods; 'main' takes nothing from a call and was
-    // compiled whole
-    static auto check_function_bodies(compile_toc& tc) -> void {
-        const stmt_def_func& func_main{tc.get_main_or_throw()};
-
-        for (const stmt_def_func* const f : tc.funcs().defs()) {
-            // a noinline body without array lengths was checked as emitted
-            if (f != &func_main and not tc.emitted_bodies().contains(*f, {})) {
-
-                f->check_body(tc);
-            }
-        }
-    }
-
     // a noinline body that was not emitted, asked for only by skipped code
     // or by 'check_function_bodies', is checked with its array lengths, as
     // an inlined call there is
@@ -561,5 +553,19 @@ class program final {
         };
 
         return resolved.lexically_proximate(std::filesystem::current_path());
+    }
+
+    // the program starts at 'main', its signature is checked where it is
+    // defined; no token names a missing one
+    [[nodiscard]] static auto parsed_main(const parse_toc& tc)
+        -> const stmt_def_func& {
+
+        const function_table& table{tc.funcs()};
+
+        if (not table.has(reserved_names::main)) {
+            throw compile_error::file_level("function 'main' not found");
+        }
+
+        return *table.get(reserved_names::main).def;
     }
 };
