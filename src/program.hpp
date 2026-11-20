@@ -277,16 +277,20 @@ class program final {
         main_ = &parsed_main(tc);
     }
 
+    // the output in its order: the code, the runtime it uses, the read-only
+    // constants, the data and the variables, then the report
     auto build(std::ostream& os) -> void {
         compile_toc tc{tables_};
 
         machine& x{tc.machine()};
 
         x.start();
-        compile(tc);
+        compile_code(tc);
+        x.emit_runtime();
+        x.emit_read_only_constants(tc.data().constants());
+        emit_data_section(tc);
         x.finish();
         report_renderer::write(x, tc.usage());
-        tc.assert_released();
 
         x.write_assembly(os);
     }
@@ -323,32 +327,25 @@ class program final {
         }
     }
 
-    auto compile(compile_toc& tc) -> void {
-        {
-            const compile_toc::scope_entry root{tc, scope::block()};
+    // in the root scope: the globals, 'main' and the noinline bodies, then
+    // the checks that emit nothing
+    auto compile_code(compile_toc& tc) -> void {
+        const compile_toc::scope_entry root{tc, scope::block()};
 
-            // a global 'var' or 'dat' is declared again with its storage, a
-            // type writes its layout comment, a function emits nothing here;
-            // the initializer of a global 'var' is emitted here, in the
-            // order of the files, so it runs before 'main'
-            for (const parsed_file& parsed : parsed_files_) {
-                for (const std::unique_ptr<statement>& s : parsed.statements) {
-                    s->compile(tc, destination{});
-                }
+        // a global 'var' or 'dat' is declared again with its storage, a type
+        // writes its layout comment, a function emits nothing here; the
+        // initializer of a global 'var' is emitted here, in the order of the
+        // files, so it runs before 'main'
+        for (const parsed_file& parsed : parsed_files_) {
+            for (const std::unique_ptr<statement>& s : parsed.statements) {
+                s->compile(tc, destination{});
             }
-
-            main_->compile_main(tc);
-            emit_noinline_bodies(tc);
-            check_function_bodies(tc);
-            check_noinline_bodies(tc);
         }
 
-        machine& x{tc.machine()};
-
-        x.emit_runtime();
-        x.emit_read_only_constants(tc.data().constants());
-
-        emit_data_section(tc);
+        main_->compile_main(tc);
+        emit_noinline_bodies(tc);
+        check_function_bodies(tc);
+        check_noinline_bodies(tc);
     }
 
     // the index of the file in 'files_'

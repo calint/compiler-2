@@ -212,21 +212,23 @@ class generic_call {
     [[nodiscard]] auto deduce_param_type(parse_toc& tc, const tokenizer& tz,
                                          const size_t index) -> const type* {
 
-        const generic_signature_param& p{param(index)};
+        const generic_signature_param& signature_param{param(index)};
 
-        const std::optional<size_t> type_param{
-            generic_->signature.type_param_index(p.type_name),
+        const std::optional<size_t> type_param_index{
+            generic_->signature.type_param_index(signature_param.type_name),
         };
 
-        if (not type_param) {
-            return fixed_param_type(tc, p);
+        if (not type_param_index) {
+            return fixed_param_type(tc, signature_param);
         }
 
-        const type*& arg_type{deduced_.at(*type_param)};
+        const type*& deduced_type{deduced_.at(*type_param_index)};
 
         // e.g. the 'b' of 'same(a, b)', 'a' told 'T' or nothing
-        if (generic_->signature.deducing_param(p.type_name) != index) {
-            return arg_type;
+        if (generic_->signature.deducing_param(signature_param.type_name) !=
+            index) {
+
+            return deduced_type;
         }
 
         tokenizer scan{tz};
@@ -235,10 +237,10 @@ class generic_call {
             told_type != nullptr) {
 
             deducing_args_.push_back(index);
-            arg_type = told_type;
+            deduced_type = told_type;
         }
 
-        return arg_type;
+        return deduced_type;
     }
 
     [[nodiscard]] auto generic_name() const -> std::string_view {
@@ -258,14 +260,16 @@ class generic_call {
         std::vector<generic_arg> type_args;
         type_args.reserve(params.size());
 
-        for (const auto [param, arg_type] : std::views::zip(params, deduced_)) {
-            if (arg_type == nullptr) {
+        for (const auto [param, deduced_type] :
+             std::views::zip(params, deduced_)) {
+
+            if (deduced_type == nullptr) {
                 throw_cannot_deduce(param.name_tk);
             }
 
             type_args.push_back({
                 .param_tk{param.name_tk},
-                .value{arg_type},
+                .value{deduced_type},
             });
         }
 
@@ -362,16 +366,19 @@ class generic_call {
     }
 
   private:
-    // the type that 'p' has in every instance: the default type, a type
-    // defined before the generic function or an argument of the generic type
-    // of a method, e.g. 'i8' for the 'V' of 'func cell.put<T type>(v V, t T)'
-    // called on a 'cell<i8>'; none for a name that is no type there, which
-    // the instance rejects
-    [[nodiscard]] auto fixed_param_type(parse_toc& tc,
-                                        const generic_signature_param& p) const
+    // the type that 'signature_param' has in every instance: the default
+    // type, a type defined before the generic function or an argument of the
+    // generic type of a method, e.g. 'i8' for the 'V' of 'func cell.put<T
+    // type>(v V, t T)' called on a 'cell<i8>'; null for a name that is no
+    // type there, which the instance rejects
+    // note: not an array, whose 'type_name' is empty too, see
+    //       'stmt_call::parse_deduced_argument'
+    [[nodiscard]] auto
+    fixed_param_type(parse_toc& tc,
+                     const generic_signature_param& signature_param) const
         -> const type* {
 
-        const std::string_view name{p.type_name};
+        const std::string_view name{signature_param.type_name};
 
         if (name.empty()) {
             return &tc.builtins().default_type();

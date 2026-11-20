@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 539 (2026-11-21, bug hunt: boolean conditions and
+    short-circuit evaluation; design: the top-level flow of a compile,
+    'program.hpp'; readability: a newcomer walks 'generics.hpp' and
+    'generic_call')
+    => bug hunt: no defect; a model generator in which every call prints a
+       mark, of 'and' and 'or' lists five deep with 'not's, comparisons at
+       every width with mixed sides, mirrored and edge constants and the
+       12-bit immediate edges, calls, conversions, record and array
+       equality, in 'if', 'else if', loop guards, stores that read their
+       destination, arguments and results, with constants that fold and
+       'mut' calls between elements: 17500 programs, 141000 runs; 23
+       mutants, 22 caught by the suite, the bool copy of
+       'compile_shorthand' equivalent (longer code)
+    => design: 'program::build' states the order of the output once, the
+       runtime, read-only constants and data no longer end
+       'program::compile', renamed 'compile_code' for the root scope;
+       'compile_toc::assert_released' is gone, the constructor and the
+       root scope assert it (-10 lines, listings equal); five ideas kept
+    => readability: 'generic_call' locals renamed: 'arg_type' to
+       'deduced_type', the index 'type_param' to 'type_param_index', 'p' to
+       'signature_param'; a note that 'fixed_param_type' never sees an
+       array; the registry keeps report names; 58 functions, 3
+       predictions wrong
 [x] easy: round 538 (2026-11-21, bug hunt: includes and sources in
     several files; design: generics; readability: a newcomer walks
     'stmt_builtin_convert.hpp' and 'stmt_builtin_exit.hpp')

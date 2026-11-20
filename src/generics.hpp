@@ -584,9 +584,10 @@ class generic_registry final {
     // the methods of the generic types, see 'add_method'
     std::vector<generic_func_info> methods_;
     std::vector<generic_type_instance> type_instances_;
-    // the generic functions a call can instantiate, in the order of
-    // definition, see 'uninstantiated_func_names'
+    // the report names of the generic functions a call can instantiate, in
+    // the order of definition, see 'uninstantiated_func_names'
     std::vector<std::string> instantiable_funcs_;
+    // report names, see 'mark_func_instantiated'
     std::set<std::string, std::less<>> instantiated_funcs_;
 
     std::reference_wrapper<const definition_order> order_;

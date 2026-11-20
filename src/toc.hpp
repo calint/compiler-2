@@ -3049,8 +3049,7 @@ struct usage_statistics {
 // e.g. a parameter 'self' of a type larger than the vars section holds an
 // address once the body is compiled; it holds what only the compile has:
 //
-//   program        'emitted_bodies', 'checked_bodies', 'usage',
-//                  'assert_released'
+//   program        'emitted_bodies', 'checked_bodies', 'usage'
 //   tables         'data', 'layout'
 //   scopes         'scope_entry', 'add_binding'
 //   code           'add_read_only_constant', 'add_noinline_body',
@@ -3341,12 +3340,6 @@ class compile_toc final : public toc {
 
         // note: the bytes of a literal may differ per call, e.g. '{k, 2}'
         return tables().data.add_constant(std::move(label), std::move(bytes));
-    }
-
-    // the scopes of the compile are popped
-    auto assert_released() const -> void {
-        // note: the scopes hold the storage in use, see 'storage_layout'
-        assert(tables().scopes.is_empty());
     }
 
     // the location of 'src_loc_tk' and the call path of the inlined bodies
