@@ -1,0 +1,4 @@
+
+7221.baz:4:18: constant '-c' does not fit 'i8' (-128 to 127), 'i8(...)' wraps it
+let k = i8(1) + -c
+                 ^

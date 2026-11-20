@@ -8448,3 +8448,9 @@ SRC=7182 && OPTS="--checks=noub" COMPERR
 # a constant remainder has the sign of the dividend as at run time, and a
 # constant conversion wraps at its type also in a wider list
 SRC=7183 && EXP=0 && RUN
+
+# an operand wider than its use in a nested list, and an untyped constant
+# that does not fit, are narrowed before an overflow is checked, so the
+# message does not depend on the checks
+SRC=7220 && OPTS="--checks=noub" COMPERR
+SRC=7221 && OPTS="--checks=noub" COMPERR

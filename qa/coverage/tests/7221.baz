@@ -1,0 +1,8 @@
+# an untyped constant that does not fit its use, also under the overflow
+# check
+let c = -128
+let k = i8(1) + -c
+
+func main() {
+    exit(i32(k))
+}

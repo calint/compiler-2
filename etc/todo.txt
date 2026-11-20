@@ -22,6 +22,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
        their results: 'a1', an argument of the io call, comes before 'a7'
        in the scratch order, so a call that would find 'a7' held is
        rejected on 'a1' first
+[ ] easy: (round 541, folding) a 'let' and a statement report different
+    errors for one constant list with two faults: 'let k = i8(1) + 300 / 0'
+    says "divisor must not be zero", 'x = i8(1) + 300 / 0' says "constant
+    '300' does not fit"; 'let k = i8(127) + 1 + 5 / 0' under 'noub' says
+    the divisor, the statement the overflow; 'fold_checked' folds the list
+    whole before it checks, 'compile_checked' checks each element in order
 [ ] easy: (round 536, registers, needs an extreme input) without keeping
     the receiver register in 'call_function', x86_64 goes wrong only with
     a frame address past 4 GiB ('--vars=0x100000000', an

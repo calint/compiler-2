@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 541 (2026-11-21, bug hunt: asserts of the last rounds
+    that ordinary input might reach; design: constant folding;
+    readability: a newcomer walks 'stmt_identifier.hpp')
+    => bug hunt: no defect; each assert and 'std::unreachable()' added
+       since round 520 read for its invariant and probed; generators of
+       every operand kind at 24 places a list is folded, of bodies whose
+       parameters are bound to constants, under asan on four targets:
+       83000 programs, 498000 runs; the third generator finds the assert
+       of round 540 on its parent; 3000 more on this round's fold
+    => design: the rule of round 540 lived in two node kinds and missed a
+       nested list and an untyped constant, whose message then depended on
+       the checks ('let k = i8(1) + -(i32(-128) + 0)' overflowed under
+       'noub', was narrowed under 'line'); 'fold_checked' now folds without
+       the overflow check, checks narrowing, then folds with the use's
+       check, as 'compile_checked' checks narrowing before it compiles; the
+       two node rules and the early narrowing check of 'expr_arith::fold'
+       are gone (-10 lines, listings equal, a checked fold folds twice);
+       tests 7220, 7221; a 'let' and a statement with two faults in one
+       constant list to 'etc/todo.txt'
+    => readability: the example of 'stmt_identifier::fold' is an error
+       under the overflow check; 'assert_element_selected' says why it asks
+       'elems_'; 71 functions, 2 predictions wrong
 [x] easy: round 540 (2026-11-21, bug hunt: 'let' constants and their
     folding; design: the assembler layer; readability: a newcomer walks
     'program.hpp')

@@ -1,0 +1,4 @@
+
+7220.baz:3:19: 'i32(-128)' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+let k = i8(1) + -(i32(-128) + 0)
+                  ^~~

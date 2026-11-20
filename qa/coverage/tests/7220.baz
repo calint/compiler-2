@@ -1,0 +1,7 @@
+# an operand of a nested list wider than its use is narrowed, also under
+# the overflow check
+let k = i8(1) + -(i32(-128) + 0)
+
+func main() {
+    exit(i32(k))
+}

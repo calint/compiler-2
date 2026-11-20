@@ -517,7 +517,7 @@ class stmt_identifier final : public statement {
 
     // a typed constant is a value of its type, so it wraps at the width of
     // its use like a variable, e.g. '-p' of an 'i8' 'p' bound to -128 is -128
-    // at 'i8'
+    // at 'i8', an error under the overflow check
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
@@ -529,19 +529,9 @@ class stmt_identifier final : public statement {
 
         const folded_value& constant{info.constant()};
 
-        // note: a typed constant wider than its use is rejected as narrowed
-        //       after the fold like a variable, e.g. the '-j' of
-        //       'let k = i8(1) + -j' with 'j' an 'i32', so its ops wrap there
-
-        const bool is_narrowed{
-            constant.is_typed() and
-                constant.own_type->is_wider_than(use.width_ref()),
-        };
-
         const int64_t value{
             get_unary_ops().evaluate_at(constant.value, use.width_ref(),
-                                        use.checks_overflow and
-                                            not is_narrowed),
+                                        use.checks_overflow),
         };
 
         return folded_value{
@@ -973,6 +963,9 @@ class stmt_identifier final : public statement {
     auto assert_element_selected(const ident_info& prefix,
                                  const token& src_loc_tk,
                                  const token& field_tk) const -> void {
+
+        // note: 'prefix' resolves an indexed last name as its array, only
+        //       'elems_' tells that it is indexed
 
         if (is_array_element()) {
             return;

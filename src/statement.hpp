@@ -243,7 +243,8 @@ class statement {
     // the value known at compile time where it is used, wrapped to its
     // width, empty when it is computed at run time; it does not check that
     // the value fits, a conversion computes its argument at a narrower width
-    // on purpose
+    // on purpose; under the overflow check an operand wider than the use is
+    // an overflow, 'fold_checked' rejects it as narrowed first
     [[nodiscard]] virtual auto fold([[maybe_unused]] const toc& tc,
                                     [[maybe_unused]] const value_use& use) const
         -> std::optional<folded_value> {
@@ -328,19 +329,28 @@ class statement {
     }
 
     // the fold of a value that must fit where it is used, checked as its
-    // compile is, so a folded value is rejected where a computed one is
-    // note: the check follows the fold, which keeps the low bits of an
-    //       operand that does not fit
+    // compile is, so a folded value is rejected where a computed one is: the
+    // narrowing before the overflow, e.g. the '-j' of 'let k = i8(1) + -j'
+    // with 'j' an 'i32' is narrowed, not an overflow at 'i8'
+    // note: the wrapping fold tells whether the value is known, it keeps the
+    //       low bits of an operand that does not fit
     [[nodiscard]] auto fold_checked(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> {
 
-        std::optional<folded_value> folded{fold(tc, use)};
+        const value_use wrapping{
+            .width{use.width},
+            .checks_overflow{false},
+        };
 
-        if (folded) {
-            assert_not_narrowed(tc, use.width_ref());
+        const std::optional<folded_value> wrapped{fold(tc, wrapping)};
+
+        if (not wrapped) {
+            return std::nullopt;
         }
 
-        return folded;
+        assert_not_narrowed(tc, use.width_ref());
+
+        return fold(tc, use);
     }
 
     [[nodiscard]] auto get_type() const -> const type& {

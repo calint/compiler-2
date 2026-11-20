@@ -631,8 +631,8 @@ inlined argument, the constant of a 'let'):
   holds one, at the type of the list ('0 + k' with 'k' an 'i32' constant is
   an 'int', as with a variable 'k'), a 'let' of a type other than the
   default type, e.g. 'let k = i8(3)' or 'let b = true'; one wider than its
-  use is rejected as narrowed after the fold, its unary operators wrap there,
-  e.g. 'let k = i8(1) + i32(5)'
+  use is rejected as narrowed before its overflow is checked, e.g. the '-j'
+  of 'let k = i8(1) + -j' with 'j' an 'i32' (see 'fold_checked' below)
 - untyped: a literal or a 'let' of untyped values, checked by its value where
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not; a 'let'
   of one constant keeps it whole as its literal does, e.g. 'let u =
@@ -678,7 +678,10 @@ like a list at its width W, where it wraps, checks it there unless it is one
 untyped constant, which converts whole (e.g. 'i32(0xfedc1234)' on rv32i), and
 narrows the result to its type; 'statement::fold_checked' adds the check of
 'assert_not_narrowed' at the same width, so a folded comparison side or
-initializer is rejected where a computed one is. A constant reaches a
+initializer is rejected where a computed one is: it folds without the
+overflow check to learn whether the value is known, checks the narrowing,
+then folds at the use, so a value that does not fit is narrowed under every
+'--checks', not an overflow under 'overflow'. A constant reaches a
 destination only through the list that holds it ('expr_arith', the
 immediate by 'constant_operand'); the nodes in a list never emit one.
 A comparison side has its own rule ('expr_bool_op::right_operand'): the
