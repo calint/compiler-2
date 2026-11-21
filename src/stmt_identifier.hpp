@@ -523,13 +523,11 @@ class stmt_identifier final : public statement {
 
         const folded_value& constant{info.constant()};
 
-        const int64_t value{
-            get_unary_ops().evaluate_at(constant.value, use.width_ref(),
-                                        use.checks_overflow),
-        };
-
         return folded_value{
-            .value{constant_arith::wrap_to_width(value, use.width_ref())},
+            .value{
+                get_unary_ops().evaluate_at(constant.value, use.width_ref(),
+                                            use.checks_overflow),
+            },
             .own_type{constant.own_type},
         };
     }

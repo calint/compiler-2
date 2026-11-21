@@ -642,12 +642,11 @@ class expr_arith final : public statement {
             value = fold_operation(tc, value, o.op, e->tok(), rhs, width_type);
         }
 
-        const int64_t result{
-            get_unary_ops().evaluate_at(value, width_type, use.checks_overflow),
-        };
-
         return folded_value{
-            .value{constant_arith::wrap_to_width(result, width_type)},
+            .value{
+                get_unary_ops().evaluate_at(value, width_type,
+                                            use.checks_overflow),
+            },
             .own_type{own_type},
         };
     }

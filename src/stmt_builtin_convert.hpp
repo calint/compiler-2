@@ -128,17 +128,13 @@ class stmt_builtin_convert final : public statement {
             constant_arith::wrap_to_width(arg->value, get_type()),
         };
 
-        const type& use_width{use.width_ref()};
-
-        const int64_t value{
-            get_unary_ops().evaluate_at(converted, use_width,
-                                        use.checks_overflow),
-        };
-
         // the ops wrap at the width of the use, e.g. -128 for the
         // '-i8(-128)' of 'i8(-i8(-128))'
         return folded_value{
-            .value{constant_arith::wrap_to_width(value, use_width)},
+            .value{
+                get_unary_ops().evaluate_at(converted, use.width_ref(),
+                                            use.checks_overflow),
+            },
             .own_type{&get_type()},
         };
     }

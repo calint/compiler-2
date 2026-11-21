@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 561 (2026-11-22, bug hunt: scopes and the hiding of
+    names; design: the arithmetic on constants; readability: a newcomer
+    walks 'stmt_builtin_io.hpp')
+    => bug hunt: no defect; a model generator of the names 'x', 'e', 'i'
+       and 'n' declared as globals, dats, functions, types, locals,
+       parameters, results, 'foo' names and generic parameters, used six
+       scopes deep in inlined, noinline, method and generic bodies, with
+       the expected message of every rejection: 12000 programs, 85000
+       runs; 200 probes of a value beside a type, a function or a generic
+       of its name and of the definition order; 17 mutants, two
+       equivalent; one message to 'etc/todo.txt'
+    => design: 'unary_ops::evaluate_at' wraps its result to the width of
+       the use, which its three callers each did after it;
+       'stmt_builtin_array_length::fold' folds at the use like the other
+       folds instead of ignoring it (listings and errors equal); seven
+       ideas kept with reasons
+    => readability: 'assert_buffer' returns the place of the buffer;
+       'compile_arguments' loads the address in argument order; a note
+       that a negative constant start was rejected; 25 functions, 3
+       predictions wrong
 [x] easy: round 560 (2026-11-22, bug hunt: the asserts of the backends,
     those of rounds 549, 550 and 559 first; design: the io and sector
     built-ins; readability: a newcomer walks 'fuzzlib.py')

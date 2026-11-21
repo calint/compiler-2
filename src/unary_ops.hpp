@@ -44,19 +44,23 @@ class unary_ops final {
         }
     }
 
-    // the ops applied to a constant used at 'width_type', not wrapped to it;
-    // with the overflow check a negation of the minimum of 'width_type' is an
+    // the ops applied to a constant used at 'width_type', wrapped to it; with
+    // the overflow check a negation of the minimum of 'width_type' is an
     // error at that negation
     [[nodiscard]] auto evaluate_at(const int64_t value, const type& width_type,
                                    const bool checks_overflow) const
         -> int64_t {
 
-        if (not checks_overflow) {
-            return evaluate(value, std::nullopt);
+        std::optional<int64_t> overflow_minimum;
+
+        if (checks_overflow) {
+            overflow_minimum =
+                constant_arith::signed_minimum(width_type.size_bits());
         }
 
-        return evaluate(value,
-                        constant_arith::signed_minimum(width_type.size_bits()));
+        const int64_t result{evaluate(value, overflow_minimum)};
+
+        return constant_arith::wrap_to_width(result, width_type);
     }
 
     // the ops applied to 'value' at 64 bits, wrapping, without the overflow

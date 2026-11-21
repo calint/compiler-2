@@ -199,9 +199,9 @@ class stmt_builtin_io final : public statement {
 
         static_assert(std::ranges::all_of(functions_, is_cataloged));
 
-        for (const io_function& info : functions_) {
-            if (info.name == name) {
-                return &info;
+        for (const io_function& io : functions_) {
+            if (io.name == name) {
+                return &io;
             }
         }
 
@@ -209,9 +209,9 @@ class stmt_builtin_io final : public statement {
     }
 
   private:
-    // the checks of the buffer that need no code, made before the arguments
-    // are compiled: whole sectors for a sector function and a constant range
-    // in its bounds
+    // the place of the buffer after the checks that need no code, made before
+    // the arguments are compiled: whole sectors for a sector function and a
+    // constant range in its bounds
     [[nodiscard]] auto assert_buffer(const toc& tc) const -> place {
         // note: the parse took a path to a whole array ('assert_buffer_path'),
         //       not an address, which would bypass the bounds check
@@ -347,7 +347,8 @@ class stmt_builtin_io final : public statement {
 
         const ident_info& buffer_info{buffer.info};
 
-        // the range is checked after the count
+        // the array address in argument order, moved to the start after the
+        // count, which the range check needs
         buffer.ident->load_address(tc, tok(), buffer_reg);
 
         const std::optional<int64_t> known_count{
@@ -502,6 +503,7 @@ class stmt_builtin_io final : public statement {
                        const ident_info& buffer_info) const -> void {
 
         if (const std::optional<int64_t> start{constant_start(tc)}) {
+            // note: 'assert_buffer' rejected a negative constant start
             move_to_constant_start(tc, buffer_reg, count, buffer_info,
                                    static_cast<size_t>(*start));
 

@@ -76,10 +76,10 @@ class stmt_builtin_array_length final : public statement {
         assert(src_info.is_length_unknown());
     }
 
-    // folds at any width like a typed constant, 'assert_not_narrowed' rejects
-    // a narrower one, so a 'dat' reports it as narrowed on every target
-    [[nodiscard]] auto fold(const toc& tc,
-                            [[maybe_unused]] const value_use& use) const
+    // a typed constant, wrapped at the width of its use like one, see
+    // 'statement::fold'; 'assert_not_narrowed' rejects a narrower use, so a
+    // 'dat' reports it as narrowed on every target
+    [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
         // the parse checked the indexes against the lengths it knows, a call
@@ -110,7 +110,10 @@ class stmt_builtin_array_length final : public statement {
         // typed, so a comparison gets the verdict of the length computed at
         // run time, e.g. in a function checked without a call
         return folded_value{
-            .value{get_unary_ops().evaluate_constant(length)},
+            .value{
+                get_unary_ops().evaluate_at(length, use.width_ref(),
+                                            use.checks_overflow),
+            },
             .own_type{&get_type()},
         };
     }
