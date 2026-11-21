@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 548 (2026-11-21, bug hunt: generic types with methods
+    and constant arguments; design: the x86_64 backend; readability: a
+    newcomer walks 'parse_statement.hpp' and 'constant_parser.hpp')
+    => bug hunt: no defect; a model generator of generic types of one to
+       three type and constant parameters, based types three levels deep,
+       aliases spelled twice, parameters named like globals, definitions in
+       random order, 'mut' methods, constructors, generic methods deduced
+       from arguments and destinations, receivers at every place, checking
+       values, layouts against hand-written twins and the report: 12500
+       programs, 155000 runs; 400 split into includes; 110 probes; 21
+       mutants, the suite caught all but one bound to a name
+    => design: 'shift' lowers its destination and emits with 'cl' itself,
+       so 'emit_widening_op' loses its exception for 'sal' and 'sar' and
+       only widens (listings equal); 'lower_address' of a displacement
+       beyond 'int32_t' no longer ends with a 'lea' into the sum: it
+       addresses '[base + sum]' or '[sum + index*scale]' (-114 instructions
+       over the x86_64 tests, 9 compiles with a far '--vars'; the check of
+       test-cli.sh that pinned the old 'lea' now pins the new form); eleven
+       ideas kept with reasons
+    => readability: 'literal_value' is empty for a malformed number too;
+       'parse_keyword_statement' returns null only for a name or a keyword
+       the caller rejects; 'assert_value_or_call' leaves an unknown name to
+       'stmt_identifier'; 24 functions, 3 predictions wrong
 [x] easy: round 547 (2026-11-21, bug hunt: 'bool' as a stored value;
     design: statement parsing; readability: a newcomer walks
     'tokenizer.hpp' and 'token.hpp')

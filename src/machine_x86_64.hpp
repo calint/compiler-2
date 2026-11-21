@@ -482,7 +482,12 @@ class machine_x86_64 final : public machine {
             check_shift_count(site, dst.type_ref());
         }
 
-        emit_op(site, code, dst, sized_register("rcx", size_byte_));
+        // the count is 'cl' at any width of 'dst', not a narrower source that
+        // 'emit_op' extends
+        const operation_scope lowering{*this, dst};
+        const operand lowered{lower_address(site, dst)};
+
+        emit(site.indent, code, lowered, sized_register("rcx", size_byte_));
     }
 
     // up to 'immediate_store_threshold_bytes_' as immediates; larger ones are
@@ -1537,12 +1542,6 @@ class machine_x86_64 final : public machine {
             return;
         }
 
-        // the count of a shift is not extended
-        if (code == op::sal or code == op::sar) {
-            emit(site.indent, code, dst_op, src_op);
-            return;
-        }
-
         emit_through_register(site, code, dst_op, src_op);
     }
 
@@ -1607,18 +1606,17 @@ class machine_x86_64 final : public machine {
         const std::string_view sum{address.register_name()};
         assembler_.instruction(site.indent, op::mov, sum, value.displacement());
 
+        if (value.index_register().empty()) {
+            return operand::mem(value.base_register(), address.register_name(),
+                                1, 0, value.type_ref());
+        }
+
         assembler_.instruction(site.indent, op::lea, sum,
                                register_sum(value.base_register(), sum, 1));
 
         // note: 'address_is_encodable' asserted the index and its scale
-        if (not value.index_register().empty()) {
-            assembler_.instruction(
-                site.indent, op::lea, sum,
-                register_sum(sum, value.index_register(), value.scale()));
-        }
-
-        return operand::mem(address.register_name(), {}, 1, 0,
-                            value.type_ref());
+        return operand::mem(address.register_name(), value.index_register(),
+                            value.scale(), 0, value.type_ref());
     }
 
     // an unrolled part of 'address'

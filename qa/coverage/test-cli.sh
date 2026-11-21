@@ -798,8 +798,10 @@ CLI_FAR_INDEXED_ELEMENT() {
     printf '    var i = 2\n    a[i] = 7\n    exit(a[i])\n}\n' >>gen-far.baz
     "$BIN" --vars=0x100000000 gen-far.baz >gen.s 2>err
     [[ ! -s err ]]
-    # a register sums the base and the offset of 'a', then the index
-    grep -Eq '^ +lea r[0-9]+, \[r[0-9]+ \+ r[0-9]+ \* 8\]$' gen.s
+    # a register sums the base and the offset of 'a', the element adds the
+    # index to it
+    grep -Eq '^ +lea r[0-9]+, \[rbp \+ r[0-9]+\]$' gen.s
+    grep -Eq '^ +mov qword \[r[0-9]+ \+ r[0-9]+ \* 8\], 7$' gen.s
     rm -f gen-far.baz
     echo ok
 }

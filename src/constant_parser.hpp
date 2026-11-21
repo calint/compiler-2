@@ -43,7 +43,8 @@ class constant_parser final {
                is_bool_literal(tk.text());
     }
 
-    // e.g. '0x10', ''a'' or 'true', empty for a text that is no literal
+    // e.g. '0x10', ''a'' or 'true'; empty for a malformed number or a text
+    // that is no literal
     [[nodiscard]] static auto literal_value(const token& src_loc_tk,
                                             const std::string_view str)
         -> std::optional<literal> {

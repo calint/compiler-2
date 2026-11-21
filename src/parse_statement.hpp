@@ -198,8 +198,8 @@ inline auto assert_return_without_value(const tokenizer& tz,
     }
 }
 
-// a statement that starts with a keyword, null for a name or for a keyword no
-// statement starts with, e.g. 'mut'
+// a statement that starts with a keyword, null for a name or for a keyword
+// the caller rejects, e.g. 'mut'
 inline auto parse_keyword_statement(parse_toc& tc, tokenizer& tz,
                                     const token& tk)
     -> std::unique_ptr<statement> {
@@ -248,7 +248,8 @@ using call_or_identifier =
     std::variant<std::unique_ptr<stmt_call>, std::unique_ptr<stmt_identifier>>;
 
 // a term that is neither a value nor a call, e.g. the 'i8' of 'i8 + 1' or
-// the 'f' of 'f + 1'
+// the 'f' of 'f + 1'; an unknown name is reported where 'stmt_identifier'
+// resolves it
 inline auto assert_value_or_call(const parse_toc& tc, const tokenizer& tz,
                                  const token& tk, const term_kind tm) -> void {
 
