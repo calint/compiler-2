@@ -152,8 +152,8 @@ def fuzz_one(args):
                 f.truncate(SDCARD_SIZE_BYTES)
             rv = fl.run([fl.QEMU_USER, RV32I], 10, cwd=work_rv32i,
                         stdin_bytes=data)
-            outcomes.append(("rv32i", fl.outcome_x86(rv), rv.stderr))
-    o86 = fl.outcome_x86(r86)
+            outcomes.append(("rv32i", fl.outcome_stdio(rv), rv.stderr))
+    o86 = fl.outcome_stdio(r86)
     text = data.decode("latin-1")
     for target, o, stderr in [("x86", o86, r86.stderr)] + outcomes:
         if o.kind == "panic":

@@ -151,7 +151,7 @@ def fuzz_one(args):
         begin = time.time()
         result = fl.run(command, fl.COMPILE_TIMEOUT, cwd=work, file_size=1 << 30)
         if file_arguments and not result.timed_out:
-            fl.note_if_slow(begin, fl.COMPILER_ASAN, options, file_arguments[0])
+            fl.note_if_slow(begin, fl.COMPILER_ASAN, file_arguments[0], options)
         sanitizer = any(t in result.stderr for t in fl.SANITIZER_TEXT)
         if result.timed_out:
             found.append(("option-hang", description[:100], result.stderr[-500:]))

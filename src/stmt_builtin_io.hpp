@@ -316,65 +316,6 @@ class stmt_builtin_io final : public statement {
         return args_.array_at(buffer_index_);
     }
 
-    // the run-time check of 'count' elements from 'start', each an immediate
-    // when constant; none when both are constant, 'assert_buffer' checked them
-    auto check_range(compile_toc& tc, const operand& start,
-                     const operand& count, const ident_info& buffer_info) const
-        -> void {
-
-        const std::optional<size_t> array_len{buffer_info.array_len()};
-
-        // note: an unknown length is the check of a function without its
-        //       calls or a body it checks, the code is discarded, see
-        //       'ident_info::is_length_unknown'
-
-        if (not array_len) {
-            return;
-        }
-
-        const std::optional<machine::bounds_range> range{
-            machine::bounds_range::of_range(start, count, *array_len),
-        };
-
-        if (not range) {
-            return;
-        }
-
-        // note: a run-time count is a count argument, the count of a whole
-        //       array of known length or of a sector is constant
-
-        const expr_any* const start_arg{start_argument()};
-
-        // the argument the check tests: a run-time start, else the count,
-        // which a constant start leaves checked alone
-        // ('bounds_range::of_range'), as the compile-time check names it
-        const expr_any& checked_arg{
-            start_arg != nullptr and not start.is_immediate()
-                ? *start_arg
-                : *count_argument(),
-        };
-
-        machine& x{tc.machine()};
-
-        x.check_bounds({checked_arg.tok(), tc.indent()}, *range);
-    }
-
-    // the range is checked and the buffer address moves to the start, which
-    // is 0 without a start argument; 'count' is an immediate when constant
-    auto check_range_from_start(compile_toc& tc, const operand& buffer_reg,
-                                const operand& count,
-                                const ident_info& buffer_info) const -> void {
-
-        if (const std::optional<int64_t> start{constant_start(tc)}) {
-            move_to_constant_start(tc, buffer_reg, count, buffer_info,
-                                   static_cast<size_t>(*start));
-
-            return;
-        }
-
-        move_to_run_time_start(tc, buffer_reg, count, buffer_info);
-    }
-
     // every argument into the register of the call the target takes it in,
     // 'args', in the order of the arguments, then the range check and the
     // byte count; the count and start are in elements
@@ -421,7 +362,7 @@ class stmt_builtin_io final : public statement {
                 : count,
         };
 
-        check_range_from_start(tc, buffer_reg, checked_count, buffer_info);
+        move_to_start(tc, buffer_reg, checked_count, buffer_info);
 
         // the count becomes the byte count
         x.scale_index({tok(), tc.indent()}, count,
@@ -506,7 +447,8 @@ class stmt_builtin_io final : public statement {
 
         const type& default_type{tc.builtins().default_type()};
 
-        check_range(tc, operand::imm(start, default_type), count, buffer_info);
+        check_range(tc, operand::imm(start, default_type), count, buffer_info,
+                    count_argument());
 
         const size_t offset_bytes{
             start * buffer_info.type_ref().size_bytes(),
@@ -544,13 +486,29 @@ class stmt_builtin_io final : public statement {
 
         start_arg->compile(tc, destination::of_register(start));
 
-        check_range(tc, start, count, buffer_info);
+        check_range(tc, start, count, buffer_info, start_arg);
 
         x.scale_index({tok(), tc.indent()}, start,
                       buffer_info.type_ref().size_bytes());
 
         x.add_subtract({tok(), tc.indent()}, arithmetic_operator::add,
                        buffer_reg, start);
+    }
+
+    // the range is checked and the buffer address moves to the start, which
+    // is 0 without a start argument; 'count' is an immediate when constant
+    auto move_to_start(compile_toc& tc, const operand& buffer_reg,
+                       const operand& count,
+                       const ident_info& buffer_info) const -> void {
+
+        if (const std::optional<int64_t> start{constant_start(tc)}) {
+            move_to_constant_start(tc, buffer_reg, count, buffer_info,
+                                   static_cast<size_t>(*start));
+
+            return;
+        }
+
+        move_to_run_time_start(tc, buffer_reg, count, buffer_info);
     }
 
     // the start, the last argument a call can have, null when left out
@@ -570,6 +528,42 @@ class stmt_builtin_io final : public statement {
     //
     // statics
     //
+
+    // the run-time check of 'count' elements from 'start', each an immediate
+    // when constant; none when both are constant, 'assert_buffer' checked
+    // them; 'checked_arg' names the check as the compile-time check does: a
+    // run-time start, else the count, null when there is no count argument
+    static auto check_range(compile_toc& tc, const operand& start,
+                            const operand& count, const ident_info& buffer_info,
+                            const expr_any* const checked_arg) -> void {
+
+        const std::optional<size_t> array_len{buffer_info.array_len()};
+
+        // note: an unknown length is the check of a function without its
+        //       calls or a body it checks, the code is discarded, see
+        //       'ident_info::is_length_unknown'
+
+        if (not array_len) {
+            return;
+        }
+
+        const std::optional<machine::bounds_range> range{
+            machine::bounds_range::of_range(start, count, *array_len),
+        };
+
+        if (not range) {
+            return;
+        }
+
+        // note: a run-time count is a count argument, the count of a whole
+        //       array of known length or of a sector is constant
+
+        assert(checked_arg != nullptr);
+
+        machine& x{tc.machine()};
+
+        x.check_bounds({checked_arg->tok(), tc.indent()}, *range);
+    }
 
     // the call is checked to be in a function before its arguments are read,
     // as for a call of a function, e.g. 'write' in the initializer of a global

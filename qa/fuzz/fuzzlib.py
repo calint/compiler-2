@@ -46,9 +46,9 @@ ENVIRONMENT = dict(
     UBSAN_OPTIONS="halt_on_error=1:exitcode=98:print_stacktrace=1",
 )
 # the exit code of each panic, the same on every target; a panic prints a
-# newline and 'panic: NAME', on x86_64 on standard error, on rv32i-fpga on the
-# uart after the output of the program, with ' at FILE:LINE' under
-# '--checks=line'
+# newline and 'panic: NAME', on x86_64 and rv32i on standard error, on
+# 'UART_TARGETS' on the uart after the output of the program, with
+# ' at FILE:LINE' under '--checks=line'
 PANIC_CODE = {"overflow": 249, "stack overflow": 250, "overlap": 251,
               "shift": 252, "division": 253, "frame overflow": 254,
               "bounds": 255}
@@ -58,8 +58,8 @@ SDCARD_EXIT = 248
 # address, on its standard output after the program's; it exits with the status
 # modulo 256
 CPU_ERROR = re.compile(rb"CPU error: (\d+)\n\Z")
-# the last line of a panic on rv32i-fpga, see 'PANIC_CODE'
-FPGA_PANIC = re.compile(rb"\npanic: ([a-z ]+?)(?: at [^\n]*)?\n\Z")
+# the last line of a panic on 'UART_TARGETS', see 'PANIC_CODE'
+UART_PANIC = re.compile(rb"\npanic: ([a-z ]+?)(?: at [^\n]*)?\n\Z")
 # the emulator stops at the store of a sector number past the end of the image,
 # 13xx is a 'sw' and 4 the write and 5 the read sector address; x86_64 prints
 # 'panic: sd card' instead, both are the outcome 'sdcard'
@@ -134,7 +134,8 @@ class Result:
         return -self.returncode if self.returncode < 0 else 0
 
 
-def _limits(seconds, file_size=OUTPUT_LIMIT):
+def _process_limits(seconds, file_size=OUTPUT_LIMIT):
+    # the function that sets the limits of a started process before it runs
     def apply():
         resource.setrlimit(resource.RLIMIT_CPU, (seconds, seconds))
         resource.setrlimit(resource.RLIMIT_FSIZE, (file_size, file_size))
@@ -146,7 +147,8 @@ def run(command, timeout, cwd=None, env=None,
         file_size=OUTPUT_LIMIT, stdin_bytes=None, stdout_path=None):
     # output goes to files so that a program that prints without end cannot
     # fill the memory, the size of a file is limited; the standard output to
-    # 'stdout_path' when given, then the result has none
+    # 'stdout_path' when given, then the result has none; the standard output
+    # is bytes, the standard error text
     with (open(stdout_path, "wb") if stdout_path is not None
           else tempfile.TemporaryFile()) as out, \
             tempfile.TemporaryFile() as err, \
@@ -158,7 +160,8 @@ def run(command, timeout, cwd=None, env=None,
             command, stdin=given if stdin_bytes is not None
             else subprocess.DEVNULL, stdout=out, stderr=err,
             cwd=cwd, env=env or ENVIRONMENT,
-            preexec_fn=_limits(timeout + 2, file_size))
+            preexec_fn=_process_limits(timeout + 2, file_size))
+        # note: +2 so that 'timeout' usually stops a run before the cpu limit
         timed_out = False
         try:
             process.wait(timeout=timeout)
@@ -207,11 +210,11 @@ def compile_source(compiler, path, options, assembly_path=None, cwd=None):
     result = run([compiler] + options + [path], COMPILE_TIMEOUT, cwd=cwd,
                  file_size=1 << 30, stdout_path=assembly_path)
     if not result.timed_out:
-        note_if_slow(begin, compiler, options, path)
+        note_if_slow(begin, compiler, path, options)
     return result
 
 
-def note_if_slow(begin, compiler, options, path):
+def note_if_slow(begin, compiler, path, options):
     seconds = time.time() - begin
     if seconds > SLOW_COMPILE:
         note_slow(compiler, path, options, seconds)
@@ -233,6 +236,8 @@ def note_slow(compiler, path, options, seconds):
 
 
 def assemble_x86(assembly, work, name="f"):
+    # (executable, None) or (None, (category, text)) of the step that failed,
+    # the category 'skip' when a limit stopped a tool
     obj = os.path.join(work, name + ".o")
     exe = os.path.join(work, name + ".x")
     a = run(["nasm", "-w+error", "-f", "elf64", assembly, "-o", obj], 60,
@@ -259,8 +264,9 @@ def assemble_x86(assembly, work, name="f"):
 
 
 class Outcome:
-    # what a program did: the normalized exit code (a panic as the code of
-    # rv32i-fpga), the bytes it wrote and how it ended
+    # what a program did: how it ended ('kind'), its code (the exit code, the
+    # signal or the cpu error, 'SDCARD_CODE' for 'sdcard', None for a limit)
+    # and the bytes it wrote before a panic or a cpu error
     def __init__(self, kind, code, stdout, detail=""):
         self.kind = kind
         self.code = code
@@ -288,7 +294,8 @@ def outcome_limit(result):
     return None
 
 
-def outcome_x86(result):
+def outcome_stdio(result):
+    # the outcome on x86_64 and rv32i, a panic on standard error
     limit = outcome_limit(result)
     if limit:
         return limit
@@ -304,6 +311,7 @@ def outcome_x86(result):
 
 
 def outcome_uart(result):
+    # the outcome on 'UART_TARGETS', a panic or an error last on the uart
     limit = outcome_limit(result)
     if limit:
         return limit
@@ -318,7 +326,7 @@ def outcome_uart(result):
         return Outcome("cpu-error", int(cpu_error.group(1)),
                        result.stdout[:cpu_error.start()],
                        cpu_error.group(0).decode().strip())
-    panic = FPGA_PANIC.search(result.stdout)
+    panic = UART_PANIC.search(result.stdout)
     # note: rv32i-qemu has no sd card and panics 'sd card' on the uart
     if panic and panic.group(1) == b"sd card" and \
             result.returncode == SDCARD_EXIT:
@@ -422,10 +430,10 @@ def run_program(target, program, stdin=b"", cwd=None, sdcard=os.devnull):
     # the image of 'UART_TARGETS'; the uart takes the input followed by
     # 'UART_END_OF_INPUT'
     if target == "x86_64":
-        return outcome_x86(run([program], RUN_TIMEOUT, cwd=cwd,
+        return outcome_stdio(run([program], RUN_TIMEOUT, cwd=cwd,
                                stdin_bytes=stdin))
     if target == "rv32i":
-        return outcome_x86(run([QEMU_USER, program], RUN_TIMEOUT, cwd=cwd,
+        return outcome_stdio(run([QEMU_USER, program], RUN_TIMEOUT, cwd=cwd,
                                stdin_bytes=stdin))
     assert target in UART_TARGETS
     if target == "rv32i-qemu":
@@ -518,7 +526,7 @@ def signature(text):
 
 
 class Findings:
-    # keeps the first example of each finding in 'findings/'
+    # keeps the first example of each finding in 'FINDINGS'
     def __init__(self):
         os.makedirs(FINDINGS, exist_ok=True)
         self.seen = set()
@@ -526,6 +534,7 @@ class Findings:
             self.seen.add(name.rsplit(".", 1)[0])
 
     def add(self, category, key, source, detail):
+        # true when the finding is new and kept
         digest = hashlib.sha1(f"{category}|{key}".encode()).hexdigest()[:10]
         name = f"{category}-{digest}"
         if name in self.seen:
@@ -602,7 +611,8 @@ def joined_include(path, source):
 
 def build(work, source, target, options, stdin=b"", compiler=COMPILER_ASAN,
           cwd=None, sdcard=os.devnull):
-    # what a program did: (kind, code, stdout) when it ended by itself, a kind
+    # compiles 'source' for 'target' and runs it: (kind, code, stdout) when
+    # the program ended by itself, a kind
     # of 'Outcome.finished'; ('compile', stderr) when it was rejected;
     # (category, key, stderr) of 'classify_compile' when the compiler failed;
     # (kind, detail) when the assembler failed or the run did not end
@@ -627,8 +637,8 @@ PANIC_NAME = {code: name for name, code in PANIC_CODE.items()} | \
     {SDCARD_CODE: "sd card"}
 
 
-def build_and_run(work, source, target, options, stdin=b"",
-                  compiler=COMPILER_ASAN):
+def build_for_model(work, source, target, options, stdin=b"",
+                    compiler=COMPILER_ASAN):
     # what a program did as 'build' has it, a panic and the outcome 'sdcard'
     # as (kind, 'CODE NAME') without the output before them, which the
     # models that use it do not compute
@@ -662,7 +672,7 @@ def judge(source, expected, stdin=b"", targets=TARGETS,
             wanted = uart_expected if uart_expected and \
                 target in UART_TARGETS else expected
             for options in lists:
-                got = build_and_run(work, source, target, options, stdin)
+                got = build_for_model(work, source, target, options, stdin)
                 # a tool stopped by a limit says nothing about the code
                 if got == wanted or got[0] == "skip":
                     continue

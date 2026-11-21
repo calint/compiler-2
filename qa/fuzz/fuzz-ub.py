@@ -1342,7 +1342,7 @@ SCENARIOS = [Arith, Widen, Arrays, Calls, Deep, Indexes, Shifts, Params, Context
 # "signal") for a signal on x86_64, e.g. the operating system stopping a
 # recursion, ("compile", stderr), or how it did not end, e.g. ("timeout", ...)
 def compile_run(work, source, target):
-    got = fl.build_and_run(work, source, target, ["--checks=" + CHECKS])
+    got = fl.build_for_model(work, source, target, ["--checks=" + CHECKS])
     if got[0] == "exit":
         return ("exit", got[1])
     if got[0] == "panic":

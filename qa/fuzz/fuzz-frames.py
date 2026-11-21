@@ -145,7 +145,7 @@ def fuzz_one(args):
         for target in TARGETS:
             target_options = options + (STACK,) \
                 if target in fl.UART_TARGETS else options
-            got = fl.build_and_run(work, source, target, target_options)
+            got = fl.build_for_model(work, source, target, target_options)
             if got[0] == "skip":
                 continue
             # note: the variables of 'main' alone may not fit in '--vars'

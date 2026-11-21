@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 560 (2026-11-22, bug hunt: the asserts of the backends,
+    those of rounds 549, 550 and 559 first; design: the io and sector
+    built-ins; readability: a newcomer walks 'fuzzlib.py')
+    => bug hunt: no assert reached; each assert of the two backends read
+       for its invariant and the rule of the front end behind it, then
+       stressed: results held in registers used by helpers, 'mut'
+       parameters bound to them, conversions into register views, deep
+       expressions around helpers and 'write', zero sizes through
+       generics and counts, constants that wrap to 0, under asan on two
+       targets and six option sets: 11300 programs, 158000 runs, no
+       crash and no wrong result
+    => design: 'stmt_builtin_io::check_range' is told which argument it
+       checks by its two callers instead of telling it from the start
+       operand, and 'check_range_from_start' is 'move_to_start' beside the
+       two moves it dispatches to (-5 lines, listings equal); a constant
+       count loaded as its byte count measured on the round 452 item;
+       nine ideas kept with reasons
+    => readability: 'build_and_run' renamed 'build_for_model', 'outcome_x86'
+       'outcome_stdio', 'FPGA_PANIC' 'UART_PANIC', '_limits'
+       '_process_limits'; stale comments of 'PANIC_CODE', 'Outcome' and
+       'Findings' fixed, what 'run' and 'assemble_x86' return; 45
+       functions, 8 predictions wrong
 [x] easy: round 559 (2026-11-21, bug hunt: the rv32i multiply, divide
     and remainder helpers after round 537; design: the fuzz harness;
     readability: a newcomer walks 'stmt_identifier_impl.hpp')

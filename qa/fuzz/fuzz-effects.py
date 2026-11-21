@@ -446,7 +446,7 @@ def expected_of(statements):
 def judge(work, source, expected):
     found = []
     for target in fl.with_rotated(fl.TARGETS, source):
-        got = fl.build_and_run(work, source, target, ("--checks=noub",))
+        got = fl.build_for_model(work, source, target, ("--checks=noub",))
         failure = fl.build_failure(got, target)
         if failure:
             found.append(failure)
