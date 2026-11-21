@@ -26,6 +26,23 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
     declaration; 3 files; a file rename
+[ ] easy: (round 554, fuzz) 'fuzzlib.build_and_run' and several fuzzers
+    write a source as UTF-8 ('open(path, "w")') where 'split_include',
+    'joined_include' and the findings read and write latin-1, so a
+    non-ASCII program would get other bytes when split; no generator
+    emits one today; write with 'encoding="latin-1"'
+[ ] easy: (round 554, messages) two places still give a generic message
+    for an unused ';' after round 554: 't{1 ;}' ("expected '}' to close
+    the value") and 'var a = 1 ;exit(a)' ("';exit' is not a valid name")
+[ ] easy: (round 554, types) 'type_fields' keeps a map of field names
+    beside the name index of 'type::fields_'; adding each field to the
+    type as it is read would leave one index ('add_to' and the alias token
+    of 'parse_root_fields' gone, 'stmt_def_type' reads its own '{' or '=');
+    +7 lines, listings equal, and a size overflow of an earlier field is
+    then reported before a parse error of a later one ('type a { x
+    i64[1152921504606846975], y, z q }' names 'x', not 'q'); judged weak
+    by its reviewer; patch kept as
+    'scratchpad/r554/01-type-fields-add-where-read.patch'
 [ ] easy: (round 549, registers) on x86_64 a far operand takes a scratch
     register to lower its displacement, so the "out of scratch registers"
     limit is one level lower when the variables lie past 2 GiB: 'var x =

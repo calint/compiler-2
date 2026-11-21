@@ -258,6 +258,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
         // like any value: an instance by its fields, an array element by
         // element and the rest zeroed, a copy or a call at once; an array
         // copy is checked against the field
+        // note: a field has a length, no count of an unsized destination
         expr.plan_writes(tc, at.field(field), std::nullopt, plan);
     }
 

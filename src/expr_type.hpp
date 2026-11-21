@@ -472,8 +472,9 @@ class expr_path final : public statement {
 
         const size_t size_bytes{src_info.value_size_bytes(tok())};
 
-        // nothing to copy, the code of a function checked without a call is
-        // discarded
+        // note: 0 only for an array of unknown length ('discarded_array_len'),
+        //       whose code is discarded; 'copy_block' takes no size of 0
+
         if (size_bytes == 0) {
             return;
         }

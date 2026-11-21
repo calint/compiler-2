@@ -30,9 +30,27 @@ from fuzzlib import mix
 SCALARS = {"i8": 8, "i16": 16, "i32": 32, "int": 32}
 CHARS = "abcxyz AZ09_~!#%&()*+,-./:;<=>?@[]^`{|}"
 ESCAPES = {"\\n": 10, "\\t": 9, "\\0": 0, "\\\\": 92, "\\'": 39, "\\x41": 65,
-           "\\x7f": 127, "\\x00": 0}
+           "\\x7f": 127, "\\x00": 0, "\\a": 7, "\\b": 8, "\\v": 11, "\\f": 12,
+           "\\r": 13, "\\e": 27, '\\"': 34, "\\`": 96, "\\x5A": 90}
 PRECEDENCE = {"+": 1, "-": 1, "*": 2, "|": 3, "&": 4, "^": 5, "<<": 6,
               ">>": 6}
+
+
+def string_piece(rnd):
+    # the text of one byte of a string and its 'i8' value: a letter, an
+    # escape of any byte, also after a continuation, which adds no byte
+    r = rnd.random()
+    if r < 0.6:
+        c = rnd.choice("abcdefgh")
+        return c, ord(c)
+    if r < 0.8:
+        e = rnd.choice(list(ESCAPES))
+        return e, ESCAPES[e]
+    v = rnd.randrange(256)
+    text = f"\\x{v:02x}" if rnd.random() < 0.5 else f"\\x{v:02X}"
+    if rnd.random() < 0.2:
+        text = "\\\n" + text
+    return text, v - 256 if v > 127 else v
 
 
 def limits(t):
@@ -255,8 +273,9 @@ class Generator:
             given = rnd.randint(0, t.count)
             if isinstance(t.elem, Scalar) and t.elem.t == "i8" and \
                     rnd.random() < 0.4:
-                text = "".join(rnd.choice("abcdefgh") for _ in range(given))
-                value = [ord(c) for c in text] + [0] * (t.count - given)
+                pieces = [string_piece(rnd) for _ in range(given)]
+                text = "".join(p for p, _ in pieces)
+                value = [v for _, v in pieces] + [0] * (t.count - given)
                 return value, f'"{text}"' if given else "{}"
             values = []
             texts = []

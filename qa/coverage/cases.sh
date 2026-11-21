@@ -8469,3 +8469,7 @@ SRC=7420 && EXP=1 && RUN
 # a string in an instance literal writes the bytes of its field before the
 # fields after it, so a later field that reads one of those bytes is rejected
 SRC=7480 && COMPERR
+
+# a ';' alone where a delimiter is expected is reported as unused, as one
+# that ends a word ('unused_semicolon_message')
+SRC=7500 && COMPERR

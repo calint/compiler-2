@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 554 (2026-11-21, bug hunt: a long fuzz campaign over the
+    changes of rounds 537 to 553; design: type definitions; readability:
+    a newcomer walks 'expr_type.hpp' and 'expr_type_impl.hpp')
+    => bug hunt: one defect of messages; 'fuzz-all.sh' at scale 3 on all
+       targets for 80 minutes (every fuzzer, 6000000 alias pairs), the
+       expression fuzzer with spellings, and generators for the changed
+       areas: tests re-spaced, every escape, far variables, bools read
+       from input, counts of 0 at every start, arguments of every kind:
+       16000 more programs, no wrong code, no crash
+       1. a ';' standing alone where a delimiter is expected got a generic
+          message ("expected ',' followed by another field"), the same ';'
+          attached to a word "';' is not used, statements need no
+          separator"; 'tokenizer::expect_char_token' gives the second when
+          the next character is ';', one 'unused_semicolon_message' for
+          both; test 7500; two other places and a fuzz harness encoding to
+          'etc/todo.txt'
+       'fuzz-data.py' writes every escape and '\xHH' of any byte with
+       continuations into string initializers
+    => design: no change; each fact of a type is decided once, one
+       routine parses a field list; one index of field names instead of
+       two (+7 lines, error order of an overflow) to 'etc/todo.txt'; eight
+       ideas kept with reasons
+    => readability: 'expr_path::compile' copies 0 bytes only for an array
+       of unknown length; a field has a length, so its write plan needs no
+       unsized count; 36 functions, 2 predictions wrong
 [x] easy: round 553 (2026-11-21, bug hunt: the assignment statement;
     design: calls, 'stmt_call.hpp'; readability: a newcomer walks the
     second half of 'stmt_call.hpp')

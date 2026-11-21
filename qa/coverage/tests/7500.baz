@@ -1,0 +1,4 @@
+# a ';' standing alone where a ',' is expected is reported as unused, as a
+# ';' that ends a word is
+type t { a i8 ; }
+func main() {}

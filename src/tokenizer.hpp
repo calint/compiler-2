@@ -17,6 +17,12 @@
 #include "operand.hpp"
 #include "token.hpp"
 
+// the error of a ';', which no statement or list needs, also where a
+// delimiter is expected, e.g. 'type t { a i8 ; }' as 'type t { a i8; }'
+inline constexpr std::string_view unused_semicolon_message{
+    "';' is not used, statements need no separator",
+};
+
 // reads the tokens of one source file, keeping the whitespace and comments
 // in the tokens so that the source can be reproduced; the names tell how a
 // member moves the cursor: 'next_' reads, 'accept_' reads only what matches,
@@ -160,6 +166,10 @@ class tokenizer final {
         -> token {
 
         const std::optional<token> tk{accept_char_token(ch)};
+
+        if (not tk and peek_char_after_whitespace() == ';') {
+            throw compile_error{*this, std::string{unused_semicolon_message}};
+        }
 
         if (not tk) {
             throw compile_error{*this, std::string{message}};

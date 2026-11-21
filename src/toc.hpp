@@ -1799,8 +1799,7 @@ inline auto throw_if_ends_with_semicolon(const token& src_loc_tk) -> void {
                         src_loc_tk.at_line()),
     };
 
-    throw compile_error{semicolon_tk,
-                        "';' is not used, statements need no separator"};
+    throw compile_error{semicolon_tk, std::string{unused_semicolon_message}};
 }
 
 // a word that cannot be a name, e.g. '$x'
