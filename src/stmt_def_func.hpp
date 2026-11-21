@@ -931,8 +931,9 @@ class stmt_def_func final : public statement {
         const std::span<const std::optional<size_t>> array_lengths) const
         -> void {
 
-        // a body is listed from the left also where a call checks it
-        const compile_toc::indent_scope body_indent{tc, 0};
+        // note: a body is compiled after 'main', at the root of the listing
+
+        assert(tc.indent() == 0);
 
         machine& x{tc.machine()};
 
@@ -971,11 +972,11 @@ class stmt_def_func final : public statement {
         -> void {
 
         tc.dry_run([&] -> void {
+            const compile_toc::scope_entry body{tc, frame_scope(array_lengths)};
+
             machine& x{tc.machine()};
 
             x.begin_dry_run_body();
-
-            const compile_toc::scope_entry body{tc, frame_scope(array_lengths)};
 
             compile_in_frame(tc, array_lengths);
         });

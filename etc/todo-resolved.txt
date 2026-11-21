@@ -1,6 +1,42 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 562 (2026-11-22, bug hunt: inlined bodies with
+    parameters bound to constants after the fold changes of rounds 537 to
+    561; design: the compile of a body in each context; readability: a
+    newcomer walks 'unary_ops.hpp', 'constant_arith.hpp' and
+    'array_length')
+    => bug hunt: one defect of messages, not fixed in this round; a
+       differential generator that calls each body six ways (inline with
+       constants, typed and untyped 'let's, with variables, noinline,
+       through a wrapper, mixed) under asan and six option sets: 7700
+       programs, 380000 builds, no wrong result; the constant fold names
+       a later operation than the first that fails, since round 541
+       ('etc/todo.txt' with a workaround patch and the clean design for
+       the next round); 15 mutants of the folds
+    => design: no change; a body is compiled in each context by one
+       routine; the 'indent_scope' of 'compile_in_frame' was dead, an
+       assert says a body is compiled at the root; a dry run enters its
+       frame scope before the frame base as an emitted body does (listings
+       equal); eight ideas kept with reasons
+    => readability: 'overflows_width' is false for the other operators;
+       25 functions, 3 predictions wrong; the round 518 item of
+       'array_length' resolved by round 561
+[x] easy: (round 518, the built-ins, needs an extreme input)
+    'stmt_builtin_array_length::fold' applies its unary ops with
+    'evaluate_constant', not wrapped to the use and with no overflow check
+    of a negation; a length is 0 to the maximum of 'int', so only a '-~'
+    chain on a length within a few of the maximum overflows: with
+    'type t { a i8[0x7fffffff] }', 'var v = t[1]', '--target=rv32i
+    --vars=0x80000000', 'let k = -~array_length(v[0].a)' is accepted under
+    'noub' (exit 2) while 'array_length(v[0].a) + 1' is rejected as
+    overflowing; the value matches the wrapped run-time one, only the
+    verdict differs; a fix folds like 'stmt_identifier::fold'
+    ('evaluate_at' at the use, then 'wrap_to_width'), patch kept in round
+    518's scratch as 'array-length-fold-at-use.patch'
+    => done (2026-11-22, round 561): 'array_length' folds at the use with
+       'evaluate_at'; the program is rejected "constant expression
+       overflows the type"
 [x] easy: round 561 (2026-11-22, bug hunt: scopes and the hiding of
     names; design: the arithmetic on constants; readability: a newcomer
     walks 'stmt_builtin_io.hpp')

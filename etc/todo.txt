@@ -26,6 +26,23 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
     declaration; 3 files; a file rename
+[ ] medium: (round 562, messages, a defect of round 541) a constant fold
+    names a later operation than the one that fails first:
+    'fold_checked' first folds without the overflow check to learn
+    whether the value is known, and that fold already throws the errors
+    of every width (zero divisor, shift count, minimum / -1), so they come
+    before an earlier overflow and before the narrowing check; with
+    'func f(p i8) res i8 { let k = -p << p  res = k }' and 'f(-128)' under
+    'noub' the variables panic 'overflow', the constant says "shift
+    count must be 0 to 7", and 'var k = ...' says "overflows";
+    'i8(1) + j << 9' with 'j' 5 names the shift, not the narrowed 'j';
+    the conversion folds its argument before its narrowing check too;
+    a fix that catches the probe's error, checks narrowing, folds checked
+    and rethrows passes every check with tests 7660 to 7662
+    ('scratchpad/r562-fold-order-catch.patch'), but catching to reorder
+    is a workaround; the clean fix is a probe mode of 'value_use' that
+    'expr_arith', the conversion and the identifier honor by not
+    throwing, so the probe only tells whether the value is known
 [ ] easy: (round 561, messages) a type used as an index ('x[U] = 2' with
     'U' a type parameter) or passed as a call argument is rejected with
     "the destination gives the type 'i64', write '{}'", which names a
@@ -129,18 +146,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     backend holds is commented "allocate named register rbp" ('s0' on
     rv32i) where 'register_pool::holder_kind' calls it a backend register;
     each a report change of a few lines
-[ ] easy: (round 518, the built-ins, needs an extreme input)
-    'stmt_builtin_array_length::fold' applies its unary ops with
-    'evaluate_constant', not wrapped to the use and with no overflow check
-    of a negation; a length is 0 to the maximum of 'int', so only a '-~'
-    chain on a length within a few of the maximum overflows: with
-    'type t { a i8[0x7fffffff] }', 'var v = t[1]', '--target=rv32i
-    --vars=0x80000000', 'let k = -~array_length(v[0].a)' is accepted under
-    'noub' (exit 2) while 'array_length(v[0].a) + 1' is rejected as
-    overflowing; the value matches the wrapped run-time one, only the
-    verdict differs; a fix folds like 'stmt_identifier::fold'
-    ('evaluate_at' at the use, then 'wrap_to_width'), patch kept in round
-    518's scratch as 'array-length-fold-at-use.patch'
 [p] easy: (round 513, the checks matrix) need approval: an 'array_copy'
     with constant starts and count whose destination starts inside its
     source can only panic with '--checks=overlap' (e.g. test 0971), like a

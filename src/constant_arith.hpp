@@ -130,7 +130,7 @@ class constant_arith final {
     }
 
     // true when the sum, difference or product is outside the width, e.g.
-    // '100 + 100' of an 'i8'
+    // '100 + 100' of an 'i8'; false for the other operators
     [[nodiscard]] static auto overflows_width(const int64_t lhs,
                                               const arithmetic_operator op,
                                               const int64_t rhs,
