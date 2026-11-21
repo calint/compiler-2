@@ -8465,3 +8465,7 @@ if [[ $MACHINE != rv32i-qemu ]]; then SRC=7340 && SDCARD=1M DIFF; fi
 # a copy and a comparison of no elements at a run-time start of the same
 # array copy nothing and compare equal, with no overlap check
 SRC=7420 && EXP=1 && RUN
+
+# a string in an instance literal writes the bytes of its field before the
+# fields after it, so a later field that reads one of those bytes is rejected
+SRC=7480 && COMPERR

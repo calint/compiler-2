@@ -1,0 +1,9 @@
+# a string in an instance literal writes the bytes of its field before the
+# fields after it, so a later field that reads one of those bytes is rejected
+type named {tag i8[4], len i8}
+
+func main() {
+    var n = named{"abcd", 4}
+    n = {"xy", n.tag[1]}
+    exit(n.len)
+}

@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 553 (2026-11-21, bug hunt: the assignment statement;
+    design: calls, 'stmt_call.hpp'; readability: a newcomer walks the
+    second half of 'stmt_call.hpp')
+    => bug hunt: no defect; a model generator of records three deep with
+       padding, destinations at constant, run-time and call-computed
+       indexes, values of lists, literals full, partial and nested, '{}',
+       strings, overlapping copies and calls, calls that change the
+       indexes of the destination and read or write its parts, checking
+       the verdict and its line by the rules of 3.5 and 3.7 and the exact
+       result: 5050 programs, 28000 runs; 30 probes; 10 mutants: a string
+       counted as nothing written passed the suite: test 7480
+    => design: 'call_site::store_argument' decides once whether an
+       argument goes to a place or a temporary, for inlined and noinline
+       calls, which each decided it in their own order;
+       'is_argument_temporary' and 'make_argument_temporary' are private
+       to it (+11 lines, listings and errors equal); six ideas kept
+    => readability: a noinline body is emitted once per set of array
+       lengths; the assert of 'shared_storage_check::add' holds because
+       the result destination is added first; 'record_uses_of_call' also
+       records a result passed to 'mut'; 'take_callee' rejects a callee
+       whose body is not parsed and takes its type; 73 functions, 4
+       predictions wrong
 [x] easy: round 552 (2026-11-21, bug hunt: definite assignment through
     loops after the 'trace_loop' merge of round 551; design: the contexts
     'compile_toc' and 'parse_toc'; readability: a newcomer walks

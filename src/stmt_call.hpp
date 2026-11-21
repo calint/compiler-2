@@ -69,7 +69,7 @@
 //   'ident_info'                 noinline: the variable passed, or the
 //                                temporary that holds the value, at its
 //                                address ('noinline_call::compile_arguments',
-//                                'call_site::make_argument_temporary')
+//                                'call_site::store_argument')
 //   frame slot                   the address written to it
 //                                ('noinline_call::slot_referent')
 //
@@ -577,6 +577,13 @@ class generic_call {
 
 // what compiling a call needs of it, 'stmt_call' makes it for each compile
 struct call_site {
+    // an argument in storage, which the body reaches at its address
+    struct stored_argument {
+        ident_info info;
+        // e.g. 'a[i]' or the name of a temporary
+        std::string text;
+    };
+
     // the name of a function or method, the type of a constructor call; the
     // code and the errors of the call are located at it
     token tk;
@@ -641,39 +648,34 @@ struct call_site {
         x.copy_value({tk, tc.indent()}, dst.operand(), result.operand());
     }
 
-    // the argument at 'index' is made in a temporary of the call that the
-    // body names: a value without a place, except one of a built-in type that
-    // an inlined body binds as a constant or a register, see
-    // 'stmt_call::argument_places'
-    [[nodiscard]] auto is_argument_temporary(const size_t index) const -> bool {
-        if (places.at(index)) {
-            return false;
+    // the argument at 'index' in storage: the variable it names, at the
+    // address computed here, e.g. '[rbp + r14 * 4 + 205]', '[r15 + r14]' or
+    // '[r15]', whose registers 'held' holds, or a temporary made here, in the
+    // order of the arguments, that holds its value; none for a value that an
+    // inlined body binds as a constant or a register
+    [[nodiscard]] auto store_argument(compile_toc& tc, const size_t index,
+                                      machine::held_registers& held) const
+        -> std::optional<stored_argument> {
+
+        if (const std::optional<place>& arg_place{places.at(index)}) {
+            const stmt_identifier& ident{*arg_place->ident};
+
+            return stored_argument{
+                .info{ident.info_at_address(tc, held)},
+                .text{ident.path_text()},
+            };
         }
 
-        return not func->is_inlined() or
-               not func->params().at(index).get_type().is_builtin();
-    }
+        if (not is_argument_temporary(index)) {
+            return std::nullopt;
+        }
 
-    // a variable of the current block that holds the argument at 'index',
-    // compiled into it
-    [[nodiscard]] auto make_argument_temporary(compile_toc& tc,
-                                               const size_t index) const
-        -> destination {
+        const destination temporary{make_argument_temporary(tc, index)};
 
-        // note: the name is unique per call and argument, an inlined body
-        //       names it through the binding of its parameter and a call in
-        //       the body has temporaries of its own; each level of an inlined
-        //       recursion declares it again, the binding resolves it in the
-        //       caller's scope
-
-        const destination temporary{
-            add_temporary(tc, temporary_name(tk, "call-arg", index),
-                          func->params().at(index).get_type()),
+        return stored_argument{
+            .info{temporary.bound_info()},
+            .text{temporary.text()},
         };
-
-        args.at(index).compile(tc, temporary);
-
-        return temporary;
     }
 
     // the result is written field by field, so its padding is zeroed for
@@ -761,6 +763,19 @@ struct call_site {
                (dst.is_register() or result_type_differs(dst, *func));
     }
 
+    // the argument at 'index' is made in a temporary of the call that the
+    // body names: a value without a place, except one of a built-in type that
+    // an inlined body binds as a constant or a register, see
+    // 'stmt_call::argument_places'
+    [[nodiscard]] auto is_argument_temporary(const size_t index) const -> bool {
+        if (places.at(index)) {
+            return false;
+        }
+
+        return not func->is_inlined() or
+               not func->params().at(index).get_type().is_builtin();
+    }
+
     [[nodiscard]] auto is_located_in_call(const compile_error& e) const
         -> bool {
 
@@ -775,6 +790,28 @@ struct call_site {
         return e.where->file_ix == begin_tk.file_index() and
                e.where->start_index >= begin_tk.start_index() and
                e.where->start_index <= close_paren_tk.end_index();
+    }
+
+    // a variable of the current block that holds the argument at 'index',
+    // compiled into it
+    [[nodiscard]] auto make_argument_temporary(compile_toc& tc,
+                                               const size_t index) const
+        -> destination {
+
+        // note: the name is unique per call and argument, an inlined body
+        //       names it through the binding of its parameter and a call in
+        //       the body has temporaries of its own; each level of an inlined
+        //       recursion declares it again, the binding resolves it in the
+        //       caller's scope
+
+        const destination temporary{
+            add_temporary(tc, temporary_name(tk, "call-arg", index),
+                          func->params().at(index).get_type()),
+        };
+
+        args.at(index).compile(tc, temporary);
+
+        return temporary;
     }
 };
 
@@ -873,38 +910,21 @@ class inline_call final {
 
         const expr_any& arg{call_.args.at(index)};
         const stmt_def_func_param& param{call_.func->params().at(index)};
-        const std::optional<place>& arg_place{call_.places.at(index)};
 
         // note: 'stmt_call::assert_argument_type' checked the type, an array
         //       argument is a place ('parse_array_param_argument')
 
-        assert(arg_place or not param.is_array());
+        assert(call_.places.at(index) or not param.is_array());
 
-        if (arg_place) {
-            const stmt_identifier& ident{*arg_place->ident};
+        // note: the address registers stay allocated until the inlined body
+        //       is compiled
 
-            // an argument with an index or an address held in a slot keeps
-            // the address computed here, e.g. '[rbp + r14 * 4 + 205]',
-            // '[r15 + r14]' or simply '[r15]'
-            // note: the address registers stay allocated until the inlined
-            //       body is compiled
-            const ident_info bound{
-                ident.info_at_address(tc, held),
-            };
+        if (const std::optional<call_site::stored_argument> stored{
+                call_.store_argument(tc, index, held),
+            }) {
 
-            return param_binding::make_name(param.name(), bound,
-                                            ident.path_text());
-        }
-
-        // note: a temporary is made here, in the order of the arguments
-
-        if (call_.is_argument_temporary(index)) {
-            const destination temporary{
-                call_.make_argument_temporary(tc, index),
-            };
-
-            return param_binding::make_name(
-                param.name(), temporary.bound_info(), temporary.text());
+            return param_binding::make_name(param.name(), stored->info,
+                                            stored->text);
         }
 
         // e.g. 'x' bound to a register of the caller; a named constant is
@@ -1321,26 +1341,17 @@ class noinline_call final {
 
         std::vector<ident_info> arguments;
 
-        for (const auto [i, arg_place] :
-             std::views::zip(std::views::iota(size_t{}), call_.places)) {
+        for (size_t i{}; i < call_.args.size(); ++i) {
+            const std::optional<call_site::stored_argument> stored{
+                call_.store_argument(tc, i, held),
+            };
 
-            // e.g. a literal or an expression
-            if (call_.is_argument_temporary(i)) {
-                const destination temporary{
-                    call_.make_argument_temporary(tc, i),
-                };
+            // note: a noinline call passes every value in a temporary, e.g. a
+            //       literal or an expression
 
-                arguments.push_back(temporary.bound_info());
+            assert(stored);
 
-                continue;
-            }
-
-            // note: a noinline call passes every value in a temporary
-            assert(arg_place);
-
-            const stmt_identifier& ident{*arg_place->ident};
-
-            arguments.push_back(ident.info_at_address(tc, held));
+            arguments.push_back(stored->info);
         }
 
         return arguments;
@@ -1376,11 +1387,11 @@ class noinline_call final {
             array_argument_lengths(*call_.func, arguments),
         };
 
-        // a body is emitted for a function that is called, once for all calls
-        // without array parameters; an argument of unknown length, in the
-        // check of a function without its calls, asks for a body to check
-        // with that length unknown and the others known, as an inlined call
-        // compiles it
+        // a body is emitted for a function that is called, once per set of
+        // array lengths, so once for all calls without array parameters; an
+        // argument of unknown length, in the check of a function without its
+        // calls, asks for a body to check with that length unknown and the
+        // others known, as an inlined call compiles it
         tc.add_noinline_body(*call_.func, array_lengths, call_.begin_tk,
                              call_.source);
 
@@ -1744,8 +1755,9 @@ class shared_storage_check final {
             // note: 'may_share' found a part that 'ref' reaches
             const std::string_view root{ref.reached.front().storage.root.name};
 
-            // note: the root of an argument is a name of the source or a
-            //       parameter, a temporary is the result or behind a binding
+            // note: the result destination is added first, so 'ref' is an
+            //       argument, whose root is a name of the source or a
+            //       parameter; a temporary is behind a binding
 
             assert(not is_temporary_name(root));
 
@@ -2576,7 +2588,8 @@ class stmt_call final : public statement {
     }
 
     // what the callee reaches of the caller is the caller's use too, see
-    // 'visit_callee_effects'
+    // 'visit_callee_effects'; the result passed to a 'mut' parameter is
+    // recorded for 'call_site::has_result_temporary'
     auto record_uses_of_call(
         parse_toc& tc, const std::span<const std::optional<place>> places) const
         -> void {
@@ -2677,8 +2690,8 @@ class stmt_call final : public statement {
         }
     }
 
-    // the callee is known: its body is parsed and the call has its result
-    // type
+    // the callee is known: it is rejected unless its body is parsed, the
+    // call takes its result type
     auto take_callee(const toc& tc) -> void {
         assert_callee_body_parsed(tc);
         set_type(callee().result_type());
