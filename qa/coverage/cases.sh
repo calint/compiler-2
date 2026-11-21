@@ -8461,3 +8461,7 @@ if [[ $MACHINE == x86_64 ]]; then SRC=7240 && EXP=0 && RUN; fi
 # a 'bool' read as a byte other than 0 or 1 converts to the byte sign extended
 # on every target, also as the result of a call
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=7340 && SDCARD=1M DIFF; fi
+
+# a copy and a comparison of no elements at a run-time start of the same
+# array copy nothing and compare equal, with no overlap check
+SRC=7420 && EXP=1 && RUN

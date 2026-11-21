@@ -59,11 +59,19 @@ class stmt_builtin_arrays_equal final : public statement {
 
         machine& x{tc.machine()};
 
-        // a known size is compared like two instances; a count of 0 stays a
-        // run-time walk, which compares nothing
-        if (size_bytes and *size_bytes > 0) {
+        // a known size is compared like two instances
+        if (size_bytes) {
             emit.both_addresses(
                 [&](const operand& lhs, const operand& rhs) -> void {
+                    // a count of 0 compares nothing, its addresses are still
+                    // checked
+                    if (*size_bytes == 0) {
+                        x.copy_value({tok(), tc.indent()}, dst.operand(),
+                                     operand::imm(1, dst.type_ref()));
+
+                        return;
+                    }
+
                     x.memory_equal({tok(), tc.indent()}, *size_bytes, lhs, rhs,
                                    {
                                        .alignment{element_type.alignment()},

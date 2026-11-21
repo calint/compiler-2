@@ -153,8 +153,7 @@ class bulk_operands final {
             return [this, &array, &held, checks_ranges](
                        const std::optional<operand>& address_register,
                        const machine::address_use use) -> void {
-                if (tc_.checks().is_bounds() and
-                    not array.constant_start_index(tc_)) {
+                if (has_range_check() and not array.constant_start_index(tc_)) {
 
                     machine& x{tc_.machine()};
 
@@ -185,7 +184,7 @@ class bulk_operands final {
                          const std::optional<operand>& count_register,
                          const bool count_lower_checked) const -> void {
 
-            if (not tc_.checks().is_bounds()) {
+            if (not has_range_check()) {
                 return;
             }
 
@@ -254,6 +253,12 @@ class bulk_operands final {
 
                 held.holder.reset();
             }
+        }
+
+        // a range of a constant count of 0 is its start, which the walk of
+        // the address checked up to the length
+        [[nodiscard]] auto has_range_check() const -> bool {
+            return tc_.checks().is_bounds() and constant_count_ != 0;
         }
 
         // the range 'check_range' checks, none when the start and the count

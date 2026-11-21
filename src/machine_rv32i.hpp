@@ -718,6 +718,8 @@ class machine_rv32i : public machine {
                       const operand& lhs, const operand& rhs,
                       const equality_request& request) -> void override {
 
+        assert(size_bytes != 0);
+
         // note: compared sizes are limited by the variables that hold the data
         assert(size_bytes <= std::numeric_limits<uint32_t>::max());
 

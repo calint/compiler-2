@@ -1235,8 +1235,9 @@ class machine_x86_64 final : public machine {
         branch_to_failure(site, condition::s, bounds_failure_);
     }
 
-    // a count in 'rcx' below zero or not below the width jumps to the failure
-    // handler, a negative count is a large unsigned one
+    // a count in 'rcx', read at the width of 'dst_type', below zero or not
+    // below its bit count jumps to the failure handler, a negative count is a
+    // large unsigned one
     auto check_shift_count(const emit_site site, const type& dst_type) -> void {
         comment(site, "shift check begin");
 
@@ -1468,7 +1469,8 @@ class machine_x86_64 final : public machine {
     }
 
     // 'idiv' takes the divisor as a qword register or memory operand and the
-    // dividend in 'rax', which 'cqo' extends into 'rdx'
+    // dividend in 'rax', which 'cqo' extends into 'rdx'; the caller reserved
+    // both
     auto emit_signed_divide(const emit_site site, const operand& divisor,
                             const runtime_check& check,
                             const size_t dividend_size_bytes) -> void {
@@ -1590,8 +1592,8 @@ class machine_x86_64 final : public machine {
         scale_index(site, count, element_size_bytes);
     }
 
-    // a displacement beyond 'int32_t' is added in a scratch register, freed
-    // by the 'operation_scope' of the caller
+    // a displacement beyond 'int32_t' goes in a scratch register, as the
+    // index or added to the base, freed by the 'operation_scope' of the caller
     [[nodiscard]] auto lower_address(const emit_site site, const operand& value)
         -> operand {
 

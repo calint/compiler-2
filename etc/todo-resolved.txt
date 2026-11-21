@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 550 (2026-11-21, bug hunt: block operations of size 0
+    after 'copy_block' asserts a size of round 549; design: the bulk and io
+    built-ins; readability: a newcomer walks the second half of
+    'machine_x86_64.hpp')
+    => bug hunt: no defect; generators of operations of size 0 in every
+       context (inlined, noinline, never called, called only from skipped
+       code, generics, constant arguments, 'let' counts, dats) and every
+       start and count form, under asan on two targets and six option
+       sets: 9000 programs, 108700 compiles and runs; each caller of
+       'copy_block', 'zero' and 'memory_equal' checked; 7 mutants; rv32i
+       'memory_equal' now asserts its size as the others do
+    => design: a constant count of 0 is handled alike by the bulk
+       built-ins: 'arrays_equal' checks both addresses and stores true
+       instead of comparing (rv32i no longer links its compare routine:
+       test 1540 282 to 129 instructions on fpga), an 'array_copy' of
+       count 0 needs no overlap check ('may_start_inside_source' is false,
+       17 to 6 instructions), and no range check repeats the start the
+       address walk checked; test 7420; six ideas kept with reasons
+    => readability: 'check_shift_count' reads 'rcx' at the width of the
+       destination and against its bit count; 'emit_signed_divide' says the
+       caller reserved 'rax' and 'rdx'; 'lower_address' puts a far
+       displacement in a register as the index or added to the base; 55
+       functions, 3 predictions wrong
 [x] easy: round 549 (2026-11-21, bug hunt: x86_64 addresses past 2 GiB
     after the 'lower_address' change of round 548; design: what the base
     'machine' decides and the backends repeat; readability: a newcomer

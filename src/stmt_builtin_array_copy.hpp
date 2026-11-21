@@ -110,6 +110,13 @@ class stmt_builtin_array_copy final : public statement {
     // note: the 'upper' check of the count keeps each copy inside the range
     //       of its path, from its start element to the end of the array
     [[nodiscard]] auto may_start_inside_source(const toc& tc) const -> bool {
+        const std::optional<int64_t> count{operands_.constant_count(tc)};
+
+        // a count of 0 copies nothing
+        if (count == 0) {
+            return false;
+        }
+
         const std::optional<storage_path> src{operands_.first().storage(tc)};
         const std::optional<storage_path> dst{operands_.second().storage(tc)};
 
@@ -142,8 +149,6 @@ class stmt_builtin_array_copy final : public statement {
         if (*dst_start <= *src_start) {
             return false;
         }
-
-        const std::optional<int64_t> count{operands_.constant_count(tc)};
 
         return not count or *dst_start < *src_start + *count;
     }
