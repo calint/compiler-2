@@ -8500,3 +8500,7 @@ SRC=7660 && OPTS="--checks=noub" COMPERR
 SRC=7661 && OPTS="--checks=noub" COMPERR
 SRC=7662 && OPTS="--checks=noub" COMPERR
 SRC=7663 && OPTS="--checks=noub" COMPERR
+
+# an untyped generic argument that is a typed array literal is skipped whole
+# ('skip_literal'), so the call reports the type it cannot deduce
+SRC=7760 && COMPERR

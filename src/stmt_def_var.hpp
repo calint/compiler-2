@@ -168,10 +168,7 @@ class initializer_declaration final {
         }
 
         if (tm == term_kind::array_literal and is_literal_value(tz)) {
-            // e.g. '[2]{1, 2}' has the default type
-            set_unsized_array(tk.is_none() ? tc.builtins().default_type()
-                                           : tc.get_type_or_throw(tk));
-
+            set_unsized_array(array_literal_type(tc, tk));
             return;
         }
 

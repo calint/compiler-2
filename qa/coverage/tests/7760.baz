@@ -1,0 +1,7 @@
+# an untyped argument that is a typed array literal is skipped whole, so
+# the error is that 'T' cannot be deduced
+func f<T type, U type>(a T, b U) {}
+
+func main() {
+    f(1, [2]{1, 2})
+}

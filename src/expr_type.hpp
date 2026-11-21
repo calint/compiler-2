@@ -161,11 +161,7 @@ inline auto assert_not_array_literal(const parse_toc& tc, const tokenizer& tz,
         return;
     }
 
-    // e.g. the 'i8' of 'p = i8[2]{1, 2}', none for the default type of
-    // 'p = [2]{1, 2}'
-    const type& element_type{
-        tk.is_none() ? tc.builtins().default_type() : tc.get_type_or_throw(tk),
-    };
+    const type& element_type{array_literal_type(tc, tk)};
 
     throw_type_mismatch(tk, tp.name(),
                         std::format("{}[]", element_type.name()));

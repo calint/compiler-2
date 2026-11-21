@@ -328,6 +328,19 @@ enum class term_kind : uint8_t {
     return term_kind::unknown;
 }
 
+// the element type of the array literal at 'tk', a 'term_kind::array_literal',
+// e.g. 'i8' of 'i8[2]{1, 2}' or the default type of '[2]{1, 2}', which has no
+// token before its '['
+[[nodiscard]] inline auto array_literal_type(const parse_toc& tc,
+                                             const token& tk) -> const type& {
+
+    if (tk.is_none()) {
+        return tc.builtins().default_type();
+    }
+
+    return tc.get_type_or_throw(tk);
+}
+
 // the integer type of a conversion, e.g. 'i8' of 'i8(x)'; 'bool' and 'void'
 // have none, 'get_type_or_throw' rejects 'void' and a type wider than the
 // target

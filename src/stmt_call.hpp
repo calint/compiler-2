@@ -321,10 +321,9 @@ class generic_call {
             return;
         }
 
-        const char close{next == '{' ? '}' : ']'};
-
-        // e.g. '{1, 2' without its closer, '{1, 2}.x' or '{1, 2} + 1'
-        if (not tz.skip_enclosed(next, close) or is_reached_into(tz) or
+        // e.g. '{1, 2' without its closer, '{1, 2}.x', '{1, 2} + 1' or
+        // '[2]{1, 2} + 1'
+        if (not skip_literal(tz) or is_reached_into(tz) or
             continues_expression(tz)) {
 
             std::ignore = instantiate(tc);

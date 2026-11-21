@@ -1470,6 +1470,9 @@ class storage_layout final {
     auto assert_dats_and_vars_fit_target(const token& src_loc_tk) const
         -> void {
 
+        // note: the dats alone first, which keeps the sum below within
+        //       'max_storage_size_bytes'
+
         assert_total_fits_target(src_loc_tk, data_.get().total_size_bytes());
 
         assert_total_fits_target(
@@ -2472,10 +2475,10 @@ class toc {
 //                  'add_generic_type_instance', 'add_dat',
 //                  'mark_generic_func_instantiated',
 //                  'generic_scope', 'current_definition'
-//   names          'assert_foo_names_free', 'assert_valid_unqualified_name',
-//                  'assert_valid_name', 'constant_value_of',
-//                  'get_func_or_throw', 'get_type_or_throw', 'is_func',
-//                  'type_param_named'
+//   names          'assert_foo_names_not_type_params',
+//                  'assert_valid_unqualified_name', 'assert_valid_name',
+//                  'constant_value_of', 'get_func_or_throw',
+//                  'get_type_or_throw', 'is_func', 'type_param_named'
 //   body uses      'record_use', 'record_result_passed_as_mut'
 //   source         'parse_nesting_scope', 'source_of', 'where'
 class parse_toc final : public toc {
@@ -2721,7 +2724,7 @@ class parse_toc final : public toc {
 
     // the names a 'foo' declares are no type parameter either, see
     // 'assert_valid_unqualified_name'
-    auto assert_foo_names_free(const token& foo_tk) const -> void {
+    auto assert_foo_names_not_type_params(const token& foo_tk) const -> void {
         for (const std::string_view name : reserved_names::foo_names) {
             if (const type* const bound{type_param_named(name)}) {
                 throw compile_error{

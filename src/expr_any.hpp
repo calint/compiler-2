@@ -641,10 +641,7 @@ class expr_any final : public statement {
         // note: an array literal is a type name or nothing before a '['
         const token open_bracket_tk{tz.seen_char_token('[')};
 
-        const type& literal_type{
-            names_element_type ? tc.get_type_or_throw(tk)
-                               : tc.builtins().default_type(),
-        };
+        const type& literal_type{array_literal_type(tc, tk)};
 
         // the element type, or the '[' of the default type
         const token& literal_tk{names_element_type ? tk : open_bracket_tk};

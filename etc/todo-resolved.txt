@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 566 (2026-11-22, bug hunt: realistic programs under every
+    option and spelling; design: the lookahead of the parse; readability:
+    a newcomer walks the tables of 'toc.hpp')
+    => bug hunt: no defect; roome with its session, random and capacity
+       sessions, the README program, the largest run cases and all 1054 run
+       cases under 31 option sets on the targets, with functions toggled
+       inline and noinline one at a time and all, locals renamed,
+       constants written out, statements swapped, names 5000 characters
+       long: 97600 runs, every difference documented (chapter 8)
+    => design and a defect of messages: the rule that an array literal
+       without a type before '[' has the default type is
+       'array_literal_type', which three places wrote out;
+       'generic_call::parse_untyped_argument' skipped a typed array
+       literal argument by its '[...]' only, so 'f(1, [2]{1, 2})' said
+       "expected ')' after the arguments" at the '{': it skips the literal
+       whole with 'skip_literal', the routine of the lookahead, and says
+       'T' cannot be deduced; test 7760; eight ideas kept with reasons
+    => readability: 'assert_foo_names_free' renamed
+       'assert_foo_names_not_type_params', it checks only type parameters;
+       a note why the dats are checked alone first; 106 functions, 3
+       predictions wrong
 [x] easy: round 565 (2026-11-22, bug hunt: rv32i jumps that grow out of
     reach; design: the tables of the parse; readability: a newcomer walks
     'assembler_rv32i.hpp')
