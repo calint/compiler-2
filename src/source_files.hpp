@@ -23,8 +23,9 @@
 #include "compile_error.hpp"
 #include "token.hpp"
 
-// the source files of a program, the first is the main file; the text stays
-// where it is when files are added, tokens refer to it
+// the source files of a program, the first is the main file; it resolves the
+// path of an 'include' and loads each file once; the text stays where it is
+// when files are added, tokens refer to it
 class source_files final {
     // a file that was read: its name as given and its text, with what the
     // messages need to place a token in it
@@ -79,6 +80,28 @@ class source_files final {
     }
 
     [[nodiscard]] auto count() const -> size_t { return files_.size(); }
+
+    // the file named in an 'include' of the file 'includer_ix', at
+    // 'included_at', relative to the directory of that file; a file is loaded
+    // once, a later 'include' of it, also from a file it includes, changes
+    // nothing; the loaded file, none when it was loaded before
+    auto include(const size_t includer_ix, const std::string_view file_name,
+                 const source_span& included_at) -> std::optional<size_t> {
+
+        const std::filesystem::path includer{name(includer_ix)};
+
+        const std::filesystem::path joined{
+            includer.parent_path() / file_name,
+        };
+
+        const std::filesystem::path path{include_path(joined)};
+
+        if (contains(path)) {
+            return std::nullopt;
+        }
+
+        return load(path.string(), included_at);
+    }
 
     // the path of the 'include' that loaded the file, none for the main file
     [[nodiscard]] auto included_at(const size_t file_ix) const
@@ -151,35 +174,35 @@ class source_files final {
         return files_.at(file_ix).text;
     }
 
-    //
-    // statics
-    //
-
-    // the directory as the file system resolves it, as the file was opened:
-    // a '..' after a symbolic link to a directory is the parent of the link's
-    // target; the file keeps its own name; a directory that cannot be
-    // resolved, e.g. below one that cannot be searched, stays as it is, a
-    // lexical '..' could name another file
-    [[nodiscard]] static auto resolved_path(const std::filesystem::path& path)
-        -> std::filesystem::path {
-
-        std::error_code error;
-
-        const std::filesystem::path dir{
-            std::filesystem::weakly_canonical(path.parent_path(), error),
-        };
-
-        if (error) {
-            return path;
-        }
-
-        return dir / path.filename();
-    }
-
   private:
     //
     // statics
     //
+
+    // the directory as the file system resolves it ('resolved_path'), so
+    // that a chain of includes does not grow its paths and the includes of
+    // the file are relative to the directory it was opened from; a path that
+    // does not name a file stays as it is, its open tells why
+    [[nodiscard]] static auto include_path(const std::filesystem::path& joined)
+        -> std::filesystem::path {
+
+        std::error_code error;
+
+        if (not std::filesystem::exists(joined, error)) {
+            return joined;
+        }
+
+        // note: relative stays relative, as the other names of the files; a
+        //       relative path that was not resolved is returned as it is
+
+        if (joined.is_absolute()) {
+            return resolved_path(joined);
+        }
+
+        const std::filesystem::path resolved{resolved_path(joined)};
+
+        return resolved.lexically_proximate(std::filesystem::current_path());
+    }
 
     // the index where each line of 'text' begins
     [[nodiscard]] static auto line_begins_of(const std::string_view text)
@@ -235,6 +258,27 @@ class source_files final {
         }
 
         return contents;
+    }
+
+    // the directory as the file system resolves it, as the file was opened:
+    // a '..' after a symbolic link to a directory is the parent of the link's
+    // target; the file keeps its own name; a directory that cannot be
+    // resolved, e.g. below one that cannot be searched, stays as it is, a
+    // lexical '..' could name another file
+    [[nodiscard]] static auto resolved_path(const std::filesystem::path& path)
+        -> std::filesystem::path {
+
+        std::error_code error;
+
+        const std::filesystem::path dir{
+            std::filesystem::weakly_canonical(path.parent_path(), error),
+        };
+
+        if (error) {
+            return path;
+        }
+
+        return dir / path.filename();
     }
 };
 

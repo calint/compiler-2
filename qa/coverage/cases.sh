@@ -1597,6 +1597,10 @@ SRC=0502 && EXP=255 && RUN_ERR
 # the start element plus the count must stay within the array
 SRC=0503 && EXP=255 && RUN_ERR
 
+# a negative run-time count of 'write' after a run-time start panics, also
+# when the end of the range, start plus count, is inside the array
+SRC=7860 && EXP=255 && RUN_ERR
+
 # an element is not an array, the parameter would see the whole array's length
 SRC=0504 && COMPERR
 

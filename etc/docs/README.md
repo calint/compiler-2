@@ -210,7 +210,7 @@ Invariants the code relies on:
    when parsed that every path through it sets its result
    ('stmt_def_func::assert_sets_result', 'ub_assigned.hpp'). An included
    file is named by its directory as the file system resolves it
-   ('program::include_path'), so listings and messages name the file that
+   ('source_files::include_path'), so listings and messages name the file that
    was opened, and it is read once, also when reached through another path
    or a link ('source_files::contains'). A path through a link that the
    system makes per process is named by its target, e.g. an include of
@@ -764,7 +764,7 @@ e.g. the register use at the failure that 'machine::register_error' adds.
    starts from the registers held where it stands, so a limit it reaches is
    read as one of the code around it (5.3).
 3. A file that cannot be read is an 'unlocated_error', which
-   'program::load_file' locates at its 'include'; so is a relative name in a
+   'program::parse_include' locates at its 'include'; so is a relative name in a
    working directory that was removed ('source_files::load'). A file that
    starts with a byte order mark or has a carriage return without a line feed
    is rejected when it is loaded ('tokenizer::assert_source_well_formed').
@@ -1980,8 +1980,8 @@ Cost: every change rebuilds everything.
 
 ### 7.8 The first error ends the compile
 
-An error is a 'compile_error' at the token that caused it, with the inlined
-calls and generic instances that led there (1.9). No code recovers from an
+An error is a 'compile_error' at the token that caused it, with the calls and
+generic instances that led there (1.9). No code recovers from an
 error, so no error leads to a second, wrong one; the places that change an error
 instead of ending with it are in 1.9.
 

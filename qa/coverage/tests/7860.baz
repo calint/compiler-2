@@ -1,0 +1,9 @@
+# a negative run-time count of 'write' after a run-time start panics, also
+# when the end of the range, start plus count, is inside the array
+
+func main() {
+    var buf = i8[4]
+    var s = 2
+    var n = -2
+    var r = write(1, buf, n, s)
+}

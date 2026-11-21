@@ -565,22 +565,23 @@ class stmt_def_func final : public statement {
     // class methods
     //
 
-    // an error found in the body while a call compiles it names the call; a
-    // method of a generic type names the alias of its receiver first, e.g.
-    // that 'n' is 200 for 'type b = buf<200>'
+    // an error found in the body while a call compiles it names the call, and
+    // the instance when this is one; a method of a generic type names the
+    // alias of its receiver first, e.g. that 'n' is 200 for 'type b = buf<200>'
     auto add_call_frame(compile_error& e, const token& call_tk,
                         std::string call_source) const -> void {
 
-        std::string reason{"called from"};
+        std::string relation{"called from"};
 
         if (instance_) {
             instance_->add_receiver_trace_to(e);
 
-            reason = std::format("{} called from", in_quotes(instance_->name));
+            relation =
+                std::format("{} called from", in_quotes(instance_->name));
         }
 
         e.call_frames.push_back(compile_error::call_frame::at(
-            call_tk, std::move(call_source), std::move(reason)));
+            call_tk, std::move(call_source), std::move(relation)));
     }
 
     // e.g. 'func.sum..len.4.8' for array lengths 4 and 8; 'func' is a

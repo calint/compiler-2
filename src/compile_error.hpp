@@ -59,10 +59,10 @@ struct source_span {
     }
 };
 
-// an error of the program at the token that caused it, with the inlined calls
-// and generic instances it was found through ('call_frames', added while it
-// unwinds); the first one ends the compile, no code recovers from it
-// (README 1.9, 7.8)
+// an error of the program at the token that caused it, with the calls and
+// generic instances it was found through ('call_frames', added while it
+// unwinds); the first one ends the compile, only a limit may be changed or
+// dropped on the way ('error_kind') (README 1.9, 7.8)
 class compile_error final : public std::exception {
   public:
     // a limit of the compile, not a rule of the program: running out of
@@ -87,12 +87,13 @@ class compile_error final : public std::exception {
         inlining_limit,
     };
 
-    // a place the error was found through: an inlined call or the instance of
-    // a generic definition
+    // a place the error was found through: a call, inlined or the one that
+    // needed a noinline body, or the instance of a generic definition
     struct call_frame {
         source_span where{};
         std::string text;
-        std::string reason;
+        // what 'text' is to the error, e.g. "called from" or "instantiated by"
+        std::string relation;
 
         //
         // statics
@@ -100,12 +101,12 @@ class compile_error final : public std::exception {
 
         // 'text' found through 'src_loc_tk', e.g. a call or an instance
         [[nodiscard]] static auto at(const token& src_loc_tk, std::string text,
-                                     std::string reason) -> call_frame {
+                                     std::string relation) -> call_frame {
 
             return {
                 .where{source_span::at(src_loc_tk)},
                 .text{std::move(text)},
-                .reason{std::move(reason)},
+                .relation{std::move(relation)},
             };
         }
     };

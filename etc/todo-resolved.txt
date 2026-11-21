@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 571 (2026-11-22, bug hunt: the I/O builtins and the sd
+    card; design: source files and inclusion; readability: a newcomer
+    walks 'compile_error.hpp' and the call frames)
+    => bug hunt: no defect; 150 probes on the four targets (counts,
+       starts, descriptors, buffers of every kind, sectors at and past
+       the end, results in expressions, noinline calls in arguments),
+       210 programs of register pressure, 150 generated programs under
+       seven option sets and 150 of I/O statements; 32 mutants of the
+       checks, 29 caught by the I/O tests; a negative count after a
+       run-time start was caught only by an 'array_copy' test: test 7860
+       for 'write'; the overflow branch of x86_64 runs only with
+       '--checks=upper' alone
+    => design: the file table resolves an include path and loads each file
+       once ('source_files::include'); 'program::load_file' is gone and the
+       path is resolved only in 'source_files.hpp' (errors equal); the
+       five location printers kept, each is the form of one output
+    => readability: a limit may be changed or dropped on the way (the
+       class comment said no code recovers); a frame is added by every
+       call, not only inlined ones (also in the docs, 7.8); the field
+       'reason' of a frame renamed 'relation'; 52 functions, 4
+       predictions wrong
 [x] easy: round 570 (2026-11-22, bug hunt: 'let' holding records, arrays
     and run-time values; design: error reporting; readability: a newcomer
     walks 'expr_type_impl.hpp' and the constructor of 'expr_any')

@@ -914,7 +914,7 @@ auto print_located(const source_files& files, const source_span& where,
     print_source_line(src, shown.start_index, shown.end_index);
 }
 
-// the inlined calls and generic instances the error was found through,
+// the calls and generic instances the error was found through,
 // innermost first
 auto print_call_frames(const source_files& files,
                        const std::span<const compile_error::call_frame> frames)
@@ -924,7 +924,7 @@ auto print_call_frames(const source_files& files,
         const source_span& where{frame.where};
         const std::string_view src{files.text(where.file_ix)};
 
-        std::string text{frame.reason};
+        std::string text{frame.relation};
 
         // the source line shows a call or an alias that is the whole line,
         // read like the frame text: its spacing and comment do not count
@@ -933,7 +933,7 @@ auto print_call_frames(const source_files& files,
         };
 
         if (frame.text != line) {
-            text = std::format("{} {}", frame.reason,
+            text = std::format("{} {}", frame.relation,
                                in_quotes(printable(frame.text)));
         }
 
@@ -968,7 +968,7 @@ auto print_source_error(const source_files& files,
     print_located(files, *where, printable(message));
 }
 
-// the message of the error at its source line, the inlined calls and generic
+// the message of the error at its source line, the calls and generic
 // instances it was found through and what else is known about it
 auto print_compiler_error(const source_files& files, const compile_error& error)
     -> void {

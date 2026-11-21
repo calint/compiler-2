@@ -1,14 +1,12 @@
 #pragma once
 
 #include <cstddef>
-#include <filesystem>
 #include <format>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
 #include <string>
-#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -348,17 +346,6 @@ class program final {
         check_noinline_bodies(tc);
     }
 
-    // the index of the file in 'files_'
-    [[nodiscard]] auto load_file(const std::filesystem::path& path,
-                                 const token& path_tk) -> size_t {
-
-        try {
-            return files_.get().load(path.string(), source_span::at(path_tk));
-        } catch (const unlocated_error& e) {
-            throw compile_error{path_tk, e.what()};
-        }
-    }
-
     [[nodiscard]] auto opened_file(const size_t file_ix) const -> open_file {
         return {
             .tz{file_ix, files_.get().text(file_ix)},
@@ -422,9 +409,8 @@ class program final {
         }
     }
 
-    // a file is loaded once, a later 'include' of it, also from a file it
-    // includes, changes nothing; the loaded file, none when it was loaded
-    // before
+    // the file loaded, none when it was loaded before, see
+    // 'source_files::include'
     [[nodiscard]] auto parse_include(open_file& file, const token& include_tk)
         -> std::optional<size_t> {
 
@@ -432,26 +418,17 @@ class program final {
             std::make_unique<stmt_include>(include_tk, file.tz),
         };
 
-        const std::filesystem::path includer{
-            files_.get().name(file.parsed.file_ix),
-        };
-
-        // relative to the directory of the file with the 'include'
-        const std::filesystem::path joined{
-            includer.parent_path() / include->file_name(),
-        };
-
-        const std::filesystem::path path{include_path(joined)};
-
+        const std::string file_name{include->file_name()};
         const token path_tk{include->path_token()};
 
         file.parsed.statements.emplace_back(std::move(include));
 
-        if (files_.get().contains(path)) {
-            return std::nullopt;
+        try {
+            return files_.get().include(file.parsed.file_ix, file_name,
+                                        source_span::at(path_tk));
+        } catch (const unlocated_error& e) {
+            throw compile_error{path_tk, e.what()};
         }
-
-        return load_file(path, path_tk);
     }
 
     //
@@ -508,33 +485,6 @@ class program final {
 
             body.func->emit_noinline_body(tc, body);
         }
-    }
-
-    // the directory as the file system resolves it ('resolved_path'), so
-    // that a chain of includes does not grow its paths and the includes of
-    // the file are relative to the directory it was opened from; a path that
-    // does not name a file stays as it is, its open tells why
-    [[nodiscard]] static auto include_path(const std::filesystem::path& joined)
-        -> std::filesystem::path {
-
-        std::error_code error;
-
-        if (not std::filesystem::exists(joined, error)) {
-            return joined;
-        }
-
-        // note: relative stays relative, as the other names of the files; a
-        //       relative path that was not resolved is returned as it is
-
-        if (joined.is_absolute()) {
-            return source_files::resolved_path(joined);
-        }
-
-        const std::filesystem::path resolved{
-            source_files::resolved_path(joined),
-        };
-
-        return resolved.lexically_proximate(std::filesystem::current_path());
     }
 
     // the program starts at 'main', its signature is checked where it is
