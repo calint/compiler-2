@@ -16,11 +16,17 @@
 // definite assignment: which bytes of a variable are set before they are read
 // and before a function returns
 
-// how the end of a loop is reached: only at a 'break', e.g. 'loop', also
-// when it runs out, e.g. 'foo', or, known only to the compile, at a 'break'
-// or where its counter step is reached, e.g. a 'foo' whose count is a
-// constant above 0, so it runs its body, or is not reached at all
-enum class loop_end : uint8_t { at_break, also_when_done, when_stepped };
+// how the end of a loop is reached
+enum class loop_end : uint8_t {
+    // only at a 'break', e.g. 'loop'
+    at_break,
+    // also when it runs out, e.g. 'foo'
+    also_when_done,
+    // known only to the compile: at a 'break' or where its counter step is
+    // reached, e.g. a 'foo' whose count is a constant above 0 or not reached,
+    // so it never skips its body
+    when_stepped,
+};
 
 // the rule both reach walks end a loop by ('assignment_flow::trace_loop',
 // 'compile_toc::join_loop'): the code after it is reached at a 'break' or
@@ -264,11 +270,10 @@ class assignment_flow final {
         end_path();
     }
 
-    // 'body' has 'trace_assignment(assignment_flow&)'; a loop that also ends
-    // when it runs out may run zero times, so after it the coverage is the
-    // one at the loop; a loop left only at a 'break' has the coverage common
-    // to its breaks after it, without a 'break' only 'return' or 'exit'
-    // leave it
+    // 'body' has 'trace_assignment(assignment_flow&)'; the end of the loop
+    // joins the paths that reach it like a 'path_merge': its breaks and, of a
+    // loop that also ends when it runs out, the entry, since it may run zero
+    // times; a loop without such a path is left only by 'return' or 'exit'
     auto trace_loop(const auto& body, const loop_end end) -> void {
         // note: only the compile folds the count of a 'foo', and the parse
         //       does not record a 'continue', which that end needs
@@ -289,21 +294,20 @@ class assignment_flow final {
             std::exchange(at_breaks_, std::move(outer_breaks)),
         };
 
-        if (not is_loop_end_reached(end, breaks.has_value(), is_reachable_)) {
-            end_path();
-            return;
+        const bool is_end_reached{
+            is_loop_end_reached(end, breaks.has_value(), is_reachable_),
+        };
+
+        end_path();
+
+        if (breaks) {
+            assigned_.intersect(*breaks);
         }
 
         if (end == loop_end::also_when_done) {
-            assigned_ = entry;
-        } else {
-            // note: a loop that does not run out is left at a 'break'
-
-            assert(breaks);
-
-            assigned_ = *breaks;
+            assigned_.intersect(entry);
         }
 
-        is_reachable_ = true;
+        is_reachable_ = is_end_reached;
     }
 };

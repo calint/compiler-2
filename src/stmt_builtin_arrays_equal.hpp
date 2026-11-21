@@ -63,8 +63,8 @@ class stmt_builtin_arrays_equal final : public statement {
         if (size_bytes) {
             emit.both_addresses(
                 [&](const operand& lhs, const operand& rhs) -> void {
-                    // a count of 0 compares nothing, its addresses are still
-                    // checked
+                    // a count of 0 is 'true' without a compare, its addresses
+                    // are still checked
                     if (*size_bytes == 0) {
                         x.copy_value({tok(), tc.indent()}, dst.operand(),
                                      operand::imm(1, dst.type_ref()));

@@ -118,8 +118,9 @@ class bulk_operands final {
                 operands_.count().compile(
                     tc_, destination::of_register(count_register));
 
-                // note: a constant count checked the ranges after the second
-                //       address, e.g. for the overlap check of 'array_copy'
+                // note: a constant count comes from the overlap check of
+                //       'array_copy', its ranges were checked after the second
+                //       address
 
                 if (constant_count_) {
                     return;
@@ -142,9 +143,10 @@ class bulk_operands final {
         }
 
       private:
-        // a run-time start gets its register before the walk of the address,
-        // so the registers of the walk, allocated later, are freed first;
-        // 'checks_ranges' checks the ranges before the address is used
+        // a run-time start of a checked range gets its register before the
+        // walk of the address, so the registers of the walk, allocated later,
+        // are freed first; 'checks_ranges' checks the ranges before the
+        // address is used
         [[nodiscard]] auto address_of(const stmt_identifier& array,
                                       held_start& held,
                                       const bool checks_ranges)

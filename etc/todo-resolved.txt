@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 551 (2026-11-21, bug hunt: how call results reach their
+    destination; design: definite assignment; readability: a newcomer walks
+    the bulk built-ins)
+    => bug hunt: no defect; a model generator of results of every width,
+       bool and records with padding from functions, methods,
+       constructors and recursion, into every destination kind, some over
+       storage filled with -1, used by every operator, as indexes, counts,
+       conditions and arguments five deep, each program with its
+       inline/noinline twin: 10700 programs, 98000 runs; 180 probes of
+       aliasing, chains to globals and results read before set; 12
+       mutants, one equivalent (padding dirty only after 'read')
+    => design: 'assignment_flow::trace_loop' joins the paths at the end of
+       a loop as a merge, from not reached, with the breaks and with the
+       entry when the loop may not run; the early return, the assert on
+       the breaks and the branch on them are gone (-2 lines, listings and
+       errors equal); 'loop_end' says each kind on its own; eight ideas
+       kept with reasons
+    => readability: a constant count reaches 'argument_emitters::count'
+       only from the overlap check of 'array_copy'; only a start of a
+       checked range gets a register; 'arrays_equal' of a count of 0 is
+       true without a compare; 23 functions, 3 predictions wrong
 [x] easy: round 550 (2026-11-21, bug hunt: block operations of size 0
     after 'copy_block' asserts a size of round 549; design: the bulk and io
     built-ins; readability: a newcomer walks the second half of
