@@ -137,11 +137,6 @@ class compile_error final : public std::exception {
 
     error_kind kind{error_kind::source};
 
-    // 'instance' names the generic instance that was called, e.g. 'use<big>',
-    // empty for a function written in the source
-    auto add_call_frame(const token& call_tk, std::string text,
-                        std::string_view instance) -> void;
-
     // see 'error_kind'
     [[nodiscard]] auto is_limit() const -> bool {
         return kind != error_kind::source;
@@ -325,21 +320,6 @@ class compile_error final : public std::exception {
     }
 
     return std::format("'{}'", source);
-}
-
-inline auto compile_error::add_call_frame(const token& call_tk,
-                                          std::string text,
-                                          const std::string_view instance)
-    -> void {
-
-    std::string reason{"called from"};
-
-    if (not instance.empty()) {
-        reason = std::format("{} called from", in_quotes(instance));
-    }
-
-    call_frames.push_back(
-        call_frame::at(call_tk, std::move(text), std::move(reason)));
 }
 
 // a count with its noun for a message, e.g. '1 argument' or '2 arguments'

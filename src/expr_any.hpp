@@ -177,6 +177,7 @@ class expr_any final : public statement {
         }
 
         // e.g. the '+' of 'p + 1' or of 'i8[2]{1, 2} + 1'
+        // note: a built-in value takes the operators after it
         if (is_array()) {
             assert_value_ends(tz, array_token(), value_kind::array, tp);
         } else if (not tp.is_builtin()) {

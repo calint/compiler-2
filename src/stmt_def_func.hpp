@@ -571,12 +571,16 @@ class stmt_def_func final : public statement {
     auto add_call_frame(compile_error& e, const token& call_tk,
                         std::string call_source) const -> void {
 
+        std::string reason{"called from"};
+
         if (instance_) {
             instance_->add_receiver_trace_to(e);
+
+            reason = std::format("{} called from", in_quotes(instance_->name));
         }
 
-        e.add_call_frame(call_tk, std::move(call_source),
-                         instance_ ? instance_->name : std::string_view{});
+        e.call_frames.push_back(compile_error::call_frame::at(
+            call_tk, std::move(call_source), std::move(reason)));
     }
 
     // e.g. 'func.sum..len.4.8' for array lengths 4 and 8; 'func' is a

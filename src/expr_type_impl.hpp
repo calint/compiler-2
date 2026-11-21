@@ -61,7 +61,8 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
         tm == term_kind::instance_literal or is_bare_user_type,
     };
 
-    // e.g. 'p = i8' is the zero value of 'i8', as 'p = x' of an 'i8' 'x'
+    // e.g. 'p = i8', the zero value of 'i8', is a mismatch as 'p = x' of an
+    // 'i8' 'x'
     if (is_bare_builtin_type(tm, tz)) {
         throw_type_mismatch(tk, tp.name(), tc.get_type_or_throw(tk).name());
     }
@@ -225,7 +226,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
 
     const std::span<const type_field> flds{get_type().fields()};
 
-    // bytes of the instance written so far, fields in order then padding
+    // bytes planned so far: the listed fields and the padding before each
     size_t written_bytes{};
 
     for (const auto [expr, field] : std::views::zip(exprs_, flds)) {

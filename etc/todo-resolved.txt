@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 570 (2026-11-22, bug hunt: 'let' holding records, arrays
+    and run-time values; design: error reporting; readability: a newcomer
+    walks 'expr_type_impl.hpp' and the constructor of 'expr_any')
+    => bug hunt: no defect; 1400 generated programs of global and local
+       lets of every kind and use (about 45000 runs over three inlining
+       variants, five option sets and two targets), 2160 forbidden writes
+       against a 'var' control (all rejected, all controls compiled),
+       folded lets against run time, 150 probes; 16 mutants of the
+       read-only checks and of let storage, all caught
+    => design: 'for_message' of a program of several files is 'for_error';
+       a call frame is built by 'stmt_def_func::add_call_frame' with
+       'call_frame::at', as a generic instance frame is, and the member of
+       'compile_error' that worded it is gone (errors equal)
+    => readability: why the constructor of 'expr_any' does not check the
+       end of a built-in value; the example of 'p = i8' is a mismatch; the
+       padding before each field is planned before it; 12 functions,
+       3 predictions wrong
 [x] easy: round 569 (2026-11-22, bug hunt: the same programs on the four
     targets; design: the parse of values of user types; readability: a
     newcomer walks 'stmt_assign_var.hpp' and the statements that leave a

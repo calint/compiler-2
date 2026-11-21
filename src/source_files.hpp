@@ -290,8 +290,8 @@ class source_locations final {
         return for_comment(src_loc_tk);
     }
 
-    // a source location for a message, with the file name as given when the
-    // program has more than one file
+    // a source location for a message, as 'for_error' when the program has
+    // more than one file
     [[nodiscard]] auto for_message(const token& src_loc_tk) const
         -> std::string {
 
@@ -299,9 +299,7 @@ class source_locations final {
             return text(src_loc_tk, ':');
         }
 
-        return std::format(
-            "{}:{}", printable(files_.get().name(src_loc_tk.file_index())),
-            text(src_loc_tk, ':'));
+        return for_error(source_span::at(src_loc_tk));
     }
 
     // see 'source_files::relative_name'
