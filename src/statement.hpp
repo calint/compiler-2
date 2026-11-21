@@ -28,18 +28,19 @@
 
 // the node interface, the types below in reading order:
 //
-//   'one_line_source'  the source of a node on one line, for the comments of
-//                      the listing
+//   'one_line_source'  the source of a node on one line, for a listing
+//                      comment or a message
 //   'statement'        the base of every node
 
-// the source text of a statement on one line, for the comments of the output
+// the source text of a statement on one line, for a listing comment or a
+// message
 class one_line_source final {
   public:
     //
     // statics
     //
 
-    // one line for an assembler comment: whitespace and source comments
+    // 'text' on one line: whitespace and source comments
     // become single spaces, string and character literals are kept as
     // written; a '#' inside a literal does not start a comment and a quote
     // inside a comment does not start a literal
@@ -241,10 +242,11 @@ class statement {
     }
 
     // the value known at compile time where it is used, wrapped to its
-    // width, empty when it is computed at run time; it does not check that
-    // the value fits, a conversion computes its argument at a narrower width
-    // on purpose; under the overflow check an operand wider than the use is
-    // an overflow, 'fold_checked' rejects it as narrowed first
+    // width, empty when it is computed at run time; throws on an error of
+    // the constant arithmetic, e.g. a division by zero; it does not check
+    // that the value fits, a conversion computes its argument at a narrower
+    // width on purpose; under the overflow check an operand wider than the
+    // use is an overflow, 'fold_checked' rejects it as narrowed first
     [[nodiscard]] virtual auto fold([[maybe_unused]] const toc& tc,
                                     [[maybe_unused]] const value_use& use) const
         -> std::optional<folded_value> {
@@ -469,7 +471,7 @@ class statement {
     }
 
     // 'items' with the delimiter tokens between them, e.g. 'x, y' of
-    // 'f(x, y)'; a delimiter after the last item is the caller's
+    // 'f(x, y)', and the delimiter after the last item when 'delims' has one
     template <std::ranges::forward_range Items>
     static auto source_delimited_to(std::ostream& os, const Items& items,
                                     const std::span<const token> delims)

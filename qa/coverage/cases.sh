@@ -8454,3 +8454,6 @@ SRC=7183 && EXP=0 && RUN
 # message does not depend on the checks
 SRC=7220 && OPTS="--checks=noub" COMPERR
 SRC=7221 && OPTS="--checks=noub" COMPERR
+
+# a constant bound to a parameter of an inlined call keeps its 64 bits
+if [[ $MACHINE == x86_64 ]]; then SRC=7240 && EXP=0 && RUN; fi

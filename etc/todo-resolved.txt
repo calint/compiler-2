@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 542 (2026-11-21, bug hunt: inlined against noinline
+    bodies after the fold changes of rounds 540 and 541; design:
+    declarations, 'stmt_def_var.hpp'; readability: a newcomer walks
+    'statement.hpp')
+    => bug hunt: no defect; a differential generator that writes each
+       program all inline, all noinline and mixed, with bound constants,
+       typed 'let's, conversions, unary operators, fields and elements,
+       globals written by callees, early returns, 'foo' over unsized
+       parameters, methods and generics, and chains of five functions
+       passing edge constants beside a twin with variables: 10500
+       programs, 356000 runs, no difference of result; the acceptance
+       differences are documented (an inlined constant rejected where
+       noinline panics, skipped code, registers); 10 mutants: a bound
+       constant cut to 32 bits passed the x86_64 suite: test 7240
+    => design: the type of a declaration was worked out from its
+       initializer by two routines, each reading and classifying the first
+       term in its own trial parse; 'deduce_from_initializer' now also
+       takes strings and array literals, 'literal_element_type' is gone
+       (-25 lines, listings and errors equal); eight ideas kept
+    => readability: 'one_line_source' also feeds messages; 'fold' throws
+       on an error of constant arithmetic; 'source_delimited_to' writes
+       the trailing delimiter itself; 35 functions, 3 predictions wrong
 [x] easy: round 541 (2026-11-21, bug hunt: asserts of the last rounds
     that ordinary input might reach; design: constant folding;
     readability: a newcomer walks 'stmt_identifier.hpp')

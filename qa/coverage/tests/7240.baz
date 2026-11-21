@@ -1,0 +1,23 @@
+# a constant bound to a parameter of an inlined call keeps its 64 bits, as
+# the argument of the same body noinline
+func half(p int) res {
+    res = p >> 1
+}
+
+func noinline half_noinline(p int) res {
+    res = p >> 1
+}
+
+func main() {
+    var a = half(0x300000005)
+    var b = half_noinline(0x300000005)
+    if a != b or a != 0x180000002 {
+        exit(1)
+    }
+
+    var c = half(-0x10000000000)
+    var d = half_noinline(-0x10000000000)
+    if c != d or c != -0x8000000000 {
+        exit(2)
+    }
+}

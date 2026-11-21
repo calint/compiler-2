@@ -8,7 +8,6 @@
 #include <optional>
 #include <ostream>
 #include <string_view>
-#include <tuple>
 #include <utility>
 
 #include "compile_error.hpp"
@@ -118,23 +117,15 @@ class initializer_declaration final {
         // note: the placeholder has the default type until the type is known
         set_type(tc.builtins().default_type());
 
-        // the name is visible like in the parse, e.g. 'point' in
-        // 'var point = point[2]' is the variable
-        const type* element_type{};
-
-        with_placeholder(tc, [&element_type, &tc, &tz] -> void {
-            element_type = literal_element_type(tc, tz);
+        trial_parse(tc, tz, [this, &tc](tokenizer& probe) -> void {
+            deduce_from_initializer(tc, probe);
         });
 
-        if (element_type == nullptr) {
-            trial_parse(tc, tz, [this, &tc](tokenizer& probe) -> void {
-                deduce_from_initializer(tc, probe);
-            });
-
+        if (not shape_.is_length_unknown()) {
             return;
         }
 
-        deduce_literal_length(tc, tz, *element_type);
+        deduce_literal_length(tc, tz);
     }
 
     // note: the type of a whole initializer, e.g. 'bool' for 'a < b' and the
@@ -154,6 +145,8 @@ class initializer_declaration final {
                                 is_zero_value(tz) ? "'{}'" : "'{...}'")};
         }
 
+        // the name is visible like in the parse, e.g. 'point' in
+        // 'var point = point[2]' is the variable
         const term_kind tm{classify_term(tc, tk, tz)};
 
         // the type named first is the type, e.g. 'var p = point{1, 2}' or
@@ -162,6 +155,22 @@ class initializer_declaration final {
         // e.g. 'var b = point{1, 2} == p'
         if (is_instance_value(tm, tz) or is_bare_builtin_type(tm, tz)) {
             set_type(tc.get_type_or_throw(tk));
+            return;
+        }
+
+        // a string or an array literal gives the element type, its length is
+        // counted after; one that is an operand of a longer expression is
+        // rejected below, e.g. 'var b = [2]{1, 2} == a'
+        if (tm == term_kind::string and not continues_expression(tz)) {
+            set_literal_element_type(tc.builtins().i8());
+            return;
+        }
+
+        if (tm == term_kind::array_literal and is_literal_value(tz)) {
+            // e.g. '[2]{1, 2}' has the default type
+            set_literal_element_type(tk.is_none() ? tc.builtins().default_type()
+                                                  : tc.get_type_or_throw(tk));
+
             return;
         }
 
@@ -191,13 +200,9 @@ class initializer_declaration final {
         deduce_whole_array_copy(tc, tk, *ident);
     }
 
-    // e.g. 'var a = i8[]{1, 2}' or 'var s = "hi"'
-    auto deduce_literal_length(parse_toc& tc, const tokenizer& tz,
-                               const type& element_type) -> void {
-
-        shape_ = array_shape::array(std::nullopt);
-        set_type(element_type);
-
+    // the length that a string or an array literal gives, e.g.
+    // 'var a = i8[]{1, 2}' or 'var s = "hi"'
+    auto deduce_literal_length(parse_toc& tc, const tokenizer& tz) -> void {
         std::optional<token> size_tk;
 
         trial_parse(tc, tz, [this, &tc, &size_tk](tokenizer& probe) -> void {
@@ -241,6 +246,12 @@ class initializer_declaration final {
         shape_ = info.shape();
     }
 
+    // an unsized array whose literal gives the length
+    auto set_literal_element_type(const type& tp) -> void {
+        set_type(tp);
+        shape_ = array_shape::array(std::nullopt);
+    }
+
     auto set_type(const type& tp) -> void { type_ = &tp; }
 
     // a value cannot be parsed at its type before the type is known, so the
@@ -277,42 +288,6 @@ class initializer_declaration final {
     //
     // statics
     //
-
-    // the element type of a string, 'i8', or of an array literal; null when
-    // the initializer is neither or the literal is an operand of a longer
-    // expression, e.g. 'var b = [2]{1, 2} == a', which the parse rejects
-    [[nodiscard]] static auto literal_element_type(const parse_toc& tc,
-                                                   tokenizer& tz)
-        -> const type* {
-
-        if (tz.peek_char_after_whitespace() == '"') {
-            tokenizer after_string{tz};
-            std::ignore = after_string.next_token();
-
-            return continues_expression(after_string) ? nullptr
-                                                      : &tc.builtins().i8();
-        }
-
-        const token tk{tz.next_token()};
-
-        const bool is_literal{
-            classify_term(tc, tk, tz) == term_kind::array_literal and
-                is_literal_value(tz),
-        };
-
-        tz.put_back_token(tk);
-
-        if (not is_literal) {
-            return nullptr;
-        }
-
-        // e.g. '[2]{1, 2}' has the default type
-        if (tk.is_none()) {
-            return &tc.builtins().default_type();
-        }
-
-        return &tc.get_type_or_throw(tk);
-    }
 
     // the '=' after 'name_tk', 'keyword' starts the example of the error;
     // the error is at the end of the name, the next token can be on another
