@@ -165,7 +165,8 @@ class assignment_flow final {
     // bytes assigned on every path reaching the current statement
     assigned_bytes assigned_;
 
-    // bytes assigned at every 'break' of the innermost loop
+    // bytes assigned at every 'break' of the innermost loop, none before its
+    // first
     std::optional<assigned_bytes> at_breaks_;
 
     bool is_reachable_{true};
@@ -222,7 +223,8 @@ class assignment_flow final {
         }
 
       private:
-        // every path starts at the 'if'
+        // every path starts at the 'if', which is reached: a statement that is
+        // not is rejected ('stmt_block::trace_assignment')
         auto begin_path() -> void {
             flow_.assigned_ = entry_;
             flow_.is_reachable_ = true;

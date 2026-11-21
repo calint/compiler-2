@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 552 (2026-11-21, bug hunt: definite assignment through
+    loops after the 'trace_loop' merge of round 551; design: the contexts
+    'compile_toc' and 'parse_toc'; readability: a newcomer walks
+    'ub_assigned.hpp' and the walks of 'if' and 'loop')
+    => bug hunt: no defect; a generator whose model takes every set of
+       paths over the bytes of the result (a scalar or a record of fields
+       and elements) through 'if' chains with constant and run-time
+       conditions, 'loop', nested loops and 'foo' with every kind of count,
+       'break', 'continue', 'return' and 'exit' three deep, compared with
+       this build and the one before round 551: 91000 programs, no
+       difference in verdict or line between the model and either build;
+       accepted ones run over storage filled with 0x5a: 92000 runs, every
+       byte of the result set; 19 mutants of the walks, all caught
+    => design: no change; ten ideas kept with reasons (state is held once,
+       the accessors are the ones README 7.6 asks for, the parse and
+       compile scope entries share too little to share a base)
+    => readability: 'at_breaks_' is empty before the first 'break' of the
+       innermost loop; every path of a merge starts reached because an
+       unreached statement is rejected first; the path that skips every
+       branch is empty when there is no 'else'; 25 functions, 3
+       predictions wrong
 [x] easy: round 551 (2026-11-21, bug hunt: how call results reach their
     destination; design: definite assignment; readability: a newcomer walks
     the bulk built-ins)

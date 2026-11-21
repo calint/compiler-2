@@ -219,7 +219,7 @@ class stmt_if final : public statement {
             return;
         }
 
-        // an empty 'else' is the path that skips every branch
+        // the 'else' is the path that skips every branch, empty without one
         if (else_) {
             paths.trace(else_->code);
         } else {
