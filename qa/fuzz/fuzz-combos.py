@@ -1752,27 +1752,12 @@ def subset_options(rnd, panic):
 
 
 def build(work, source, target, options, stdin):
-    # what the program did: (kind, code, stdout) or (problem, detail)
-    path = os.path.join(work, "f.baz")
-    with open(path, "w") as f:
-        f.write(fl.split_include(work, source))
+    # 'fuzzlib.build' with a new sd card, the program runs in 'work'
     card = os.path.join(work, "sdcard.img")
     with open(card, "wb") as f:
         f.write(card_image())
-    c, o, problem = fl.run_target(fl.COMPILER_ASAN, path, list(options), work,
-                                  target, stdin=stdin, cwd=work, sdcard=card)
-    if problem:
-        return problem[0], problem[1][:300]
-    if c.timed_out:
-        return ("compiler-hang", "")
-    if c.returncode:
-        sanitizer = any(t in c.stderr for t in fl.SANITIZER_TEXT)
-        if sanitizer or c.returncode < 0 or c.returncode in fl.SANITIZER_EXIT:
-            return ("compiler-crash", c.stderr[-3000:])
-        return ("compile", c.stderr[:800])
-    if o.kind not in ("exit", "panic", "sdcard"):
-        return (o.kind, f"{o.code} {o.detail} {o.stdout[-200:]!r}")
-    return (o.kind, o.code, o.stdout)
+    return fl.build(work, source, target, options, stdin, cwd=work,
+                    sdcard=card)
 
 
 def short(outcome):
@@ -1825,15 +1810,11 @@ def judge(gen, rnd, counts):
                               f"{target} {message.split(': ', 1)[-1]}",
                               f"{where}: {message}"))
                 return found, text
-            if got[0] == "compiler-crash":
-                found.append((got[0], fl.signature(got[1]),
-                              f"{where}\n{got[1]}"))
+            failure = fl.build_failure(got, where)
+            if failure:
+                found.append(failure)
                 continue
-            category = got[0] if got[0] in ("compiler-hang", "invalid-asm",
-                                            "link-failure",
-                                            "image-mismatch") \
-                else "combos-mismatch"
-            found.append((category, f"{where} {got[0]}",
+            found.append(("combos-mismatch", f"{where} {got[0]}",
                           f"stdin {stdin!r}\nexpected {short(want)}, "
                           f"got {short(got)}"))
     return found, mixed

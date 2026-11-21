@@ -254,7 +254,8 @@ inline auto stmt_identifier::narrow_to_element(const toc& tc,
     const std::optional<size_t> array_len{array_info.array_len()};
 
     // note: 'checked_constant_index' rejected a negative index and one past the
-    //       end, the end itself starts the empty range of a zero count
+    //       end; the end itself starts the empty range of a zero count, which
+    //       'add_index_range' cannot hold, so it is taken as a run-time index
 
     if (not constant_index or
         (array_len and std::cmp_equal(*constant_index, *array_len))) {
@@ -360,8 +361,8 @@ inline auto stmt_identifier::path_address::indexed_element(
 
     const token& index_tk{cur_elem.index_expr().tok()};
 
-    // a register kept by an earlier fold is reused since the fold already
-    // consumed its value
+    // the register of the earlier index, unless the fold took it as the base,
+    // is reused since the fold read its value
     if (not index_register_) {
         // index expressions are parsed with the default type
         index_register_ = held_.get().alloc_scratch_register(

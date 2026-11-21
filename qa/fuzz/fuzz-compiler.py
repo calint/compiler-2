@@ -238,16 +238,11 @@ def mutate(rnd, seed_text):
     return text
 
 
-def write_source(path, text):
-    with open(path, "wb") as f:
-        f.write(text.encode("latin-1", "replace"))
-
-
 def seed_differs(seed_text, options, work, rv32i_target):
     # the seed alone is accepted on one target and rejected on the other, e.g.
     # a test of a documented difference, so its mutants are not findings
     path = os.path.join(work, "seed.baz")
-    write_source(path, seed_text)
+    fl.write_source(path, seed_text)
     rejected = []
     for target in ["x86_64", rv32i_target]:
         c = fl.compile_source(fl.COMPILER, path,
@@ -285,7 +280,7 @@ def fuzz_one(args):
     stats = {"accepted": 0, "rejected": 0, "compared": 0}
     try:
         path = os.path.join(work, "f.baz")
-        write_source(path, text)
+        fl.write_source(path, text)
         options = checks_options(rnd)
         run = Run(text, seed_text, path, options, work)
         noub = run.noub

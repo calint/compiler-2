@@ -32,8 +32,7 @@ def write_files(work, files):
     for path, text in files.items():
         full = os.path.join(work, path)
         os.makedirs(os.path.dirname(full), exist_ok=True)
-        with open(full, "w") as f:
-            f.write(text)
+        fl.write_source(full, text)
     return os.path.join(work, "main.baz")
 
 

@@ -26,15 +26,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
     declaration; 3 files; a file rename
-[ ] easy: (round 554, fuzz) 'fuzzlib.build_and_run' and several fuzzers
-    write a source as UTF-8 ('open(path, "w")') where 'split_include',
-    'joined_include' and the findings read and write latin-1, so a
-    non-ASCII program would get other bytes when split; no generator
-    emits one today; write with 'encoding="latin-1"'
-[ ] easy: (round 557, qa) 'qa/fuzz/fuzz-mutate.py' reads cases with
-    '^\s*SRC=...', which misses the one-line cases behind a target guard
-    (about 150 accepted ones left out of 'ACCEPTED'); 'cases.sh' now has
-    one checked form, so the pattern can allow a leading 'if ...; then '
+[ ] easy: (round 559, rv32i) in a noinline 'x = x * y' with a 'mut'
+    parameter 'x' the listing stores 'x' to itself before the multiply
+    ('lh t1, 0(t1)' then 'sh t1, 0(t0)'), e.g. 'func.mulby'
+[ ] easy: (round 559, fuzz) after 'fuzzlib.build' and 'build_failure':
+    fuzz-programs (two), fuzz-options and fuzz-reject still test sanitizer
+    text for their own categories (a shared 'compiler_crashed' would remove
+    the four copies); fuzz-constructs files a compiler crash as
+    'construct-reject' (needs a 'build' of several files); fuzz-exprs keeps
+    a local 'run_target' without the include split; the category lists in
+    the fuzzer headers miss 'compiler-crash' and 'bad-diagnostic'
 [ ] easy: (round 557, qa) the case helper 'DIFFINP2' (7 cases) feeds one
     line per read; a name such as 'DIFFLINES' would say so
 [ ] easy: (round 555, messages) a missing token is located three ways:
@@ -1171,13 +1172,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        rejected on x86_64, 171 of them accepted on rv32i-fpga; 13
        forwarded 'int' parameters give "out of scratch registers" on
        x86_64 for any inlined callee
-[ ] easy: (round 485 RA) 'qa/fuzz/fuzzlib.py' mixes encodings:
-    'build_and_run' writes the program with the default UTF-8 ('open(path,
-    "w")') while 'split_include', 'Findings.add' and the reads of kept
-    programs use latin-1 with 'replace', so a program with raw non-ASCII
-    text is changed when split into an include or kept as a finding ('€'
-    becomes '?'); no fuzzer emits non-ASCII today; one encoding for all
-    sites, about 8 lines
 [ ] easy: user decision (round 478 RA): the later-operand rule
     ('assert_not_written_later', 'ub_order.hpp') also checks the names in
     the arguments of a call among the earlier operands, which ran before

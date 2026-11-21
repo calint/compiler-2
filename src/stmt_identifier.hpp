@@ -1204,8 +1204,8 @@ class stmt_identifier final : public statement {
 
     // the index goes into 'index_register'; without bounds checks a trailing
     // '+ c' or '- c' is left out and returned for the displacement, e.g.
-    // 'ix + 1' compiles 'ix' and returns 1; bounds checks check the whole sum
-    // in the register and return 0
+    // 'ix + 1' compiles 'ix' and returns 1; otherwise the whole index is
+    // compiled, checked when bounds checks are on, and 0 returned
     [[nodiscard]] static auto
     compile_checked_index(compile_toc& tc, const expr_any& index_expr,
                           const operand& index_register,

@@ -303,7 +303,7 @@ def outcome_x86(result):
     return Outcome("exit", result.returncode, result.stdout)
 
 
-def outcome_fpga(result):
+def outcome_uart(result):
     limit = outcome_limit(result)
     if limit:
         return limit
@@ -373,8 +373,7 @@ def run_rv32i(compiler, path, options, work, name="f", stdin=b"", cwd=None):
     exe, problem = assemble_rv32i(assembly, image, work, name)
     if problem:
         return c, None, problem
-    r = run([QEMU_USER, exe], RUN_TIMEOUT, cwd=cwd, stdin_bytes=stdin)
-    return c, outcome_x86(r), None
+    return c, run_program("rv32i", exe, stdin, cwd), None
 
 
 def run_target(compiler, path, options, work, target, name="f", stdin=b"",
@@ -396,7 +395,6 @@ def run_uart(compiler, path, options, work, target, name, stdin, cwd=None,
              sdcard=os.devnull):
     # compile for rv32i-qemu or rv32i-fpga and run the image in a qemu system
     # or the emulator, a panic ends on the uart: (compile result, outcome)
-    # the uart takes the input followed by 'UART_END_OF_INPUT'
     assert target in UART_TARGETS
     image = os.path.join(work, f"{name}-{target}.bin")
     c = compile_source(compiler, path,
@@ -404,13 +402,7 @@ def run_uart(compiler, path, options, work, target, name, stdin, cwd=None,
                        os.devnull)
     if c.returncode or c.timed_out:
         return c, None
-    if target == "rv32i-qemu":
-        command = QEMU_SYSTEM + [image]
-    else:
-        command = [EMULATOR, image, sdcard]
-    r = run(command, RUN_TIMEOUT, cwd=cwd,
-            stdin_bytes=stdin + UART_END_OF_INPUT)
-    return c, outcome_fpga(r)
+    return c, run_program(target, image, stdin, cwd, sdcard)
 
 
 def run_x86(compiler, path, options, work, name="f", stdin=b"", cwd=None):
@@ -422,8 +414,26 @@ def run_x86(compiler, path, options, work, name="f", stdin=b"", cwd=None):
     exe, problem = assemble_x86(assembly, work, name)
     if problem:
         return c, None, problem
-    r = run([exe], RUN_TIMEOUT, cwd=cwd, stdin_bytes=stdin)
-    return c, outcome_x86(r), None
+    return c, run_program("x86_64", exe, stdin, cwd), None
+
+
+def run_program(target, program, stdin=b"", cwd=None, sdcard=os.devnull):
+    # the outcome of a built 'program', the executable of x86_64 and rv32i or
+    # the image of 'UART_TARGETS'; the uart takes the input followed by
+    # 'UART_END_OF_INPUT'
+    if target == "x86_64":
+        return outcome_x86(run([program], RUN_TIMEOUT, cwd=cwd,
+                               stdin_bytes=stdin))
+    if target == "rv32i":
+        return outcome_x86(run([QEMU_USER, program], RUN_TIMEOUT, cwd=cwd,
+                               stdin_bytes=stdin))
+    assert target in UART_TARGETS
+    if target == "rv32i-qemu":
+        command = QEMU_SYSTEM + [program]
+    else:
+        command = [EMULATOR, program, sdcard]
+    return outcome_uart(run(command, RUN_TIMEOUT, cwd=cwd,
+                            stdin_bytes=stdin + UART_END_OF_INPUT))
 
 
 # diagnostics are 'file:line:column: message'
@@ -521,8 +531,7 @@ class Findings:
         if name in self.seen:
             return False
         self.seen.add(name)
-        with open(os.path.join(FINDINGS, name + ".baz"), "wb") as f:
-            f.write(source.encode("latin-1", "replace"))
+        write_source(os.path.join(FINDINGS, name + ".baz"), source)
         with open(os.path.join(FINDINGS, name + ".txt"), "w") as f:
             f.write(f"{category}\n{key}\n\n{detail}\n")
         return True
@@ -555,6 +564,13 @@ def with_rotated(targets, source):
     return tuple(targets) + (ROTATED_TARGETS[digest % 2],)
 
 
+def write_source(path, text):
+    # the sources are latin-1 in every file the fuzzers write and read, so a
+    # byte of a program stays the same byte when split, joined or kept
+    with open(path, "wb") as f:
+        f.write(text.encode("latin-1", "replace"))
+
+
 # the first line of a program that 'split_include' split
 PART_INCLUDE = 'include "lib/part.baz"\n'
 
@@ -569,8 +585,7 @@ def split_include(work, source):
                      .hexdigest(), 16) % 3:
         return source
     os.makedirs(os.path.join(work, "lib"), exist_ok=True)
-    with open(os.path.join(work, "lib", "part.baz"), "wb") as f:
-        f.write(source[:at + 1].encode("latin-1", "replace"))
+    write_source(os.path.join(work, "lib", "part.baz"), source[:at + 1])
     return PART_INCLUDE + source[at + 1:]
 
 
@@ -585,24 +600,52 @@ def joined_include(path, source):
     return part + source[len(PART_INCLUDE):]
 
 
-def build_and_run(work, source, target, options, stdin=b"",
-                  compiler=COMPILER_ASAN):
-    # what a program did: ('compile', stderr), ('exit', code, stdout) or
-    # (kind, detail) when it did not end by itself or the assembler failed
+def build(work, source, target, options, stdin=b"", compiler=COMPILER_ASAN,
+          cwd=None, sdcard=os.devnull):
+    # what a program did: (kind, code, stdout) when it ended by itself, a kind
+    # of 'Outcome.finished'; ('compile', stderr) when it was rejected;
+    # (category, key, stderr) of 'classify_compile' when the compiler failed;
+    # (kind, detail) when the assembler failed or the run did not end
     path = os.path.join(work, "f.baz")
-    with open(path, "w") as f:
-        f.write(split_include(work, source))
+    write_source(path, split_include(work, source))
     c, o, problem = run_target(compiler, path, list(options), work, target,
-                               stdin=stdin)
-    if c.timed_out:
-        return ("compile-hang", "")
+                               stdin=stdin, cwd=cwd, sdcard=sdcard)
+    failure = classify_compile(c)
+    if failure:
+        return failure + (c.stderr[-3000:],)
     if c.returncode:
-        return ("compile", c.stderr[:600])
+        return ("compile", c.stderr[:800])
     if problem:
         return (problem[0], problem[1][:300])
-    if o.kind != "exit":
-        return (o.kind, f"{o.code} {o.detail}")
-    return ("exit", o.code, o.stdout)
+    if not o.finished():
+        return (o.kind, f"{o.code} {o.detail} {o.stdout[-200:]!r}")
+    return (o.kind, o.code, o.stdout)
+
+
+# the name of each panic, the text of the outcome 'sdcard'
+PANIC_NAME = {code: name for name, code in PANIC_CODE.items()} | \
+    {SDCARD_CODE: "sd card"}
+
+
+def build_and_run(work, source, target, options, stdin=b"",
+                  compiler=COMPILER_ASAN):
+    # what a program did as 'build' has it, a panic and the outcome 'sdcard'
+    # as (kind, 'CODE NAME') without the output before them, which the
+    # models that use it do not compute
+    got = build(work, source, target, options, stdin, compiler)
+    if got[0] in ("panic", "sdcard"):
+        return (got[0], f"{got[1]} {PANIC_NAME[got[1]]}")
+    return got
+
+
+def build_failure(got, where):
+    # the finding (category, key, detail) of a result of 'build' that failed
+    # in the compiler, the assembler or the linker, else None
+    if got[0] in ("compiler-hang", "compiler-crash", "bad-diagnostic"):
+        return (got[0], got[1], f"{where}\n{got[2]}")
+    if got[0] in ("invalid-asm", "link-failure", "image-mismatch"):
+        return (got[0], f"{where} {got[0]}", got[1])
+    return None
 
 
 def judge(source, expected, stdin=b"", targets=TARGETS,
@@ -629,20 +672,18 @@ def judge(source, expected, stdin=b"", targets=TARGETS,
                 # does not help (README 1.5 item 3)
                 if got[0] == "compile" and out_of_registers(got[1]):
                     continue
-                key = f"{target} {' '.join(options)} {got[0]}"
-                if got[0] == "compile":
-                    category = f"{prefix}-reject"
+                where = f"{target} {' '.join(options)}"
+                failure = build_failure(got, where)
+                if failure:
+                    found.append(failure)
+                elif got[0] == "compile":
                     message = got[1].strip().splitlines()[0] if got[1] else ""
-                    key = f"{target} {message.split(': ', 1)[-1]}"
-                elif got[0] == "compile-hang":
-                    category = "compiler-hang"
-                elif got[0] in ("invalid-asm", "link-failure",
-                                "image-mismatch"):
-                    category = got[0]
+                    found.append((f"{prefix}-reject",
+                                  f"{target} {message.split(': ', 1)[-1]}",
+                                  f"expected {wanted}, got {got}"))
                 else:
-                    category = f"{prefix}-mismatch"
-                found.append((category, key,
-                              f"expected {wanted}, got {got}"))
+                    found.append((f"{prefix}-mismatch", f"{where} {got[0]}",
+                                  f"expected {wanted}, got {got}"))
         return found
 
 

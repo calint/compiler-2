@@ -437,8 +437,7 @@ def fuzz_one(args):
     stats = {"ok": 0, "rejected": 0}
     try:
         path = os.path.join(work, "f.baz")
-        with open(path, "w") as f:
-            f.write(source)
+        fl.write_source(path, source)
         base = ["--checks=noub"]
         c, x86, problem = fl.run_x86(compiler, path, base, work)
         if c.timed_out:
@@ -508,8 +507,7 @@ def compare_inlining(compiler, work, source, options, x86, found):
         if variant == source:
             continue
         path = os.path.join(work, "inlining.baz")
-        with open(path, "w") as f:
-            f.write(variant)
+        fl.write_source(path, variant)
         c, other, problem = fl.run_x86(compiler, path, options, work, "i")
         if c.returncode and fl.out_of_registers(c.stderr):
             # inlining changes how many registers an expression needs

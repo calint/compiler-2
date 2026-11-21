@@ -1,6 +1,57 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 559 (2026-11-21, bug hunt: the rv32i multiply, divide
+    and remainder helpers after round 537; design: the fuzz harness;
+    readability: a newcomer walks 'stmt_identifier_impl.hpp')
+    => bug hunt: no defect; a model generator of '*', '/' and '%' at every
+       width with operands near, far and far elements, calls and bodies,
+       in assignments, far destinations, conditions and indexes, under
+       chains up to 30 deep, edge values (min / -1, products one past the
+       range) last, under five check sets and four version options on
+       rv32i, fpga and x86_64: 19000 programs, 187000 runs, no mismatch;
+       31 mutants, the suite caught 13 of 14; the branch of
+       'load_helper_arguments' for a source that reads the destination
+       register is dead (the front end computes it in a scratch, x86_64
+       'divide' asserts it): an assert; a redundant store to 'etc/todo.txt'
+    => design: the fuzz harness had a reporting defect: a compiler crash
+       under asan was filed as a rejection keyed on the first line of the
+       report, so every crash on a target was one finding and a new one
+       was never printed as new; 'fuzzlib.build' and 'build_failure'
+       build and classify for every fuzzer (four copies gone) and key a
+       crash by its sanitizer signature; 'fuzzlib.write_source' writes
+       every source as latin-1 (two todo items); 'fuzzlib.run_program' runs
+       a program on any target; 'fuzz-mutate.py' reads guarded cases (103
+       more names); 'fuzz-all.sh' names the fuzzers that failed;
+       'outcome_fpga' renamed 'outcome_uart' (+141 -188); the rest to
+       'etc/todo.txt'
+    => readability: the end of an array as a constant index starts an
+       empty range 'add_index_range' cannot hold; the register of the
+       earlier index is reused since the fold read it; without bounds
+       checks the index is compiled whole; 16 functions, 3 predictions
+       wrong
+[x] easy: (round 554, fuzz) 'fuzzlib.build_and_run' and several fuzzers
+    write a source as UTF-8 ('open(path, "w")') where 'split_include',
+    'joined_include' and the findings read and write latin-1, so a
+    non-ASCII program would get other bytes when split; no generator
+    emits one today; write with 'encoding="latin-1"'
+    => done (2026-11-21, round 559): every source is written by
+       'fuzzlib.write_source' as latin-1
+[x] easy: (round 557, qa) 'qa/fuzz/fuzz-mutate.py' reads cases with
+    '^\s*SRC=...', which misses the one-line cases behind a target guard
+    (about 150 accepted ones left out of 'ACCEPTED'); 'cases.sh' now has
+    one checked form, so the pattern can allow a leading 'if ...; then '
+    => done (2026-11-21, round 559): the pattern allows a guard around
+       the case, 103 more accepted names
+[x] easy: (round 485 RA) 'qa/fuzz/fuzzlib.py' mixes encodings:
+    'build_and_run' writes the program with the default UTF-8 ('open(path,
+    "w")') while 'split_include', 'Findings.add' and the reads of kept
+    programs use latin-1 with 'replace', so a program with raw non-ASCII
+    text is changed when split into an include or kept as a finding ('€'
+    becomes '?'); no fuzzer emits non-ASCII today; one encoding for all
+    sites, about 8 lines
+    => done (2026-11-21, round 559): every source is written by
+       'fuzzlib.write_source' as latin-1
 [x] easy: round 558 (2026-11-21, bug hunt: ordered comparisons against
     constants at the immediate edges; design: the operand of an identifier;
     readability: a newcomer walks the test scripts)

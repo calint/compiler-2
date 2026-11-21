@@ -27,7 +27,6 @@
 # usage: fuzz-whole.py [count] [seed] [jobs]
 #        fuzz-whole.py --one SEED INDEX [--noinline]
 # '--one' prints the program 'INDEX' of 'SEED' and what the model gives
-import os
 import random
 import shutil
 import sys
@@ -2529,29 +2528,6 @@ FOLDED = ("divisor must not be zero", "shift count must be", "out of bounds",
           "past the end", "overflow", "is negative", "has no value")
 
 
-def build(work, source, target, options, stdin):
-    # what the program did: ('exit' or 'panic', code, stdout),
-    # ('compiler-crash', stderr), ('compile', stderr) or how it did not end
-    path = os.path.join(work, "f.baz")
-    with open(path, "w") as f:
-        f.write(fl.split_include(work, source))
-    c, o, problem = fl.run_target(fl.COMPILER_ASAN, path, options, work,
-                                  target, stdin=stdin)
-    if c.timed_out:
-        return ("compiler-hang", "")
-    if c.returncode:
-        sanitizer = any(t in c.stderr for t in fl.SANITIZER_TEXT)
-        if sanitizer or c.returncode < 0 or \
-                c.returncode in fl.SANITIZER_EXIT:
-            return ("compiler-crash", c.stderr[-3000:])
-        return ("compile", c.stderr[:800])
-    if problem:
-        return (problem[0], problem[1][:300])
-    if o.kind not in ("exit", "panic"):
-        return (o.kind, f"{o.code} {o.detail}")
-    return (o.kind, o.code, o.stdout)
-
-
 def judge(work, source, expected, variant, rnd, const_args, counts, stdin):
     # builds one variant of the program, returns the findings
     targets = fl.with_rotated(fl.TARGETS, source)
@@ -2564,7 +2540,7 @@ def judge(work, source, expected, variant, rnd, const_args, counts, stdin):
     for target, options in runs:
         options = list(options) + [VARS]
         want = expected[64 if target == "x86_64" else 32]
-        got = build(work, source, target, options, stdin)
+        got = fl.build(work, source, target, options, stdin)
         # a tool stopped by a limit says nothing about the code
         if got == want or got[0] == "skip":
             continue
@@ -2582,16 +2558,12 @@ def judge(work, source, expected, variant, rnd, const_args, counts, stdin):
                           f"{variant} {' '.join(options)}: {message}"))
             # one rejection says enough about the program
             return found
-        if got[0] == "compiler-crash":
-            found.append((got[0], fl.signature(got[1]),
-                          f"{target} {variant} {' '.join(options)}\n"
-                          f"{got[1]}"))
+        where = f"{target} {variant} {' '.join(options)}"
+        failure = fl.build_failure(got, where)
+        if failure:
+            found.append(failure)
             continue
-        category = got[0] if got[0] in ("compiler-hang", "invalid-asm",
-                                        "link-failure", "image-mismatch") \
-            else "whole-mismatch"
-        key = f"{target} {variant} {' '.join(options)} {got[0]}"
-        found.append((category, key,
+        found.append(("whole-mismatch", f"{where} {got[0]}",
                       f"expected {short(want)}, got {short(got)}"))
     return found
 

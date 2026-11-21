@@ -2878,14 +2878,13 @@ class machine_rv32i : public machine {
         assert(not src.uses_register("a0"));
 
         // note: a register 'first_value' is the destination of the helper,
-        //       which receives the result after the call
+        //       which receives the result after the call; an expression
+        //       whose operand reads its destination is computed in a scratch
+        //       register, so 'src' does not read it
 
-        const bool consumed{
-            first_value.is_register() and
-                not src.uses_register(first_value.register_name()),
-        };
+        if (first_value.is_register()) {
+            assert(not src.uses_register(first_value.register_name()));
 
-        if (consumed) {
             assembler_.move_consumed(site.indent, "a0",
                                      first_value.register_name());
         } else {

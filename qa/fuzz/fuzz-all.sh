@@ -34,10 +34,11 @@ export TMPDIR
 trap 'rm -rf -- "$TMPDIR"' EXIT
 trap 'exit 130' INT TERM HUP
 
-status=0
+# the fuzzers that failed, a finding or a failure of the fuzzer itself
+failed=""
 run() {
     echo "=== $*"
-    "$@" || status=1
+    "$@" || failed="$failed $1"
 }
 
 # the coverage of the generators is checked with its own fixed seed, so a
@@ -68,5 +69,8 @@ run ./fuzz-roome.py $((3000 * scale)) "$seed"
 run ./fuzz-alias.sh $((2000000 * scale)) $((5000 * scale)) "$seed"
 run ./fuzz-ub.sh --mutants
 
-echo "=== findings are in findings/"
-exit $status
+echo "=== findings are in ${FUZZ_FINDINGS:-findings/}"
+if [ -n "$failed" ]; then
+    echo "=== failed:$failed"
+    exit 1
+fi

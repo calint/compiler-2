@@ -143,7 +143,7 @@ def fuzz_one(args):
         rf = fl.run([fl.EMULATOR, IMAGE, sdcard_fpga], 10,
                     stdin_bytes=data + b"\x04")
         # (target, outcome, the text of a panic on standard error)
-        outcomes = [("fpga", fl.outcome_fpga(rf), "")]
+        outcomes = [("fpga", fl.outcome_uart(rf), "")]
         if index % 2 == 0:
             # the rv32i program opens 'sdcard.img' in its working directory too
             work_rv32i = os.path.join(work, "rv32i")

@@ -62,8 +62,10 @@ DEFINING_WORDS = {"func", "var", "let", "dat", "type", "if", "else", "loop",
 WORD = re.compile(r"[A-Za-z_][A-Za-z_0-9]*")
 NUMBER = re.compile(
     r"(?<![A-Za-z_0-9.])-?(0x[0-9a-fA-F_]+|0b[01_]+|\d[\d_]*)\b")
-# the case of a test in 'cases.sh', e.g. 'SRC=0001 && EXP=58 && RUN'
-CASE = re.compile(r"^\s*SRC=(\w+) .*?(\w+)\s*$", re.M)
+# the case of a test in 'cases.sh', e.g. 'SRC=0001 && EXP=58 && RUN', also
+# behind a target guard 'if [[ $MACHINE == x86_64 ]]; then ...; fi'
+CASE = re.compile(r"^\s*(?:if .*?; then )?SRC=(\w+) .*?(\w+)(?:; fi)?\s*$",
+                  re.M)
 
 # (name, text) of the tests and of those the tests expect to be accepted
 SOURCES = []
@@ -416,8 +418,7 @@ def fuzz_one(args):
         os.symlink(os.path.join(fl.TESTS, "include"),
                    os.path.join(work, "include"))
         path = os.path.join(work, "f.baz")
-        with open(path, "wb") as f:
-            f.write(mutant.encode("latin-1", "replace"))
+        fl.write_source(path, mutant)
         for target in targets:
             command = ["--target=" + target] + options
             # note: the image of rv32i holds the 'dat' arrays, one of 2 GiB

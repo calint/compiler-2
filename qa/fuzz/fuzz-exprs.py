@@ -628,8 +628,7 @@ def fuzz_one(args):
 
 def run_target(work, source, target, options):
     path = os.path.join(work, "f.baz")
-    with open(path, "w") as f:
-        f.write(source)
+    fl.write_source(path, source)
     c, o, problem = fl.run_target(fl.COMPILER, path, list(options), work,
                                   target)
     if c.timed_out:

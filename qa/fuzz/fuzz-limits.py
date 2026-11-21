@@ -127,8 +127,7 @@ def fuzz_one(args):
     counts = {}
     with tempfile.TemporaryDirectory(prefix="fuzz-") as work:
         path = os.path.join(work, "f.baz")
-        with open(path, "w") as f:
-            f.write(source)
+        fl.write_source(path, source)
         full = outcome(work, path, "rv32i-fpga", (CHECKS,), found)
         # note: 'fuzz-programs.py' reports a program that does not end
         if full is None or full[0] not in ("exit", "panic"):

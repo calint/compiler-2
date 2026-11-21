@@ -525,10 +525,8 @@ def fuzz_one(args):
     try:
         bad_path = os.path.join(work, "bad.baz")
         good_path = os.path.join(work, "good.baz")
-        with open(bad_path, "w") as f:
-            f.write(case.bad.text())
-        with open(good_path, "w") as f:
-            f.write(case.good.text())
+        fl.write_source(bad_path, case.bad.text())
+        fl.write_source(good_path, case.good.text())
         for target in fl.TARGETS:
             r = compile_only(bad_path, target, case.options)
             if r.timed_out:

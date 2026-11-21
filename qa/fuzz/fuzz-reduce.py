@@ -55,8 +55,7 @@ def main():
     accepted_flags = without_image(shlex.split(options["accepted-by"] or ""))
 
     def interesting(candidate):
-        with open(work, "wb") as f:
-            f.write(candidate.encode("latin-1"))
+        fl.write_source(work, candidate)
         if options["accepted-by"] is not None:
             check = fl.run([fl.COMPILER] + accepted_flags + [work],
                            fl.COMPILE_TIMEOUT, file_size=1 << 30)
@@ -75,8 +74,7 @@ def main():
     finally:
         os.remove(work)
     out = options["out"] or re.sub(r"\.baz$", "", path) + ".min.baz"
-    with open(out, "wb") as f:
-        f.write(text.encode("latin-1"))
+    fl.write_source(out, text)
     print(f"{len(text)} bytes in {out}")
 
 

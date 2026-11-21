@@ -250,8 +250,7 @@ def fuzz_one(args):
     src, truth = made
     with tempfile.TemporaryDirectory() as tmp:
         path = os.path.join(tmp, "p.baz")
-        with open(path, "w") as f:
-            f.write(src)
+        fl.write_source(path, src)
         run = fl.run([compiler, path], fl.COMPILE_TIMEOUT)
     rejected = "may share storage" in run.stderr
     if run.returncode != 0 and not rejected:

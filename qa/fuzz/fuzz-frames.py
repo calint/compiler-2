@@ -157,16 +157,14 @@ def fuzz_one(args):
             if got == expected:
                 counts[got[0]] = counts.get(got[0], 0) + 1
                 continue
-            if got[0] == "compile":
+            failure = fl.build_failure(
+                got, f"{target} {' '.join(target_options)}")
+            if failure:
+                found.append(failure)
+            elif got[0] == "compile":
                 message = got[1].strip().splitlines()[0] if got[1] else ""
                 found.append(("frames-reject",
                               f"{target} {message.split(': ', 1)[-1]}",
-                              f"{' '.join(target_options)}\n{got[1]}"))
-            elif got[0] in ("compile-hang", "invalid-asm", "link-failure",
-                            "image-mismatch"):
-                category = "compiler-hang" if got[0] == "compile-hang" \
-                    else got[0]
-                found.append((category, f"{target} {got[0]}",
                               f"{' '.join(target_options)}\n{got[1]}"))
             else:
                 found.append(("frames-mismatch",

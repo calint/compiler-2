@@ -447,6 +447,10 @@ def judge(work, source, expected):
     found = []
     for target in fl.with_rotated(fl.TARGETS, source):
         got = fl.build_and_run(work, source, target, ("--checks=noub",))
+        failure = fl.build_failure(got, target)
+        if failure:
+            found.append(failure)
+            continue
         if expected[0] == "reject":
             if got[0] == "compile" and REJECTIONS[expected[1]] in got[1]:
                 continue
@@ -468,10 +472,6 @@ def judge(work, source, expected):
             found.append(("effects-reject",
                           f"{target} {message.split(': ', 1)[-1]}",
                           f"expected {expected}, got {got}"))
-        elif got[0] in ("compile-hang", "invalid-asm", "link-failure",
-                        "image-mismatch"):
-            found.append((got[0] if got[0] != "compile-hang"
-                          else "compiler-hang", target, str(got)))
         else:
             found.append(("effects-mismatch", f"{target} {got[0]}",
                           f"expected {expected}, got {got}"))

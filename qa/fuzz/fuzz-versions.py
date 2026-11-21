@@ -30,7 +30,6 @@
 #                      see fuzz-compiler.py
 #
 # usage: fuzz-versions.py [count] [seed] [jobs]
-import os
 import random
 import sys
 import tempfile
@@ -1107,29 +1106,6 @@ class Model:
 # running
 
 
-def build(work, source, target, options):
-    # what the program did: ('exit' or 'panic', code, stdout),
-    # ('compiler-crash', stderr), ('compile', stderr) or how it did not end
-    path = os.path.join(work, "f.baz")
-    with open(path, "w") as f:
-        f.write(fl.split_include(work, source))
-    c, o, problem = fl.run_target(fl.COMPILER_ASAN, path, list(options), work,
-                                  target)
-    if c.timed_out:
-        return ("compiler-hang", "")
-    if c.returncode:
-        sanitizer = any(t in c.stderr for t in fl.SANITIZER_TEXT)
-        if sanitizer or c.returncode < 0 or \
-                c.returncode in fl.SANITIZER_EXIT:
-            return ("compiler-crash", c.stderr[-3000:])
-        return ("compile", c.stderr[:800])
-    if problem:
-        return (problem[0], problem[1][:300])
-    if o.kind not in ("exit", "panic"):
-        return (o.kind, f"{o.code} {o.detail}")
-    return (o.kind, o.code, o.stdout)
-
-
 def limit_of_registers(text):
     # a register that an operation fixes is a limit too (chapter 8 item 3)
     return fl.out_of_registers(text) or "is always used by the operation" \
@@ -1160,7 +1136,7 @@ def judge(work, source, variant, expected, counts):
         option_lists = OPTION_LISTS if target in fl.TARGETS \
             else OPTION_LISTS[:1]
         for options in option_lists:
-            got = build(work, source, target, options)
+            got = fl.build(work, source, target, options)
             where = f"{target} {variant} {' '.join(options)}"
             # a tool stopped by a limit says nothing about the code
             if got[0] == "skip":
@@ -1180,14 +1156,11 @@ def judge(work, source, variant, expected, counts):
             verdicts.add("accepted")
             if got == expected:
                 continue
-            if got[0] == "compiler-crash":
-                found.append((got[0], fl.signature(got[1]),
-                              f"{where}\n{got[1]}"))
+            failure = fl.build_failure(got, where)
+            if failure:
+                found.append(failure)
                 continue
-            category = got[0] if got[0] in ("compiler-hang", "invalid-asm",
-                                            "link-failure", "image-mismatch") \
-                else "versions-mismatch"
-            found.append((category, f"{where} {got[0]}",
+            found.append(("versions-mismatch", f"{where} {got[0]}",
                           f"expected {short(expected)}, got {short(got)}"))
     if len(verdicts) > 1:
         found.append(("versions-reject", f"{variant} accepted by some builds",

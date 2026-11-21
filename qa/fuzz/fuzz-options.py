@@ -136,8 +136,7 @@ def fuzz_one(args):
         name = rnd.choice(list(PROGRAMS))
         source, expected = PROGRAMS[name]
         path = os.path.join(work, "f.baz")
-        with open(path, "w") as f:
-            f.write(source)
+        fl.write_source(path, source)
         options = make_options(rnd)
         file_arguments = rnd.choice([[path], [path], [path], [], [path, path],
                                      [work], [os.path.join(work, "missing.baz")]])
@@ -182,7 +181,7 @@ def run_accepted(work, path, options, target, fpga, expected, name, description,
         if problem and problem[0] != "skip":
             found.append((problem[0], description[:100], problem[1][-800:]))
         if exe:
-            o = fl.outcome_x86(fl.run([exe], fl.RUN_TIMEOUT))
+            o = fl.run_program(target, exe)
             judge(o, expected, name, options, description, found)
     elif target == "rv32i" and os.path.exists(image):
         assembly = os.path.join(work, "f.s")
@@ -192,14 +191,13 @@ def run_accepted(work, path, options, target, fpga, expected, name, description,
         if problem and problem[0] != "skip":
             found.append((problem[0], description[:100], problem[1][-800:]))
         if exe:
-            o = fl.outcome_x86(fl.run([fl.QEMU_USER, exe], fl.RUN_TIMEOUT))
+            o = fl.run_program(target, exe)
             judge(o, expected, name, options, description, found)
     elif target == "rv32i-qemu" and os.path.exists(image):
-        o = fl.outcome_fpga(fl.run(fl.QEMU_SYSTEM + [image], fl.RUN_TIMEOUT))
+        o = fl.run_program(target, image)
         judge(o, expected, name, options, description, found)
     elif fpga and os.path.exists(image):
-        r = fl.run([fl.EMULATOR, image, os.devnull], fl.RUN_TIMEOUT)
-        o = fl.outcome_fpga(r)
+        o = fl.run_program(target, image)
         if o.kind == "cpu-error":
             if not beyond_emulator_memory(options):
                 found.append(("option-cpu", description[:100], str(o)))
