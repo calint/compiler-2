@@ -200,6 +200,9 @@ struct type_field {
     // an array of a length, or not an array
     array_shape shape;
 
+    // the offset after the last byte
+    [[nodiscard]] auto end() const -> size_t { return offset + size_bytes; }
+
     [[nodiscard]] auto type_ref() const -> const type& { return *type_ptr; }
 };
 

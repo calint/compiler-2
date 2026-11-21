@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 545 (2026-11-21, bug hunt: where run-time failures are
+    reported; design: types; readability: a newcomer walks the loops,
+    'stmt_builtin_foo.hpp', 'stmt_loop.hpp', 'stmt_loop_jump.hpp')
+    => bug hunt: no defect; a generator that plants one failing operation
+       of 54 kinds at a known file and line in 22 contexts (inlined three
+       deep, noinline, methods, generics, included files and across them)
+       under random check sets with and without 'line' and the five
+       version options, with passing checks after it and far jumps on
+       rv32i: 24400 programs; overflow, shift and division matrices at
+       every width: 5800 programs; probes of statements over several
+       lines, unusual include names and line numbers up to 2097152; 10
+       mutants, one equivalent
+    => design: no change; types keep each fact once; 'type_field::end'
+       names the end of a field where two places added offset and size;
+       eleven ideas kept with reasons
+    => readability: two comments of 'stmt_builtin_foo::compile' speak of
+       the limit, not the count (without a count an unknown length is a
+       limit of 0); 21 functions, 2 predictions wrong
 [x] easy: round 544 (2026-11-21, bug hunt: string and character
     literals; design: the control statements and their paths;
     readability: a newcomer walks 'expr_any.hpp')

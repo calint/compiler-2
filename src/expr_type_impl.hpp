@@ -242,7 +242,7 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
         plan_unwritten(at, "padding", written_bytes,
                        field.offset - written_bytes, {}, plan);
 
-        written_bytes = field.offset + field.size_bytes;
+        written_bytes = field.end();
 
         plan.push_back({
             .at{at},

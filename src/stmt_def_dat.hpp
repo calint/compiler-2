@@ -195,7 +195,7 @@ class stmt_def_dat final : public statement {
                 x.emit_zero_data(padding_bytes);
             }
 
-            written_bytes = f.offset + f.size_bytes;
+            written_bytes = f.end();
 
             compile_data_elem(x, f.type_ref(), e);
         }

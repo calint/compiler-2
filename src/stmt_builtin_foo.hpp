@@ -101,8 +101,9 @@ class stmt_builtin_foo final : public statement {
         x.copy_value({tok(), tc.indent()}, counter,
                      operand::imm(0, tc.builtins().default_type()));
 
-        // a count that folds to 0 skips the body like a branch that folds to
-        // false, see 'compile_toc::check_skipped'
+        // a limit of 0, a count that folds to 0 or 'discarded_array_len', skips
+        // the body like a branch that folds to false, see
+        // 'compile_toc::check_skipped'
         if (limit.is_immediate() and limit.immediate() == 0) {
             tc.check_skipped([&] -> void { code_.compile(tc, destination{}); });
         } else {
@@ -120,7 +121,7 @@ class stmt_builtin_foo final : public statement {
         }
 
         // the check that skips the body runs out the loop at its entry; a
-        // constant count above 0 never skips and a count that is not reached
+        // constant limit above 0 never skips and a count that is not reached
         // never checks, so the loop runs out only where the body reaches its
         // counter step, e.g. not after 'foo a, 2 { stop() }'
         const bool runs_body{limit.is_immediate() and limit.immediate() != 0};
