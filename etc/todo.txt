@@ -10,6 +10,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 572, tests) no test sees the zeroing of globals: every
+    target the suite runs starts the variable storage at zero, so dropping
+    the zeroing code of globals and their padding would pass; e.g. the
+    fpga emulator could fill the variable storage with a pattern first
 [ ] easy: (round 535, registers) rv32i 'emit_target_call' reserves 'a7'
     by name around 'call_io_routine', which already asserts 'a3' to 'a6'
     free, and 'a7' comes after them in the allocation order; the

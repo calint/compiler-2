@@ -36,8 +36,8 @@ class source_files final {
         std::string relative_name;
         // the index where each line begins, the first is 0
         std::vector<size_t> line_begins;
-        // the path of the 'include' that loaded the file, none for the main
-        // file
+        // the file name in the 'include' that loaded the file, none for the
+        // main file
         std::optional<source_span> included_at;
     };
 
@@ -103,15 +103,16 @@ class source_files final {
         return load(path.string(), included_at);
     }
 
-    // the path of the 'include' that loaded the file, none for the main file
+    // the file name in the 'include' that loaded the file, none for the main
+    // file
     [[nodiscard]] auto included_at(const size_t file_ix) const
         -> const std::optional<source_span>& {
 
         return files_.at(file_ix).included_at;
     }
 
-    // reads the file and returns its index, 'included_at' is none for the
-    // main file
+    // reads the file and returns its index; the first file loaded is the main
+    // file, 'included_at' is none for it; 'include' loads a file once
     auto load(std::string name, const std::optional<source_span> included_at)
         -> size_t {
 
@@ -296,7 +297,7 @@ class source_locations final {
         // note: a line end in a file name would end the comment
         return std::format("{}:{}",
                            printable(relative_name(src_loc_tk.file_index())),
-                           text(src_loc_tk, ':'));
+                           line_column(src_loc_tk, ':'));
     }
 
     // where an error is, 'file:line:column', always with the file name as
@@ -315,11 +316,11 @@ class source_locations final {
     // for a program of one file
     [[nodiscard]] auto for_label(const token& src_loc_tk) const -> std::string {
         if (src_loc_tk.file_index() == 0) {
-            return text(src_loc_tk, '.');
+            return line_column(src_loc_tk, '.');
         }
 
         return std::format("f{}.{}", src_loc_tk.file_index(),
-                           text(src_loc_tk, '.'));
+                           line_column(src_loc_tk, '.'));
     }
 
     // like 'for_comment', without the file name for a program of one file,
@@ -328,7 +329,7 @@ class source_locations final {
         -> std::string {
 
         if (files_.get().count() == 1) {
-            return text(src_loc_tk, ':');
+            return line_column(src_loc_tk, ':');
         }
 
         return for_comment(src_loc_tk);
@@ -340,7 +341,7 @@ class source_locations final {
         -> std::string {
 
         if (files_.get().count() == 1) {
-            return text(src_loc_tk, ':');
+            return line_column(src_loc_tk, ':');
         }
 
         return for_error(source_span::at(src_loc_tk));
@@ -362,8 +363,8 @@ class source_locations final {
 
   private:
     // 'line' and 'column' of the token, 'separator' between them
-    [[nodiscard]] auto text(const token& src_loc_tk, const char separator) const
-        -> std::string {
+    [[nodiscard]] auto line_column(const token& src_loc_tk,
+                                   const char separator) const -> std::string {
 
         const size_t column{
             files_.get().column(src_loc_tk.file_index(),

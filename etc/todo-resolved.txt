@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 572 (2026-11-22, bug hunt: globals and their order at
+    program start; design: 'program.hpp' after the include change;
+    readability: a newcomer walks 'source_files.hpp')
+    => bug hunt: no defect; 2900 generated programs of one to four files
+       (include diamonds, globals of every kind reading earlier globals
+       across files, inline and noinline getters and setters, panics in
+       initializers) against a model, about 25500 runs on four targets;
+       500 programs of 'dat' against 'var'; sizes at the offset limits of
+       rv32i, '--vars' at the limit, panic lines and odd file names; 150
+       probes; 8 mutants, 7 caught, the eighth equivalent for globals;
+       that no test sees the zeroing of globals is a todo item
+    => design: the parse of a program is static: 'files_' is gone, the
+       helpers take the file table, 'parsed_files' returns the files in
+       include order and the parse of definitions only parses (errors
+       equal; +7 lines of wrapped signatures)
+    => readability: 'included_at' is the file name in the 'include', not
+       a path; 'load' takes the first file as the main file and does not
+       check for a file loaded before; the private 'text' of
+       'source_locations' renamed 'line_column'; 22 functions, 3
+       predictions wrong
 [x] easy: round 571 (2026-11-22, bug hunt: the I/O builtins and the sd
     card; design: source files and inclusion; readability: a newcomer
     walks 'compile_error.hpp' and the call frames)

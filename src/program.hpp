@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <format>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -246,13 +245,12 @@ class program final {
         token end_tk;
     };
 
-    // a file whose includes are being parsed, see 'parse_files'
+    // a file whose includes are being parsed, see 'parsed_files'
     struct open_file {
         tokenizer tz;
         parsed_file parsed;
     };
 
-    std::reference_wrapper<source_files> files_;
     std::vector<parsed_file> parsed_files_;
     // the names and the storage of the program, see 'toc_tables'
     toc_tables tables_;
@@ -262,14 +260,14 @@ class program final {
   public:
     // the main file is the first of 'files', the included ones are added
     program(machine& backend, source_files& files, const size_t vars_size_bytes)
-        : files_{files}, tables_{backend, files, vars_size_bytes} {
+        : tables_{backend, files, vars_size_bytes} {
 
         parse_toc tc{tables_};
 
         {
             const parse_toc::scope_entry root{tc, scope::block()};
 
-            parse_files(tc);
+            parsed_files_ = parsed_files(tc, files);
         }
 
         main_ = &parsed_main(tc);
@@ -346,91 +344,6 @@ class program final {
         check_noinline_bodies(tc);
     }
 
-    [[nodiscard]] auto opened_file(const size_t file_ix) const -> open_file {
-        return {
-            .tz{file_ix, files_.get().text(file_ix)},
-            .parsed{
-                .file_ix{file_ix},
-                .statements{},
-                .end_tk{},
-            },
-        };
-    }
-
-    // the definitions after the includes, 'tk' is the first of them; then the
-    // file moves to 'parsed_files_', after the files it included
-    auto parse_definitions(parse_toc& tc, open_file& file, token tk) -> void {
-        while (not tk.is_none()) {
-            // a name is seen only after its definition, see
-            // 'definition_order'
-            tc.begin_definition();
-
-            file.parsed.statements.emplace_back(
-                parse_definition(tc, file.tz, tk));
-
-            tk = file.tz.next_token();
-        }
-
-        // a delimiter is not a token, only the end of the source ends the
-        // definitions
-        file.tz.assert_not_at_delimiter();
-
-        file.parsed.end_tk = tk;
-        parsed_files_.push_back(std::move(file.parsed));
-    }
-
-    // the includes of a file come before its definitions, so an included
-    // file is parsed before the definitions of the file that includes it:
-    // the last open file reads on, an include of a new file opens it, a
-    // file without more includes parses its definitions and is closed; the
-    // files are a stack, not nested calls, so an include is no level of the
-    // nesting limit
-    auto parse_files(parse_toc& tc) -> void {
-        std::vector<open_file> open_files;
-        open_files.push_back(opened_file(0));
-
-        while (not open_files.empty()) {
-            open_file& file{open_files.back()};
-            const token tk{file.tz.next_token()};
-
-            if (not tk.is_text("include")) {
-                parse_definitions(tc, file, tk);
-                open_files.pop_back();
-                continue;
-            }
-
-            const std::optional<size_t> loaded_ix{
-                parse_include(file, tk),
-            };
-
-            if (loaded_ix) {
-                open_files.push_back(opened_file(*loaded_ix));
-            }
-        }
-    }
-
-    // the file loaded, none when it was loaded before, see
-    // 'source_files::include'
-    [[nodiscard]] auto parse_include(open_file& file, const token& include_tk)
-        -> std::optional<size_t> {
-
-        std::unique_ptr<stmt_include> include{
-            std::make_unique<stmt_include>(include_tk, file.tz),
-        };
-
-        const std::string file_name{include->file_name()};
-        const token path_tk{include->path_token()};
-
-        file.parsed.statements.emplace_back(std::move(include));
-
-        try {
-            return files_.get().include(file.parsed.file_ix, file_name,
-                                        source_span::at(path_tk));
-        } catch (const unlocated_error& e) {
-            throw compile_error{path_tk, e.what()};
-        }
-    }
-
     //
     // statics
     //
@@ -485,6 +398,100 @@ class program final {
 
             body.func->emit_noinline_body(tc, body);
         }
+    }
+
+    [[nodiscard]] static auto opened_file(const source_files& files,
+                                          const size_t file_ix) -> open_file {
+
+        return {
+            .tz{file_ix, files.text(file_ix)},
+            .parsed{
+                .file_ix{file_ix},
+                .statements{},
+                .end_tk{},
+            },
+        };
+    }
+
+    // the definitions after the includes, 'tk' is the first of them
+    static auto parse_definitions(parse_toc& tc, open_file& file, token tk)
+        -> void {
+
+        while (not tk.is_none()) {
+            // a name is seen only after its definition, see
+            // 'definition_order'
+            tc.begin_definition();
+
+            file.parsed.statements.emplace_back(
+                parse_definition(tc, file.tz, tk));
+
+            tk = file.tz.next_token();
+        }
+
+        // a delimiter is not a token, only the end of the source ends the
+        // definitions
+        file.tz.assert_not_at_delimiter();
+
+        file.parsed.end_tk = tk;
+    }
+
+    // the file loaded, none when it was loaded before, see
+    // 'source_files::include'
+    [[nodiscard]] static auto
+    parse_include(source_files& files, open_file& file, const token& include_tk)
+        -> std::optional<size_t> {
+
+        std::unique_ptr<stmt_include> include{
+            std::make_unique<stmt_include>(include_tk, file.tz),
+        };
+
+        const std::string file_name{include->file_name()};
+        const token path_tk{include->path_token()};
+
+        file.parsed.statements.emplace_back(std::move(include));
+
+        try {
+            return files.include(file.parsed.file_ix, file_name,
+                                 source_span::at(path_tk));
+        } catch (const unlocated_error& e) {
+            throw compile_error{path_tk, e.what()};
+        }
+    }
+
+    // the includes of a file come before its definitions, so an included
+    // file is parsed before the definitions of the file that includes it:
+    // the last open file reads on, an include of a new file opens it, a
+    // file without more includes parses its definitions and is closed; the
+    // files are a stack, not nested calls, so an include is no level of the
+    // nesting limit
+    [[nodiscard]] static auto parsed_files(parse_toc& tc, source_files& files)
+        -> std::vector<parsed_file> {
+
+        std::vector<parsed_file> closed_files;
+        std::vector<open_file> open_files;
+        open_files.push_back(opened_file(files, 0));
+
+        while (not open_files.empty()) {
+            open_file& file{open_files.back()};
+            const token tk{file.tz.next_token()};
+
+            if (not tk.is_text("include")) {
+                parse_definitions(tc, file, tk);
+                closed_files.push_back(std::move(file.parsed));
+                open_files.pop_back();
+                continue;
+            }
+
+            const std::optional<size_t> loaded_ix{
+                parse_include(files, file, tk),
+            };
+
+            if (loaded_ix) {
+                open_files.push_back(opened_file(files, *loaded_ix));
+            }
+        }
+
+        return closed_files;
     }
 
     // the program starts at 'main', its signature is checked where it is
