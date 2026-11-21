@@ -136,6 +136,7 @@ class register_trace final {
 
     // the registers held when the most were
     struct peak_use {
+        // the listed ones of 'allocations', see 'is_listed'
         size_t held{};
         std::vector<register_pool::allocation> allocations;
         std::vector<frame> frames;
@@ -172,7 +173,7 @@ class register_trace final {
 
     // the frame that allocations belong to, 0 before the first frame, which
     // the report names 'global initializers'
-    [[nodiscard]] auto current_frame() const -> size_t {
+    [[nodiscard]] auto current_frame_index() const -> size_t {
         return frames_.empty() ? 0 : frames_.size() - 1;
     }
 
@@ -230,7 +231,7 @@ class register_trace final {
             return;
         }
 
-        const size_t frame_index{current_frame()};
+        const size_t frame_index{current_frame_index()};
 
         size_t own{};
 
@@ -254,9 +255,9 @@ class register_trace final {
             static_cast<size_t>(std::ranges::count_if(live, is_listed)),
         };
 
-        // note: a build that holds no register keeps no allocations, its
-        //       report counts all scratch registers as the variables base,
-        //       held then, is not one
+        // note: a build that holds no register keeps no allocations; its
+        //       report still has the right total of scratch registers since
+        //       the variables base, held then, is not one
 
         if (held <= peak_.held) {
             return;
@@ -359,7 +360,7 @@ class register_call_log final {
         return uses;
     }
 
-    [[nodiscard]] auto end() const -> position {
+    [[nodiscard]] auto length() const -> position {
         return {
             .frames{frames_.size()},
             .noinline_calls{noinline_calls_.size()},

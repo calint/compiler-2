@@ -1,0 +1,5 @@
+most scratch registers: the report agrees with the listing
+most registers held: the report agrees with the listing
+per callee: the report agrees with the listing
+saved at noinline calls: the report agrees with the listing
+0

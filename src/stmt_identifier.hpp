@@ -497,7 +497,7 @@ class stmt_identifier final : public statement {
         // note: the parse rejected a whole array ('assert_not_whole_array')
         assert(not info.is_array());
 
-        if (info.is_const() and not info.constant().is_typed()) {
+        if (info.is_untyped_const()) {
             assert_constant_fits(info, dst_type);
             return;
         }

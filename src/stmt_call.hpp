@@ -115,7 +115,7 @@
 
     const ident_info info{make_ident_info(tc, ident)};
 
-    if (info.is_const() and not info.constant().is_typed()) {
+    if (info.is_untyped_const()) {
         return nullptr;
     }
 

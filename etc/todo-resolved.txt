@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 556 (2026-11-21, bug hunt: whether the reports are true
+    to the code; design: 'ident_info.hpp'; readability: a newcomer walks
+    'register_pool.hpp' and 'register_report.hpp')
+    => bug hunt: no defect; a checker that counts from the listing the
+       most scratch registers live, the registers at the peak, the
+       instructions, the noinline bodies and calls, the table of callees
+       and of saved registers, the dat size and what '--nopt' keeps, over
+       every test on two targets with five version options: 32000
+       compiles, no mismatch; 800 generated programs with
+       '--reproduce-source'; 12 mutants of the reports, five passed the
+       suite, four of them caught by test 7540 (the report checked
+       against the listing); 'max body vars size' against '--vars' is
+       the known round 439 item
+    => design: no change; 'ident_info' holds no fact twice; a name for
+       the untyped constant ('is_untyped_const') where two places spelled
+       the condition; nine ideas kept with reasons
+    => readability: 'register_trace::current_frame' renamed
+       'current_frame_index', 'register_call_log::end' renamed 'length';
+       'peak_use::held' counts the listed registers; the note of
+       'record_peak' reworded; a lone frame gets no noinline line; 56
+       functions, 5 predictions wrong
 [x] easy: round 555 (2026-11-21, bug hunt: the consistency of messages;
     design: the reports; readability: a newcomer walks the type
     definitions)

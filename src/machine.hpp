@@ -570,7 +570,7 @@ class machine {
         explicit version_scope(machine& backend)
             : machine_{backend}, start_{backend.state_},
               failures_start_{backend.failure_locations_.size()},
-              calls_start_{backend.call_log_.end()} {}
+              calls_start_{backend.call_log_.length()} {}
 
         version_scope(const version_scope&) = delete;
         version_scope(version_scope&&) = delete;
@@ -2656,7 +2656,7 @@ class machine {
             .src_loc_tk{site.src_loc_tk},
             .indent{site.indent},
             .holder{holder},
-            .frame{state_.trace.current_frame()},
+            .frame{state_.trace.current_frame_index()},
         });
 
         state_.trace.record_allocation(state_.registers);

@@ -1,0 +1,32 @@
+# the reports after the code agree with the listing: a callee that holds no
+# register is counted per call, a callee's most is of its busiest call, not
+# its last, a named register at the peak is not a scratch one, and the check
+# of a body that is not emitted ('unused') leaves no peak
+
+func zero(x mut i32) {
+    x = 0
+}
+
+func mix(a, b) res {
+    res = (a + b) * (a - b) + a / (b | 1)
+}
+
+func unused(a, b) res {
+    res = a + (b * (a + (b - (a + (b * (a + (b - (a + (b * (a + b))))))))))
+}
+
+func noinline far(a, b) res {
+    res = mix(a, b) % 1000
+}
+
+func main() {
+    var a = 7
+    var b = 3
+    var c = i32[4]{1, 2, 3, 4}
+    zero(c[0])
+    zero(c[1])
+    var r = mix(a * b + c[2], (b - a) * c[3])
+    r = r + mix(1, 2)
+    r = r + far(a, b) + a * b / (c[2] + 1)
+    exit((mix(r, a * b + c[1]) + (a + (b * (r + (a - (b + c[r & 3])))))) & 127)
+}

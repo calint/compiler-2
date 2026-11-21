@@ -179,6 +179,7 @@ struct register_use_report final {
     }
 
     [[nodiscard]] auto noinline_lines() const -> std::vector<std::string> {
+        // a lone frame makes no call that 'noinline' could change
         if (frames.size() < 2) {
             return {};
         }
@@ -430,7 +431,7 @@ class register_reporter final {
         };
     }
 
-    // e.g. 'r15 153:13' or 'rax 153:31 (named)'
+    // e.g. 'rax 153:31 (named)'
     [[nodiscard]] auto
     register_text(const register_pool::allocation& allocated) const
         -> std::string {

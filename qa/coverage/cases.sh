@@ -8481,3 +8481,8 @@ SRC=7530 && COMPERR
 # the line of a call frame that ends inside a string continued on the next
 # line shows more than the call, the frame quotes it
 SRC=7531 && COMPERR
+
+# the footer and the register report agree with the allocations and the
+# frames of the listing: a callee that holds no register, the busiest call of
+# a callee, a named register, a checked body that is not emitted
+SRC=7540 && DIFFPY

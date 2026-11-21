@@ -299,6 +299,12 @@ class ident_info final {
         return std::holds_alternative<register_part>(part_);
     }
 
+    // a constant checked by its value, e.g. a literal, see 'folded_value'
+    [[nodiscard]] auto is_untyped_const() const -> bool {
+        const const_part* const constant{std::get_if<const_part>(&part_)};
+        return constant != nullptr and not constant->value.is_typed();
+    }
+
     [[nodiscard]] auto is_var() const -> bool {
         return std::holds_alternative<var_part>(part_);
     }
