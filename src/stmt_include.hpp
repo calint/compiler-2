@@ -27,7 +27,7 @@ class stmt_include final : public statement {
         }
 
         // escapes are decoded like in any other string, e.g. '\x20'
-        const std::string file_name{path_tk_.string_bytes()};
+        const std::string file_name{path_tk_.literal_bytes()};
 
         if (file_name.empty()) {
             throw compile_error{path_tk_, "the file name is empty"};
@@ -60,7 +60,7 @@ class stmt_include final : public statement {
 
     // the name as the file system takes it, its escapes decoded
     [[nodiscard]] auto file_name() const -> std::string {
-        return path_tk_.string_bytes();
+        return path_tk_.literal_bytes();
     }
 
     [[nodiscard]] auto path_token() const -> const token& { return path_tk_; }

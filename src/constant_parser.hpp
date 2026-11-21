@@ -2,11 +2,11 @@
 
 #include <cassert>
 #include <charconv>
-#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <memory>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <system_error>
 
@@ -68,41 +68,19 @@ class constant_parser final {
     }
 
     // the value is the byte, e.g. 'a' is 97 and '\xff' is 255
-    [[nodiscard]] static auto parse_character(const token& src_loc_tk,
-                                              const std::string_view str)
+    [[nodiscard]] static auto parse_character(const token& literal_tk)
         -> int64_t {
 
-        assert(is_character_literal(str));
+        assert(is_character_literal(literal_tk.text()));
 
-        const std::string_view body{str.substr(1, str.size() - 2)};
-        // note: 1 and -2 because the literal is between the quotes
+        const std::string bytes{literal_tk.literal_bytes()};
 
-        // note: a backslash would escape the closing quote
-        if (body.size() == 1) {
-            return static_cast<unsigned char>(body.at(0));
+        // e.g. 'ab', '\n\n' or 'é'
+        if (bytes.size() != 1) {
+            throw_not_one_byte(literal_tk);
         }
 
-        // e.g. 'ab'
-        if (not body.starts_with('\\')) {
-            throw_not_one_byte(src_loc_tk, str);
-        }
-
-        const token::escape esc{token::escape_at(body, 0)};
-
-        // note: the tokenizer rejected an unsupported escape
-        //       ('tokenizer::assert_escapes_supported')
-
-        assert(esc.decoded);
-
-        const size_t escape_size{1 + esc.size};
-        // note: 1 + for the backslash before the escape
-
-        // e.g. '\n\n'
-        if (body.size() > escape_size) {
-            throw_not_one_byte(src_loc_tk, str);
-        }
-
-        return static_cast<unsigned char>(*esc.decoded);
+        return static_cast<unsigned char>(bytes.front());
     }
 
     // e.g. '12', '0x1f', '0b101' and ''a'' have a value, 'x' has none; a
@@ -112,7 +90,10 @@ class constant_parser final {
         -> std::optional<int64_t> {
 
         if (is_character_literal(str)) {
-            return parse_character(src_loc_tk, str);
+            // note: a character literal is a token of its own, 'tokenizer'
+            assert(str == src_loc_tk.text());
+
+            return parse_character(src_loc_tk);
         }
 
         const int base{base_of(str)};
@@ -174,14 +155,13 @@ class constant_parser final {
                str.ends_with('\'');
     }
 
-    [[noreturn]] static auto throw_not_one_byte(const token& src_loc_tk,
-                                                const std::string_view str)
+    [[noreturn]] static auto throw_not_one_byte(const token& literal_tk)
         -> void {
 
         throw compile_error{
-            src_loc_tk,
+            literal_tk,
             std::format("character literal {} must contain one byte, e.g. "
                         "'a' or '\\xe9'",
-                        in_quotes(str))};
+                        in_quotes(literal_tk.text()))};
     }
 };

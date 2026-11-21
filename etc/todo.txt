@@ -26,6 +26,18 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
     declaration; 3 files; a file rename
+[ ] easy: (round 546, aliasing) 'array_length' of a global counts as a
+    read of it for the shared storage of a call: with 'func f(b mut i8[])
+    { b[0] = i8(array_length(g)) }', 'f(g)' is rejected ("argument 1 'g'
+    may share storage with the global 'g' that 'f' uses"), inlined and
+    noinline, while 'array_length(b)' is accepted and
+    'stmt_builtin_array_length::visit_operands' says the array is not
+    read; the body summary would not record a read of the array there
+[ ] easy: (round 546, consistency) the whitespace set " \t\r\n" is
+    spelled in five places: 'tokenizer::delimiters_',
+    'tokenizer::next_whitespace', 'one_line_source::is_ascii_space',
+    'located_in_text' and 'trimmed_line_at' (" \t\r", a line has no
+    '\n'); one constant in 'token.hpp' would name it once
 [ ] easy: (round 541, folding) a 'let' and a statement report different
     errors for one constant list with two faults: 'let k = i8(1) + 300 / 0'
     says "divisor must not be zero", 'x = i8(1) + 300 / 0' says "constant

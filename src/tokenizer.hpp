@@ -68,8 +68,13 @@ class tokenizer final {
         }));
 
   public:
+    // throws when the source is not well formed ('assert_source_well_formed'),
+    // so every file is checked before its first token
     tokenizer(const size_t file_ix, const std::string_view src)
-        : src_{src}, file_ix_{file_ix} {}
+        : src_{src}, file_ix_{file_ix} {
+
+        assert_source_well_formed(file_ix, src);
+    }
 
     // continues at a position of an earlier pass over the same source, 'src' is
     // the text of the file of the position
@@ -327,51 +332,6 @@ class tokenizer final {
         throw compile_error{*this, "expected '}' to close block"};
     }
 
-    //
-    // statics
-    //
-
-    // the source of file 'file_ix' has no bytes that an editor shows other
-    // than the tokenizer reads them: a byte order mark, which hides in the
-    // first token, and a carriage return without a line feed, which ends a
-    // line on screen but not a comment
-    static auto assert_source_well_formed(const size_t file_ix,
-                                          const std::string_view src) -> void {
-
-        constexpr std::string_view byte_order_mark{"\xef\xbb\xbf"};
-
-        if (src.starts_with(byte_order_mark)) {
-            const token mark_tk{
-                token::synthetic(file_ix, byte_order_mark, 0, 1),
-            };
-
-            throw compile_error{mark_tk, "the source starts with a byte order "
-                                         "mark, save it without one"};
-        }
-
-        size_t line{1};
-
-        for (size_t i{}; i < src.size(); ++i) {
-            if (src.at(i) == '\n') {
-                ++line;
-                continue;
-            }
-
-            const bool is_lone_carriage_return{
-                src.at(i) == '\r' and not src.substr(i + 1).starts_with('\n'),
-            };
-
-            if (is_lone_carriage_return) {
-                const token cr_tk{
-                    token::synthetic(file_ix, src.substr(i, 1), i, line),
-                };
-
-                throw compile_error{
-                    cr_tk, "a carriage return is not followed by a line feed"};
-            }
-        }
-    }
-
   private:
     // reads 'ch' when it is at the cursor, without the whitespace before it
     [[nodiscard]] auto accept_char(const char ch) -> bool {
@@ -418,8 +378,7 @@ class tokenizer final {
         // checked where it is read like a string, also in a generic body that
         // no instance parses
         if (not is_string) {
-            std::ignore =
-                constant_parser::parse_character(literal_tk, literal_tk.text());
+            std::ignore = constant_parser::parse_character(literal_tk);
         }
 
         return literal_tk;
@@ -685,6 +644,47 @@ class tokenizer final {
             throw compile_error{bytes.error(),
                                 std::format("unsupported escape {}",
                                             in_quotes(bytes.error().text()))};
+        }
+    }
+
+    // the source of file 'file_ix' has no bytes that an editor shows other
+    // than the tokenizer reads them: a byte order mark, which hides in the
+    // first token, and a carriage return without a line feed, which ends a
+    // line on screen but not a comment
+    static auto assert_source_well_formed(const size_t file_ix,
+                                          const std::string_view src) -> void {
+
+        constexpr std::string_view byte_order_mark{"\xef\xbb\xbf"};
+
+        if (src.starts_with(byte_order_mark)) {
+            const token mark_tk{
+                token::synthetic(file_ix, byte_order_mark, 0, 1),
+            };
+
+            throw compile_error{mark_tk, "the source starts with a byte order "
+                                         "mark, save it without one"};
+        }
+
+        size_t line{1};
+
+        for (size_t i{}; i < src.size(); ++i) {
+            if (src.at(i) == '\n') {
+                ++line;
+                continue;
+            }
+
+            const bool is_lone_carriage_return{
+                src.at(i) == '\r' and not src.substr(i + 1).starts_with('\n'),
+            };
+
+            if (is_lone_carriage_return) {
+                const token cr_tk{
+                    token::synthetic(file_ix, src.substr(i, 1), i, line),
+                };
+
+                throw compile_error{
+                    cr_tk, "a carriage return is not followed by a line feed"};
+            }
         }
     }
 };

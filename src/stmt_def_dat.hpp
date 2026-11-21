@@ -264,7 +264,7 @@ class stmt_def_dat final : public statement {
 
         x.comment({str.src_loc_tk, 0}, "{}[{}]", tp.name(), str.array_count);
 
-        const std::string bytes{str.src_loc_tk.string_bytes()};
+        const std::string bytes{str.src_loc_tk.literal_bytes()};
 
         // note: the parse rejected a string longer than its array
         assert(bytes.size() <= str.array_count);

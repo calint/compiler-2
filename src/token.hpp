@@ -277,6 +277,18 @@ class token final {
         return not text_.empty() and not is_string();
     }
 
+    // the bytes of a string or character literal, see 'decoded'
+    [[nodiscard]] auto literal_bytes() const -> std::string {
+        const std::expected<std::string, token> bytes{decoded()};
+
+        // note: the tokenizer rejected an unsupported escape
+        //       ('tokenizer::assert_escapes_supported')
+
+        assert(bytes);
+
+        return *bytes;
+    }
+
     [[nodiscard]] auto source_begin_index() const -> size_t {
         return start_ix_ - ws_left_.length();
     }
@@ -295,18 +307,6 @@ class token final {
     // whitespace its first token holds
     [[nodiscard]] auto start_position() const -> token {
         return position(file_index(), start_index(), at_line());
-    }
-
-    // the bytes of a string literal, see 'decoded'
-    [[nodiscard]] auto string_bytes() const -> std::string {
-        const std::expected<std::string, token> bytes{decoded()};
-
-        // note: the tokenizer rejected an unsupported escape
-        //       ('tokenizer::assert_escapes_supported')
-
-        assert(bytes);
-
-        return *bytes;
     }
 
     [[nodiscard]] auto text() const -> std::string_view { return text_; }

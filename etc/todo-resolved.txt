@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 546 (2026-11-21, bug hunt: array parameters and the
+    noinline bodies per length; design: the tokenizer; readability: a
+    newcomer walks 'type.hpp')
+    => bug hunt: no defect; a model generator of one to three array
+       parameters of every element type and of records, from locals,
+       globals, dats, fields and elements at constant and run-time index,
+       passed on unsized, with 'foo', fills through 'mut', recursion,
+       generics and skipped calls, checking the noinline bodies per length
+       in the report: 12300 programs, 169000 runs; 5000 aliasing calls by
+       the path rules; 70 verdict probes inline against noinline; 17
+       mutants, the suite or the generator caught all but an equivalent
+       and an artificial one; 'array_length' of a global taken as a read
+       for shared storage to 'etc/todo.txt'
+    => design: one escape decoder: a character literal is decoded by
+       'token::literal_bytes' (was 'string_bytes') as a string is, not by
+       its own walk in 'constant_parser', and 'one_line_source' reads
+       escapes with 'token::escape_at'; the well-formed check of a source
+       runs in the tokenizer's constructor, so no file can skip it (8
+       files, -19 lines, listings and errors equal); the whitespace set
+       spelled in five places to 'etc/todo.txt'; eight ideas kept
+    => readability: 'padding_gaps' does not cut at 'max_count';
+       'element_count' is 0 for an unknown length;
+       'align_storage_size' states its precondition; 44 functions, 3
+       predictions wrong
 [x] easy: round 545 (2026-11-21, bug hunt: where run-time failures are
     reported; design: types; readability: a newcomer walks the loops,
     'stmt_builtin_foo.hpp', 'stmt_loop.hpp', 'stmt_loop_jump.hpp')

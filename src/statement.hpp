@@ -92,43 +92,47 @@ class one_line_source final {
     //
 
     // appends the literal starting at 'begin' and returns where it ends,
-    // after its closing quote, which an escaped character cannot be; a
-    // backslash before a line end continues the literal on the next line, the
-    // listing comment stays on one line
-    // note: the tokenizer rejects a carriage return that is not in a crlf
-    //       line end, so dropping it makes a crlf continuation look like a lf
-    //       one
+    // after its closing quote; its escapes are read as the tokenizer reads
+    // them ('token::escape_at'), so an escaped quote does not close it and a
+    // continuation is dropped, the listing comment stays on one line
     [[nodiscard]] static auto append_literal(const std::string_view text,
                                              const size_t begin,
                                              std::string& collapsed) -> size_t {
 
         const char quote{text.at(begin)};
-        bool escaped{};
 
         collapsed.push_back(quote);
 
-        for (size_t index{begin + 1}; index < text.size(); ++index) {
-            // note: +1 because the opening quote cannot close the literal
+        size_t index{begin + 1};
+        // note: +1 because the opening quote cannot close the literal
+
+        while (index < text.size()) {
             const char ch{text.at(index)};
 
-            if (ch == '\r') {
-                continue;
-            }
-
-            if (escaped and ch == '\n') {
-                collapsed.pop_back();
-                escaped = false;
-                continue;
-            }
-
-            collapsed.push_back(ch);
-
-            if (not escaped and ch == quote) {
+            if (ch == quote) {
+                collapsed.push_back(ch);
                 return index + 1;
                 // note: +1 because the closing quote belongs to the literal
             }
 
-            escaped = not escaped and ch == '\\';
+            if (ch != '\\') {
+                collapsed.push_back(ch);
+                ++index;
+                continue;
+            }
+
+            const token::escape esc{token::escape_at(text, index)};
+
+            const std::string_view escape_text{
+                text.substr(index, 1 + esc.size),
+            };
+            // note: 1 + for the backslash before the escape
+
+            if (not esc.is_continuation) {
+                collapsed += escape_text;
+            }
+
+            index += escape_text.size();
         }
 
         // note: the tokenizer rejected an unterminated literal

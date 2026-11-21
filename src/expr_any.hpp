@@ -298,7 +298,7 @@ class expr_any final : public statement {
         }
 
         if (const string_array* const str{std::get_if<string_array>(&form_)}) {
-            return str->string_tk.string_bytes().size();
+            return str->string_tk.literal_bytes().size();
         }
 
         const element_list* const list{std::get_if<element_list>(&form_)};
@@ -799,7 +799,7 @@ class expr_any final : public statement {
                      const std::optional<size_t> dst_count,
                      write_plan& plan) const -> void {
 
-        std::string bytes{string_tk.string_bytes()};
+        std::string bytes{string_tk.literal_bytes()};
 
         const size_t size_bytes{bytes.size()};
 
@@ -962,7 +962,7 @@ class expr_any final : public statement {
                                    const std::optional<size_t> dst_count)
         -> void {
 
-        const size_t size_bytes{string_tk.string_bytes().size()};
+        const size_t size_bytes{string_tk.literal_bytes().size()};
 
         if (not element_type.is_same(string_element_type)) {
             throw compile_error{

@@ -98,7 +98,8 @@ inline constexpr size_t max_storage_size_bytes{
     return (alignment - (size_bytes % alignment)) % alignment;
 }
 
-// rounds 'size_bytes' up to a multiple of 'alignment', a power of two
+// rounds 'size_bytes' up to a multiple of 'alignment', a power of two, when
+// the rounded size is known to be within the limit
 [[nodiscard]] inline auto align_storage_size(const size_t size_bytes,
                                              const size_t alignment) -> size_t {
 
@@ -149,7 +150,8 @@ class array_shape final {
     // not an array
     array_shape() = default;
 
-    // 1 for a name that is not an array, see 'discarded_array_len'
+    // 1 for a name that is not an array, 0 ('discarded_array_len') for an
+    // unknown length
     [[nodiscard]] auto element_count() const -> size_t {
         return is_array_ ? length_.value_or(discarded_array_len) : 1;
     }
@@ -215,9 +217,9 @@ struct byte_range {
     [[nodiscard]] auto end() const -> size_t { return offset + size_bytes; }
 };
 
-// bytes of an instance that no field covers, from its start, e.g. the 3 B at
-// offset 1 of 'type r { a i8, b i32 }'; 'alignment' is known for the first
-// byte
+// bytes of an instance that no field covers, 'offset' from its start, e.g.
+// the 3 B at offset 1 of 'type r { a i8, b i32 }'; 'alignment' is known for
+// the first byte
 struct padding_gap {
     size_t offset{};
     size_t size_bytes{};
@@ -395,7 +397,8 @@ class type final {
     }
 
     // the bytes that no field covers, between the data ranges and after the
-    // last one; all of them up to 'max_count', else more than 'max_count'
+    // last one; all of them when there are at most 'max_count', else only
+    // some, more than 'max_count'
     [[nodiscard]] auto padding_gaps(const size_t max_count) const
         -> std::vector<padding_gap> {
 
