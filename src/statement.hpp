@@ -419,16 +419,14 @@ class statement {
     // as a type not found; checked as it is read, so also in a generic
     // definition that no instance parses
     static auto assert_not_literal_type(const token& type_tk) -> void {
-        if (type_tk.is_string()) {
-            throw compile_error{type_tk, "expected a type name, got a string"};
+        if (not type_tk.is_string() and
+            not constant_parser::is_literal(type_tk)) {
+
+            return;
         }
 
-        if (constant_parser::is_literal(type_tk)) {
-            throw compile_error{
-                type_tk,
-                std::format("expected a type name, got the constant {}",
-                            in_quotes(type_tk.text()))};
-        }
+        throw compile_error{type_tk, std::format("expected a type name, got {}",
+                                                 described_token(type_tk))};
     }
 
     // 'compile_value' computes a value into a scratch register of

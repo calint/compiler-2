@@ -1,0 +1,30 @@
+# a 'bool' read as a byte other than 0 or 1 (chapter 8) converts to the same
+# integer on every target, its byte sign extended as for an 'i8'
+func noinline same(b bool) res bool {
+    res = b
+}
+
+# 's' for the sign extended byte 0xff, 'z' for the zero extended one
+func noinline mark(x i32) res i8 {
+    res = 'z'
+    if x == -1 {
+        res = 's'
+    }
+}
+
+func main() {
+    var bytes = i8[512]{-1}
+    sector_write(1, bytes)
+    var bs = bool[512]
+    sector_read(1, bs)
+    var r = same(bs[0])
+    var marks = i8[6]{
+        mark(i32(bs[0])),
+        mark(i32(int(bs[0]))),
+        mark(i32(r)),
+        mark(i32(i16(same(bs[0])))),
+        mark(i32(i8(same(bs[0])))),
+        '\n',
+    }
+    write(1, marks)
+}

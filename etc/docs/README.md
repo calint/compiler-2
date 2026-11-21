@@ -2200,8 +2200,9 @@ The bytes that 'read' and 'sector_read' put into a buffer are assumed to be
 written from the same type, e.g. by 'write' or 'sector_write' of such a
 buffer: a 'bool' is 0 or 1 and the padding of an instance is 0. Other bytes are
 not checked; a 'bool' read as 120 is then true as a condition and equal to
-neither 'true' nor 'false', and two instances with equal fields compare
-unequal, since '==' compares their bytes.
+neither 'true' nor 'false', a conversion of it gives the byte sign extended
+on every target, e.g. -1 for 0xff (7340), and two instances with equal
+fields compare unequal, since '==' compares their bytes.
 
 The checks run in three phases: the parse rejects the reads of what is not
 assigned and the kinds of value a destination does not take, the compile the

@@ -160,7 +160,7 @@ class machine_rv32i : public machine {
         size_t size_bytes{};
         // sign extends as a narrow integer reads it
         op load{};
-        // zero extends, for a 'bool' and for copying bytes unchanged
+        // zero extends, for copying bytes unchanged
         op unsigned_load{};
         // stores the low 8, 16 or 32 bits
         op store{};
@@ -4120,10 +4120,10 @@ class machine_rv32i : public machine {
         return constant == 0;
     }
 
-    // a narrow integer is sign extended, a 'bool' zero extended
+    // a narrow value is sign extended, a 'bool' too: it is 0 or 1, which
+    // either extension keeps
     [[nodiscard]] static auto load_op(const type& value_type) -> op {
-        const access_width& access{access_width_of(value_type.size_bytes())};
-        return value_type.is_bool() ? access.unsigned_load : access.load;
+        return access_width_of(value_type.size_bytes()).load;
     }
 
     [[nodiscard]] static auto make_digit_sequence(const uint32_t multiplier,
@@ -4276,8 +4276,7 @@ class machine_rv32i : public machine {
                             address.type_ref());
     }
 
-    // a narrow register gets high bits from a wider or differently extended
-    // source
+    // a narrow register gets high bits from a wider source
     [[nodiscard]] static auto register_needs_extension(const type& dst_type,
                                                        const operand& src)
         -> bool {
@@ -4291,13 +4290,8 @@ class machine_rv32i : public machine {
         const size_t dst_size_bytes{dst_type.size_bytes()};
         const size_t src_size_bytes{src.type_ref().size_bytes()};
 
-        const bool extension_differs{
-            src.type_ref().is_bool() != dst_type.is_bool(),
-        };
-
         return dst_size_bytes < word_size_bytes_ and
-               (src_size_bytes > dst_size_bytes or
-                (extension_differs and src_size_bytes == dst_size_bytes));
+               src_size_bytes > dst_size_bytes;
     }
 
     // the aligned stack area 'save_call_registers' allocates for 'count'

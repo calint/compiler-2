@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 547 (2026-11-21, bug hunt: 'bool' as a stored value;
+    design: statement parsing; readability: a newcomer walks
+    'tokenizer.hpp' and 'token.hpp')
+    => bug hunt: no wrong code; a model generator of bools in locals,
+       globals, dats, arrays and record fields beside every width and
+       padding, set from literals, '{}', conditions, calls, 'mut'
+       parameters and methods, converted to every width, copied and
+       compared whole: 14000 programs, 126000 runs; every way to make a
+       bool from an integer is rejected, only 'read' and 'sector_read'
+       store another byte (8, exception 2); 16 mutants, two equivalent for
+       0 and 1, which showed the next item
+    => design: rv32i zero extended a 'bool' ('lbu', and an extension when
+       a bool register is copied into an 'i8') where x86_64 sign extends
+       it; for 0 and 1 the two agree, so rv32i loads and copies a bool as
+       an 'i8': the special case is gone, 3 test listings are shorter, and
+       a bool read from input converts alike on every target (0xff gives
+       -1, rv32i gave 255 to 'int' and -1 to 'i8'); test 7340, docs 8;
+       'described_token' names a token for the two messages that each
+       decided it ("a string", "the constant 'x'" or "'x'"); eight ideas
+       kept with reasons
+    => readability: 'token::decoded' counts a line only at a continuation,
+       the only line end in a literal; 'escape_at' says a continuation is
+       a backslash before a line end and a byte follows the backslash; 77
+       functions, 2 predictions wrong
 [x] easy: round 546 (2026-11-21, bug hunt: array parameters and the
     noinline bodies per length; design: the tokenizer; readability: a
     newcomer walks 'type.hpp')

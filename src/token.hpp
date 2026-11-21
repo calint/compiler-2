@@ -206,6 +206,7 @@ class token final {
 
         std::string bytes;
         size_t line{at_line_};
+        // note: a literal has a line end only in a continuation
 
         for (size_t i{}; i < body.size(); ++i) {
             if (body.at(i) != '\\') {
@@ -315,10 +316,11 @@ class token final {
     // statics
     //
 
-    // the escape whose backslash is at 'backslash_index' of 'text': a line
-    // continuation, a backslash before a line end, or a character escape,
-    // decoded unless unsupported; 'size' counts the bytes after the
-    // backslash, e.g. 3 for '\x41' and 2 for a crlf continuation or '\é'
+    // the escape whose backslash is at 'backslash_index' of 'text', which a
+    // byte follows: a line continuation (a backslash before a line end) or a
+    // character escape, decoded unless unsupported; 'size' counts the bytes
+    // after the backslash, e.g. 3 for '\x41' and 2 for a crlf continuation or
+    // '\é'
     [[nodiscard]] static auto escape_at(const std::string_view text,
                                         const size_t backslash_index)
         -> escape {

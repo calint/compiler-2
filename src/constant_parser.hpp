@@ -165,3 +165,17 @@ class constant_parser final {
                         in_quotes(literal_tk.text()))};
     }
 };
+
+// 'tk' as a message names it: a string is not quoted back, it may span lines;
+// a constant is named, a character quoted back reads as a name
+[[nodiscard]] inline auto described_token(const token& tk) -> std::string {
+    if (tk.is_string()) {
+        return "a string";
+    }
+
+    if (constant_parser::is_literal(tk)) {
+        return std::format("the constant {}", in_quotes(tk.text()));
+    }
+
+    return in_quotes(tk.text());
+}

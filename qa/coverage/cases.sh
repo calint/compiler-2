@@ -8457,3 +8457,7 @@ SRC=7221 && OPTS="--checks=noub" COMPERR
 
 # a constant bound to a parameter of an inlined call keeps its 64 bits
 if [[ $MACHINE == x86_64 ]]; then SRC=7240 && EXP=0 && RUN; fi
+
+# a 'bool' read as a byte other than 0 or 1 converts to the byte sign extended
+# on every target, also as the result of a call
+if [[ $MACHINE != rv32i-qemu ]]; then SRC=7340 && SDCARD=1M DIFF; fi
