@@ -41,6 +41,10 @@
 # rv32i, rv32i-qemu, rv32i-fpga), e.g. a 'RUN' whose exit code differs by
 # target. A commented case is disabled on purpose.
 #
+# A case is written 'SRC=NNN && EXP=N && OPTS="..." SDCARD=SIZE HELPER', in
+# that order, all but 'SRC' and the helper optional; 'test-coverage.sh'
+# rejects a line of another form before it runs any case.
+#
 # The cases are mostly in the order they were written, related ones in runs.
 # The test of a rule is found by its comment here, the test of an error
 # message by its expected file, e.g. 'grep -l "is negative" tests/*.out'.
@@ -3581,7 +3585,7 @@ SRC=1114 && COMPERR
 if [[ $MACHINE == x86_64 ]]; then
     SRC=1115 && OPTS="--checks=noub" COMPERR
 else
-    SRC=1115 && OPTS="--vars=0x40000 --checks=noub" EXP=0 RUN
+    SRC=1115 && EXP=0 && OPTS="--vars=0x40000 --checks=noub" RUN
 fi
 
 # a keyword is not a variable name, 'else = 7' after an 'if' would be read as

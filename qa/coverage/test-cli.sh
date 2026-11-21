@@ -1364,3 +1364,6 @@ CLI_KEYWORD_NAMES
 CLI_NESTED_TYPE_CHAIN
 
 rm -f gen.s diff.baz out err gen-rv32i.bin
+
+# a run that ends early has no such line
+echo "passed: every cli check"

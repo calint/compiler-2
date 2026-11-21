@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 557 (2026-11-21, bug hunt: method receivers reached
+    through 'foo' elements and run-time indexes; design: the test scripts;
+    readability: a newcomer walks 'ident_info.hpp')
+    => bug hunt: no defect in the compiler; a model generator of methods
+       'mut' and not, inline and noinline, recursive, on 'self', fields,
+       elements of nested arrays, globals, parameters and 'e' of 'foo',
+       with indexes the method itself writes, results of records: 7900
+       programs, 233000 runs, no mismatch; 50 probes; 9 mutants, three
+       equivalent or conservative
+    => design: the test scripts had defects: a malformed line of
+       'cases.sh' ('SRC=7540 \&\& DIFFPY', a case without helper, a
+       misspelled target) ran or dropped silently and a failure named the
+       previous case; 'test-coverage.sh' now checks every line of
+       'cases.sh' before the cases ('check_cases_lines'), ends with
+       "passed: N cases" and names the failing case; 'test-cli.sh' ends
+       with "passed"; the program 'tests/gen' that runs leave was tracked
+       (committed four times): it is ignored and untracked; the case
+       reader of 'fuzz-mutate.py' and the name 'DIFFINP2' to
+       'etc/todo.txt'
+    => readability: 'ident_info::operand' has none for a constant;
+       'destination::of_name' may be a register; 51 functions, 2
+       predictions wrong
 [x] easy: round 556 (2026-11-21, bug hunt: whether the reports are true
     to the code; design: 'ident_info.hpp'; readability: a newcomer walks
     'register_pool.hpp' and 'register_report.hpp')

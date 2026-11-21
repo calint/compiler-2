@@ -31,6 +31,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'joined_include' and the findings read and write latin-1, so a
     non-ASCII program would get other bytes when split; no generator
     emits one today; write with 'encoding="latin-1"'
+[ ] easy: (round 557, qa) 'qa/fuzz/fuzz-mutate.py' reads cases with
+    '^\s*SRC=...', which misses the one-line cases behind a target guard
+    (about 150 accepted ones left out of 'ACCEPTED'); 'cases.sh' now has
+    one checked form, so the pattern can allow a leading 'if ...; then '
+[ ] easy: (round 557, qa) the case helper 'DIFFINP2' (7 cases) feeds one
+    line per read; a name such as 'DIFFLINES' would say so
 [ ] easy: (round 555, messages) a missing token is located three ways:
     "expected '=' followed by an initializer" at the end of the name,
     "expected '{' to begin block" and others at the next token (README

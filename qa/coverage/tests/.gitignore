@@ -1,8 +1,8 @@
 # the listings that the cases and scripts write here
 *.s
-# what a run of a case leaves when it is stopped, e.g. its output and the
-# rv32i image of 'gen.s'
+# what a run of a case or script leaves when it is stopped: its output and
+# the files named 'gen*', e.g. the program 'gen' and the rv32i image of 'gen.s'
 /out
 /err
-/gen-image.*
+/gen*
 /sdcard.img

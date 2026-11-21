@@ -336,6 +336,7 @@ skipped_with_versions() {
         return 1
     fi
     echo skipped
+    SKIPPED_COUNT=$((SKIPPED_COUNT + 1))
 }
 
 # the sd card image 'sdcard.img' of the case, a sparse file of the size of its
@@ -351,6 +352,7 @@ make_sdcard() {
 # one set with '&&' instead of as a prefix out of the next case
 begin_case() {
     echo -n "$SRC: "
+    CASE_COUNT=$((CASE_COUNT + 1))
     CASE_EXP=${EXP-}
     CASE_OPTS=${OPTS-$DEFAULT_OPTS}
     CASE_SDCARD=${SDCARD:-0}
@@ -469,12 +471,42 @@ COMPERR() {
     check_output "$(expected_compile_output)"
 }
 
-# a failure also names the target, else only in the header far above
-trap '[[ $? -eq 0 ]] || echo "case $SRC failed on target $MACHINE"' EXIT
+# every line of 'cases.sh' is blank, a comment, a case or a guard, so a
+# malformed one fails before the cases run instead of passing silently, e.g.
+# a case without its helper, or failing after those before it passed
+check_cases_lines() {
+    # one case: its source, the expectations of the helper and its options
+    local case_line='SRC=[0-9]{4} && (EXP=[0-9]+ && )?(OPTS="[^"]*" )?(SDCARD=[0-9]+[KMGT]? )?(RUN|RUN_ERR|DIFF|DIFFINP|DIFFINP2|DIFFPY|DIFFNOPT|COMPERR|LISTING [a-z]+)'
+    # a guard on the targets that run the cases after it
+    local guard_line='if \[\[ \$MACHINE [!=]= (x86_64|rv32i|rv32i-qemu|rv32i-fpga)( \|\| \$MACHINE == (rv32i|rv32i-fpga))? \]\]; then'
+    local line_numbers
+    line_numbers=$(sed -E "s/$case_line/CASE/g" "$SCRIPT_DIR/cases.sh" |
+        grep -nvE "^ *(#.*)?$|^ *CASE$|^$guard_line( CASE;( else CASE;)? fi)?$|^(else|fi)$" |
+        cut -d: -f1)
+    if [[ -z $line_numbers ]]; then
+        return
+    fi
+    local line_number
+    for line_number in $line_numbers; do
+        echo "cases.sh:$line_number: $(sed -n "${line_number}p" "$SCRIPT_DIR/cases.sh")"
+    done
+    echo "FAILED. malformed lines in 'cases.sh'"
+    exit 1
+}
 
+check_cases_lines
+
+# a failure also names the target, else only in the header far above
+trap '[[ $? -eq 0 ]] || echo "FAILED. case $SRC on target $MACHINE"' EXIT
+
+CASE_COUNT=0
+SKIPPED_COUNT=0
 source "$SCRIPT_DIR/cases.sh"
 
 rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err sdcard.img
 rm -f gen-image.elf gen-image.bin
 
+# a run that ends early has no such line
+echo $SEP
+echo "passed: $((CASE_COUNT - SKIPPED_COUNT)) cases, skipped: $SKIPPED_COUNT, target: $MACHINE${VERSION_OPTS:+ $VERSION_OPTS}"
 echo $SEP

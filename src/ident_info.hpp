@@ -310,7 +310,8 @@ class ident_info final {
     }
 
     // the register that holds the value, or the storage operand, e.g.
-    // '[rbp + 8]'; of a held address, the slot that holds it
+    // '[rbp + 8]'; of a held address, the slot that holds it; a constant has
+    // none
     [[nodiscard]] auto operand() const -> const ::operand& {
         if (const register_part* const reg{
                 std::get_if<register_part>(&part_),
@@ -588,8 +589,8 @@ class destination final {
     // statics
     //
 
-    // a name resolved as 'info' at the address written, e.g. the destination
-    // of an assignment or a call temporary
+    // a name resolved as 'info', in its register or at the address written,
+    // e.g. the destination of an assignment or a call temporary
     [[nodiscard]] static auto of_name(const ident_info& info, name_parts parts)
         -> destination {
 
