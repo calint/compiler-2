@@ -29,8 +29,8 @@ class stmt_block final : public statement {
     std::optional<token> close_brace_tk_;
 
   public:
-    // without '{' the block is one statement unless braces are required,
-    // e.g. the 'exit(1)' of 'if a == 1 exit(1)'
+    // without '{' the block is one statement, an error when braces are
+    // required, e.g. the 'exit(1)' of 'if a == 1 exit(1)'
     stmt_block(parse_toc& tc, tokenizer& tz, const block_braces braces = {})
         : statement{tz.peek_token_position()},
           open_brace_tk_{tz.accept_char_token('{')} {
@@ -81,6 +81,7 @@ class stmt_block final : public statement {
         compile_from(tc, 0);
     }
 
+    // also rejects a statement that no path reaches
     auto trace_assignment(assignment_flow& flow) const -> void override {
         for (const std::unique_ptr<statement>& s : statements_) {
             // e.g. a statement after 'return', 'break', 'continue', 'exit'

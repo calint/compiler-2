@@ -696,6 +696,35 @@ class expr_any final : public statement {
         return parse_array_form(tc, tz, tp, typing);
     }
 
+    // stores 'bytes', the constant elements from the start of the array at
+    // 'at', none for no bytes; 'constant_kind' labels the read-only constant
+    // they may be copied from
+    auto plan_constant_elements(const part_location& at,
+                                const token& src_loc_tk, std::string bytes,
+                                const std::string_view constant_kind,
+                                write_plan& plan) const -> void {
+
+        if (bytes.empty()) {
+            return;
+        }
+
+        const size_t count{bytes.size() / get_type().size_bytes()};
+
+        plan.push_back({
+            .at{at},
+            .action{
+                bytes_write{
+                    .src_loc_tk{src_loc_tk},
+                    .bytes{std::move(bytes)},
+                    .constant_kind{constant_kind},
+                },
+            },
+            .covered{
+                {at.elements_path(0, count)},
+            },
+        });
+    }
+
     // the listed elements, each at its index; constant ones are stored like a
     // string so the backend can pack them into wider immediates or copy them
     // from read-only data
@@ -710,19 +739,8 @@ class expr_any final : public statement {
             // note: only a list in braces has elements to pack
             assert(list.open_brace_tk);
 
-            plan.push_back({
-                .at{at},
-                .action{
-                    bytes_write{
-                        .src_loc_tk{*list.open_brace_tk},
-                        .bytes{std::move(*bytes)},
-                        .constant_kind{"init"},
-                    },
-                },
-                .covered{
-                    {at.elements_path(0, list.elements.size())},
-                },
-            });
+            plan_constant_elements(at, *list.open_brace_tk, std::move(*bytes),
+                                   "init", plan);
 
             return;
         }
@@ -806,20 +824,7 @@ class expr_any final : public statement {
                                 string_overflows(size_bytes, *dst_count)};
         }
 
-        // an empty string has nothing to store
-        if (size_bytes != 0) {
-            plan.push_back({
-                .at{at},
-                .action{
-                    bytes_write{
-                        .src_loc_tk{string_tk},
-                        .bytes{std::move(bytes)},
-                        .constant_kind{"str"},
-                    },
-                },
-                .covered{at.path()},
-            });
-        }
+        plan_constant_elements(at, string_tk, std::move(bytes), "str", plan);
 
         // the bytes after the string are not known
         if (not dst_count) {

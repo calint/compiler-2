@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 568 (2026-11-22, bug hunt: depth at ordinary sizes;
+    design: write plans; readability: a newcomer walks 'stmt_block.hpp'
+    and 'stmt_if.hpp')
+    => bug hunt: no defect; 70 constructs nested 1 to 40 deep (blocks,
+       'if' chains, loops, records, arrays of arrays, paths, literals,
+       constructors, call chains, generics, methods, stacked operators,
+       checks and aliasing at depth) under asan, six option sets and two
+       targets, with the first failing depth bisected: every failure a
+       documented rejection (registers, the nesting limit 128, inlined
+       recursion 64, storage); compile time flat or mildly superlinear,
+       the one exponential case the documented one of '--versions'
+    => design: constant bytes of a list and of a string are planned by one
+       routine ('plan_constant_elements'), which covers the elements it
+       writes; a string no longer claimed to cover its whole array
+       (listings equal); one constant list with its zeroed rest as one
+       write measured (mixed) and kept apart; five ideas kept with reasons
+    => readability: the field 'is_end_reachable' of a branch renamed
+       'is_condition_end_reachable', it is set after the condition; the
+       walk of a block also rejects an unreached statement; a block
+       without braces where they are required is an error; 27 functions,
+       4 predictions wrong
 [x] easy: round 567 (2026-11-22, bug hunt: the deduction of generic type
     arguments; design: the parse of call arguments; readability: a
     newcomer walks 'parse_lookahead.hpp')

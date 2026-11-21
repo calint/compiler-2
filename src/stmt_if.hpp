@@ -93,7 +93,7 @@ class stmt_if final : public statement {
     // inlined 'exit'
     struct branch_condition {
         std::optional<bool> known;
-        bool is_end_reachable{};
+        bool is_condition_end_reachable{};
     };
 
     // e.g. 'else {z = 3}'
@@ -161,7 +161,7 @@ class stmt_if final : public statement {
                 compile_branch_at(tc, index, if_label),
             };
 
-            is_start_reachable = condition.is_end_reachable;
+            is_start_reachable = condition.is_condition_end_reachable;
 
             const std::optional<bool> known{condition.known};
 
@@ -284,7 +284,7 @@ class stmt_if final : public statement {
 
         const branch_condition condition{
             .known{known},
-            .is_end_reachable{tc.is_reachable()},
+            .is_condition_end_reachable{tc.is_reachable()},
         };
 
         // note: code that never runs holds the compile rules too, see
