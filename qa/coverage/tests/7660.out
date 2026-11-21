@@ -1,0 +1,7 @@
+
+7660.baz:5:13: constant expression overflows the type
+    let k = -p << p
+            ^
+7660.baz:10:10: called from 'f(-128)'
+    exit(f(-128))
+         ^

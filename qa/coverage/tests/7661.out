@@ -1,0 +1,7 @@
+
+7661.baz:4:21: 'j' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    let k = i8(1) + j << 9
+                    ^
+7661.baz:9:10: called from 'f(5)'
+    exit(f(5))
+         ^

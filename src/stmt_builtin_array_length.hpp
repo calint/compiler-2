@@ -84,7 +84,9 @@ class stmt_builtin_array_length final : public statement {
 
         // the parse checked the indexes against the lengths it knows, a call
         // gives an unsized array parameter its length
-        array().assert_constant_indexes_in_bounds(tc);
+        if (not use.is_probe) {
+            array().assert_constant_indexes_in_bounds(tc);
+        }
 
         const ident_info src_info{array_info(tc)};
 
@@ -100,7 +102,9 @@ class stmt_builtin_array_length final : public statement {
         // e.g. 'i8[0x80000000]' on rv32i, an array size is not limited to the
         // default type, like the 'n' of a 'foo' over it; the message gives no
         // conversion hint, a conversion folds its argument here too
-        if (not constant_arith::fits_width(length, get_type())) {
+        if (not use.is_probe and
+            not constant_arith::fits_width(length, get_type())) {
+
             throw compile_error{tok(),
                                 std::format("constant {} does not fit {}",
                                             in_quotes(trimmed_source(*this)),

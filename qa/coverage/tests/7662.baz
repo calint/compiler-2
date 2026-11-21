@@ -1,0 +1,10 @@
+# the argument of a conversion of constants that narrows an operand is
+# rejected as narrowed before its zero divisor, as the same argument of
+# variables is
+func f(j i32) res i8 {
+    res = i8(i8(1) + j / 0)
+}
+
+func main() {
+    exit(f(5))
+}

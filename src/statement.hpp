@@ -253,10 +253,11 @@ class statement {
 
     // the value known at compile time where it is used, wrapped to its
     // width, empty when it is computed at run time; throws on an error of
-    // the constant arithmetic, e.g. a division by zero; it does not check
-    // that the value fits, a conversion computes its argument at a narrower
-    // width on purpose; under the overflow check an operand wider than the
-    // use is an overflow, 'fold_checked' rejects it as narrowed first
+    // the constant arithmetic, e.g. a division by zero, except in a probe
+    // ('is_known'); it does not check that the value fits, a conversion
+    // computes its argument at a narrower width on purpose; under the
+    // overflow check an operand wider than the use is an overflow,
+    // 'fold_checked' rejects it as narrowed first
     [[nodiscard]] virtual auto fold([[maybe_unused]] const toc& tc,
                                     [[maybe_unused]] const value_use& use) const
         -> std::optional<folded_value> {
@@ -342,21 +343,14 @@ class statement {
 
     // the fold of a value that must fit where it is used, checked as its
     // compile is, so a folded value is rejected where a computed one is: the
-    // narrowing before the overflow, e.g. the '-j' of 'let k = i8(1) + -j'
-    // with 'j' an 'i32' is narrowed, not an overflow at 'i8'
-    // note: the wrapping fold tells whether the value is known, it keeps the
-    //       low bits of an operand that does not fit
+    // narrowing first, then the first operation that fails in evaluation
+    // order, e.g. the '-j' of 'let k = i8(1) + -j' with 'j' an 'i32' is
+    // narrowed, not an overflow at 'i8', and the 'j' of 'i8(1) + j << 9' is
+    // narrowed before the shift count is outside the width
     [[nodiscard]] auto fold_checked(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> {
 
-        const value_use wrapping{
-            .width{use.width},
-            .checks_overflow{false},
-        };
-
-        const std::optional<folded_value> wrapped{fold(tc, wrapping)};
-
-        if (not wrapped) {
+        if (not is_known(tc, use.width_ref())) {
             return std::nullopt;
         }
 
@@ -379,6 +373,20 @@ class statement {
     // place ('operand_path')
     [[nodiscard]] auto is_computed() const -> bool {
         return operand_path() == nullptr;
+    }
+
+    // the value is known at compile time at the width 'width'; checks nothing
+    // that a list computes, 'fold' reports its errors in evaluation order
+    [[nodiscard]] auto is_known(const toc& tc, const type& width) const
+        -> bool {
+
+        const value_use probe{
+            .width{&width},
+            .checks_overflow{false},
+            .is_probe{true},
+        };
+
+        return fold(tc, probe).has_value();
     }
 
     auto set_type(const type& tp) -> void { type_ = &tp; }

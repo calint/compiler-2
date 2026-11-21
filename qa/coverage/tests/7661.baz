@@ -1,0 +1,10 @@
+# a 'let' of constants that narrows an operand is rejected as narrowed before
+# its shift count outside the width, as the same 'let' of variables is
+func f(j i32) res i8 {
+    let k = i8(1) + j << 9
+    res = k
+}
+
+func main() {
+    exit(f(5))
+}

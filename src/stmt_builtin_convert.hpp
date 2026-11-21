@@ -105,23 +105,24 @@ class stmt_builtin_convert final : public statement {
     [[nodiscard]] auto fold(const toc& tc, const value_use& use) const
         -> std::optional<folded_value> override {
 
+        // note: a single operand is not narrowed: W is at least its type, and
+        //       an untyped constant converts whole, e.g. 'i32(0xfedc1234)' on
+        //       a target whose default type is 'i32'; a list is a list at W
+
+        if (not use.is_probe and not argument().is_single_operand()) {
+            argument().assert_not_narrowed(tc, width_type());
+        }
+
         const value_use arg_use{
             .width{&width_type()},
             .checks_overflow{false},
+            .is_probe{use.is_probe},
         };
 
         const std::optional<folded_value> arg{argument().fold(tc, arg_use)};
 
         if (not arg) {
             return std::nullopt;
-        }
-
-        // note: a single operand is not narrowed: W is at least its type, and
-        //       an untyped constant converts whole, e.g. 'i32(0xfedc1234)' on
-        //       a target whose default type is 'i32'; a list is a list at W
-
-        if (not argument().is_single_operand()) {
-            argument().assert_not_narrowed(tc, width_type());
         }
 
         const int64_t converted{

@@ -1,0 +1,14 @@
+# a 'let' of constants that narrows an operand is rejected as narrowed before
+# a constant index of its 'array_length' is out of bounds, as the same 'let'
+# of variables is
+type box {a i8[2]}
+
+func f(m box[], j i32) res i8 {
+    let k = i8(1) + j + array_length(m[5].a)
+    res = k
+}
+
+func main() {
+    var m = box[3]
+    exit(f(m, 5))
+}

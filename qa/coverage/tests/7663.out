@@ -1,0 +1,7 @@
+
+7663.baz:7:21: 'j' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    let k = i8(1) + j + array_length(m[5].a)
+                    ^
+7663.baz:13:10: called from 'f(m, 5)'
+    exit(f(m, 5))
+         ^

@@ -26,23 +26,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
     declaration; 3 files; a file rename
-[ ] medium: (round 562, messages, a defect of round 541) a constant fold
-    names a later operation than the one that fails first:
-    'fold_checked' first folds without the overflow check to learn
-    whether the value is known, and that fold already throws the errors
-    of every width (zero divisor, shift count, minimum / -1), so they come
-    before an earlier overflow and before the narrowing check; with
-    'func f(p i8) res i8 { let k = -p << p  res = k }' and 'f(-128)' under
-    'noub' the variables panic 'overflow', the constant says "shift
-    count must be 0 to 7", and 'var k = ...' says "overflows";
-    'i8(1) + j << 9' with 'j' 5 names the shift, not the narrowed 'j';
-    the conversion folds its argument before its narrowing check too;
-    a fix that catches the probe's error, checks narrowing, folds checked
-    and rethrows passes every check with tests 7660 to 7662
-    ('scratchpad/r562-fold-order-catch.patch'), but catching to reorder
-    is a workaround; the clean fix is a probe mode of 'value_use' that
-    'expr_arith', the conversion and the identifier honor by not
-    throwing, so the probe only tells whether the value is known
+[ ] easy: (round 563, messages) compile-time checks that run out of
+    evaluation order name a later fault than the first one (both reject
+    the program, only the message differs): a constant index and the
+    fit of a constant argument are checked at the parse
+    ('narrow_to_element', 'stmt_call'), before the folds of earlier
+    parts ('x = (10 / kz) + a8[7]' names the index); 'compile_checked'
+    checks narrowing of every element before any is folded ('v8 = v8 +
+    (10 / kz) + 300' names '300'); a comparison folds both sides and
+    checks their fit before the left side compiles ('if v8 + vk ==
+    (10 / kz)' names the divisor, not the narrowed 'vk'); with variables
+    the first part panics first
 [ ] easy: (round 561, messages) a type used as an index ('x[U] = 2' with
     'U' a type parameter) or passed as a call argument is rejected with
     "the destination gives the type 'i64', write '{}'", which names a
@@ -866,6 +860,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'test-cli.sh' and the two far jump scripts reach files through an
     absolute '$SCRIPT_DIR'; 'etc/tools.txt' has no 'llvm-objdump' line
     (with the round 393 item)
+    => round 563: 'let kmin = -MAX - 1' and '-kmin' where the overflow
+       check is off are accepted on x86_64 (the 64-bit fold wraps 2^63)
+       and rejected on rv32i ("does not fit 'int'"), as 2^31 is held;
+       under 'noub' both reject
+
 [ ] easy: (round 425, a hunt of the input and output built-ins and a
     walk of the parser's dispatch) the -9 of a descriptor that is not
     served equals '-EBADF' of linux, so a 'read' that also served 1 or a
@@ -1209,8 +1208,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'get(a)'"), not the calls down to 'main': with 'mid' calling a noinline
     'get', 'mid(b) + mid(a)' never names the faulty 'mid(a)'; 'noinline_body'
     ('toc.hpp') keeps one call token; the index of the requesting body would
-    let 'stmt_def_func::with_call_frame' add the chain (the inlined calls
-    around a request would need a frame list taken at request time)
+    let 'stmt_def_func::with_call_frame_on_error' add the chain (the inlined
+    calls around a request would need a frame list taken at request time)
 [ ] easy: user decision (round 245 VI1): '--bin=out.s' with stdout
     redirected to 'out.s' exits 0 and leaves the listing in 'out.s', the
     image lost (the file is truncated twice); rejecting a regular '--bin'

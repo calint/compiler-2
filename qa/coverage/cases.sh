@@ -8490,3 +8490,13 @@ SRC=7531 && COMPERR
 # frames of the listing: a callee that holds no register, the busiest call of
 # a callee, a named register, a checked body that is not emitted
 SRC=7540 && DIFFPY
+
+# a 'let' or a conversion of constants is rejected as the same of variables:
+# for the narrowing first, then for the first operation that fails in the
+# order the run-time checks stop at, an overflow before a shift count outside
+# the width, a narrowed operand before a shift count, a zero divisor or an
+# index out of bounds
+SRC=7660 && OPTS="--checks=noub" COMPERR
+SRC=7661 && OPTS="--checks=noub" COMPERR
+SRC=7662 && OPTS="--checks=noub" COMPERR
+SRC=7663 && OPTS="--checks=noub" COMPERR

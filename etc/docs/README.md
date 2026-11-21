@@ -678,12 +678,15 @@ like a list at its width W, where it wraps, checks it there unless it is one
 untyped constant, which converts whole (e.g. 'i32(0xfedc1234)' on rv32i), and
 narrows the result to its type; 'statement::fold_checked' adds the check of
 'assert_not_narrowed' at the same width, so a folded comparison side or
-initializer is rejected where a computed one is: it folds without the
-overflow check to learn whether the value is known, checks the narrowing,
-then folds at the use, so a value that does not fit is narrowed under every
-'--checks', not an overflow under 'overflow'. A constant reaches a
-destination only through the list that holds it ('expr_arith', the
-immediate by 'constant_operand'); the nodes in a list never emit one.
+initializer is rejected where a computed one is: a probe ('is_known', a
+fold that checks and computes nothing) tells whether the value is known,
+then it checks the narrowing and folds at the use, so a value that does not
+fit is narrowed under every '--checks', not an overflow under 'overflow',
+and the error is the one the compile of variables reports, e.g. the '-p' of
+'-p << p' with 'p' an 'i8' of -128 overflows before its count is outside the
+width (tests 7660 to 7663). A constant reaches a destination only through
+the list that holds it ('expr_arith', the immediate by 'constant_operand');
+the nodes in a list never emit one.
 A comparison side has its own rule ('expr_bool_op::right_operand'): the
 immediate has the type of its side, which is the own type of a typed
 constant; the backend compares at the width of the left side, so an
@@ -1457,8 +1460,8 @@ address    | result address         |    the callee's frame base
 
 The body is compiled for the first call that needs it. An error in the body
 carries that call as a frame ('noinline_body::call_tk', added by
-'stmt_def_func::with_call_frame'), so it points both at
-the call and at the line in the body. A body with array parameters is also
+'stmt_def_func::with_call_frame_on_error'), so it points both at the call
+and at the line in the body. A body with array parameters is also
 checked without its calls; one without them was checked as it was emitted
 (1.5).
 

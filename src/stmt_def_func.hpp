@@ -614,7 +614,7 @@ class stmt_def_func final : public statement {
     auto check_noinline_body(compile_toc& tc,
                              const noinline_body& requested) const -> void {
 
-        with_call_frame(requested, [&] -> void {
+        with_call_frame_on_error(requested, [&] -> void {
             dry_run_in_frame(tc, requested.array_lengths);
         });
     }
@@ -720,7 +720,7 @@ class stmt_def_func final : public statement {
     auto emit_noinline_body(compile_toc& tc,
                             const noinline_body& requested) const -> void {
 
-        with_call_frame(requested, [&] -> void {
+        with_call_frame_on_error(requested, [&] -> void {
             emit_in_frame(tc, requested.array_lengths);
         });
     }
@@ -1013,6 +1013,7 @@ class stmt_def_func final : public statement {
 
         x.end_noinline_body();
 
+        // known after the body only, a call names it by 'frame_size_label'
         const size_t frame_size_bytes{tc.layout().max_frame_size_bytes()};
 
         x.define_constant(frame_size_label(array_lengths), frame_size_bytes);
@@ -1232,8 +1233,8 @@ class stmt_def_func final : public statement {
 
     // 'requested' is a body of this function, an error in it reports the
     // call that asked for it
-    auto with_call_frame(const noinline_body& requested,
-                         const std::function_ref<void()> compile) const
+    auto with_call_frame_on_error(const noinline_body& requested,
+                                  const std::function_ref<void()> compile) const
         -> void {
 
         assert(requested.func == this);

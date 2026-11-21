@@ -1,0 +1,7 @@
+
+7662.baz:5:22: 'j' of type 'i32' is narrowed to 'i8', use 'i8(...)'
+    res = i8(i8(1) + j / 0)
+                     ^
+7662.baz:9:10: called from 'f(5)'
+    exit(f(5))
+         ^

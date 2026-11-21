@@ -1,6 +1,50 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] medium: (round 562, messages, a defect of round 541) a constant fold
+    names a later operation than the one that fails first:
+    'fold_checked' first folds without the overflow check to learn
+    whether the value is known, and that fold already throws the errors
+    of every width (zero divisor, shift count, minimum / -1), so they come
+    before an earlier overflow and before the narrowing check; with
+    'func f(p i8) res i8 { let k = -p << p  res = k }' and 'f(-128)' under
+    'noub' the variables panic 'overflow', the constant says "shift
+    count must be 0 to 7", and 'var k = ...' says "overflows";
+    'i8(1) + j << 9' with 'j' 5 names the shift, not the narrowed 'j';
+    the conversion folds its argument before its narrowing check too;
+    a fix that catches the probe's error, checks narrowing, folds checked
+    and rethrows passes every check with tests 7660 to 7662
+    ('scratchpad/r562-fold-order-catch.patch'), but catching to reorder
+    is a workaround; the clean fix is a probe mode of 'value_use' that
+    'expr_arith', the conversion and the identifier honor by not
+    throwing, so the probe only tells whether the value is known
+    => done (2026-11-22, round 563): a probe mode of 'value_use'
+[x] easy: round 563 (2026-11-22, the clean fix of the round 562 defect;
+    bug hunt: compile-time checks out of evaluation order; readability: a
+    newcomer walks the compile side of 'stmt_def_func.hpp')
+    => fix: 'value_use' has a probe mode ('is_probe'); 'statement::is_known'
+       folds as a probe, which never throws, so 'fold_checked' is: known?
+       then narrowing, then the fold with the use's checks, which names
+       the first failing operation in evaluation order;
+       'expr_arith::fold' skips checks and operations in a probe, the
+       conversion checks narrowing before it folds its argument,
+       'array_length' skips its checks in a probe (also reachable:
+       'i8(1) + j + array_length(m[5].a)' named the index, not 'j'); the
+       narrowing check before a zero divisor in 'expr_arith::fold' is gone,
+       it served the old wrapping probe; no catch; tests 7660 to 7663,
+       docs 1.7; no message of an existing test changes
+    => bug hunt: no defect of acceptance or result; every statement of one
+       constant and one run-time part in 26 forms in both orders as main,
+       inline and noinline under six check sets and the versions: 318000
+       builds, no verdict flips; three places that name a later fault
+       than the first ('narrow_to_element' at the parse, the narrowing of
+       a list before its folds, a comparison's sides folded first) to
+       'etc/todo.txt'; '-kmin' accepted on x86_64 and not on rv32i
+       without the overflow check, noted on the round 426 item
+    => readability: 'with_call_frame' renamed 'with_call_frame_on_error'
+       (it only adds the caller to an error); 'emit_in_frame' defines the
+       frame size after the body, calls name it by its label; 25
+       functions, 2 predictions wrong
 [x] easy: round 562 (2026-11-22, bug hunt: inlined bodies with
     parameters bound to constants after the fold changes of rounds 537 to
     561; design: the compile of a body in each context; readability: a

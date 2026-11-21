@@ -622,15 +622,12 @@ class expr_arith final : public statement {
                 own_type = &get_type();
             }
 
-            const int64_t rhs{element->value};
-
-            // note: the fold keeps the low bits of a divisor that does not
-            //       fit, e.g. '4294967296' is 0 on rv32i, so its fit is
-            //       checked before the zero
-
-            if (is_division(o.op) and rhs == 0) {
-                e->assert_not_narrowed(tc, width_type);
+            // note: a probe computes nothing, so nothing fails
+            if (use.is_probe) {
+                continue;
             }
+
+            const int64_t rhs{element->value};
 
             if (use.checks_overflow and
                 constant_arith::overflows_width(value, o.op, rhs, width_type)) {

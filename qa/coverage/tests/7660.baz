@@ -1,0 +1,11 @@
+# a 'let' of constants whose negation overflows before its shift count is
+# outside the width is rejected at the negation, the operation the run-time
+# check of the same 'let' of variables stops at
+func f(p i8) res i8 {
+    let k = -p << p
+    res = k
+}
+
+func main() {
+    exit(f(-128))
+}
