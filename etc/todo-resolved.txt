@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 543 (2026-11-21, bug hunt: the equivalence of the
+    versions and '--nopt'; design: the assignment, 'expr_any'; readability:
+    a newcomer walks 'stmt_def_var.hpp' and 'stmt_def_dat.hpp')
+    => bug hunt: no defect; a differential generator compiling each program
+       under the four '--versions' with and without '--nopt', with
+       'noub,line' and no checks, comparing output, exit code, panic with
+       its line and the compile verdict with its message, over arithmetic
+       lists with calls and panics in the middle, deep lists near the
+       register limit, inlined calls with indexed arguments and records
+       with padding: 6400 programs, 217600 runs, no difference under the
+       checks, 35 in runs without checks of programs that panic under them
+       (undefined behavior, docs 8.2 now names the version kept); 13
+       mutants of the version machinery, one equivalent
+    => design: no change; 'expr_any::plan_writes' reads the count of the
+       destination from its length; the kind of a value is decided once,
+       one routine copies into a destination, no check repeats; renaming
+       'stmt_assign_var' to 'stmt_assign' with its file to 'etc/todo.txt'
+       as '[p]'; six ideas kept with reasons
+    => readability: 'set_literal_element_type' renamed 'set_unsized_array',
+       it also makes the array of unknown length; 'deduce_from_initializer'
+       says it sets the shape too; the name of a 'dat' is hidden in its
+       initializer only; a note that arrays do not nest; 38 functions, 4
+       predictions wrong
 [x] easy: round 542 (2026-11-21, bug hunt: inlined against noinline
     bodies after the fold changes of rounds 540 and 541; design:
     declarations, 'stmt_def_var.hpp'; readability: a newcomer walks

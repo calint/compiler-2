@@ -430,7 +430,8 @@ class expr_any final : public statement {
 
         // empty when the size is not known
         const std::optional<size_t> dst_count{
-            destination_.is_length_unknown() ? unsized_count : array_count(),
+            destination_.is_length_unknown() ? unsized_count
+                                             : destination_.length(),
         };
 
         // the parse checked that the source of an array copy is an array,

@@ -133,11 +133,12 @@ class initializer_declaration final {
     //       argument tells its type only as a whole term, see
     //       'generic_call::value_type'
 
+    // the type, and the shape of an array copy or of an unsized literal
     auto deduce_from_initializer(parse_toc& tc, tokenizer& tz) -> void {
         // 'expr_arith' cannot parse the '{' of an instance literal
         const token tk{tz.next_token()};
 
-        // e.g. 'var p = {1, 2}', a destination gives the type of '{...}'
+        // e.g. 'var p = {1, 2}', '{...}' would take the type being deduced
         if (tk.is_none() and tz.peek_char_after_whitespace() == '{') {
             throw compile_error{
                 tk, std::format("the type of {} is not known, write it before "
@@ -162,14 +163,14 @@ class initializer_declaration final {
         // counted after; one that is an operand of a longer expression is
         // rejected below, e.g. 'var b = [2]{1, 2} == a'
         if (tm == term_kind::string and not continues_expression(tz)) {
-            set_literal_element_type(tc.builtins().i8());
+            set_unsized_array(tc.builtins().i8());
             return;
         }
 
         if (tm == term_kind::array_literal and is_literal_value(tz)) {
             // e.g. '[2]{1, 2}' has the default type
-            set_literal_element_type(tk.is_none() ? tc.builtins().default_type()
-                                                  : tc.get_type_or_throw(tk));
+            set_unsized_array(tk.is_none() ? tc.builtins().default_type()
+                                           : tc.get_type_or_throw(tk));
 
             return;
         }
@@ -246,13 +247,13 @@ class initializer_declaration final {
         shape_ = info.shape();
     }
 
-    // an unsized array whose literal gives the length
-    auto set_literal_element_type(const type& tp) -> void {
-        set_type(tp);
+    auto set_type(const type& tp) -> void { type_ = &tp; }
+
+    // an array of 'element_type' that 'deduce_literal_length' sizes
+    auto set_unsized_array(const type& element_type) -> void {
+        set_type(element_type);
         shape_ = array_shape::array(std::nullopt);
     }
-
-    auto set_type(const type& tp) -> void { type_ = &tp; }
 
     // a value cannot be parsed at its type before the type is known, so the
     // initializer is parsed once to learn the type or size and that tree is

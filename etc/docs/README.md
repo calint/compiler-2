@@ -2244,8 +2244,8 @@ overflow wraps, also a constant one; an 'array_copy' whose destination
 starts inside its source copies in blocks of the target, e.g. 'array_copy(a,
 a[1], 3)' of '{1, 2, 3, 4}' gives '{1, 1, 2, 2}' on x86_64 with a constant
 count and '{1, 1, 1, 1}' with a run-time one and on rv32i. Such a result
-depends on the target and on inlining. With 'noub' each of them stops at a panic that
-names the check, e.g. 'panic: bounds'.
+depends on the target, on inlining and on the version kept. With 'noub' each
+of them stops at a panic that names the check, e.g. 'panic: bounds'.
 
 A panic prints its message on a line of its own after the output of the
 program, on standard error where there is one, on the uart of rv32i-qemu and

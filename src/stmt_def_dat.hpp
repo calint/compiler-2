@@ -71,7 +71,7 @@ class stmt_def_dat final : public statement {
     };
 
     // the name, the '=' and the type and size the initializer gives, the name
-    // is not in scope
+    // is not in scope in its initializer
     initializer_declaration declaration_;
     expr_any initializer_;
     elem root_elem_{};
@@ -227,6 +227,9 @@ class stmt_def_dat final : public statement {
         if (tp.is_builtin()) {
             compile_data_scalars(x, tp, list);
         } else {
+            // note: arrays do not nest, an element of a user type is an
+            //       instance
+
             for (const auto [i, e] : std::views::enumerate(list.items)) {
                 x.comment({e.tok(), 0}, "[{}]", i);
                 compile_data_instance(x, tp, std::get<elem::fields>(e.form));
