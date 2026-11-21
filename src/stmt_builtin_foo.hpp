@@ -119,18 +119,15 @@ class stmt_builtin_foo final : public statement {
             x.label(tc.indent(), end_label);
         }
 
-        // a constant count above 0 runs the body, so the loop runs out only
-        // where the body reaches its counter step, e.g. not after
-        // 'foo a, 2 { stop() }'
+        // the check that skips the body runs out the loop at its entry; a
+        // constant count above 0 never skips and a count that is not reached
+        // never checks, so the loop runs out only where the body reaches its
+        // counter step, e.g. not after 'foo a, 2 { stop() }'
         const bool runs_body{limit.is_immediate() and limit.immediate() != 0};
+        const bool may_skip_body{is_reachable_after_count and not runs_body};
 
-        tc.join_loop(runs_body ? loop_end::when_stepped
-                               : loop_end::also_when_done);
-
-        // 'join_loop' does not see that the count left the loop unreached
-        if (not is_reachable_after_count) {
-            tc.end_path();
-        }
+        tc.join_loop(may_skip_body ? loop_end::also_when_done
+                                   : loop_end::when_stepped);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {

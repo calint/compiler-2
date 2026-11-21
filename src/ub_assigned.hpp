@@ -19,7 +19,7 @@
 // how the end of a loop is reached: only at a 'break', e.g. 'loop', also
 // when it runs out, e.g. 'foo', or, known only to the compile, at a 'break'
 // or where its counter step is reached, e.g. a 'foo' whose count is a
-// constant above 0, so it runs its body
+// constant above 0, so it runs its body, or is not reached at all
 enum class loop_end : uint8_t { at_break, also_when_done, when_stepped };
 
 // the rule both reach walks end a loop by ('assignment_flow::trace_loop',

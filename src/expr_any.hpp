@@ -157,16 +157,16 @@ class expr_any final : public statement {
 
     // what the destination gives, e.g. an array parameter 's[]' is an array
     // of unknown length, its argument gives the length when it is compiled
-    array_shape destination_;
+    array_shape dst_shape_;
     form_variant form_;
 
   public:
-    // a single value, or an array when 'destination' is one; where 'typing' is
+    // a single value, or an array when 'dst_shape' is one; where 'typing' is
     // 'written' a type or array may be written without '{}', e.g. 'var p =
     // point' and 'var a = i8[4]'
     expr_any(parse_toc& tc, tokenizer& tz, const type& tp,
-             const literal_typing typing, const array_shape destination = {})
-        : statement{tz.next_whitespace_token()}, destination_{destination},
+             const literal_typing typing, const array_shape dst_shape = {})
+        : statement{tz.next_whitespace_token()}, dst_shape_{dst_shape},
           form_{parse_form(tc, tz, tp, typing)} {
 
         set_type(tp);
@@ -293,7 +293,7 @@ class expr_any final : public statement {
     // the literal gives, e.g. 3 of 'i8[]{1, 2, 3}'; empty when neither gives
     // one, as for a copy to an unsized destination
     [[nodiscard]] auto array_count() const -> std::optional<size_t> {
-        if (const std::optional<size_t> length{destination_.length()}) {
+        if (const std::optional<size_t> length{dst_shape_.length()}) {
             return length;
         }
 
@@ -334,7 +334,7 @@ class expr_any final : public statement {
     }
 
     // a value that folds is not compiled, and the fold of a condition stops
-    // at the element that decides it, so the elements after it are checked
+    // at the operand that decides it, so the operands after it are checked
     // like skipped code, e.g. the 'a / 0 == 1' of 'true or a / 0 == 1'; in
     // every condition of the value, also in the elements of a list and in
     // the fields of an instance literal
@@ -396,7 +396,7 @@ class expr_any final : public statement {
     }
 
     [[nodiscard]] auto is_array() const -> bool {
-        return destination_.is_array();
+        return dst_shape_.is_array();
     }
 
     // one operand alone, e.g. '0x80000000', '-5' or 'k', not 'a + 1' or
@@ -430,8 +430,8 @@ class expr_any final : public statement {
 
         // empty when the size is not known
         const std::optional<size_t> dst_count{
-            destination_.is_length_unknown() ? unsized_count
-                                             : destination_.length(),
+            dst_shape_.is_length_unknown() ? unsized_count
+                                           : dst_shape_.length(),
         };
 
         // the parse checked that the source of an array copy is an array,
@@ -558,7 +558,7 @@ class expr_any final : public statement {
             const token string_tk{tz.next_token()};
 
             assert_string_fits(tc.builtins().i8(), string_tk, tp,
-                               destination_.length());
+                               dst_shape_.length());
 
             return string_array{
                 .string_tk{string_tk},
@@ -605,8 +605,7 @@ class expr_any final : public statement {
 
         if (open_brace_tk) {
             const std::optional<size_t> length{
-                destination_.length() ? destination_.length()
-                                      : written_size(list),
+                dst_shape_.length() ? dst_shape_.length() : written_size(list),
             };
 
             parse_braced_elements(tc, tz, tp, length, list);
@@ -626,12 +625,12 @@ class expr_any final : public statement {
 
         const token tk{tz.next_token()};
         const term_kind tm{classify_term(tc, tk, tz)};
-        const bool is_typed{not tk.is_none()};
+        const bool names_element_type{not tk.is_none()};
 
         // note: the '[' of the default type is read with the whitespace
         //       before it
 
-        if (tm != term_kind::array_literal or not is_typed) {
+        if (tm != term_kind::array_literal or not names_element_type) {
             tz.put_back_token(tk);
         }
 
@@ -643,11 +642,12 @@ class expr_any final : public statement {
         const token open_bracket_tk{tz.seen_char_token('[')};
 
         const type& literal_type{
-            is_typed ? tc.get_type_or_throw(tk) : tc.builtins().default_type(),
+            names_element_type ? tc.get_type_or_throw(tk)
+                               : tc.builtins().default_type(),
         };
 
         // the element type, or the '[' of the default type
-        const token& literal_tk{is_typed ? tk : open_bracket_tk};
+        const token& literal_tk{names_element_type ? tk : open_bracket_tk};
 
         if (not literal_type.is_same(tp)) {
             throw_type_mismatch(literal_tk, tp.name(), literal_type.name());
@@ -656,7 +656,7 @@ class expr_any final : public statement {
         // e.g. the '[4]' of 'i8[4]', no value for 'i8[]'
         array_prefix prefix{
             .element_type_tk{
-                is_typed ? std::optional<token>{tk} : std::nullopt,
+                names_element_type ? std::optional<token>{tk} : std::nullopt,
             },
             .size{tc, tz, open_bracket_tk},
         };
@@ -664,7 +664,7 @@ class expr_any final : public statement {
         // e.g. 'i8[]{1, 2}' for an 'i8' array field is '{1, 2}' and 'i8[4]'
         // is '{}'
         if (typing == literal_typing::from_destination) {
-            const std::optional<size_t> length{destination_.length()};
+            const std::optional<size_t> length{dst_shape_.length()};
 
             const std::string length_text{
                 length ? std::format("{}", *length) : "",
@@ -678,19 +678,19 @@ class expr_any final : public statement {
         // note: only a declaration names the array type, its size is the one
         //       of this literal
 
-        assert(not prefix.size.has_value() or not destination_.length() or
-               *destination_.length() == prefix.size.array_size());
+        assert(not prefix.size.has_value() or not dst_shape_.length() or
+               *dst_shape_.length() == prefix.size.array_size());
 
         return prefix;
     }
 
-    // the form 'destination_' calls for
-    // note: called by the constructor after 'destination_' is made
+    // the form 'dst_shape_' calls for
+    // note: called by the constructor after 'dst_shape_' is made
     [[nodiscard]] auto parse_form(parse_toc& tc, tokenizer& tz, const type& tp,
                                   const literal_typing typing) -> form_variant {
 
         // the basic case, e.g. 'x + 1' or 'point{1, 2}'
-        if (not destination_.is_array()) {
+        if (not dst_shape_.is_array()) {
             return single_value{
                 .value{parse_variant(tc, tz, tp, typing)},
             };
@@ -699,8 +699,9 @@ class expr_any final : public statement {
         return parse_array_form(tc, tz, tp, typing);
     }
 
-    // constant elements are stored like a string so the backend can pack them
-    // into wider immediates or copy them from read-only data
+    // the listed elements, each at its index; constant ones are stored like a
+    // string so the backend can pack them into wider immediates or copy them
+    // from read-only data
     auto plan_elements(const toc& tc, const element_list& list,
                        const part_location& at, write_plan& plan) const
         -> void {
@@ -749,8 +750,8 @@ class expr_any final : public statement {
         }
     }
 
-    // unlisted elements are zero like unlisted fields, the first
-    // 'listed_count' of the array at 'at' are written
+    // unlisted elements are zero like unlisted fields: zeroes the elements
+    // after the first 'listed_count' of the array at 'at'
     auto plan_remaining_elements(const part_location& at,
                                  const size_t listed_count,
                                  const size_t dst_count, write_plan& plan) const
@@ -1022,7 +1023,7 @@ class expr_any final : public statement {
 
         std::string bytes;
         for (const expr_any& item : list.elements) {
-            // a condition is compiled, not packed, so the elements after the
+            // a condition is compiled, not packed, so the operands after the
             // one that decides it are checked, e.g. the 'a / 0 == 1' of
             // 'true or a / 0 == 1'
             if (std::holds_alternative<expr_bool>(item.value_variant())) {

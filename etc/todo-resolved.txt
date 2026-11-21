@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 544 (2026-11-21, bug hunt: string and character
+    literals; design: the control statements and their paths;
+    readability: a newcomer walks 'expr_any.hpp')
+    => bug hunt: no defect; a model generator of string 'dat's, shared
+       constants, 'let' strings read by constant and run-time index, arrays
+       of deduced and given length assigned strings, records with i8 array
+       fields at every phase, strings into 'mut' unsized parameters,
+       character literals at every width, every escape, raw bytes, NUL and
+       continuations, in 'main', inlined and noinline bodies: 3200
+       programs, 6900 runs, 500 with '--reproduce-source'; 150 probes of
+       invalid escapes and literal edges; 21 mutants, each caught by the
+       suite or equivalent
+    => design: the reach after a 'foo' is decided once: a count that is
+       not reached makes the loop end only at its counter step
+       ('loop_end::when_stepped'), so 'join_loop' needs no 'end_path'
+       after it (-3 lines, listings and errors equal); nine ideas kept
+    => readability: 'expr_any::destination_' renamed 'dst_shape_' (an
+       'array_shape', not a 'destination'), 'is_typed' of
+       'parse_array_prefix' renamed 'names_element_type'; 'plan_elements'
+       plans every listed element, 'plan_remaining_elements' writes only
+       the zero fill; "operands" of a condition; 58 functions, 5
+       predictions wrong
 [x] easy: round 543 (2026-11-21, bug hunt: the equivalence of the
     versions and '--nopt'; design: the assignment, 'expr_any'; readability:
     a newcomer walks 'stmt_def_var.hpp' and 'stmt_def_dat.hpp')
