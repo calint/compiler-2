@@ -788,22 +788,6 @@ struct source_line {
     };
 }
 
-// the line of the character at 'index' without its surrounding whitespace
-[[nodiscard]] auto trimmed_line_at(const std::string_view src,
-                                   const size_t index) -> std::string_view {
-
-    constexpr std::string_view whitespace{" \t\r"};
-
-    const std::string_view line{line_at(src, index).text};
-
-    const size_t first{line.find_first_not_of(whitespace)};
-
-    // note: the character at 'index' starts a token, its line is not blank
-    assert(first != std::string_view::npos);
-
-    return line.substr(first, line.find_last_not_of(whitespace) - first + 1);
-}
-
 // an error at the end of the source is shown after its last character that
 // is not whitespace, e.g. after the last token of an unclosed block
 [[nodiscard]] auto located_in_text(const std::string_view src,
@@ -942,8 +926,13 @@ auto print_call_frames(const source_files& files,
 
         std::string text{frame.reason};
 
-        // the source line shows a call or an alias that is the whole line
-        if (frame.text != trimmed_line_at(src, where.start_index)) {
+        // the source line shows a call or an alias that is the whole line,
+        // read like the frame text: its spacing and comment do not count
+        const std::string line{
+            one_line_source::of(line_at(src, where.start_index).text),
+        };
+
+        if (frame.text != line) {
             text = std::format("{} {}", frame.reason,
                                in_quotes(printable(frame.text)));
         }

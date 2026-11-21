@@ -1,0 +1,13 @@
+# the line of a call frame that ends inside a string continued on the next
+# line shows more than the call, the frame quotes it
+
+func f(a) {
+    var arr = i8[2]
+    arr[a] = 1
+}
+
+func main() {
+    f(5) var s = "a\
+b"
+    exit(s[0])
+}

@@ -1,0 +1,11 @@
+# a comment after a call that is the whole line is not part of the line, the
+# frame of the call does not quote it
+
+func f(a) {
+    var arr = i8[2]
+    arr[a] = 1
+}
+
+func main() {
+    f(5) # the index is out of bounds
+}

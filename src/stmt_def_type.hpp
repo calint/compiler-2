@@ -63,7 +63,7 @@ class type_fields final {
             // e.g. 'items point[4]'
             const token field_tk{tz.next_token()};
 
-            // checked where it is read, before the errors of later fields
+            // note: checked where it is read, before the errors of later fields
             const auto [existing, is_new]{
                 field_indexes.try_emplace(field_tk.text(), fields_.size()),
             };

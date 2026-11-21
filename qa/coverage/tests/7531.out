@@ -1,0 +1,7 @@
+
+7531.baz:6:9: index 5 is out of bounds for array 'arr' of size 2
+    arr[a] = 1
+        ^
+7531.baz:10:5: called from 'f(5)'
+    f(5) var s = "a\
+    ^

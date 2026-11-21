@@ -94,7 +94,9 @@ class one_line_source final {
     // appends the literal starting at 'begin' and returns where it ends,
     // after its closing quote; its escapes are read as the tokenizer reads
     // them ('token::escape_at'), so an escaped quote does not close it and a
-    // continuation is dropped, the listing comment stays on one line
+    // continuation is dropped, the listing comment stays on one line; a text
+    // cut inside the literal, e.g. the source line of a string continued on
+    // the next one, ends it
     [[nodiscard]] static auto append_literal(const std::string_view text,
                                              const size_t begin,
                                              std::string& collapsed) -> size_t {
@@ -121,6 +123,11 @@ class one_line_source final {
                 continue;
             }
 
+            // a backslash that ends the text has no escape after it
+            if (index + 1 == text.size()) {
+                return text.size();
+            }
+
             const token::escape esc{token::escape_at(text, index)};
 
             const std::string_view escape_text{
@@ -135,8 +142,7 @@ class one_line_source final {
             index += escape_text.size();
         }
 
-        // note: the tokenizer rejected an unterminated literal
-        std::unreachable();
+        return text.size();
     }
 
     // after the line end of the comment starting at 'begin'

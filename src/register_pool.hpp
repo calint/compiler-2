@@ -254,13 +254,11 @@ class register_trace final {
             static_cast<size_t>(std::ranges::count_if(live, is_listed)),
         };
 
-        // note: the first snapshot is kept even with nothing listed, so a
-        //       build that holds no register still shows what the backend
-        //       holds
+        // note: a build that holds no register keeps no allocations, its
+        //       report counts all scratch registers as the variables base,
+        //       held then, is not one
 
-        const bool is_first{peak_.allocations.empty()};
-
-        if (held <= peak_.held and not is_first) {
+        if (held <= peak_.held) {
             return;
         }
 

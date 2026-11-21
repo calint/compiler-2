@@ -8473,3 +8473,11 @@ SRC=7480 && COMPERR
 # a ';' alone where a delimiter is expected is reported as unused, as one
 # that ends a word ('unused_semicolon_message')
 SRC=7500 && COMPERR
+
+# a comment after a call that is the whole line is not part of the line,
+# the frame of the call does not quote it
+SRC=7530 && COMPERR
+
+# the line of a call frame that ends inside a string continued on the next
+# line shows more than the call, the frame quotes it
+SRC=7531 && COMPERR

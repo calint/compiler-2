@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 555 (2026-11-21, bug hunt: the consistency of messages;
+    design: the reports; readability: a newcomer walks the type
+    definitions)
+    => bug hunt: one defect; every COMPERR test transformed without
+       changing its meaning (indentation, tabs, comments, CRLF, spaces
+       between tokens, line breaks, noinline, 'let' to 'var') and its
+       message compared at the mapped place: 1573 tests, 13 transformations
+       1. a trailing comment or doubled spaces made a call or instance
+          frame quote its line ("called from 'f(5)'" for 'f(5) # c'):
+          'print_call_frames' compared the frame with the raw trimmed line;
+          it compares with 'one_line_source::of(line)', which made the
+          frame text, 'trimmed_line_at' is gone, and 'append_literal' ends
+          a literal cut by the end of the text; tests 7530, 7531
+       a stray ';' with eight messages, one place in the tokenizer, rejects
+       it also in a generic body nothing instantiates: '[p]' need
+       approval; three locations of a missing token to 'etc/todo.txt'
+    => design: 'register_trace::record_peak' has no first snapshot: it
+       only ever took the variables base, which is no scratch register,
+       so the counts are the same (-2 lines, reports equal); nine ideas
+       kept with reasons
+    => readability: a 'note:' on the duplicate field check of
+       'type_fields'; 23 functions, 2 predictions wrong
 [x] easy: round 554 (2026-11-21, bug hunt: a long fuzz campaign over the
     changes of rounds 537 to 553; design: type definitions; readability:
     a newcomer walks 'expr_type.hpp' and 'expr_type_impl.hpp')

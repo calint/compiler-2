@@ -31,9 +31,26 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'joined_include' and the findings read and write latin-1, so a
     non-ASCII program would get other bytes when split; no generator
     emits one today; write with 'encoding="latin-1"'
-[ ] easy: (round 554, messages) two places still give a generic message
-    for an unused ';' after round 554: 't{1 ;}' ("expected '}' to close
-    the value") and 'var a = 1 ;exit(a)' ("';exit' is not a valid name")
+[ ] easy: (round 555, messages) a missing token is located three ways:
+    "expected '=' followed by an initializer" at the end of the name,
+    "expected '{' to begin block" and others at the next token (README
+    1.9), "expected '=' for assignment or '('" at the name; and a
+    parenthesized operand two ways: 'x / (1 - 1)' points inside the
+    parentheses, 'a[(1 + 1)]' at the '('; moving the first to the next
+    token changes 13 expected files
+[p] easy: need approval (round 555, messages) a stray ';' gets a message
+    that depends on spacing and place in eight forms ('func f(a i8; b i8)'
+    points at 'b', 'func f() res i8 ; {', 'type b<n ;>', 't{1 ;}',
+    'var a = 1 ;exit(a)', 'var a = 1;exit(a)' says "'1;exit' is a
+    constant", 'type t = i8;' quotes the ';'); making ';' a delimiter of
+    the tokenizer and throwing the unused message in 'next_whitespace'
+    gives one message from one place and removes
+    'throw_if_ends_with_semicolon' with its 4 callers, the special case of
+    'expect_char_token' and 'unused_semicolon_message'; no expected output
+    changes; but a ';' in the body of a generic function or method that
+    nothing instantiates, accepted today, is then rejected (as strings and
+    characters there already are checked); tests 7520 to 7528, README 7.4;
+    patch 'scratchpad/r555-proposal-semicolon.patch'; need approval
 [ ] easy: (round 554, types) 'type_fields' keeps a map of field names
     beside the name index of 'type::fields_'; adding each field to the
     type as it is read would leave one index ('add_to' and the alias token

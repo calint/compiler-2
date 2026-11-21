@@ -1,0 +1,7 @@
+
+7530.baz:6:9: index 5 is out of bounds for array 'arr' of size 2
+    arr[a] = 1
+        ^
+7530.baz:10:5: called from
+    f(5) # the index is out of bounds
+    ^
