@@ -171,9 +171,16 @@ class expr_any final : public statement {
 
         set_type(tp);
 
-        // a copy checks its end itself
-        if (is_array() and not is_whole_array_copy()) {
+        // note: a whole array copy checks its end itself
+        if (is_whole_array_copy()) {
+            return;
+        }
+
+        // e.g. the '+' of 'p + 1' or of 'i8[2]{1, 2} + 1'
+        if (is_array()) {
             assert_value_ends(tz, array_token(), value_kind::array, tp);
+        } else if (not tp.is_builtin()) {
+            assert_value_ends(tz, single().tok(), value_kind::instance, tp);
         }
     }
 
@@ -1171,8 +1178,9 @@ class expr_any final : public statement {
     }
 
     // an instance of the user type 'tp': a literal, the type name alone as
-    // its zero value, a copy of a path or the result of a call; defined in
-    // 'expr_type_impl.hpp', which includes 'stmt_call.hpp'
+    // its zero value, a copy of a path or the result of a call; the
+    // constructor checks that it ends; defined in 'expr_type_impl.hpp', which
+    // includes 'stmt_call.hpp'
     [[nodiscard]] static auto parse_instance(parse_toc& tc, tokenizer& tz,
                                              const type& tp,
                                              const literal_typing typing)

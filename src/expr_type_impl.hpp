@@ -39,6 +39,15 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
                                      const literal_typing typing)
     -> expr_variant {
 
+    // e.g. "an instance of 'point'" in the messages below
+    const std::string instance_text{
+        std::format("an instance of {}", in_quotes(tp.name())),
+    };
+
+    // e.g. the '(' of 'q = (p)', the '-' of 'q = -p' or the 'not' of
+    // 'q = not b'
+    assert_no_value_operator(tz, instance_text);
+
     const token tk{tz.next_token()};
 
     const parse_toc::parse_nesting_scope nesting{tc, tz};
@@ -71,14 +80,8 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
 
     // e.g. 'var p = point', no fields are listed
     if (is_bare_user_type) {
-        assert_value_ends(tz, tk, value_kind::instance, tp);
         return expr_type{tk, tp};
     }
-
-    // e.g. "an instance of 'point'" in the messages below
-    const std::string instance_text{
-        std::format("an instance of {}", in_quotes(tp.name())),
-    };
 
     // e.g. 'q = "a"' for an instance 'q'
     if (tk.is_string()) {
@@ -88,25 +91,12 @@ inline auto expr_any::parse_instance(parse_toc& tc, tokenizer& tz,
                         in_quotes(tc.builtins().i8().name()), instance_text)};
     }
 
-    // e.g. the 'not' of 'q = not b', as a unary operator below
-    if (tk.is_text("not")) {
-        throw_not_makes_condition(tk, instance_text);
-    }
-
     // e.g. 'p = pt', the token is empty at '{x, y}'
     if (not tk.is_none() and not is_typed_literal) {
-        expr_variant source{parse_instance_source(tc, tz, tk, tm, tp)};
-        assert_value_ends(tz, tk, value_kind::instance, tp);
-        return source;
+        return parse_instance_source(tc, tz, tk, tm, tp);
     }
 
-    // e.g. the '(' of 'q = (p)' or the '-' of 'q = -p'
-    assert_no_value_operator(tz, instance_text);
-
-    expr_type literal{tc, tz, tk, tp};
-    assert_value_ends(tz, tk, value_kind::instance, tp);
-
-    return literal;
+    return expr_type{tc, tz, tk, tp};
 }
 
 // e.g. 'obj.pos = p', 'obj.pos = f()', 'o.pos = lst.first()' or

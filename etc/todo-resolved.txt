@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 569 (2026-11-22, bug hunt: the same programs on the four
+    targets; design: the parse of values of user types; readability: a
+    newcomer walks 'stmt_assign_var.hpp' and the statements that leave a
+    path)
+    => bug hunt: no defect; 1073 run cases on x86_64, rv32i, rv32i-qemu
+       and fpga with their input under seven option sets, 919 of them
+       rewritten without the default type, the 1514 error cases on two
+       targets, 23000 generated programs of fixed widths: every
+       difference is one of chapter 8 (the default type, 'i64', registers,
+       limits, devices, behavior without checks)
+    => design: the end of an instance value is checked once, in the
+       constructor of 'expr_any' beside the array end, instead of in the
+       three forms of 'parse_instance'; the value operators ('(', unary,
+       'not') are checked first in one call, the special case of 'not' is
+       gone (listings equal); five ideas kept; a message for
+       'var x = i8{1}' added to the round 205 item
+    => readability: the initializer of a declaration skips
+       'record_write' because it is not an assignment (a 'let' is
+       read-only from its declaration on), not because a new variable is
+       writable; 14 functions, 1 prediction wrong
 [x] easy: round 568 (2026-11-22, bug hunt: depth at ordinary sizes;
     design: write plans; readability: a newcomer walks 'stmt_block.hpp'
     and 'stmt_if.hpp')

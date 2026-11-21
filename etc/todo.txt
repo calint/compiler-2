@@ -1401,6 +1401,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => not done (2026-11-09, round 207): taking 'i8{5}' as a literal after
        'var r =' decides the same '{' as the item of a block after a
        declaration, which the user left as it is (2026-10-27)
+    => round 569: a message only would also do: 'parse_type_as_zero' could
+       throw "expected '}', the zero value of a built-in type is '{}'" when
+       a '{' that is not '{}' follows on the same line (about 4 lines and
+       a test), which would leave the block on a later line alone
 [ ] easy: low priority: a block on the line after a declaration whose
     initializer ends with a type is parsed as a literal of that type (bug
     hunt round 9 W2-1): 'var a = i8[2]' then '{ f() }' on the next lines is

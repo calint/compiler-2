@@ -28,8 +28,8 @@ class stmt_assign_var final : public statement {
           expr_{parse_value(tc, tz, stmt_ident_)}, equals_tk_{equals_tk} {}
 
     // the initializer of a declaration, parsed before the variable was
-    // declared; a new variable is writable, so the read-only check of an
-    // assignment does not apply
+    // declared; it is not an assignment, so 'record_write' does not apply,
+    // e.g. a 'let' is read-only from its declaration on
     stmt_assign_var(stmt_identifier ident, const token& equals_tk,
                     expr_any value)
         : statement{ident.tok()}, stmt_ident_{std::move(ident)},
