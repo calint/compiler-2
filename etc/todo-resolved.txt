@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 567 (2026-11-22, bug hunt: the deduction of generic type
+    arguments; design: the parse of call arguments; readability: a
+    newcomer walks 'parse_lookahead.hpp')
+    => bug hunt: no defect; a model generator of generic functions of one
+       to three type parameters with arguments of every kind (variables,
+       fields, constants, literals, conversions, instance literals,
+       constructors, calls, methods, generic calls, operators, 'mut')
+       and every destination, checking the instance names of the listing
+       and the results: 5700 programs on two targets under asan; 230
+       probes against docs 2.10; 20 mutants, two survived as their checks
+       are redundant: 'value_type' no longer asks whether a method is a
+       constructor or whether a call has a result, the parse of the
+       argument rejects both with the same message (-15 lines); a written
+       generic call as an argument to deduce from to 'etc/todo.txt' as
+       '[p]', and a hint of 'g<g<i8>>' that leads nowhere
+    => design: 'deduce_param_type' returns whether its argument is the
+       deducing one ('param_typing'), so the call keeps no vector of
+       deducing arguments for 'parse_deduced_argument' to look up (+9
+       lines, listings and errors equal); seven ideas kept with reasons
+    => readability: a name hides a function of its name too; 'type_called'
+       covers a type parameter followed by '('; the header names
+       'array_literal_type'; 24 functions, 2 predictions wrong
 [x] easy: round 566 (2026-11-22, bug hunt: realistic programs under every
     option and spelling; design: the lookahead of the parse; readability:
     a newcomer walks the tables of 'toc.hpp')

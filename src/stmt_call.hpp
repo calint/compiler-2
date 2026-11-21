@@ -169,11 +169,17 @@ class generic_call {
     // result is declared with starts as the type the call is assigned to,
     // e.g. 'x.f = tz.to()'
     std::vector<const type*> deduced_;
-    // the arguments a type was deduced from, counted without a receiver, e.g.
-    // 0 for 'take(point{3, 4})', a literal there names its type
-    std::vector<size_t> deducing_args_;
 
   public:
+    // the type an argument is parsed at, see 'deduce_param_type'
+    struct param_typing {
+        // null when not known
+        const type* tp{};
+        // a type was deduced from the argument, e.g. 'point{3, 4}' of
+        // 'take(point{3, 4})', a literal there names its type
+        bool is_deducing{};
+    };
+
     // the instance that a call with '<...>' names
     struct written {
         const stmt_def_func* func{};
@@ -206,11 +212,11 @@ class generic_call {
     // type of its parameter in the instance; the deducing argument of a type
     // parameter, the first declared with it, deduces it when it tells a type
     // ('argument_type'), none for a literal or an expression, else the
-    // destination stays, see the constructor; null when not known: a type
-    // parameter not deduced, which 'instantiate' reports, or a name that is
-    // no type there, which the instance rejects
+    // destination stays, see the constructor; a null type when not known: a
+    // type parameter not deduced, which 'instantiate' reports, or a name that
+    // is no type there, which the instance rejects
     [[nodiscard]] auto deduce_param_type(parse_toc& tc, const tokenizer& tz,
-                                         const size_t index) -> const type* {
+                                         const size_t index) -> param_typing {
 
         const generic_signature_param& signature_param{param(index)};
 
@@ -219,7 +225,9 @@ class generic_call {
         };
 
         if (not type_param_index) {
-            return fixed_param_type(tc, signature_param);
+            return {
+                .tp{fixed_param_type(tc, signature_param)},
+            };
         }
 
         const type*& deduced_type{deduced_.at(*type_param_index)};
@@ -228,19 +236,27 @@ class generic_call {
         if (generic_->signature.deducing_param(signature_param.type_name) !=
             index) {
 
-            return deduced_type;
+            return {
+                .tp{deduced_type},
+            };
         }
 
         tokenizer scan{tz};
 
-        if (const type* const told_type{argument_type(tc, scan)};
-            told_type != nullptr) {
+        const type* const told_type{argument_type(tc, scan)};
 
-            deducing_args_.push_back(index);
-            deduced_type = told_type;
+        if (told_type == nullptr) {
+            return {
+                .tp{deduced_type},
+            };
         }
 
-        return deduced_type;
+        deduced_type = told_type;
+
+        return {
+            .tp{told_type},
+            .is_deducing{true},
+        };
     }
 
     [[nodiscard]] auto generic_name() const -> std::string_view {
@@ -275,12 +291,6 @@ class generic_call {
 
         return func_instantiator::instantiate_func(tc, name_tk_, generic_name_,
                                                    type_args);
-    }
-
-    // a type was deduced from the argument at 'index', which
-    // 'deduce_param_type' read
-    [[nodiscard]] auto is_deducing_argument(const size_t index) const -> bool {
-        return std::ranges::contains(deducing_args_, index);
     }
 
     // e.g. 'x U' of '(x U)', counted without a receiver
@@ -411,9 +421,9 @@ class generic_call {
     // 'point{1, 2}', 'point.at(1, 2)' or 'mk(1, 2)', otherwise null; an
     // argument that no operator continues, no '.' or '[' reaches into and no
     // '{' follows is whole, e.g. 'a' of 'f(a 2)', the parse of the call
-    // reports what follows it; 'point.m()' tells a type only when 'm' is a
-    // constructor. 'tz' is at the argument, it ends after the argument when
-    // the argument tells its type
+    // reports what follows it; it also reports 'point.m()' of a method 'm'
+    // and 'mk()' without a result, which tell a type here. 'tz' is at the
+    // argument, it ends after the argument when the argument tells its type
     [[nodiscard]] static auto argument_type(parse_toc& tc, tokenizer& tz)
         -> const type* {
 
@@ -457,9 +467,9 @@ class generic_call {
         return named_argument_type(tc, ident);
     }
 
-    // e.g. 'point.at(1, 2)', not the method 'point.m()' or 'point.zz(1)',
-    // which the parse of the argument reports; 'tk' is the type and 'tz' is
-    // after it
+    // e.g. 'point.at(1, 2)'; 'tk' is the type and 'tz' is after it
+    // note: also of the method 'point.m()' and of 'point.zz(1)', which the
+    //       parse of the argument rejects as it does without a type
     [[nodiscard]] static auto
     constructor_call_type(parse_toc& tc, tokenizer& tz, const token& tk)
         -> const type* {
@@ -467,7 +477,7 @@ class generic_call {
         std::ignore = tz.seen_char_token('.');
 
         // the type names the result, the constructor, e.g. 'at', does not
-        const token ctor_tk{tz.next_token()};
+        std::ignore = tz.next_token();
 
         if (not tz.accept_char_token('(')) {
             return nullptr;
@@ -475,18 +485,7 @@ class generic_call {
 
         tz.skip_to_close_paren();
 
-        const type& result_type{tc.get_type_or_throw(tk)};
-
-        const std::string ctor_name{
-            method_name_of(result_type.name(), ctor_tk.text()),
-        };
-
-        const bool is_constructor{
-            tc.funcs().has(ctor_name) and
-                tc.get_func_or_throw(ctor_tk, ctor_name).is_constructor(),
-        };
-
-        return is_constructor ? &result_type : nullptr;
+        return &tc.get_type_or_throw(tk);
     }
 
     // the type of a 'bool' literal, an instance literal, a constructor call or
@@ -539,15 +538,10 @@ class generic_call {
         std::ignore = tz.seen_char_token('(');
         tz.skip_to_close_paren();
 
-        const type& return_type{
-            tc.get_func_or_throw(tk, tk.text()).result_type(),
-        };
+        // note: a function without a result tells 'void', which the parse of
+        //       the argument rejects as it does without a type
 
-        if (return_type.is_same(tc.builtins().void_type())) {
-            return nullptr;
-        }
-
-        return &return_type;
+        return &tc.get_func_or_throw(tk, tk.text()).result_type();
     }
 
     // the types between '<' and '>', one per type parameter, e.g. 'name' of
@@ -2528,21 +2522,20 @@ class stmt_call final : public statement {
             return;
         }
 
-        const type* const param_type{
+        const generic_call::param_typing typing{
             deduction.deduce_param_type(tc, tz, arg_index),
         };
 
         // e.g. the '1' of 'f(1, 2)' for 'func f<T type>(a T, b T)', 'T' is
         // not deduced, the instance reports it after the arguments
-        if (param_type == nullptr) {
+        if (typing.tp == nullptr) {
             deduction.parse_untyped_argument(tc, tz);
             return;
         }
 
         // a literal that deduced the type keeps its written type
-        parse_typed_argument(tc, tz, *param_type,
-                             param.is_mut or
-                                 deduction.is_deducing_argument(arg_index));
+        parse_typed_argument(tc, tz, *typing.tp,
+                             param.is_mut or typing.is_deducing);
     }
 
     // e.g. 'b + 1' of 'f(a, b + 1)'; a literal takes the type of its

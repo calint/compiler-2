@@ -3,13 +3,13 @@
 // what the next tokens are, decided before they are parsed: 'classify_term'
 // tells what the first token of a value or a statement denotes; a name
 // followed by a character has one meaning only, e.g. 'point{' is an instance
-// literal and 'show<' a generic call; 'builtin_value_type' gives the type of
-// the value of a built-in, 'builtin_function_type' that of a call of a
-// built-in function; the name after a '.' is decided by
-// 'stmt_identifier::is_method_name', a function head by 'func_head'; the
-// rejections that run before a parse would misread ('assert_*') and the
-// predicates of the shape of what follows ('continues_*', 'is_*',
-// 'starts_value')
+// literal and 'show<' a generic call; 'array_literal_type' gives the element
+// type of an array literal, 'builtin_value_type' the type of the value of a
+// built-in, 'builtin_function_type' that of a call of a built-in function; the
+// name after a '.' is decided by 'stmt_identifier::is_method_name', a function
+// head by 'func_head'; the rejections that run before a parse would misread
+// ('assert_*') and the predicates of the shape of what follows ('continues_*',
+// 'is_*', 'starts_value')
 
 #include <cassert>
 #include <cstddef>
@@ -172,8 +172,9 @@ enum class term_kind : uint8_t {
     user_type,
     // a name followed by '(', e.g. 'f(x)' or 'point(3)' of a function 'point'
     call,
-    // a user type followed by '(' with no function of its name, e.g.
-    // 'point(5)', which is an error where a value is expected
+    // a user type with no function of its name or a type parameter, followed
+    // by '(', e.g. 'point(5)' or the 'T(5)' of 'func f<T type>()', which is an
+    // error where a value is expected
     type_called,
     // a generic function followed by '<' or '(', e.g. 'show<i8>(x)'
     generic_call,
@@ -244,9 +245,9 @@ enum class term_kind : uint8_t {
 
 // what 'tk', with 'tz' after it, denotes where a value or a statement starts;
 // the rules of hiding: a variable, a parameter or a constant hides a user type
-// and a generic function of its name, a call 'f(...)' still calls the
-// function; built-in types, built-in functions and keywords are reserved
-// names, nothing hides them
+// and a function of its name, a call 'f(...)' still calls the function;
+// built-in types, built-in functions and keywords are reserved names, nothing
+// hides them
 [[nodiscard]] inline auto classify_term(const parse_toc& tc, const token& tk,
                                         const tokenizer& tz) -> term_kind {
 

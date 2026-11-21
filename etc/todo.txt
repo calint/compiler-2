@@ -26,6 +26,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
     declaration; 3 files; a file rename
+[p] easy: need approval (round 567, generics) a generic call with written
+    type arguments tells no type to the deduction of an outer call:
+    'id(id<i16>(300))' says "cannot deduce 'A'" though 'var r =
+    id<i16>(300)' works; docs 2.10.2 1.2 give as reason that the result
+    type is not known before the instance, which does not hold when the
+    type arguments are written; 'value_type' could make the written
+    instance ('written_instance') and tell its result type (+12 lines,
+    test 7780, docs), a new capability; patch
+    'scratchpad/r567-proposal-written-generic-arg.patch' (made before the
+    round 567 simplification of 'value_type', to be merged); need approval
+[ ] easy: (round 567, messages) 'g<g<i8>>(5)' with 'g' a generic function
+    says "name an instance first, e.g. 'type my_g = g<...>'", and doing so
+    gives "'g' is not a generic type"; the check is
+    'generic_arg_tokens::assert_arg_ends', at the token level, which does
+    not know what 'g' names
 [ ] easy: (round 563, messages) compile-time checks that run out of
     evaluation order name a later fault than the first one (both reject
     the program, only the message differs): a constant index and the
