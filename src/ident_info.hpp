@@ -400,7 +400,8 @@ struct value_use {
     const type* width{};
     bool checks_overflow{};
     // the fold only tells whether the value is known, see
-    // 'statement::is_known': it checks nothing and its value is meaningless
+    // 'statement::is_known': it checks nothing but the sides of a condition
+    // ('expr_bool::fold') and its value is meaningless
     bool is_probe{};
 
     [[nodiscard]] auto width_ref() const -> const type& {

@@ -57,8 +57,9 @@ class stmt_builtin_array_length final : public statement {
 
         comment_source(tc);
 
-        // note: a narrower destination is rejected by 'assert_not_narrowed'
-        //       or the argument check of a conversion, a 'bool' by its
+        // note: a narrower destination is rejected by 'assert_not_narrowed',
+        //       a conversion computes the length in a register of its type
+        //       (it does not keep its low bits), a 'bool' is rejected by its
         //       boolean check, and no type is wider
 
         assert(dst.type_ref().is_same(tc.builtins().default_type()));

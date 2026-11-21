@@ -1063,6 +1063,9 @@ class expr_bool final : public statement {
     }
 
     // a condition known at compile time is 1 or 0
+    // note: a probe ('statement::is_known') folds the sides checked, since
+    //       the values decide whether a condition is known; nothing comes
+    //       before it, a 'bool' is never narrowed
     [[nodiscard]] auto fold(const toc& tc,
                             [[maybe_unused]] const value_use& use) const
         -> std::optional<folded_value> override {

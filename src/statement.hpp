@@ -376,7 +376,8 @@ class statement {
     }
 
     // the value is known at compile time at the width 'width'; checks nothing
-    // that a list computes, 'fold' reports its errors in evaluation order
+    // that a list computes, 'fold' reports its errors in evaluation order;
+    // a condition still checks its sides ('expr_bool::fold')
     [[nodiscard]] auto is_known(const toc& tc, const type& width) const
         -> bool {
 

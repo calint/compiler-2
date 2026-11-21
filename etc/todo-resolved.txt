@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 564 (2026-11-22, bug hunt: the contract of the probe of
+    round 563; design: the interface of folding; readability: a newcomer
+    walks the conversion, 'array_length' and the folds of 'expr_arith')
+    => bug hunt: no defect of a result or message; an instrumented build
+       that aborts when a probe throws, when a probe and the checked fold
+       disagree on known, or when a direct fold disagrees with its probe,
+       over every test and the expression fuzzers, and a differential
+       generator of bad divisors, shift counts, conversions and
+       'array_length' in 15 positions against the build before round 563:
+       77000 compiles, no accept/reject or listing change; the probe of a
+       condition throws, since 'expr_bool::fold' folds its sides checked
+       to know whether it is decided, which no message shows as a bool is
+       never narrowed: documented
+    => design: no change; each fold override honors the probe the same
+       way but 'expr_bool', now documented on 'expr_bool::fold',
+       'value_use::is_probe', 'statement::is_known' and docs 1.7; one enum
+       for the two flags, dropping the probe (259 compiles differ, an
+       assert), merging 'is_known' into 'fold' and one routine for
+       'compile_checked' and 'fold_checked' measured and kept apart
+    => readability: 'fold_operation' rejects a zero divisor, a shift count
+       outside the width and the minimum / -1; the note of
+       'array_length::compile' said the conversion rejects a narrower
+       destination, it computes the length at its own type; 36 functions,
+       2 predictions wrong
 [x] medium: (round 562, messages, a defect of round 541) a constant fold
     names a later operation than the one that fails first:
     'fold_checked' first folds without the overflow check to learn

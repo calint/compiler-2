@@ -1393,9 +1393,9 @@ class expr_arith final : public statement {
         x.bitwise({src_loc_tk, tc.indent()}, op, dst.operand(), value);
     }
 
-    // rejects a constant divisor or shift count like 'compile', and the
-    // minimum divided by -1 where the division check is on or at 64 bits,
-    // where the quotient has no value: x86_64 traps
+    // rejects a zero divisor or a shift count outside the width like
+    // 'compile', and the minimum divided by -1 where the division check is on
+    // or at 64 bits, where the quotient has no value: x86_64 traps
     [[nodiscard]] static auto
     fold_operation(const toc& tc, const int64_t lhs,
                    const arithmetic_operator op, const token& src_loc_tk,
