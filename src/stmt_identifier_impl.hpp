@@ -343,10 +343,18 @@ inline auto stmt_identifier::parse_element(parse_toc& tc, tokenizer& tz,
     }
 }
 
-inline auto stmt_identifier::path_address::add_index(
+inline auto stmt_identifier::path_address::indexed_element(
     const ident_elem& cur_elem, const ident_info& cur_info, const bool is_range,
     const std::optional<operand>& start_register, const operand& address)
     -> operand {
+
+    // an operand holds one index, so an earlier one is folded first
+    operand base{address};
+
+    if (not address.index_register().empty()) {
+        const operand folded_register{fold_indexed_address(address)};
+        base = operand::mem(folded_register, cur_info.type_ref());
+    }
 
     compile_toc& tc{tc_.get()};
 
@@ -399,11 +407,11 @@ inline auto stmt_identifier::path_address::add_index(
     }
 
     const int64_t displacement{
-        add_scaled_address_offset(address.displacement(), addend_elements,
+        add_scaled_address_offset(base.displacement(), addend_elements,
                                   element_size_bytes),
     };
 
-    return operand::mem(address.base_register(), index_register.register_name(),
+    return operand::mem(base.base_register(), index_register.register_name(),
                         is_encodable_scale ? element_size_bytes : 1,
                         displacement, cur_info.type_ref());
 }
@@ -432,35 +440,17 @@ inline auto stmt_identifier::compile_checked_index(
 
     index_expr.compile(tc, index_dst);
 
-    const std::optional<size_t> array_len{shape.length()};
+    // note: an unknown length checks against 'discarded_array_len', its code
+    //       is discarded
 
-    // note: an unknown length checks the index alone, also of a range,
-    //       against 'discarded_array_len', its code is discarded
+    const size_t array_count{shape.element_count()};
 
     const machine::bounds_range checked{
-        is_range and array_len
-            ? machine::bounds_range::up_to(index_register, *array_len)
-            : machine::bounds_range::index(index_register,
-                                           shape.element_count()),
+        is_range ? machine::bounds_range::up_to(index_register, array_count)
+                 : machine::bounds_range::index(index_register, array_count),
     };
 
     x.check_bounds({index_expr.tok(), tc.indent()}, checked);
 
     return 0;
-}
-
-inline auto stmt_identifier::path_address::indexed_element(
-    const ident_elem& cur_elem, const ident_info& cur_info, const bool is_range,
-    const std::optional<operand>& start_register, const operand& address)
-    -> operand {
-
-    // an operand holds one index, so an earlier one is folded first
-    operand base{address};
-
-    if (not address.index_register().empty()) {
-        const operand folded_register{fold_indexed_address(address)};
-        base = operand::mem(folded_register, cur_info.type_ref());
-    }
-
-    return add_index(cur_elem, cur_info, is_range, start_register, base);
 }

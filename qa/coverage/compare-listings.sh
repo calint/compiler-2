@@ -47,7 +47,8 @@ grep -vE '^ *#' cases.sh | grep -oE 'SRC=[0-9]+[^;]*' | while read -r line; do
     printf '%s\t%s\n' "$src" "$options"
 done | sort -u >"$WORK/jobs"
 
-# compiles one case with both builds for every target and both option sets
+# compiles one case with both builds for every target and both option sets,
+# prints each compile that differs
 compare_case() {
     local src=$1
     local options=$2

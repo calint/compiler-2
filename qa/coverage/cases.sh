@@ -15,9 +15,9 @@
 #                '--nopt' and of the optimized compile with 'NNN.TARGET.diff'
 #   COMPERR      the compile fails with exit code 1 and its message is
 #                'NNN.out'
-#   LISTING KIND compile without the checks, and compare the part of the
-#                listing that 'listing.py KIND' extracts with
-#                'NNN.TARGET.KIND'
+#   LISTING KIND compile with the defaults of the compiler (no checks, no
+#                'OPTS'), and compare the part of the listing that
+#                'listing.py KIND' extracts with 'NNN.TARGET.KIND'
 #
 # Prefixes of one helper call, e.g. 'OPTS="--checks=noub" RUN':
 #

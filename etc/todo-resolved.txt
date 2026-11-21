@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 558 (2026-11-21, bug hunt: ordered comparisons against
+    constants at the immediate edges; design: the operand of an identifier;
+    readability: a newcomer walks the test scripts)
+    => bug hunt: no defect; a model generator of '<', '<=', '>' and '>='
+       at the rv32i 12-bit edges, the x86_64 'imm32' edges and the limits
+       of every width, constants on either side, typed and untyped,
+       inlined and folded, elements, fields, computed sides, in 'if',
+       stored bools, lists and loop guards, beyond the 12-bit offsets:
+       5500 seeds, 66000 runs; every edge pair in eight forms: 63000
+       checks; 18 mutants, one equivalent ('narrowed_immediate' never
+       wraps a comparison's immediate, the front end makes it fit)
+    => design: 'path_address::add_index' merged into its one caller
+       'indexed_element'; the bounds plan of 'compile_checked_index' no
+       longer treats an unknown length apart, it counts 0 and its code is
+       discarded (-16 lines, listings and errors equal); seven ideas kept
+    => readability: seven comments of the test scripts ('RUN_ERR' writes
+       its output to the log, 'LISTING' takes the compiler's defaults,
+       'expect_exit' needs an 'EXP', 'CLI' and its arguments); the line
+       check of 'cases.sh' rejects 'OPTS' on a 'LISTING' case, which would
+       be ignored; 33 functions, 7 predictions wrong
 [x] easy: round 557 (2026-11-21, bug hunt: method receivers reached
     through 'foo' elements and run-time indexes; design: the test scripts;
     readability: a newcomer walks 'ident_info.hpp')

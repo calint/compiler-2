@@ -286,7 +286,9 @@ class stmt_identifier final : public statement {
               address_register_{std::move(address_register)} {}
 
         // the address after the run-time index of 'cur_elem', which goes into
-        // an index register; 'is_range' when the index starts a range,
+        // an index register, after an earlier index of 'address' is folded
+        // into a base; a constant the index leaves out goes into the
+        // displacement; 'is_range' when the index starts a range,
         // 'start_register' then receives the index
         [[nodiscard]] auto
         indexed_element(const ident_elem& cur_elem, const ident_info& cur_info,
@@ -305,14 +307,6 @@ class stmt_identifier final : public statement {
         }
 
       private:
-        // adds the element index of 'cur_elem' to 'address', which has no
-        // index yet, keeping its base; a constant the index leaves out goes
-        // into the displacement
-        [[nodiscard]] auto
-        add_index(const ident_elem& cur_elem, const ident_info& cur_info,
-                  bool is_range, const std::optional<operand>& start_register,
-                  const operand& address) -> operand;
-
         // computes 'address' into a register so another index can be added
         [[nodiscard]] auto fold_indexed_address(const operand& address)
             -> operand {

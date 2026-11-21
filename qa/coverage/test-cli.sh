@@ -49,6 +49,8 @@ fail() {
     exit 1
 }
 
+# runs the compiler with the argument '$1' and those after '$2', the expected
+# exit code; the messages go to 'err', e.g. 'CLI --vars=0 1 --help'
 CLI() {
     echo -n "cli $1: "
     local exit_code=0

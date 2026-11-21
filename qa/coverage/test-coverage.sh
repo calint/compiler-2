@@ -173,8 +173,8 @@ export ASAN_OPTIONS="fast_unwind_on_fatal=0:print_stacktrace=1:detect_stack_use_
 export ASAN_SYMBOLIZER_PATH="$(which llvm-symbolizer)"
 export ASAN_SYMBOLIZE=1
 
-# the built-in assembler must produce the bytes llvm assembles from 'gen.s',
-# the object 'gen.o'
+# the built-in assembler must produce the bytes llvm assembles from 'gen.s';
+# leaves the object 'gen.o' that the rv32i target links
 verify_rv32i_image() {
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
     ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o gen-image.elf gen.o
@@ -237,7 +237,8 @@ execute_program() {
     esac
 }
 
-# the uart carries both output streams, so errors are in the output
+# the errors of the program to 'out'; the uart carries both output streams, so
+# on the uart targets its output too, else the output goes to the log
 execute_program_errors_to_out() {
     case "$MACHINE" in
     rv32i-qemu | rv32i-fpga) execute_program >out ;;
@@ -315,7 +316,8 @@ expected_compile_output() {
     first_existing "$SRC.$COMPILER_MACHINE.out" "$SRC.out"
 }
 
-# fails the case when the exit code '$2' is not the expected '$1'
+# fails the case when the exit code '$2' is not the expected '$1' or the case
+# sets no expected code
 expect_exit() {
     local expected=$1
     local exit_code=$2
@@ -360,8 +362,8 @@ begin_case() {
 }
 
 # the helpers of the cases, see 'cases.sh'; a program judged by its output
-# must exit 0, one judged by its exit code writes its output to 'out' and
-# 'err', not into the log
+# must exit 0, one judged by its exit code alone ('RUN', 'DIFFNOPT') writes
+# its output to 'out' and 'err', not into the log
 
 RUN() {
     begin_case
@@ -440,8 +442,8 @@ DIFFNOPT() {
 }
 
 # the part of the listing that 'listing.py' extracts for the kind of the
-# argument, compiled without the checks for the target of the compiler,
-# compared with 'NNN.TARGET.KIND'
+# argument, compiled for the target of the compiler with its defaults (no
+# checks), compared with 'NNN.TARGET.KIND'; the 'OPTS' of the case are ignored
 LISTING() {
     begin_case
     local expected="$SRC.$COMPILER_MACHINE.$1"
@@ -476,7 +478,8 @@ COMPERR() {
 # a case without its helper, or failing after those before it passed
 check_cases_lines() {
     # one case: its source, the expectations of the helper and its options
-    local case_line='SRC=[0-9]{4} && (EXP=[0-9]+ && )?(OPTS="[^"]*" )?(SDCARD=[0-9]+[KMGT]? )?(RUN|RUN_ERR|DIFF|DIFFINP|DIFFINP2|DIFFPY|DIFFNOPT|COMPERR|LISTING [a-z]+)'
+    # note: 'LISTING' compiles with the defaults, so it takes no 'OPTS'
+    local case_line='SRC=[0-9]{4} && ((EXP=[0-9]+ && )?(OPTS="[^"]*" )?(SDCARD=[0-9]+[KMGT]? )?(RUN|RUN_ERR|DIFF|DIFFINP|DIFFINP2|DIFFPY|DIFFNOPT|COMPERR)|LISTING [a-z]+)'
     # a guard on the targets that run the cases after it
     local guard_line='if \[\[ \$MACHINE [!=]= (x86_64|rv32i|rv32i-qemu|rv32i-fpga)( \|\| \$MACHINE == (rv32i|rv32i-fpga))? \]\]; then'
     local line_numbers
