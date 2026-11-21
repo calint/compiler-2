@@ -73,6 +73,12 @@ class stmt_builtin_array_copy final : public statement {
         if (size_bytes and not checks_overlap) {
             emit.both_addresses(
                 [&](const operand& src, const operand& dst_address) -> void {
+                    // a count of 0 copies nothing, its addresses are still
+                    // checked
+                    if (*size_bytes == 0) {
+                        return;
+                    }
+
                     x.copy_block({tok(), tc.indent()}, dst_address, src,
                                  *size_bytes, element_type.alignment());
                 });

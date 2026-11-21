@@ -947,8 +947,8 @@ class machine {
                                     const comparison_action& action)
         -> void = 0;
 
-    // 'alignment' is the alignment known for both addresses; a size of 0
-    // copies nothing, e.g. an 'array_copy' of 0 elements
+    // 'size_bytes' is not 0, 'alignment' is the alignment known for both
+    // addresses
     virtual auto copy_block(const emit_site site, const operand& dst,
                             const operand& src, const size_t size_bytes,
                             const size_t alignment) -> void = 0;

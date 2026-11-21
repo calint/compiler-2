@@ -472,6 +472,12 @@ class expr_path final : public statement {
 
         const size_t size_bytes{src_info.value_size_bytes(tok())};
 
+        // nothing to copy, the code of a function checked without a call is
+        // discarded
+        if (size_bytes == 0) {
+            return;
+        }
+
         x.copy_block({tok(), tc.indent()}, dst.operand(), src_op, size_bytes,
                      dst_type.alignment());
     }

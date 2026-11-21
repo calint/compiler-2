@@ -26,6 +26,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
     declaration; 3 files; a file rename
+[ ] easy: (round 549, registers) on x86_64 a far operand takes a scratch
+    register to lower its displacement, so the "out of scratch registers"
+    limit is one level lower when the variables lie past 2 GiB: 'var x =
+    a14 + (a13 - (... (a0 + b)))' of 15 levels compiles near and is
+    rejected after 'var big = i8[0x90000000]'; a far-to-far move takes
+    three registers where a near one takes one; lowering one operand at a
+    time would give one back; the class of the user-decision items on
+    register limits
 [ ] easy: (round 546, aliasing) 'array_length' of a global counts as a
     read of it for the shared storage of a call: with 'func f(b mut i8[])
     { b[0] = i8(array_length(g)) }', 'f(g)' is rejected ("argument 1 'g'

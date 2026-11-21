@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 549 (2026-11-21, bug hunt: x86_64 addresses past 2 GiB
+    after the 'lower_address' change of round 548; design: what the base
+    'machine' decides and the backends repeat; readability: a newcomer
+    walks the first half of 'machine_x86_64.hpp')
+    => bug hunt: no defect; a generator of every access to variables
+       placed past 2 GiB, 4 GiB and across 2 GiB, compared with the same
+       program near, under eight option sets: 2640 builds and runs, all
+       assembled; probes of indexes past 4 GiB and far frames; 13 mutants,
+       three equivalent; one register more per far operand to
+       'etc/todo.txt'
+    => design: 'copy_block' needs a size that is not 0 as 'zero' and
+       'memory_equal' do, the two backends assert it instead of returning;
+       the callers that can have 0 decide: an 'array_copy' of a constant
+       count 0 compiles and checks its addresses and copies nothing, a
+       discarded unsized array in a function never called copies nothing
+       (+8 lines, listings equal); a common 'exit' of the report line
+       routine would move the rv32i table of decimal places, kept; eleven
+       ideas kept with reasons
+    => readability: the comment of the routine labels names the sector
+       routines too; a note that 'divide' reserves 'rdx' after the dividend
+       is loaded, so its lowering can borrow it (reserved earlier, 94
+       listings differ in comments only), which round 401 left open; 35
+       functions, 6 predictions wrong
 [x] easy: round 548 (2026-11-21, bug hunt: generic types with methods
     and constant arguments; design: the x86_64 backend; readability: a
     newcomer walks 'parse_statement.hpp' and 'constant_parser.hpp')

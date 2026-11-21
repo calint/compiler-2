@@ -67,7 +67,8 @@ class machine_x86_64 final : public machine {
     static constexpr int syscall_lseek_{8};
     static constexpr int syscall_pread_{17};
     static constexpr int syscall_pwrite_{18};
-    // the routines 'read' and 'write' call, see 'emit_io_routines'
+    // the routines of the built-ins, see 'emit_io_routines' and
+    // 'emit_sector_routines'
     static constexpr std::string_view read_label_{"baz_read"};
     static constexpr std::string_view write_label_{"baz_write"};
     static constexpr std::string_view sector_read_label_{"baz_sector_read"};
@@ -286,9 +287,7 @@ class machine_x86_64 final : public machine {
                     const operand& src, const size_t size_bytes,
                     [[maybe_unused]] const size_t alignment) -> void override {
 
-        if (size_bytes == 0) {
-            return;
-        }
+        assert(size_bytes != 0);
 
         const size_t parts{part_count(size_bytes)};
 
@@ -375,6 +374,7 @@ class machine_x86_64 final : public machine {
             mov(site, qword_register("rax"), dst);
         }
 
+        // note: reserved after the dividend load, whose lowering can borrow it
         reserve_named_register(site, "rdx");
 
         emit_signed_divide(site, divisor, check, dst.type_ref().size_bytes());

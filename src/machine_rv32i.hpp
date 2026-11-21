@@ -2119,9 +2119,7 @@ class machine_rv32i : public machine {
                           const operand& src, const size_t size_bytes,
                           const std::array<access_start, 2>& starts) -> void {
 
-        if (size_bytes == 0) {
-            return;
-        }
+        assert(size_bytes != 0);
 
         // note: a constant count is within its array, and an array is within
         //       the 32-bit address range
