@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 565 (2026-11-22, bug hunt: rv32i jumps that grow out of
+    reach; design: the tables of the parse; readability: a newcomer walks
+    'assembler_rv32i.hpp')
+    => bug hunt: no defect; the whole suite with every jump forced far and
+       forced to borrow 't0', with and without '--nopt': 18000 runs; a
+       build that asserts every jump reaches and the next smaller form
+       would not; fuzzers on the forced builds; 15 templates probed at
+       each branch and 'jal' edge byte against llvm's image, x86_64 and
+       the near build: 1864 runs; 14 mutants: the branch reach changed by
+       4 bytes passed both far jump scripts: test-far-jumps.sh checks the
+       4 KiB branch reach too
+    => design: 'type_table::exists' had a branch for type parameters that
+       its only caller, at the top level, never meets: gone; the order of
+       the global definitions is recorded by the parse only, which alone
+       uses it, so the rule that the parse's value stays when the compile
+       declares the globals again is gone (listings and errors equal);
+       nine ideas kept with reasons
+    => readability: 'fold_copy' also rewrites the instruction that writes
+       the copy; 'grow_out_of_reach' checks the layout before the pass;
+       'write_line_text' counts the skip labels; the operands of
+       'branch_word' as written; 'write_landing' writes the label;
+       'li_value_size_bytes' names 'load_immediate'; 135 functions, 5
+       predictions wrong
 [x] easy: round 564 (2026-11-22, bug hunt: the contract of the probe of
     round 563; design: the interface of folding; readability: a newcomer
     walks the conversion, 'array_length' and the folds of 'expr_arith')

@@ -585,7 +585,7 @@ inline auto make_stmt_def_type(parse_toc& tc, const token& src_loc_tk,
     // built-in
     tc.assert_valid_unqualified_name(name_tk);
 
-    tc.definitions().assert_type_not_defined(name_tk, name_tk.text());
+    tc.definitions().assert_type_not_defined(name_tk);
 
     const char next{tz.peek_char_after_whitespace()};
 

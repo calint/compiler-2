@@ -895,8 +895,8 @@ class assembler_rv32i final : public assembler {
         std::unreachable();
     }
 
-    // the size of the expansion that 'write_code' encodes, so the layout and
-    // the image agree
+    // the size of the expansion that 'load_immediate' encodes, so the layout
+    // and the image agree
     [[nodiscard]] static auto li_value_size_bytes(const int64_t value)
         -> size_t {
 
@@ -945,10 +945,11 @@ class assembler_rv32i final : public assembler {
     // overridden methods
     //
 
-    // note: the reads of 'copied' up to the instruction that writes it take
-    //       'source', which holds the same value: no line in between writes
-    //       'source', jumps or calls, and the block has no entry, so no other
-    //       path reaches them and no line after them reads the copy
+    // note: the reads of 'copied' up to and including the instruction that
+    //       writes it take 'source', which holds the same value: no line in
+    //       between writes 'source', jumps or calls, and the block has no
+    //       entry, so no other path reaches them and no line after them reads
+    //       the copy
 
     auto fold_copy(const std::span<line> block) -> bool override {
         const instruction* const copy{
@@ -1248,7 +1249,8 @@ class assembler_rv32i final : public assembler {
         return encode_instruction(*ins, line_index, address, symbols);
     }
 
-    // grows each jump that does not reach its target, true when one grew
+    // grows each jump that does not reach its target in the layout before
+    // the pass, true when one grew
     [[nodiscard]] auto grow_out_of_reach(
         const std::unordered_map<std::string_view, size_t>& labels) -> bool {
 
@@ -1406,6 +1408,7 @@ class assembler_rv32i final : public assembler {
         }
     }
 
+    // 'skip_count' counts the skip labels written, which keeps them unique
     auto write_line_text(std::ostream& os, const line& l,
                          size_t& skip_count) const -> void {
 
@@ -1543,6 +1546,7 @@ class assembler_rv32i final : public assembler {
         });
     }
 
+    // 'first' and 'second' as written, pseudos such as 'bgtz' swap them
     [[nodiscard]] static auto branch_word(const op code, const uint8_t first,
                                           const uint8_t second,
                                           const int64_t offset) -> uint32_t {
@@ -2283,7 +2287,7 @@ class assembler_rv32i final : public assembler {
         }
     }
 
-    // the landing of a borrowed register before the label of 'l'
+    // the label line 'l' after the landing of a borrowed register
     static auto write_landing(std::ostream& os, const line& l) -> void {
         const std::string indent{indentation(1)};
 

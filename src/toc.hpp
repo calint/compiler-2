@@ -706,8 +706,10 @@ class type_table final {
 
     // also a type that the current instance parse does not see, for the
     // checks of a name defined twice
+    // note: a type is defined at the top level, where no type parameter is
+    //       named
     [[nodiscard]] auto exists(const std::string_view name) const -> bool {
-        return is_param(name) or entries_.has(name);
+        return entries_.has(name);
     }
 
     auto exit_params() -> void { params_.pop_back(); }
@@ -1192,14 +1194,13 @@ class scope_stack final {
     }
 
     // records the definition of a variable, data or constant of the root
-    // scope; the one of the parse stays when the compile declares it again
+    // scope, at the parse
     auto record_if_global(const std::string_view name) -> void {
         if (not is_at_root()) {
             return;
         }
 
-        global_definitions_.try_emplace(std::string{name},
-                                        order_.get().current());
+        global_definitions_.emplace(std::string{name}, order_.get().current());
     }
 
     // the body being parsed passes its result to a 'mut' parameter
@@ -2137,8 +2138,8 @@ class definition_checks final {
     }
 
     // a generic type and a type share the namespace of types
-    auto assert_type_not_defined(const token& src_loc_tk,
-                                 const std::string_view name) const -> void {
+    auto assert_type_not_defined(const token& name_tk) const -> void {
+        const std::string_view name{name_tk.text()};
 
         if (types_.get().exists(name)) {
             // note: a built-in type name is rejected by
@@ -2148,14 +2149,14 @@ class definition_checks final {
 
             const token& type_tk{types_.get().src_loc_tk_of(name)};
 
-            throw_already_defined(src_loc_tk, "type", name, where(type_tk));
+            throw_already_defined(name_tk, "type", name, where(type_tk));
         }
 
         if (generics_.get().exists_type(name)) {
             const token& generic_tk{generics_.get().get_type(name).src_loc_tk};
 
             throw compile_error{
-                src_loc_tk,
+                name_tk,
                 std::format("type {} already defined as a generic type at {}",
                             in_quotes(name), where(generic_tk))};
         }
@@ -2429,8 +2430,6 @@ class toc {
                                             .src_loc_tk{src_loc_tk},
                                             .constant{constant},
                                         });
-
-        t.scopes.record_if_global(name);
     }
 
     // the declaration that both phases make, the declared variable is in the
@@ -2450,11 +2449,7 @@ class toc {
                                            var.name);
         }
 
-        var_info& declared{t.scopes.back().add_var(var, kind)};
-
-        t.scopes.record_if_global(var.name);
-
-        return declared;
+        return t.scopes.back().add_var(var, kind);
     }
 
     [[nodiscard]] auto tables() -> toc_tables& { return tables_.get(); }
@@ -2625,16 +2620,22 @@ class parse_toc final : public toc {
     // overridden methods
     //
 
-    // declared, as at the compile, without a comment
+    // declared, as at the compile, without a comment; a global is seen
+    // after its definition, see 'definition_order'
     auto add_const(const token& src_loc_tk, const std::string_view name,
                    const folded_value& constant) -> void final {
 
         declare_const(src_loc_tk, name, constant);
+
+        tables().scopes.record_if_global(name);
     }
 
-    // the name only; a variable in storage is placed by the compile
+    // the name only; a variable in storage is placed by the compile; a
+    // global is seen after its definition, see 'definition_order'
     auto add_var(const var_info& var, const var_kind kind) -> void final {
         std::ignore = declare_var(var, kind);
+
+        tables().scopes.record_if_global(var.name);
     }
 
     //

@@ -3,12 +3,15 @@
 # 'foo', 'if', 'break' and 'continue' jump over bodies of 8.4 KiB (a branch
 # becomes 'j') and 1.08 MiB (a jump becomes 'jump'), compiled with and without
 # the jump optimizer, assembled, linked, their images compared with llvm's and
-# executed under qemu; and that a grown conditional jump, whose 'j' follows the
-# inverted branch, keeps 'j' just inside the reach of 'jal' and becomes 'jump'
-# just outside it, forward and backward
+# executed under qemu; that a conditional branch stays a branch just inside
+# its 4 KiB reach and becomes 'j' just outside it, forward and backward; and
+# that a grown conditional jump, whose 'j' follows the inverted branch, keeps
+# 'j' just inside the reach of 'jal' and becomes 'jump' just outside it,
+# forward and backward
 #
 # usage: test-far-jumps.sh [short]
-#   short   only the 8.4 KiB bodies, which compile in seconds
+#   short   only the 8.4 KiB bodies and the reach of a branch, which compile
+#           in seconds
 set -eE
 # names the failed command; one in a command substitution, where '-e' is off,
 # may fail on purpose, e.g. a 'grep -c' that counts 0
@@ -104,10 +107,6 @@ for optimize in "" "--nopt"; do
     echo ok
 done
 
-if [[ ${1:-} == short ]]; then
-    exit 0
-fi
-
 # writes 'far.baz' and 'far.labels': two forward conditional jumps ('if' to
 # its end) and two backward ('continue' to the start of the loop) over bodies
 # of the given counts of 'pad = 0'; each line of 'far.labels' names the
@@ -187,6 +186,48 @@ print(*spans)
 EOF
 }
 
+# writes 'far.baz', 'far.labels', 'far.s' and 'far.o' with the spans of
+# 'wanted'; a short build measures the code around the bodies, each 'pad = 0'
+# is 4 bytes
+generate_at_spans() {
+    local calibration=1000
+    generate_boundary $calibration $calibration $calibration $calibration
+    "$BIN" far.baz --target=rv32i --bin=far.bin >far.s
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
+    read -ra spans < <(measure_boundary)
+    local counts=()
+    local i
+    for i in 0 1 2 3; do
+        counts+=($((calibration + (wanted[i] - spans[i]) / 4)))
+    done
+    generate_boundary "${counts[@]}"
+    "$BIN" far.baz --target=rv32i --bin=far.bin >far.s
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
+    read -ra spans < <(measure_boundary)
+    [[ ${spans[*]} == "${wanted[*]}" ]]
+}
+
+# a branch reaches 4 KiB - 2 forward and 4 KiB backward from its start, so
+# these spans keep it just inside its reach and grow it just outside: forward
+# 4 KiB - 8 and 4 KiB - 4, backward 4 KiB and 4 KiB + 4
+reach=$((1 << 12))
+wanted=($((reach - 8)) $((reach - 4)) $reach $((reach + 4)))
+
+echo -n "far jumps conditional at the reach of a branch rv32i: "
+generate_at_spans
+mapfile -t jumps < <(cut -d ' ' -f 3 far.labels)
+grep -qE "^ +b[a-z]+ .*, ${jumps[0]}$" far.s
+grown="$(grep -A1 -E '^ +b[a-z]+ .*, \.Lbaz_jump\.[0-9]+$' far.s)"
+grep -qE "^ +j ${jumps[1]}$" <<<"$grown"
+grep -qE "^ +b[a-z]+ .*, ${jumps[2]}$" far.s
+grep -qE "^ +j ${jumps[3]}$" <<<"$grown"
+assemble_and_run
+echo ok
+
+if [[ ${1:-} == short ]]; then
+    exit 0
+fi
+
 # the 'j' of a grown conditional jump starts 4 bytes into its 8-byte line and
 # 'jal' reaches 1 MiB - 2 forward and 1 MiB backward, so these spans put the
 # 'j' just inside and just outside its reach: forward 1 MiB - 8 and 1 MiB - 4,
@@ -194,24 +235,9 @@ EOF
 reach=$((1 << 20))
 wanted=($((reach - 8)) $((reach - 4)) $((reach - 4)) $reach)
 
-# a short build measures the code around the bodies, each 'pad = 0' is 4
-# bytes
-calibration=1000
-generate_boundary $calibration $calibration $calibration $calibration
-"$BIN" far.baz --target=rv32i --bin=far.bin >far.s
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
-read -ra spans < <(measure_boundary)
-counts=()
-for i in 0 1 2 3; do
-    counts+=($((calibration + (wanted[i] - spans[i]) / 4)))
-done
 
 echo -n "far jumps conditional at the reach of jal rv32i: "
-generate_boundary "${counts[@]}"
-"$BIN" far.baz --target=rv32i --bin=far.bin >far.s
-llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj far.s -o far.o
-read -ra spans < <(measure_boundary)
-[[ ${spans[*]} == "${wanted[*]}" ]]
+generate_at_spans
 mapfile -t jumps < <(cut -d ' ' -f 3 far.labels)
 grown="$(grep -A1 -E '^ +b[a-z]+ .*, \.Lbaz_jump\.[0-9]+$' far.s)"
 grep -qE "^ +j ${jumps[0]}$" <<<"$grown"
