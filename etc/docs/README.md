@@ -2248,8 +2248,9 @@ because the machine masks the count to the width of the operation (6 bits for
 a 64-bit one on x86_64, 5 for a narrower one and on rv32i) and a signed
 overflow wraps, also a constant one; an 'array_copy' whose destination
 starts inside its source copies in blocks of the target, e.g. 'array_copy(a,
-a[1], 3)' of '{1, 2, 3, 4}' gives '{1, 1, 2, 2}' on x86_64 with a constant
-count and '{1, 1, 1, 1}' with a run-time one and on rv32i. Such a result
+a[1], 3)' of 'i32[]{1, 2, 3, 4}' gives '{1, 1, 2, 2}' on x86_64 with a
+constant count and '{1, 1, 1, 1}' with a run-time one, on rv32i and with
+elements of the default type. Such a result
 depends on the target, on inlining and on the version kept. With 'noub' each
 of them stops at a panic that names the check, e.g. 'panic: bounds'.
 

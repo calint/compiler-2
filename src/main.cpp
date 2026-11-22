@@ -649,6 +649,7 @@ auto apply_reproduce_source([[maybe_unused]] const std::string_view value,
 }
 
 // one argument of the command line: an option or the source file
+// note: '--help' and '--version' stop the parse, 'parse_options' reads them
 auto parse_option(const std::string_view arg, options& opts) -> void {
     constexpr std::array<command_option, 11> command_options{
         command_option{.name{"--vars="}, .apply{apply_vars}},
@@ -713,10 +714,10 @@ auto print_option_error(const std::string_view message) -> void {
     return static_cast<bool>(std::cout);
 }
 
-// 0 when 'text', named 'what' in the message, reached stdout, else 1 with a
-// message
-[[nodiscard]] auto written_to_stdout(const std::string_view text,
-                                     const std::string_view what) -> int {
+// writes 'text' to stdout; 0 when it reached it, else 1 after a message that
+// names it 'what'
+[[nodiscard]] auto exit_code_after_writing(const std::string_view text,
+                                           const std::string_view what) -> int {
 
     std::cout << text;
 
@@ -738,12 +739,13 @@ auto print_option_error(const std::string_view message) -> void {
             const std::string_view arg{argument};
 
             if (arg == "--help" or arg == "-h") {
-                return written_to_stdout(help_text(args.at(0)), "the help");
+                return exit_code_after_writing(help_text(args.at(0)),
+                                               "the help");
             }
 
             if (arg == "--version") {
-                return written_to_stdout(std::format("baz {}\n", baz_version),
-                                         "the version");
+                return exit_code_after_writing(
+                    std::format("baz {}\n", baz_version), "the version");
             }
 
             parse_option(arg, opts);

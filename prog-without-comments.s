@@ -305,17 +305,8 @@ main:
             jmp baz_exit
         if.38.24.248.5.end:
     func.assert..248.5.end:
-    lea rsi, [rbp + 432]
-    lea rdi, [rbp + 424]
-    mov rcx, 2
-    sal rcx, 2
-    mov r15, rdi
-    sub r15, rsi
-    je .Lbaz_overlap.0
-    cmp r15, rcx
-    jb baz_overlap_line_250
-    .Lbaz_overlap.0:
-    rep movsb
+    mov r15, qword [rbp + 432]
+    mov qword [rbp + 424], r15
     cmp.251.12:
     cmp dword [rbp + 424], 2
     sete r15b
@@ -340,9 +331,9 @@ main:
     lea rsi, [rbp + 428]
     lea rdi, [rbp + 452]
     cmpsq
-    jne .Lbaz_equal.1
+    jne .Lbaz_equal.0
     cmpsd
-    .Lbaz_equal.1:
+    .Lbaz_equal.0:
     sete byte [rbp + 480]
     func.assert..259.5:
         if.38.24.259.5:
@@ -358,9 +349,9 @@ main:
         lea rsi, [rbp + 424]
         lea rdi, [rbp + 448]
         cmpsq
-        jne .Lbaz_equal.2
+        jne .Lbaz_equal.1
         cmpsq
-        .Lbaz_equal.2:
+        .Lbaz_equal.1:
         sete r15b
     test r15b, r15b
     sete r15b
@@ -382,9 +373,9 @@ main:
         lea rsi, [rbp + 424]
         lea rdi, [rbp + 484]
         cmpsq
-        jne .Lbaz_equal.3
+        jne .Lbaz_equal.2
         cmpsq
-        .Lbaz_equal.3:
+        .Lbaz_equal.2:
         sete r15b
     bool.265.12.end:
     func.assert..265.5:
@@ -526,9 +517,9 @@ main:
         lea rsi, [rbp + 520]
         lea rdi, [rbp + 536]
         cmpsq
-        jne .Lbaz_equal.4
+        jne .Lbaz_equal.3
         cmpsq
-        .Lbaz_equal.4:
+        .Lbaz_equal.3:
         sete r15b
     bool.301.12.end:
     func.assert..301.5:
@@ -545,9 +536,9 @@ main:
         lea rsi, [rbp + 520]
         lea rdi, [rbp + 536]
         cmpsq
-        jne .Lbaz_equal.5
+        jne .Lbaz_equal.4
         cmpsq
-        .Lbaz_equal.5:
+        .Lbaz_equal.4:
         setne r15b
     bool.306.12.end:
     func.assert..306.5:
@@ -990,14 +981,7 @@ main:
     func.assert..382.5.end:
     lea rsi, [rbp + 816]
     lea rdi, [rbp + 752]
-    mov rcx, 8
-    sal rcx, 3
-    mov r15, rdi
-    sub r15, rsi
-    je .Lbaz_overlap.6
-    cmp r15, rcx
-    jb baz_overlap_line_384
-    .Lbaz_overlap.6:
+    mov rcx, 64
     rep movsb
     cmp.391.12:
     cmp qword [rbp + 760], 65518
@@ -1324,23 +1308,6 @@ baz_frame_overflow:
 section .rodata
 baz_frame_overflow_message:
 db `\npanic: frame overflow\n`
-section .text
-baz_overlap_line_250:
-    mov rbp, 250
-    jmp baz_overlap_panic_file_0
-baz_overlap_line_384:
-    mov rbp, 384
-baz_overlap_panic_file_0:
-    mov rax, 1
-    mov rdi, 2
-    lea rsi, [baz_overlap_panic_file_0_message]
-    mov rdx, 28
-    syscall
-    mov rbx, 251
-    jmp baz_report_line
-section .rodata
-baz_overlap_panic_file_0_message:
-db `\npanic: overlap at prog.baz:`
 section .text
 baz_overflow_line_55:
     mov rbp, 55

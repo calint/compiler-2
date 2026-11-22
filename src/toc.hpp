@@ -1400,9 +1400,9 @@ class storage_layout final {
         : machine_{backend}, scopes_{scopes}, data_{data},
           vars_capacity_bytes_{vars_capacity_bytes} {
 
-        // note: 'main' rejects a '--vars' that reaches what the target
-        //       addresses; the dats with it stay below it too
-        //       ('assert_dats_and_vars_fit_target')
+        // note: the driver rejects a '--vars' that reaches what the target
+        //       addresses ('check_vars_fit_target' in 'main.cpp'); the dats
+        //       with it stay below it too ('assert_dats_and_vars_fit_target')
 
         assert(vars_capacity_bytes < backend.max_storage_bytes());
     }

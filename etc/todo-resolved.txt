@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 589 (2026-11-22, bug hunt: the claims of the docs
+    against the compiler; design: storage layout; readability: a newcomer
+    walks 'main.cpp')
+    => bug hunt: about 320 claims of 'etc/docs/README.md', the tutorial,
+       the parts of 'README.md' and '--help' tested on the targets they
+       name (option bounds and defaults, limits, panics, exit codes, the
+       target differences of chapter 8, 150 rules of acceptance): one
+       example was wrong, the overlapping 'array_copy' of 8.2 gives
+       '{1, 1, 2, 2}' on x86_64 only for elements of 4 bytes or less, the
+       default type gives '{1, 1, 1, 1}' (the example names 'i32' and
+       adds the case); 'README.md' and the listings of 'prog.baz' were
+       last written on 2026-11-12 (844 instructions, now 820), written
+       again
+    => design: no change; one mechanism places a variable from one of two
+       bases, alignment and the reuse after a block are one rule each;
+       the note of 'storage_layout' names the driver check of round 588;
+       pointing the x86_64 variables base at 'vars' as rv32i does would
+       leave one convention (-176 B over 413 tests), for round 590
+    => readability: 'written_to_stdout' renamed 'exit_code_after_writing',
+       it writes and returns the exit code; '--help' and '--version' stop
+       the parse before 'parse_option'; 48 functions, 2 predictions wrong
 [x] easy: round 588 (2026-11-22, bug hunt: unsized array parameters;
     design: the driver 'main.cpp'; readability: a newcomer walks
     'stmt_def_func.hpp')

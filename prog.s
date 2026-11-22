@@ -719,33 +719,13 @@ main:
     func.assert..248.5.end:
 ;       [prog.baz:248:5] free scratch register r15
 ;   [prog.baz:250:5] array_copy(arr[2], arr, 2)
-;   [prog.baz:250:5] allocate named register rsi
-;   [prog.baz:250:5] allocate named register rdi
-;   [prog.baz:250:5] allocate named register rcx
 ;   [prog.baz:250:16] arr[2]
-    lea rsi, [rbp + 432]
 ;   [prog.baz:250:24] arr
-    lea rdi, [rbp + 424]
-;   [prog.baz:250:29] rcx = 2
-;   [prog.baz:250:29] src: folded constant '2'
-    mov rcx, 2
-    sal rcx, 2
-;   [prog.baz:250:5] overlap check begin
+;   [prog.baz:250:5] 1 part, use mov
 ;   [prog.baz:250:5] allocate scratch register -> r15
-    mov r15, rdi
-    sub r15, rsi
-;   [prog.baz:250:5] the same range is not an overlap
-    je .Lbaz_overlap.0
-;   [prog.baz:250:5] destination starts inside the source
-    cmp r15, rcx
-    jb baz_overlap_line_250
-    .Lbaz_overlap.0:
-;   [prog.baz:250:5] overlap check end
+    mov r15, qword [rbp + 432]
+    mov qword [rbp + 424], r15
 ;   [prog.baz:250:5] free scratch register r15
-    rep movsb
-;   [prog.baz:250:5] free named register rcx
-;   [prog.baz:250:5] free named register rdi
-;   [prog.baz:250:5] free named register rsi
 ;   [prog.baz:251:5] assert(arr[0] == 2)
 ;   [prog.baz:251:12] allocate scratch register -> r15
 ;   [prog.baz:251:12] ? arr[0] == 2
@@ -803,9 +783,9 @@ main:
     lea rsi, [rbp + 428]
     lea rdi, [rbp + 452]
     cmpsq
-    jne .Lbaz_equal.1
+    jne .Lbaz_equal.0
     cmpsd
-    .Lbaz_equal.1:
+    .Lbaz_equal.0:
     sete byte [rbp + 480]
 ;   [prog.baz:256:14] free named register rdi
 ;   [prog.baz:256:14] free named register rsi
@@ -845,9 +825,9 @@ main:
         lea rsi, [rbp + 424]
         lea rdi, [rbp + 448]
         cmpsq
-        jne .Lbaz_equal.2
+        jne .Lbaz_equal.1
         cmpsq
-        .Lbaz_equal.2:
+        .Lbaz_equal.1:
         sete r15b
 ;       [prog.baz:262:16] free named register rdi
 ;       [prog.baz:262:16] free named register rsi
@@ -893,9 +873,9 @@ main:
         lea rsi, [rbp + 424]
         lea rdi, [rbp + 484]
         cmpsq
-        jne .Lbaz_equal.3
+        jne .Lbaz_equal.2
         cmpsq
-        .Lbaz_equal.3:
+        .Lbaz_equal.2:
         sete r15b
 ;       [prog.baz:265:12] free named register rdi
 ;       [prog.baz:265:12] free named register rsi
@@ -1226,9 +1206,9 @@ main:
         lea rsi, [rbp + 520]
         lea rdi, [rbp + 536]
         cmpsq
-        jne .Lbaz_equal.4
+        jne .Lbaz_equal.3
         cmpsq
-        .Lbaz_equal.4:
+        .Lbaz_equal.3:
         sete r15b
 ;       [prog.baz:301:12] free named register rdi
 ;       [prog.baz:301:12] free named register rsi
@@ -1266,9 +1246,9 @@ main:
         lea rsi, [rbp + 520]
         lea rdi, [rbp + 536]
         cmpsq
-        jne .Lbaz_equal.5
+        jne .Lbaz_equal.4
         cmpsq
-        .Lbaz_equal.5:
+        .Lbaz_equal.4:
         setne r15b
 ;       [prog.baz:306:12] free named register rdi
 ;       [prog.baz:306:12] free named register rsi
@@ -2281,29 +2261,14 @@ main:
     func.assert..382.5.end:
 ;       [prog.baz:382:5] free scratch register r15
 ;   [prog.baz:384:5] array_copy( worlds[1].locations, worlds[0].locations, array_length(worlds[0].locations) )
+;   [prog.baz:385:9] worlds[1].locations
+;   [prog.baz:386:9] worlds[0].locations
 ;   [prog.baz:384:5] allocate named register rsi
 ;   [prog.baz:384:5] allocate named register rdi
 ;   [prog.baz:384:5] allocate named register rcx
-;   [prog.baz:385:9] worlds[1].locations
     lea rsi, [rbp + 816]
-;   [prog.baz:386:9] worlds[0].locations
     lea rdi, [rbp + 752]
-;   [prog.baz:387:9] rcx = 8
-;   [prog.baz:387:9] src: folded constant 'array_length(worlds[0].locations)'
-    mov rcx, 8
-    sal rcx, 3
-;   [prog.baz:384:5] overlap check begin
-;   [prog.baz:384:5] allocate scratch register -> r15
-    mov r15, rdi
-    sub r15, rsi
-;   [prog.baz:384:5] the same range is not an overlap
-    je .Lbaz_overlap.6
-;   [prog.baz:384:5] destination starts inside the source
-    cmp r15, rcx
-    jb baz_overlap_line_384
-    .Lbaz_overlap.6:
-;   [prog.baz:384:5] overlap check end
-;   [prog.baz:384:5] free scratch register r15
+    mov rcx, 64
     rep movsb
 ;   [prog.baz:384:5] free named register rcx
 ;   [prog.baz:384:5] free named register rdi
@@ -3178,25 +3143,6 @@ section .rodata
 baz_frame_overflow_message:
 db `\npanic: frame overflow\n`
 section .text
-; overlap failure handler (--checks=overlap)
-baz_overlap_line_250:
-    mov rbp, 250
-    jmp baz_overlap_panic_file_0
-baz_overlap_line_384:
-    mov rbp, 384
-baz_overlap_panic_file_0:
-;    print message to stderr
-    mov rax, 1
-    mov rdi, 2
-    lea rsi, [baz_overlap_panic_file_0_message]
-    mov rdx, 28
-    syscall
-    mov rbx, 251
-    jmp baz_report_line
-section .rodata
-baz_overlap_panic_file_0_message:
-db `\npanic: overlap at prog.baz:`
-section .text
 ; overflow failure handler (--checks=overflow)
 baz_overflow_line_55:
     mov rbp, 55
@@ -3419,7 +3365,7 @@ vars.end:
 ;                    factorial: 1 body, 2 calls, 29 instructions
 ;                    print_num: 1 body, 2 calls, 65 instructions
 ;
-;   removed jumps to next code: 75
+;   removed jumps to next code: 74
 ;    removed unreachable jumps: 2
 ; removed same target branches: 0
 ; inverted branches over jumps: 7
@@ -3431,7 +3377,7 @@ vars.end:
 ;                     dat size: 376 B
 ;              dat var padding: 8 B
 ;           max body vars size: 1045 B
-;                 instructions: 844
+;                 instructions: 820
 ;
 ; register use at the peak: 6 of 13 registers live, 2 named by instructions
 ;
