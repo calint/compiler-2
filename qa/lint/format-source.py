@@ -124,7 +124,7 @@ def special_rank(m):
     return None
 
 
-def is_defaulted_special(m):
+def is_defaulted_or_deleted_special(m):
     # e.g. 'expr_any() = default;' or 'auto operator=(x&&) -> x& = delete;'
     if not is_function(m) or special_rank(m) is None:
         return False
@@ -141,7 +141,7 @@ def is_constructor(m, class_name):
     if c.kind == K.FUNCTION_TEMPLATE:
         return c.spelling == class_name
 
-    return c.kind == K.CONSTRUCTOR and not is_defaulted_special(m)
+    return c.kind == K.CONSTRUCTOR and not is_defaulted_or_deleted_special(m)
 
 
 #
@@ -221,7 +221,8 @@ def types_group(types):
 
 
 def top_lines(members):
-    # types are set apart, fields keep their source spacing
+    # the members at the top of a class body: types are set apart, fields keep
+    # their source spacing
     lines = []
     prev = None
     for m in members:
@@ -238,8 +239,8 @@ def top_lines(members):
 #
 
 
-def body_lines(cursor):
-    # the line of the opening brace and the line of the closing brace
+def brace_lines(cursor):
+    # the 0-based indexes of the lines of the opening and the closing brace
     for token in cursor.get_tokens():
         if token.spelling == "{":
             return token.location.line - 1, cursor.extent.end.line - 1
@@ -269,8 +270,9 @@ def is_class_definition(cursor):
     return cursor.kind in CLASS_KINDS and cursor.is_definition()
 
 
-def member_cursors(cursor, open_n, close_n):
-    # declarations sharing lines e.g. 'int a, b;' become one member
+def member_extents(cursor, open_n, close_n):
+    # the first cursor, first and last line of each member; declarations
+    # sharing lines e.g. 'int a, b;' become one member
     groups = []
     for c in cursor.get_children():
         if c.kind == K.CXX_ACCESS_SPEC_DECL:
@@ -296,7 +298,7 @@ def declaration_lines(cursor, lines, start, end):
     if not is_class_definition(cursor):
         return lines[start : end + 1]
 
-    open_n, close_n = body_lines(cursor)
+    open_n, close_n = brace_lines(cursor)
 
     # a body on one line, e.g. 'struct tag {};', has nothing to lay out
     if open_n == close_n:
@@ -338,7 +340,7 @@ def class_members(cursor, lines, open_n, close_n):
     members = []
     accesses = written_accesses(cursor)
     prev_end = open_n
-    for c, start, end in member_cursors(cursor, open_n, close_n):
+    for c, start, end in member_extents(cursor, open_n, close_n):
         # the lines between members belong to the next one, except the labels
         # that are emitted anew
         gap = [l for l in lines[prev_end + 1 : start] if not ACCESS_LABEL.match(l)]
@@ -398,7 +400,7 @@ def sections_by_access(members):
 
 
 def referenced_usrs(cursor):
-    # types, constants and fields that a member names
+    # the declarations a member names: types, constants, fields and functions
     for c in cursor.walk_preorder():
         if c.kind not in REFERENCE_KINDS:
             continue
@@ -407,7 +409,7 @@ def referenced_usrs(cursor):
             yield c.referenced.get_usr()
 
 
-def needed_accesses(private_data, members):
+def needed_accesses(private_data_and_types, members):
     # the accesses of non-private types that the private data refers to,
     # directly or through other such types
     types = {
@@ -418,7 +420,7 @@ def needed_accesses(private_data, members):
 
     accesses = set()
     seen = set()
-    pending = [m.cursor for m in private_data]
+    pending = [m.cursor for m in private_data_and_types]
     while pending:
         for usr in referenced_usrs(pending.pop()):
             if usr in seen or usr not in types:
@@ -444,7 +446,7 @@ def by_name(functions):
 
 
 def is_lifecycle(m, class_name):
-    if is_constructor(m, class_name) or is_defaulted_special(m):
+    if is_constructor(m, class_name) or is_defaulted_or_deleted_special(m):
         return True
 
     return m.cursor.kind == K.DESTRUCTOR
@@ -452,9 +454,10 @@ def is_lifecycle(m, class_name):
 
 def lifecycle_group(members, class_name):
     # constructors, then the defaulted and deleted special members without
-    # blank lines, then the destructors set apart
+    # blank lines, then the defaulted virtual destructor and the written
+    # destructor, each set apart
     members, constructors = take(members, lambda m: is_constructor(m, class_name))
-    members, specials = take(members, is_defaulted_special)
+    members, specials = take(members, is_defaulted_or_deleted_special)
     specials.sort(key=special_rank)
     specials, virtual_destructors = take(specials, is_virtual_destructor)
 
@@ -571,7 +574,7 @@ def format_section(members, lifecycle, class_name, leading_methods, indent):
 
 
 def format_body(cursor, lines):
-    open_n, close_n = body_lines(cursor)
+    open_n, close_n = brace_lines(cursor)
     members = class_members(cursor, lines, open_n, close_n)
     if not members:
         return lines[open_n + 1 : close_n]
@@ -590,7 +593,7 @@ def format_body(cursor, lines):
     # functions go to the bottom sorted by name after the constructors and
     # destructors
     private = [m for m in members if m.access == "private"]
-    private_data, private_functions = take(private, is_function)
+    private_data_and_types, private_functions = take(private, is_function)
     private_functions, private_lifecycle = take(
         private_functions, lambda m: is_lifecycle(m, class_name)
     )
@@ -599,7 +602,7 @@ def format_body(cursor, lines):
 
     # the needed types of other accesses come first, then the private types
     # and fields in source order, each after what it refers to
-    needed = needed_accesses(private_data, members)
+    needed = needed_accesses(private_data_and_types, members)
     top_types = []
     for access in ("public", "protected"):
         if access not in needed:
@@ -610,7 +613,7 @@ def format_body(cursor, lines):
         )
         top_types += sorted(types, key=type_rank)
 
-    top = ordered_types(top_types + private_data, lambda m: 0)
+    top = ordered_types(top_types + private_data_and_types, lambda m: 0)
     body_sections = [[a, top_lines(t)] for a, t in sections_by_access(top)]
 
     # the constructors and destructors of all public sections open the first
@@ -750,6 +753,7 @@ def nested_type(reference):
 
 
 def is_derived(usr, base_usr, bases):
+    # also true for the class itself
     pending = [usr]
     seen = set()
     while pending:
@@ -942,6 +946,7 @@ class block:
             return False
 
         start = self.function.extent.start.line - 1
+        # a template head on a line of its own is not part of the signature
         while self.lines[start].lstrip().startswith("template"):
             start += 1
 
@@ -1112,6 +1117,8 @@ def rule_return_by_block(b, wants, want):
     # a return has a blank line above it when a gap between the statements
     # before it has one, otherwise it stays with them; runs after the other
     # rules because their wants decide which gaps are blank
+    # the branches of a switch are set apart, which would set apart every
+    # return in them; the returns of a switch body keep their gaps
     if any(s.after_label for s in b.stmts):
         return
 
@@ -1205,9 +1212,9 @@ DESIGNATOR = re.compile(r"\s*\.[A-Za-z_]\w*\s*[{=]")
 TABLE_ROW = re.compile(r"^(\w[\w:<>]*)?\{\..*\},?$")
 
 
-# a quote inside a number, e.g. '0xffff'f000', not the start of a character
-# literal, which may have a prefix of letters, e.g. 'u8'x''
 def is_digit_separator(text, i):
+    # a quote inside a number, e.g. '0xffff'f000', not the start of a character
+    # literal, which may have a prefix of letters, e.g. 'u8'x''
     start = i
     while start > 0 and (text[start - 1].isalnum() or text[start - 1] in "_'"):
         start -= 1
@@ -1216,8 +1223,8 @@ def is_digit_separator(text, i):
 
 
 def designated_commas(text):
-    # the positions after the last token of each designated initializer that
-    # has no trailing comma, comments and literals are skipped
+    # the text with a comma after the last token of each designated initializer
+    # that has none, except a table row; comments and literals are skipped
     inserts = []
     stack = []
     last = -1
@@ -1262,9 +1269,6 @@ def designated_commas(text):
         i += 1
 
     lines = text.split("\n")
-    starts = [0]
-    for line in lines:
-        starts.append(starts[-1] + len(line) + 1)
 
     def line_of(pos):
         return text.count("\n", 0, pos)
@@ -1320,9 +1324,9 @@ def is_block_start(line):
 
 def class_member_ends(cursor):
     # the last lines of the members of a class and of its nested classes
-    open_n, close_n = body_lines(cursor)
+    open_n, close_n = brace_lines(cursor)
     ends = set()
-    for c, _, end in member_cursors(cursor, open_n, close_n):
+    for c, _, end in member_extents(cursor, open_n, close_n):
         ends.add(end)
         if is_class_definition(c):
             ends |= class_member_ends(c)

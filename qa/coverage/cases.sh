@@ -8523,3 +8523,7 @@ SRC=7760 && COMPERR
 # the whitespace after the line end that ends a '[' or an 'if' is written back
 # by '--reproduce-source'
 SRC=8020 && EXP=0 && RUN
+
+# the line of a failed check is printed with every decimal place below its
+# first, a zero inside too, here line 1203
+SRC=8060 && EXP=255 && RUN_ERR

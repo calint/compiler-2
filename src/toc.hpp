@@ -1205,13 +1205,13 @@ class scope_stack final {
 
     // the body being parsed passes its result to a 'mut' parameter
     auto record_result_passed_as_mut() -> void {
-        func_scope().body_uses_of_func().mark_result_passed_as_mut();
+        current_func_scope().body_uses_of_func().mark_result_passed_as_mut();
     }
 
     // a 'return' of the innermost function is compiled, see
     // 'func_reach'
     auto record_return() -> void {
-        func_scope().reach_of_func().is_left_by_return = true;
+        current_func_scope().reach_of_func().is_left_by_return = true;
     }
 
     // records 'storage' when its root is a global, a parameter or the result
@@ -1220,7 +1220,7 @@ class scope_stack final {
     auto record_storage_use(const storage_path& storage, const bool is_written)
         -> void {
 
-        scope& func{func_scope()};
+        scope& func{current_func_scope()};
 
         if (storage.root.is_global()) {
             func.body_uses_of_func().add_global(storage, is_written);
@@ -1254,7 +1254,7 @@ class scope_stack final {
             scopes_.at(*state.loop_index).reach_of_loop() = state.loop;
         }
 
-        func_scope().reach_of_func() = state.func;
+        current_func_scope().reach_of_func() = state.func;
     }
 
     // see 'compile_toc::is_reachable'
@@ -1263,11 +1263,11 @@ class scope_stack final {
             return;
         }
 
-        func_scope().reach_of_func().is_reachable = is_reachable;
+        current_func_scope().reach_of_func().is_reachable = is_reachable;
     }
 
   private:
-    [[nodiscard]] auto func_scope() -> scope& {
+    [[nodiscard]] auto current_func_scope() -> scope& {
         return scopes_.at(func_scope_index());
     }
 

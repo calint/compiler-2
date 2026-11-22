@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 583 (2026-11-22, bug hunt: the runtime routines and the
+    start and exit of each target; design: the scopes of 'toc.hpp';
+    readability: a newcomer walks the formatter)
+    => bug hunt: no defect; exit codes of every width at every depth on
+       the four targets, 13 kinds of failure in main, inlined and noinline
+       code in included files with odd names, byte-equal on the targets
+       (about 2400 runs), panic lines up to 10^7, frame, stack and sd card
+       panics; 22000 compiles of random sets of features checked that
+       every runtime routine is emitted exactly when used; 7 mutants, 6
+       caught, one equivalent; test 8060 panics on line 1203, the suite
+       had no line above 14 and missed a wrong place of the rv32i table
+       of line digits; x86_64 'sector_read' alone emits a jump to the next
+       line that the optimizer removes, rv32i leaves it out
+    => design: no change; push and pop of a scope are paired by RAII, one
+       lookup routine; the private 'func_scope' is an overload of
+       'current_func_scope', as 'innermost_loop' is
+    => readability: four names of the formatter say what they hold
+       ('brace_lines', 'member_extents',
+       'is_defaulted_or_deleted_special', 'private_data_and_types'); three
+       wrong comments fixed, four reasons added, an unused list removed;
+       78 functions, 12 predictions wrong
 [x] easy: round 582 (2026-11-22, bug hunt: the test scripts against
     their contracts; design: the formatter; readability: a newcomer walks
     'assembler.hpp')
