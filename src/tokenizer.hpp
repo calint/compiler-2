@@ -34,6 +34,8 @@ class tokenizer final {
     size_t at_line_{1};
     size_t file_ix_{}; // index of the source file of 'src_'
 
+    // 'whitespace_chars', then the characters that start a punctuation, an
+    // operator or a comment
     static constexpr std::string_view delimiters_{
         " \t\r\n(){}[]=,.:+-*/%&|^<>!~#",
     };
@@ -480,7 +482,7 @@ class tokenizer final {
                 continue;
             }
 
-            if (not std::string_view{" \t\r\n"}.contains(ch)) {
+            if (not whitespace_chars.contains(ch)) {
                 break;
             }
 

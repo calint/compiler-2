@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 546, consistency) the whitespace set " \t\r\n" is
+    spelled in five places: 'tokenizer::delimiters_',
+    'tokenizer::next_whitespace', 'one_line_source::is_ascii_space',
+    'located_in_text' and 'trimmed_line_at' (" \t\r", a line has no
+    '\n'); one constant in 'token.hpp' would name it once
+    => done (2026-11-23): 'whitespace_chars' in 'token.hpp', read by
+       'next_whitespace', 'one_line_source' (its 'is_ascii_space' removed)
+       and 'located_in_text'; 'delimiters_' starts with the same set, its
+       comment says so; 'trimmed_line_at' no longer exists; listings equal
 [x] easy: (round 557, qa) the case helper 'DIFFINP2' (7 cases) feeds one
     line per read; a name such as 'DIFFLINES' would say so
     => done (2026-11-23): 'DIFFINP2' is 'DIFFLINES', after the

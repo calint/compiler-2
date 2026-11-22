@@ -800,7 +800,7 @@ struct source_line {
         return where;
     }
 
-    const size_t last{src.find_last_not_of(" \t\r\n")};
+    const size_t last{src.find_last_not_of(whitespace_chars)};
 
     // note: an error at the end follows a token of the file, so the file is
     //       not only whitespace

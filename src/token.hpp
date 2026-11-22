@@ -16,6 +16,9 @@
 #include <string_view>
 #include <system_error>
 
+// the characters that separate tokens besides comments
+inline constexpr std::string_view whitespace_chars{" \t\r\n"};
+
 // the names that have a meaning for the compiler, most of them a program
 // cannot use for what it defines
 namespace reserved_names {

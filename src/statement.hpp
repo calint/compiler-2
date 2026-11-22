@@ -61,7 +61,7 @@ class one_line_source final {
                 continue;
             }
 
-            if (is_ascii_space(ch)) {
+            if (whitespace_chars.contains(ch)) {
                 pending_space = true;
                 ++index;
                 continue;
@@ -160,10 +160,6 @@ class one_line_source final {
 
         return newline + 1;
         // note: +1 because the line end belongs to the comment
-    }
-
-    [[nodiscard]] static auto is_ascii_space(const char ch) -> bool {
-        return ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r';
     }
 };
 
