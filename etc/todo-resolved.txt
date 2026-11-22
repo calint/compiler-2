@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 573 (2026-11-22, bug hunt: aliases and type parameters
+    bound to types; design: the bookkeeping of registers; readability: a
+    newcomer walks 'program.hpp')
+    => bug hunt: no defect; 1850 programs written with aliases, generic
+       methods and functions and again with the types by hand, about
+       22000 compile and run pairs on the targets, 50 probes; 19 mutants,
+       14 caught, 2 equivalent; tests 7900 ('T(5)' with 'T' bound to a
+       user type and a function 'T') and 7901 (the arguments of a base see
+       names defined after the base) catch the other two
+    => design: 'held_registers::release' holds the loop and the destructor
+       calls it, 'free_all' is gone (listings equal); one owner of free
+       registers, release by scope except two begin and end pairs whose
+       miss an assert catches; a free comment at the place of its
+       allocation is a todo item (listings)
+    => readability: 'source_to' writes a file back equal to its text;
+       'parse_definitions' also records the end of the file; 19 functions,
+       2 predictions wrong
 [x] easy: round 572 (2026-11-22, bug hunt: globals and their order at
     program start; design: 'program.hpp' after the include change;
     readability: a newcomer walks 'source_files.hpp')

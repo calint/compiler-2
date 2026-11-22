@@ -1,0 +1,21 @@
+# the arguments of a base see the names defined before the type based on it,
+# also those defined after the base, e.g. 'pair' of 'list<pair, c>'
+type list<T type, c> {
+    items T[c],
+    len,
+}
+
+type pair {
+    a,
+    b,
+}
+
+type pairs<c> = list<pair, c>
+
+type ps = pairs<3>
+
+func main() {
+    var v = ps
+    v.items[2].b = 7
+    exit(v.items[2].b + array_length(v.items))
+}

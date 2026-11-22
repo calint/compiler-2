@@ -1,0 +1,18 @@
+# a generic parameter bound to a user type hides a function of its name,
+# 'T(5)' does not call the function
+type point {
+    x,
+}
+
+func T(x) res {
+    res = x + 1
+}
+
+func f<T type>(a T) res {
+    res = T(5) + a.x
+}
+
+func main() {
+    var p = point
+    exit(f(p))
+}

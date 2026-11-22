@@ -478,7 +478,7 @@ class machine {
                 return;
             }
 
-            free_all();
+            release();
         }
 
         // a register that the calling convention fixes, held until the scope
@@ -515,16 +515,10 @@ class machine {
             return registers_;
         }
 
-        // frees the registers before the scope ends, e.g. before a call
-        // that would save them as live
+        // frees the registers in reverse, they are the top of the pool; also
+        // before the scope ends, e.g. before a call that would save them as
+        // live
         auto release() -> void {
-            free_all();
-            registers_.clear();
-        }
-
-      private:
-        // frees the registers in reverse, they are the top of the pool
-        auto free_all() -> void {
             for (const operand& reg : registers_ | std::views::reverse) {
                 // note: the backend releases its own registers by name
                 assert(machine_.state_.registers.top().holder !=
@@ -534,6 +528,8 @@ class machine {
 
                 machine_.pop_allocation(site_, index);
             }
+
+            registers_.clear();
         }
     };
 

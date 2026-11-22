@@ -10,6 +10,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 573, listings) 'held_registers' could write its "free
+    ... register" comment at the place the register was allocated, as
+    'operation_scope' does, and its 22 constructions would drop their
+    'emit_site' argument (3 in 'stmt_call.hpp' pass 'tc.indent() + 1');
+    the code is equal, the place or indent of free comments differs in
+    4202 compiles of 'compare-listings.sh', e.g. '[7860.baz:8:13] free
+    scratch register r15' becomes '[7860.baz:8:30] ...'
 [ ] easy: (round 572, tests) no test sees the zeroing of globals: every
     target the suite runs starts the variable storage at zero, so dropping
     the zeroing code of globals and their padding would pass; e.g. the

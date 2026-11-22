@@ -5988,6 +5988,13 @@ SRC=1860 && COMPERR
 SRC=1861 && EXP=17 && RUN
 SRC=1862 && EXP=7 && RUN
 
+# a generic parameter bound to a user type hides a function of its name,
+# 'T(5)' is rejected, not a call
+SRC=7900 && COMPERR
+
+# the arguments of a base see the names defined before the type based on it
+SRC=7901 && EXP=10 && RUN
+
 # an array length that does not fit the default type is rejected on rv32i
 if [[ $MACHINE != x86_64 ]]; then SRC=1863 && OPTS="--vars=0x80001000" COMPERR; fi
 

@@ -291,7 +291,7 @@ class program final {
         x.write_assembly(os);
     }
 
-    // writes the source of the statements parsed from a file
+    // writes a file back from its statements and its end, equal to its text
     auto source_to(const size_t file_ix, std::ostream& os) const -> void {
         for (const parsed_file& parsed : parsed_files_) {
             if (parsed.file_ix != file_ix) {
@@ -413,7 +413,7 @@ class program final {
         };
     }
 
-    // the definitions after the includes, 'tk' is the first of them
+    // the definitions after the includes, from 'tk', then the end of the file
     static auto parse_definitions(parse_toc& tc, open_file& file, token tk)
         -> void {
 
