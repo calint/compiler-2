@@ -1378,10 +1378,10 @@ class storage_layout final {
     std::reference_wrapper<scope_stack> scopes_;
     std::reference_wrapper<const data_table> data_;
     size_t vars_capacity_bytes_{};
-    // the most bytes of variables in use while one body is compiled: the
-    // globals with 'main' or with one noinline body, its inlined calls
-    // included; the frames of noinline calls stack at run time, which
-    // '--checks=frame' checks
+    // the most bytes of variables in use at once in the compile: the globals
+    // with 'main' or with one noinline body, its inlined calls included; the
+    // frames of noinline calls stack at run time, which '--checks=frame'
+    // checks
     size_t max_body_vars_size_bytes_{};
     // the most bytes of variables in the frame being compiled, see
     // 'begin_frame'
@@ -1415,7 +1415,7 @@ class storage_layout final {
         const size_t var_alignment{var_storage_alignment(var)};
 
         // note: a frame base and 'dat' are both aligned
-        const storage_location location{find_storage_location()};
+        const storage_location location{next_storage_location()};
         const size_t next_offset_bytes{location.next_offset_bytes};
 
         const size_t padding_bytes{
@@ -1450,7 +1450,7 @@ class storage_layout final {
         std::get<in_storage>(var.placement).address = address;
 
         if (location.is_in_frame) {
-            // note: the frame is within the data and variables checked above
+            // note: the frame's bytes are part of the variables checked above
 
             max_frame_size_bytes_ = std::max(
                 sum_storage_size(next_offset_bytes, allocated_size_bytes),
@@ -1482,7 +1482,7 @@ class storage_layout final {
     // called before a scope with a frame is pushed; the frames do not nest,
     // a noinline body is compiled after the body that calls it
     auto begin_frame() -> void {
-        assert(not find_storage_location().is_in_frame);
+        assert(not next_storage_location().is_in_frame);
 
         max_frame_size_bytes_ = 0;
     }
@@ -1493,7 +1493,7 @@ class storage_layout final {
 
     // asked inside a noinline body, which has a frame
     [[nodiscard]] auto max_frame_size_bytes() const -> size_t {
-        assert(find_storage_location().is_in_frame);
+        assert(next_storage_location().is_in_frame);
 
         return max_frame_size_bytes_;
     }
@@ -1507,7 +1507,7 @@ class storage_layout final {
         // note: no built-in type is wider than an address
         //       ('parse_toc::get_type_or_throw'), so no type is aligned past it
 
-        const storage_location location{find_storage_location()};
+        const storage_location location{next_storage_location()};
 
         const size_t aligned_offset_bytes{
             align_storage_size(location.next_offset_bytes, frame_alignment),
@@ -1595,30 +1595,19 @@ class storage_layout final {
         };
     }
 
-    // the storage 'offset_from_dat' bytes past the label 'dat': the
-    // variables base is 'dat' unless the target puts it past the label
-    // 'vars', which makes the dats negative and the variables start below
-    // the base
-    [[nodiscard]] auto address_past_dat(const size_t offset_from_dat) const
+    // the storage 'offset_bytes' past the label 'dat': the variables base
+    // points 'variables_base_past_vars_bytes' past the label 'vars', which
+    // makes the dats negative
+    [[nodiscard]] auto address_past_dat(const size_t offset_bytes) const
         -> storage_address {
 
-        const int64_t offset{address_offset(offset_from_dat)};
+        const int64_t offset{address_offset(offset_bytes)};
 
         const ::machine& x{machine_.get()};
 
-        const std::optional<size_t> past_vars_bytes{
-            x.variables_base_past_vars_bytes(),
-        };
-
-        if (not past_vars_bytes) {
-            return {
-                .base_register{x.variables_base_register()},
-                .offset{offset},
-            };
-        }
-
         const size_t shift_bytes{
-            sum_storage_size(vars_start_bytes(), *past_vars_bytes),
+            sum_storage_size(vars_start_bytes(),
+                             x.variables_base_past_vars_bytes()),
         };
 
         const int64_t shift{address_offset(shift_bytes)};
@@ -1673,7 +1662,7 @@ class storage_layout final {
     // a local starts after the storage in use of the nearest scope with a
     // frame and of the scopes inside it, any other variable after the dats
     // and the variables in use
-    [[nodiscard]] auto find_storage_location() const -> storage_location {
+    [[nodiscard]] auto next_storage_location() const -> storage_location {
         const std::vector<scope>& scopes{scopes_.get().all()};
         size_t local_size_bytes{};
 
@@ -1697,7 +1686,7 @@ class storage_layout final {
         };
     }
 
-    // bytes of variables, without the dats and the padding after them
+    // bytes of the variables of every scope, a frame's too, not the dats
     [[nodiscard]] auto used_vars_size_bytes() const -> size_t {
         size_t total_bytes{};
 

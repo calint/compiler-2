@@ -81,9 +81,10 @@ def placement_offsets(assembly):
     # Declarations are commented as '; [main.baz:5:9] name: i8[3] (3 B @ [rbp + 16])';
     # returns each name's offsets from rbp in declaration order.
     offsets = {}
-    pattern = r";\s*\[[^\]]+:\d+:\d+\] (\w+): \S+ \(\d+ B @ \[rbp(?: \+ (\d+))?\]\)"
-    for name, offset in re.findall(pattern, assembly):
-        offsets.setdefault(name, []).append(int(offset or 0))
+    pattern = r";\s*\[[^\]]+:\d+:\d+\] (\w+): \S+ \(\d+ B @ \[rbp(?: ([+-]) (\d+))?\]\)"
+    for name, sign, offset in re.findall(pattern, assembly):
+        value = int(offset or 0)
+        offsets.setdefault(name, []).append(-value if sign == "-" else value)
     return offsets
 
 
@@ -109,7 +110,7 @@ def compile_source(directory, source, vars_size, options):
 with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
     directory = Path(temporary)
     # Each layout is (global data source, extra runtime assertions, data bytes,
-    # expected data offsets from 'rbp').
+    # expected data offsets from the label 'dat').
     # Ten bytes, including three padding bytes that align 'second', need six
     # bytes of alignment padding before vars; sixteen need none.
     layouts = {
@@ -212,12 +213,14 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                 result = compile_source(directory, source, vars_size, options)
                 assert result.returncode == 0, result.stderr
                 offsets = placement_offsets(result.stdout)
-                # vars start at the data end rounded up to 16 bytes
-                assert offsets["first_local"] == [(data_size + 15) // 16 * 16], offsets
+                # rbp points at vars, which start at the data end rounded up
+                # to 16 bytes, so the data is below rbp
+                vars_start = (data_size + 15) // 16 * 16
+                assert offsets["first_local"] == [0], offsets
                 # sibling blocks reuse the same storage
                 assert len(set(offsets["temporary"])) == 1, offsets
                 for data_name, data_offset in data_offsets.items():
-                    assert offsets[data_name] == [data_offset], offsets
+                    assert offsets[data_name] == [data_offset - vars_start], offsets
                 assembly = directory / "arena.s"
                 assembly.write_text(result.stdout)
                 subprocess.run(["nasm", "-Werror", "-f", "elf64", "arena.s"], cwd=directory, check=True)
@@ -249,7 +252,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                 assert segment[6] >= variables[3] - segment[3] + vars_size
                 # Startup uses rbp for the arena base, not the OS-provided rsp.
                 assert "default rel" in result.stdout
-                assert "lea rbp, [dat]" in result.stdout
+                assert "lea rbp, [vars]" in result.stdout
                 assert "mov rsp," not in result.stdout
                 # (whole file bytes, RW segment file bytes, RW segment memory bytes)
                 measurements.append((executable.stat().st_size, segment[5], segment[6]))

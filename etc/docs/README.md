@@ -638,7 +638,9 @@ inlined argument, the constant of a 'let'):
   it is used, e.g. 'let k = 5' fits an 'i8', 'let k = 300' does not; a 'let'
   of one constant keeps it whole as its literal does, e.g. 'let u =
   0x80000000' on rv32i, a 'let' of a list is computed and checked at the
-  default type where it is defined ('stmt_def_const::fold_let')
+  default type where it is defined ('stmt_def_const::fold_let'); a typed
+  'let' passed as a constant argument of a generic is untyped there, e.g.
+  with 'let k = i8(100)' and 'box<k>', 'N * 2' is 200
 
 The default type ('int') is the width of a register, 'i64' on x86_64 and 'i32'
 on rv32i (7.12). A variable or a parameter without a type has it, and so has
@@ -1766,13 +1768,14 @@ variables in the source. The compile declares it again like a global
 ('compile_toc::add_var'), and 'program::emit_data_section' writes its bytes
 ('stmt_def_dat::compile_data').
 
-x86_64 addresses variables from 'rbp', which points at the data: the variables
-follow the dats after the padding that aligns them ('dat var padding' in the
-report), so 'rbp' reaches both, and 'baz.ld' asserts the order. rv32i
-addresses them from 's0', which points 2032 B past the start of 'vars', so the
-12-bit offsets, -2048 to 2047, reach the first 4080 B of variables directly
-('variables_base_past_vars_bytes'), further ones need a 'lui'. A noinline body
-addresses its locals from its frame base, 'rbx' or 's1'.
+The variables base points a fixed distance past the start of 'vars'
+('variables_base_past_vars_bytes'). The variables follow the dats after the
+padding that aligns them ('dat var padding' in the report), so the dats are at
+negative offsets from the base, and 'baz.ld' asserts the order. x86_64
+addresses variables from 'rbp', which points at 'vars'. rv32i addresses them
+from 's0', which points 2032 B past 'vars', so the 12-bit offsets, -2048 to
+2047, reach the first 4080 B of variables directly, further ones need a 'lui'.
+A noinline body addresses its locals from its frame base, 'rbx' or 's1'.
 
 ### 6.7 Registers
 

@@ -125,9 +125,8 @@ struct target_description {
     std::string_view variables_base_register;
     // the register that carries the address of the receiver of a method call
     std::string_view receiver_register;
-    // empty when the variables base register points at 'dat', else how far
-    // past the 'vars' label it points
-    std::optional<size_t> variables_base_past_vars_bytes;
+    // how far past the 'vars' label the variables base register points
+    size_t variables_base_past_vars_bytes{};
     // the registers 'alloc_scratch_register' picks from, in the order it
     // tries them
     std::span<const std::string_view> scratch_registers;
@@ -1654,10 +1653,7 @@ class machine {
         };
     }
 
-    // none when the variables base register points at 'dat'
-    [[nodiscard]] auto variables_base_past_vars_bytes() const
-        -> std::optional<size_t> {
-
+    [[nodiscard]] auto variables_base_past_vars_bytes() const -> size_t {
         return target_.variables_base_past_vars_bytes;
     }
 

@@ -1365,6 +1365,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     node<n> { a n }'); one more lookup in 'parse_toc::get_type_or_throw'
     could say "'n' is a constant, not a type", as the reverse case has its
     own message
+    => round 590: a constant parameter does not hide a global type of its
+       name where a type is written: with 'type N { x, }' before 'type
+       box<N> { a i8[N], z N, }', 'z N' is the global type 'N' (also 'func
+       box.f(p N)'), while a method body treats 'N' as hiding the type;
+       docs 1.3 and 2.3 say a parameter hides a global of its name
 [p] medium: user decision (round 229 UL1): 'p.get() < p.bump()' is
     rejected ("'p' may be written by the call of 'bump' in a later
     operand"), also 'rd(p.x) < bumpx(p.x)' and 'add2(p.get(), p.bump())',

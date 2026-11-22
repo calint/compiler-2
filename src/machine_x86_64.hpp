@@ -1030,7 +1030,7 @@ class machine_x86_64 final : public machine {
     auto emit_variables_base_load() -> void override {
         assembler_.instruction(
             0, op::lea, variables_base_register(),
-            assembler_x86_64::memory::of_symbol(data_label_));
+            assembler_x86_64::memory::of_symbol(variables_label_));
     }
 
     [[nodiscard]] auto make_register_operand(const std::string_view name,
@@ -1973,7 +1973,7 @@ class machine_x86_64 final : public machine {
             .frame_base_register{"rbx"},
             .variables_base_register{"rbp"},
             .receiver_register{"r11"},
-            .variables_base_past_vars_bytes{std::nullopt},
+            .variables_base_past_vars_bytes{0},
             .scratch_registers{scratch_registers_},
             .target_calls{
                 .arguments{"rdi", "rsi", "rdx"},

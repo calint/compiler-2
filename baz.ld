@@ -28,7 +28,7 @@ SECTIONS
   /* start writable segment on a fresh page to avoid overlap with text */
   . = ALIGN(0x1000);
 
-  /* initialized global dat payload; rbp points to dat */
+  /* initialized global dat payload; rbp points to vars, dats below it */
   .data :
   {
     __dat_section_start = .;

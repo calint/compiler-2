@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 590 (2026-11-22, bug hunt: constant parameters of
+    generics; design: one convention of the variables base; readability:
+    a newcomer walks the storage layout)
+    => bug hunt: no defect; 7400 generated programs of generic types with
+       up to three levels of bases, sizes and bodies built from the
+       constants, arguments of every width and sign, nested instances and
+       generic functions over aliases, about 16000 checks against a model
+       on three targets under the option sets; 150 probes; 13 mutants, 12
+       caught, one equivalent; the docs (1.7) say a typed 'let' passed to
+       a generic is untyped there; that a constant parameter does not
+       hide a global type where a type is written joins the round 234
+       user decision
+    => design: x86_64 points its variables base at 'vars' as rv32i does
+       (with 0 bytes past it instead of 2032), so
+       'variables_base_past_vars_bytes' is a plain 'size_t' and the second
+       convention in 'storage_layout::address_past_dat' is gone (src -15
+       lines; docs 6.6, 'baz.ld', 'test-arena.py' and the stores of 0544
+       follow); x86_64 code of the suite -235 B (13 smaller, 4 larger),
+       roome +516 B (+3.6%: its 600 KB of dats now lie below the base, so
+       more displacements take 4 bytes); rv32i unchanged
+    => readability: 'find_storage_location' renamed 'next_storage_location'
+       (where the next variable goes); 'used_vars_size_bytes' counts a
+       frame too; 'max_body_vars_size_bytes_' is a peak of the whole
+       compile; the parameter 'offset_from_dat' renamed 'offset_bytes'; 24
+       functions, 4 predictions wrong
 [x] easy: round 589 (2026-11-22, bug hunt: the claims of the docs
     against the compiler; design: storage layout; readability: a newcomer
     walks 'main.cpp')
