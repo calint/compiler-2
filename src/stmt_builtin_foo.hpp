@@ -98,28 +98,32 @@ class stmt_builtin_foo final : public statement {
         x.copy_value({tok(), tc.indent()}, counter,
                      operand::imm(0, tc.builtins().default_type()));
 
-        // a limit of 0, a count that folds to 0 or 'discarded_array_len', skips
-        // the body like a branch that folds to false, see
-        // 'compile_toc::check_skipped'
+        // a limit of 0, a count that folds to 0 or the length
+        // 'discarded_array_len', skips the body like a branch that folds to
+        // false, see 'compile_toc::check_skipped'
         if (limit.is_immediate() and limit.immediate() == 0) {
             tc.check_skipped([&] -> void { code_.compile(tc, destination{}); });
+            tc.record_jump_to_loop_end();
         } else {
             skip_empty_loop(tc, limit, end_label);
 
             x.label(tc.indent(), loop_label);
             code_.compile(tc, destination{});
+            tc.join_continue();
             x.label(tc.indent() + 1, compile_toc::continue_label(loop_label));
 
             advance_iteration(tc, reg_iter, counter,
                               array_info.type_ref().size_bytes(), limit,
                               loop_label);
 
+            // the counter step runs out into the end
+            tc.record_jump_to_loop_end();
             x.label(tc.indent(), end_label);
         }
 
         // the end is reached by a 'break', the skip of a body that runs zero
         // times or the counter step, e.g. not after 'foo a, 2 { stop() }'
-        tc.join_loop(loop_end::when_stepped);
+        tc.join_loop();
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
@@ -129,8 +133,14 @@ class stmt_builtin_foo final : public statement {
             count_->count.assert_result_set_before_read(flow);
         }
 
-        // the count is not folded here, see 'assignment_flow::trace_loop'
-        flow.trace_loop(code_, loop_end::also_when_done);
+        flow.trace_loop([&] -> void {
+            // note: the count is not folded here, so the body may be skipped;
+            //       the counter step reaches the end with at least what the
+            //       skip assigned
+
+            flow.record_jump_to_loop_end();
+            code_.trace_assignment(flow);
+        });
     }
 
   private:
@@ -252,7 +262,8 @@ class stmt_builtin_foo final : public statement {
     // constant count is checked against the length at compile time, another
     // count is held in a register and checked at run time like the count of
     // 'array_copy'
-    [[nodiscard]] auto compile_limit(compile_toc& tc, const size_t array_len,
+    [[nodiscard]] auto compile_limit(compile_toc& tc,
+                                     const size_t element_count,
                                      machine::held_registers& held) const
         -> operand {
 
@@ -262,18 +273,18 @@ class stmt_builtin_foo final : public statement {
             // e.g. 'i8[0x80000001]' on rv32i, whose last 'i' is 2^31
             // note: 'discarded_array_len' (0) wraps to -1, which fits
             if (not constant_arith::fits_width(
-                    static_cast<int64_t>(array_len - 1), counter_type)) {
+                    static_cast<int64_t>(element_count - 1), counter_type)) {
 
                 const std::string message{
                     std::format("index 'i' of 'foo' over {} elements does "
                                 "not fit {}, give a count",
-                                array_len, in_quotes(counter_type.name())),
+                                element_count, in_quotes(counter_type.name())),
                 };
 
                 throw compile_error{ident_.tok(), message};
             }
 
-            return operand::imm(array_len, counter_type);
+            return operand::imm(element_count, counter_type);
         }
 
         const expr_any& count{count_->count};
@@ -296,7 +307,7 @@ class stmt_builtin_foo final : public statement {
         count.compile(tc, destination::of_register(reg_count));
 
         x.check_bounds({count.tok(), tc.indent()},
-                       machine::bounds_range::up_to(reg_count, array_len));
+                       machine::bounds_range::up_to(reg_count, element_count));
 
         return reg_count;
     }

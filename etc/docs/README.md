@@ -481,10 +481,11 @@ expansion of a recursion with constant arguments, or after a 'loop' whose
 reached ('compile_toc::is_reachable'), 'compile_toc::end_path' and
 'compile_toc::record_break' end a path, 'compile_toc::path_merge' joins the
 branches of an 'if' with the same chain rule as the parse,
-'compile_toc::join_loop' ends a loop by its 'loop_end' with the rule of the
-parse walk ('is_loop_end_reached', 'loop_reach'; a 'foo' whose count folds
-above 0 runs out only where its body or a 'continue' reaches the counter step,
-'loop_end::when_stepped'), an inlined call whose body reaches
+'compile_toc::join_loop' reaches the end of a loop only at a compiled jump to
+it, as the parse walk does ('loop_reach'; the skip of a 'foo' body that runs
+zero times and its counter step, which is reached where its body or a
+'continue' reaches it, 'compile_toc::join_continue', are such jumps), an
+inlined call whose body reaches
 neither its end nor a 'return' leaves the code after the call unreached
 ('compile_toc::pop_scope'), and the end of 'main' is emitted when the compile
 reaches it.
@@ -1374,7 +1375,8 @@ body, which every path must set before it returns
 parse tells which reads and writes name the result, by the one lookup of 1.3
 ('scope_stack::names_result'), so a name that hides it is not the result.
 Each statement reports what it does ('assign', 'end_path', 'record_break'), the
-class joins the paths ('trace_loop' with its 'loop_end', 'path_merge' for an
+class joins the paths ('trace_loop' at the jumps to the end of a loop,
+'path_merge' for an
 'if'), and 'assigned_bytes' keeps the byte ranges set on every path. A read
 outside them is "result 'res' is read before it is set". The same walk finds the
 statements that are not reached (1.5.1); a function without a result has no

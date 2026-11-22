@@ -29,7 +29,6 @@
 #include "operand.hpp"
 #include "token.hpp"
 #include "type.hpp"
-#include "ub_assigned.hpp"
 
 //
 // the table of contents: what the names of the program are while it is parsed
@@ -249,7 +248,7 @@ enum class var_kind : uint8_t { var, dat, param, result };
 
 // whether a jump to the end of a loop, e.g. a 'break', or a 'continue' was
 // compiled, so its end or its counter step is reached by it; read by
-// 'compile_toc::join_loop'
+// 'compile_toc::join_loop' and 'compile_toc::join_continue'
 struct loop_reach {
     bool is_end_jumped_to{};
     bool is_continued{};
@@ -3064,7 +3063,8 @@ struct usage_statistics {
 //   listing        'indent', 'indent_scope', 'end_label', 'continue_label'
 //   reachability   'is_reachable', 'end_path', 'record_break',
 //                  'record_continue', 'record_jump_to_loop_end',
-//                  'record_return', 'join_loop', 'path_merge'
+//                  'record_return', 'join_continue', 'join_loop',
+//                  'path_merge'
 //
 // a statement may be compiled more than once (each inlined call, both
 // versions of 'emit_most_efficient', dry runs, 'check_body'), so what a
@@ -3510,20 +3510,25 @@ class compile_toc final : public toc {
         return scopes().current_func_scope().reach_of_func().is_reachable;
     }
 
-    // the end of a loop is reached by a compiled 'break' or as 'end' says
-    // ('is_loop_end_reached'); called as the last step inside the loop's
-    // scope, where the end of its body is the current statement
-    auto join_loop(const loop_end end) -> void {
+    // the code at the continue label of the innermost loop, e.g. the counter
+    // step of a 'foo', is reached at the end of its body or by a 'continue'
+    auto join_continue() -> void {
+        const bool is_continued{
+            scopes().innermost_loop().reach_of_loop().is_continued,
+        };
+
+        tables().scopes.set_reachable(is_reachable() or is_continued);
+    }
+
+    // the end of a loop is reached only by a compiled jump to it, e.g. a
+    // 'break', like 'assignment_flow::trace_loop'; called as the last step
+    // inside the loop's scope
+    auto join_loop() -> void {
         const scope& loop{scopes().back()};
 
         assert(loop.is_loop());
 
-        const loop_reach& reach{loop.reach_of_loop()};
-
-        const bool is_step_reached{is_reachable() or reach.is_continued};
-
-        tables().scopes.set_reachable(
-            is_loop_end_reached(end, reach.is_end_jumped_to, is_step_reached));
+        tables().scopes.set_reachable(loop.reach_of_loop().is_end_jumped_to);
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {
@@ -3555,16 +3560,16 @@ class compile_toc final : public toc {
 
     // a 'continue' jumps to the head of the innermost 'loop' or the counter
     // step of a 'foo' and leaves the code after it unreached, see
-    // 'loop_end::when_stepped'
+    // 'join_continue'
     auto record_continue() -> void {
         tables().scopes.record_continue();
         end_path();
     }
 
     // a branch to the end of the innermost 'loop' or 'foo' that the code
-    // after it may pass, e.g. the skip of a 'foo' whose count is 0 or less;
-    // the end is reached when the branch is, e.g. not after 'foo a, stop()'
-    // with 'stop' an inlined 'exit'
+    // after it may pass, e.g. the skip of a 'foo' whose count is 0 or less or
+    // its counter step that runs out; the end is reached when the branch is,
+    // e.g. not after 'foo a, stop()' with 'stop' an inlined 'exit'
     auto record_jump_to_loop_end() -> void {
         if (not is_reachable()) {
             return;

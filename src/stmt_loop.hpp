@@ -50,11 +50,11 @@ class stmt_loop final : public statement {
 
         // the end is reached only by a 'break' that is compiled, the parse
         // rejects code after a loop without one
-        tc.join_loop(loop_end::at_break);
+        tc.join_loop();
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
-        flow.trace_loop(code_, loop_end::at_break);
+        flow.trace_loop([&] -> void { code_.trace_assignment(flow); });
     }
 
   private:

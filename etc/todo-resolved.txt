@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 576 (2026-11-22, bug hunt: noinline calls and frames;
+    design: definite assignment and the reach of loops; readability: a
+    newcomer walks 'foo', 'loop' and the reach of loops)
+    => bug hunt: no defect; 10000 programs of 1 to 12 parameters of every
+       kind, recursion passing records and arrays down, 'mut' arguments,
+       calls in arguments, conditions and counts, written inline,
+       noinline and mixed against a model, 31288 runs on three targets;
+       frame depth probes with the variables ending at an unmapped page:
+       the check never lets a frame fault and stops at most one frame
+       early; 8 mutants of frames and the calling convention, all caught;
+       the generator overlaps the frame and alias fuzzers, not added
+    => design: 'loop_end' and 'is_loop_end_reached' are gone: in the trace
+       and in the compile the end of a loop is reached only by a recorded
+       jump to it; 'foo' records its counter step running out, the skip
+       of an empty loop and 'break' as such jumps, 'join_continue' joins
+       the continue label; 'record_break' is a jump to the end and the end
+       of a path in both walks (listings and errors equal, -31 lines);
+       the two walks stay apart, the trace does not fold so its errors do
+       not depend on inlining
+    => readability: 'join_loop' said only a 'break' reaches the end; the
+       parameter 'array_len' of 'compile_limit' renamed 'element_count',
+       it is 0 for an unknown length; 26 functions, 4 predictions wrong
 [x] easy: round 575 (2026-11-22, bug hunt: the equality of records and
     arrays; design: how loops are compiled; readability: a newcomer walks
     'expr_bool.hpp')

@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
-#include <cstdint>
 #include <format>
+#include <functional>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -15,35 +15,6 @@
 
 // definite assignment: which bytes of a variable are set before they are read
 // and before a function returns
-
-// how the end of a loop is reached
-enum class loop_end : uint8_t {
-    // only at a 'break', e.g. 'loop'
-    at_break,
-    // also when it runs out, e.g. 'foo' at the parse, which does not fold
-    // its count
-    also_when_done,
-    // known only to the compile: at a jump to its end or where its counter
-    // step is reached, e.g. a 'foo', whose skip of the body for a count of 0
-    // or less is such a jump ('compile_toc::record_jump_to_loop_end')
-    when_stepped,
-};
-
-// the rule both reach walks end a loop by ('assignment_flow::trace_loop',
-// 'compile_toc::join_loop'): the code after it is reached at a jump to its
-// end, e.g. a 'break', or where it runs out as 'end' says; 'is_step_reached'
-// when the end of its body or a 'continue' reaches the counter step
-[[nodiscard]] inline auto is_loop_end_reached(const loop_end end,
-                                              const bool is_end_jumped_to,
-                                              const bool is_step_reached)
-    -> bool {
-
-    if (is_end_jumped_to or end == loop_end::also_when_done) {
-        return true;
-    }
-
-    return end == loop_end::when_stepped and is_step_reached;
-}
 
 // the bytes of a variable that are definitely assigned, as byte ranges so
 // that the cost follows the assignments, not the size of the variable
@@ -156,8 +127,8 @@ class assigned_bytes final {
 // no bytes to assign. the statements report what they do ('assign',
 // 'end_path', 'record_break'), a path that names the result writes or reads
 // its bytes ('stmt_identifier::record_assignment', 'assert_set_before_read'),
-// and the rules that join paths are here: 'trace_loop' traces a body by its
-// 'loop_end', 'path_merge' joins the paths of an 'if'
+// and the rules that join paths are here: 'trace_loop' joins the jumps to the
+// end of a loop, 'path_merge' joins the paths of an 'if'
 class assignment_flow final {
     // the name of the result as declared, e.g. 'res', reported when a 'return'
     // may leave it unset
@@ -262,55 +233,48 @@ class assignment_flow final {
         return assigned_.covers(bytes);
     }
 
+    // a 'break' leaves the innermost loop, whose end is then reached, and the
+    // code after it unreached, like 'compile_toc::record_break'
     auto record_break() -> void {
-        // the first break sets the coverage, later ones narrow it
+        record_jump_to_loop_end();
+        end_path();
+    }
+
+    // a jump to the end of the innermost loop that the code after it may
+    // pass, e.g. the skip of a 'foo' body that runs zero times
+    auto record_jump_to_loop_end() -> void {
+        // note: a block traces only a reached statement
+        assert(is_reachable_);
+
+        // the first jump sets the coverage, later ones narrow it
         if (not at_breaks_) {
             at_breaks_ = assigned_;
         } else {
             at_breaks_->intersect(assigned_);
         }
-
-        end_path();
     }
 
-    // 'body' has 'trace_assignment(assignment_flow&)'; the end of the loop
-    // joins the paths that reach it like a 'path_merge': its breaks and, of a
-    // loop that also ends when it runs out, the entry, since it may run zero
-    // times; a loop without such a path is left only by 'return' or 'exit'
-    auto trace_loop(const auto& body, const loop_end end) -> void {
-        // note: only the compile folds the count of a 'foo', and the parse
-        //       does not record a 'continue', which that end needs
-
-        assert(end != loop_end::when_stepped);
-
-        const assigned_bytes entry{assigned_};
-
+    // the end of the loop that 'body' traces is reached only at its jumps to
+    // the end and has what all of them assigned, like 'compile_toc::join_loop';
+    // a loop without one is left only by 'return' or 'exit'
+    auto trace_loop(const std::function_ref<void()> body) -> void {
         // every iteration starts with at least the coverage at the loop, the
-        // breaks of the body are its own
+        // jumps of the body are its own
         std::optional<assigned_bytes> outer_breaks{
             std::exchange(at_breaks_, std::nullopt),
         };
 
-        body.trace_assignment(*this);
+        body();
 
         const std::optional<assigned_bytes> breaks{
             std::exchange(at_breaks_, std::move(outer_breaks)),
         };
 
-        const bool is_end_reached{
-            is_loop_end_reached(end, breaks.has_value(), is_reachable_),
-        };
-
         end_path();
 
         if (breaks) {
-            assigned_.intersect(*breaks);
+            assigned_ = *breaks;
+            is_reachable_ = true;
         }
-
-        if (end == loop_end::also_when_done) {
-            assigned_.intersect(entry);
-        }
-
-        is_reachable_ = is_end_reached;
     }
 };
