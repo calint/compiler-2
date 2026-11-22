@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 579 (2026-11-22, bug hunt: the round trip of
+    '--reproduce-source'; design: declarations of variables; readability:
+    a newcomer walks the public interface of 'machine')
+    => bug hunt: no defect; 53550 tests with one filler at a token
+       boundary or a whole-file change (CRLF, no final newline, tabs,
+       comments at line ends), 18500 with fillers in many gaps at once on
+       two targets, the included files, roome and the examples, hand
+       programs: no mismatch; 142 mutants that drop a 'source_to', 139
+       caught, one equivalent; test 8020 (whitespace after the line end
+       that follows '[' or 'if') catches the other two; a keyword glued
+       to a string is a todo item
+    => design: 'initializer_declaration' records the read-only cause of a
+       'let' from its keyword, so its 'declared_var' is the whole
+       variable and the static 'stmt_def_var::declared_var' that copied
+       it to set that field is gone (listings equal, -10 lines); one path
+       per kind of declaration, storage in one place
+    => readability: 'last' of '--versions' also chooses inside a
+       version; 'address_of' writes to a register or to memory; the
+       source of an arithmetic operation is read as 'copy_value' reads;
+       'write_assembly' also writes the image of rv32i; 72 functions, 5
+       predictions wrong
 [x] easy: round 578 (2026-11-22, bug hunt: bitwise and shift operators;
     design: the interface of the backends; readability: a newcomer walks
     'generics.hpp')

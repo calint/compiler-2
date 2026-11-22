@@ -10,6 +10,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 579, lexical) 'include"e1.baz"' without a space is read
+    as the word 'include"e1' ("expected a definition ... got
+    'include"e1'"), as '"' does not end a word; no other keyword is
+    followed by a string
 [ ] easy: (round 577, messages) 'var a = i16' then 'if a < 0x80000000'
     says on x86_64 "constant '2147483648' does not fit 'a' of type 'i16'"
     and on rv32i "constant '0x80000000' does not fit 'int' ..., 'int(...)'

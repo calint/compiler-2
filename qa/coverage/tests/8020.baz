@@ -1,0 +1,16 @@
+# the whitespace after the line end that ends a '[' or an 'if' is written
+# back by '--reproduce-source': the token before keeps the whitespace up to
+# its line end, the array size and the condition keep the rest
+
+func main() {
+    var a = i8[ # size
+        # of 'a'
+        4]
+    a[3] = 2
+    if # first
+        # condition
+        a[3] == 2 and a[0] == 0 {
+        exit(0)
+    }
+    exit(1)
+}

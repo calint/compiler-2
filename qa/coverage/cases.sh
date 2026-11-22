@@ -8519,3 +8519,7 @@ SRC=7663 && OPTS="--checks=noub" COMPERR
 # an untyped generic argument that is a typed array literal is skipped whole
 # ('skip_literal'), so the call reports the type it cannot deduce
 SRC=7760 && COMPERR
+
+# the whitespace after the line end that ends a '[' or an 'if' is written back
+# by '--reproduce-source'
+SRC=8020 && EXP=0 && RUN

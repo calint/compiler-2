@@ -186,7 +186,7 @@ class machine {
   public:
     // which of two versions of the same code 'emit_most_efficient' keeps: the
     // smaller, also inside a version with 'nested', or to test the other
-    // version too, the first or the last
+    // version too, the first or the last; 'last' also inside a version
     enum class kept_version : uint8_t { smaller, nested, first, last };
 
     // a built-in the target provides as a routine
@@ -923,6 +923,8 @@ class machine {
                               const operand& dst, const operand& src,
                               const runtime_check& check) -> void = 0;
 
+    // 'dst', a register or memory, receives the address of the memory operand
+    // 'address', e.g. a frame slot receives the address of an argument
     virtual auto address_of(const emit_site site, const operand& dst,
                             const operand& address) -> void = 0;
 
@@ -954,7 +956,7 @@ class machine {
                   const copy_request& request) -> void = 0;
 
     // a 'src' narrower than 'dst' is sign extended, a wider one loses its
-    // high bits, also as the second operand of an arithmetic operation
+    // high bits; the source of an arithmetic operation is read the same way
     virtual auto copy_value(const emit_site site, const operand& dst,
                             const operand& src) -> void = 0;
 
@@ -1009,7 +1011,8 @@ class machine {
                        const arithmetic_operator operation, const operand& dst,
                        const runtime_check& check) -> void = 0;
 
-    // writes the lines buffered from 'start'
+    // writes the lines buffered from 'start', and the image of a target that
+    // has one; an image that cannot be written is an error
     virtual auto write_assembly(std::ostream& os) -> void = 0;
 
     // 'size_bytes' is not 0, 'alignment' is the alignment known for 'dst'

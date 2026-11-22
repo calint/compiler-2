@@ -51,6 +51,9 @@ class initializer_declaration final {
     tokenizer at_name_;
     token equals_tk_;
     name_in_initializer name_visibility_{};
+    // a 'let' is read-only from its declaration on, its initializer is not
+    // an assignment and is not checked for it
+    read_only_cause read_only_why_{};
     const type* type_{};
     // of unknown length only while the initializer that gives the length is
     // parsed
@@ -64,7 +67,10 @@ class initializer_declaration final {
                             const name_in_initializer name_visibility)
         : name_tk_{read_name(tc, tz)}, at_name_{tz},
           equals_tk_{read_equals(tz, keyword, name_tk_)},
-          name_visibility_{name_visibility} {
+          name_visibility_{name_visibility},
+          read_only_why_{
+              keyword == "let" ? read_only_cause::let : read_only_cause::none,
+          } {
 
         deduce_declaration(tc, tz);
 
@@ -76,14 +82,14 @@ class initializer_declaration final {
     // 'var a = [2]{}' would read as an index
     [[nodiscard]] auto at_name() const -> tokenizer { return at_name_; }
 
-    // the variable the definition declares, a 'var' or a 'dat'
+    // the variable the definition declares, a 'var', a 'let' or a 'dat'
     [[nodiscard]] auto declared_var() const -> var_info {
         return {
             .name{name_tk_.text()},
             .type_ptr{type_},
             .src_loc_tk{name_tk_},
             .shape{shape_},
-            .read_only_why{},
+            .read_only_why{read_only_why_},
             .placement{},
             .foo_array{},
         };
@@ -448,8 +454,7 @@ class stmt_def_var final : public statement {
   public:
     stmt_def_var(parse_toc& tc, const token& keyword_tk,
                  const initializer_declaration& declaration, expr_any value)
-        : statement{keyword_tk},
-          declared_{declared_var(keyword_tk, declaration)},
+        : statement{keyword_tk}, declared_{declaration.declared_var()},
           assign_var_{
               declare_and_assign(tc, declared_, declaration.at_name(),
                                  declaration.equals_tk(), std::move(value)),
@@ -535,21 +540,6 @@ class stmt_def_var final : public statement {
             equals_tk,
             std::move(value),
         };
-    }
-
-    // a 'let' is read-only from its declaration on, its initializer is not
-    // an assignment and is not checked for it
-    [[nodiscard]] static auto
-    declared_var(const token& keyword_tk,
-                 const initializer_declaration& declaration) -> var_info {
-
-        var_info var{declaration.declared_var()};
-
-        if (keyword_tk.is_text("let")) {
-            var.read_only_why = read_only_cause::let;
-        }
-
-        return var;
     }
 };
 
