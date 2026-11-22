@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 577 (2026-11-22, bug hunt: numeric literals; design: how
+    generic instances are made; readability: a newcomer walks
+    'ub_assigned.hpp')
+    => bug hunt: no defect; literals at each type limit in four bases with
+       and without a minus at ten sites against a model (59000 programs),
+       folds against run time inline and noinline (30300), the immediate
+       encoding limits of both targets (3000), 230 probes; 14 mutants,
+       all caught by the suite; a message of a comparison that differs
+       by target is a todo item; the full set of checks passed on round
+       576 (four targets, versions, far jumps, roome, growth, emulator,
+       asan, fuzzers)
+    => design: 'generic_registry::get_type_instances' copied the matching
+       instances with their traces into a new vector; a reference
+       accessor and the filter in 'func_instantiator::define' replace it,
+       as 'instantiate_methods' does over 'methods()' (listings equal,
+       -5 lines); the key of an instance is built in one place, the trace
+       once per level; seven ideas kept with reasons
+    => readability: 'at_breaks_' renamed 'at_loop_end_', it holds every
+       jump to the end of a loop; why a merge and the end of a function
+       need no reach check ('end_path' sets every byte); 22 functions, 4
+       predictions wrong
 [x] easy: round 576 (2026-11-22, bug hunt: noinline calls and frames;
     design: definite assignment and the reach of loops; readability: a
     newcomer walks 'foo', 'loop' and the reach of loops)

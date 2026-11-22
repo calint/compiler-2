@@ -137,9 +137,9 @@ class assignment_flow final {
     // bytes assigned on every path reaching the current statement
     assigned_bytes assigned_;
 
-    // bytes assigned at every 'break' of the innermost loop, none before its
-    // first
-    std::optional<assigned_bytes> at_breaks_;
+    // bytes assigned at every jump to the end of the innermost loop, none
+    // before the first
+    std::optional<assigned_bytes> at_loop_end_;
 
     bool is_reachable_{true};
 
@@ -172,6 +172,7 @@ class assignment_flow final {
         auto trace(const auto& path) -> void {
             begin_path();
             path.trace_assignment(flow_);
+            // note: an unreached path has every byte set ('end_path')
             merged_.intersect(flow_.assigned_);
             is_reachable_ = is_reachable_ or flow_.is_reachable_;
         }
@@ -184,14 +185,16 @@ class assignment_flow final {
 
         // a path that never runs, e.g. a branch false at the parse, is still
         // checked as if it ran from the 'if', as in the compile
-        // ('compile_toc::check_skipped'); it leaves the merge and the breaks
-        // as they were
+        // ('compile_toc::check_skipped'); it leaves the merge and the jumps to
+        // the loop end as they were
         auto trace_skipped(const auto& path) -> void {
-            const std::optional<assigned_bytes> breaks{flow_.at_breaks_};
+            const std::optional<assigned_bytes> saved_at_loop_end{
+                flow_.at_loop_end_,
+            };
 
             begin_path();
             path.trace_assignment(flow_);
-            flow_.at_breaks_ = breaks;
+            flow_.at_loop_end_ = saved_at_loop_end;
         }
 
       private:
@@ -206,6 +209,7 @@ class assignment_flow final {
     assignment_flow(const token& src_loc_tk, const size_t size_bytes)
         : src_loc_tk_{src_loc_tk}, assigned_{size_bytes} {}
 
+    // note: an unreached end has every byte set ('end_path')
     auto assert_set_at_return() const -> void {
         if (assigned_.is_full()) {
             return;
@@ -247,10 +251,10 @@ class assignment_flow final {
         assert(is_reachable_);
 
         // the first jump sets the coverage, later ones narrow it
-        if (not at_breaks_) {
-            at_breaks_ = assigned_;
+        if (not at_loop_end_) {
+            at_loop_end_ = assigned_;
         } else {
-            at_breaks_->intersect(assigned_);
+            at_loop_end_->intersect(assigned_);
         }
     }
 
@@ -260,20 +264,20 @@ class assignment_flow final {
     auto trace_loop(const std::function_ref<void()> body) -> void {
         // every iteration starts with at least the coverage at the loop, the
         // jumps of the body are its own
-        std::optional<assigned_bytes> outer_breaks{
-            std::exchange(at_breaks_, std::nullopt),
+        std::optional<assigned_bytes> outer_at_loop_end{
+            std::exchange(at_loop_end_, std::nullopt),
         };
 
         body();
 
-        const std::optional<assigned_bytes> breaks{
-            std::exchange(at_breaks_, std::move(outer_breaks)),
+        const std::optional<assigned_bytes> body_at_loop_end{
+            std::exchange(at_loop_end_, std::move(outer_at_loop_end)),
         };
 
         end_path();
 
-        if (breaks) {
-            assigned_ = *breaks;
+        if (body_at_loop_end) {
+            assigned_ = *body_at_loop_end;
             is_reachable_ = true;
         }
     }

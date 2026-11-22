@@ -651,21 +651,6 @@ class generic_registry final {
         return types_.get_const_ref(name);
     }
 
-    [[nodiscard]] auto
-    get_type_instances(const std::string_view generic_name) const
-        -> std::vector<generic_type_instance> {
-
-        std::vector<generic_type_instance> instances;
-
-        for (const generic_type_instance& instance : type_instances_) {
-            if (instance.generic_name == generic_name) {
-                instances.push_back(instance);
-            }
-        }
-
-        return instances;
-    }
-
     // a generic the current instance parse sees, see 'definition_order'
     [[nodiscard]] auto has_func(const std::string_view name) const -> bool {
         if (not funcs_.has(name)) {
@@ -694,6 +679,13 @@ class generic_registry final {
         -> const std::vector<generic_func_info>& {
 
         return methods_;
+    }
+
+    // in the order the aliases are defined, each alias then its bases
+    [[nodiscard]] auto type_instances() const
+        -> const std::vector<generic_type_instance>& {
+
+        return type_instances_;
     }
 
     // the names of the generic functions without an instance, in the order of

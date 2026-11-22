@@ -1430,10 +1430,13 @@ class func_instantiator final {
 
         tc.add_generic_method(generic);
 
+        // note: a method body defines no alias, the instances stay in place
         for (const generic_type_instance& instance :
-             tc.generics().get_type_instances(head.name_tk.text())) {
+             tc.generics().type_instances()) {
 
-            instantiate_method(tc, generic, instance);
+            if (instance.generic_name == head.name_tk.text()) {
+                instantiate_method(tc, generic, instance);
+            }
         }
     }
 

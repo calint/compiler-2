@@ -10,6 +10,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 577, messages) 'var a = i16' then 'if a < 0x80000000'
+    says on x86_64 "constant '2147483648' does not fit 'a' of type 'i16'"
+    and on rv32i "constant '0x80000000' does not fit 'int' ..., 'int(...)'
+    wraps it": the literal is checked against the default type before the
+    side's type, so rv32i names 'int' and suggests a wrap that would not
+    fit 'i16' either; the comparison message prints the value where the
+    assignment message prints the source ('255' against '\xff')
 [ ] easy: (round 575, registers) x86_64 with '--checks=noub' rejects an
     ordinary call of an inlined wrapper of 'arrays_equal' whose arguments
     index fields at run time, e.g. 'not ae1(v1[k + 0].g1, v4[k + 0].g1,
