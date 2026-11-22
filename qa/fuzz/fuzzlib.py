@@ -471,12 +471,14 @@ def classify_compile(c):
     if c.timed_out:
         return ("compiler-hang", "timeout")
     text = c.stderr
-    sanitizer = any(t in text for t in SANITIZER_TEXT)
+    # note: a rejection, exit code 1, echoes its source line, which may hold
+    #       the words of a report, e.g. in a comment
+    sanitizer = c.returncode != 1 and any(t in text for t in SANITIZER_TEXT)
     if c.returncode in SANITIZER_EXIT or c.returncode < 0 or sanitizer:
         return ("compiler-crash", signature(text) if sanitizer
                 else f"exit {c.returncode} {text[:80]}")
     # note: a defect of the compiler that it caught, it exits with 1
-    if "internal error: " in text:
+    if re.search(r"^internal error: ", text, re.M):
         return ("compiler-crash", re.sub(r"\d+", "N", text.strip()[:100]))
     if c.returncode == 1:
         if not DIAGNOSTIC.search(text) and not NO_LOCATION.search(text):

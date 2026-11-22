@@ -104,9 +104,9 @@ class stmt_builtin_array_copy final : public statement {
 
   private:
     // the destination may start inside the source, e.g.
-    // 'array_copy(a[0], a[1], n)' but not 'array_copy(s.a, s.b, n)', nor
-    // from constant starts in one array a copy down, 'array_copy(a[1], a, n)',
-    // or past the end of a constant count, 'array_copy(a, a[2], 2)'
+    // 'array_copy(a[0], a[1], n)' but not 'array_copy(s.a, s.b, n)', a copy
+    // down between constant starts in one array, 'array_copy(a[1], a, n)', or
+    // a destination past a constant count, 'array_copy(a, a[2], 2)'
     // note: the 'upper' check of the count keeps each copy inside the range
     //       of its path, from its start element to the end of the array
     [[nodiscard]] auto may_start_inside_source(const toc& tc) const -> bool {
@@ -146,6 +146,7 @@ class stmt_builtin_array_copy final : public statement {
             return true;
         }
 
+        // a copy onto itself or down reads each element before writing it
         if (*dst_start <= *src_start) {
             return false;
         }

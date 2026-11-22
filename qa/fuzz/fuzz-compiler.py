@@ -318,14 +318,12 @@ def fuzz_one(args):
         with open(os.path.join(work, "f.s"), "rb") as f:
             if not f.read(1):
                 findings.append(("empty-output", "x86_64", ""))
-        if noub and x86.kind == "signal" and x86.code in [int(s) for s in fl.CRASH_SIGNALS]:
-            recursion = "noinline" in text
-            findings.append(("ub-signal", f"{x86.detail} recursion={recursion}",
-                             str(x86)))
-
         # rv32i-fpga and one of the other rv32i targets
+        outcomes = {"x86_64": x86}
         for target in fl.with_rotated(fl.TARGETS, text)[1:]:
-            compare_rv32i(run, target, x86, findings, stats)
+            outcomes[target] = compare_rv32i(run, target, outcomes, findings,
+                                             stats)
+        report_signals(run, outcomes, findings)
 
         if x86.finished():
             c3, other, p3 = fl.run_x86(asan, path, options + ["--nopt"], work, "n")
@@ -373,15 +371,17 @@ class Run:
             "--checks=noub,line" in options
 
 
-def compare_rv32i(run, target, x86, findings, stats):
+def compare_rv32i(run, target, outcomes, findings, stats):
     # builds and runs the mutant on an rv32i 'target', compares it with the
-    # outcome 'x86' of x86_64
+    # outcome of x86_64 in 'outcomes', the outcomes of the targets run before
+    # it, and returns its outcome, None when it did not run
+    x86 = outcomes["x86_64"]
     c, rv, problem = fl.run_target(fl.COMPILER_ASAN, run.path, run.options,
                                    run.work, target, "r")
     finding = fl.classify_compile(c)
     if finding:
         findings.append(finding + (c.stderr[-3000:],))
-        return
+        return None
     if c.returncode:
         message = first_diagnostic(c.stderr).split(": ", 1)[-1]
         if not EXPECTED_DIFFERENCE.search(c.stderr) and not seed_differs(
@@ -389,50 +389,78 @@ def compare_rv32i(run, target, x86, findings, stats):
             findings.append(("accept-diff", f"x86 accepts, {target} rejects: "
                              + re.sub(r"[\d']+", "N", message[:90]),
                              c.stderr[-500:]))
-        return
+        return None
     if problem:
         if problem[0] != "skip":
             findings.append((problem[0], f"{target} {problem[1][:60]}",
                              problem[1][-1500:]))
-        return
+        return None
     if run.noub and rv.kind in ("cpu-error", "emulator-signal"):
         findings.append(("cpu-error", rv.detail[:60], str(rv)))
-    if run.noub and rv.kind == "signal" and \
-            rv.code in [int(s) for s in fl.CRASH_SIGNALS]:
-        recursion = "noinline" in run.text
-        findings.append(("ub-signal", f"{target} {rv.detail} "
-                         f"recursion={recursion}", str(rv)))
     # note: a crash in the qemu system traps without end, it times out; a
-    #       program that x86_64 does not end quickly can time out on the
-    #       slower rv32i targets, e.g. a loop of 2^31 iterations
-    if run.noub and x86.finished() and rv.kind == "timeout" and \
-            x86.seconds < fl.RUN_TIMEOUT / SLOWER:
-        findings.append(("diff-target", f"{target} {bucket(x86)} vs timeout",
-                         f"x86 {x86}\n{target} {rv}"))
+    #       program that does not end quickly on a faster target can time
+    #       out on the slower rv32i targets, e.g. a loop of 2^31 iterations
+    faster = outcomes.get(FASTER[target])
+    if run.noub and rv.kind == "timeout" and faster is not None and \
+            faster.finished() and \
+            faster.seconds < fl.RUN_TIMEOUT / SLOWER[target]:
+        findings.append(("diff-target", f"{target} {bucket(faster)} vs timeout",
+                         f"{FASTER[target]} {faster}\n{target} {rv}"))
     if not (run.noub and x86.finished() and rv.finished()):
-        return
+        return rv
     stats["compared"] += 1
     # note: an exit may carry the byte count of a written array of the
     #       default integer, so it is not compared with such an output
     same = (x86.code == rv.code and x86.stdout == rv.stdout) or \
         is_default_width_output(x86.stdout, rv.stdout)
-    # the default integer is 32 bits on rv32i, 64 on x86_64: a value or a
-    # shift count that fits 64 bits panics on rv32i only, x86_64 goes on and
-    # may panic later on another check
+    # the default integer is 32 bits on rv32i, 64 on x86_64: a value, a
+    # shift count or a quotient 'MIN / -1' that fits 64 bits panics on rv32i
+    # only, x86_64 goes on and may panic later on another check; a left
+    # shift keeps on x86_64 the bits rv32i shifts out, e.g. '1 << 31' is
+    # negative on rv32i only (README 8 item 1)
     width = rv.kind == "panic" and x86.code != rv.code and \
-        rv.code in (fl.PANIC_CODE["overflow"], fl.PANIC_CODE["shift"])
+        rv.code in (fl.PANIC_CODE["overflow"], fl.PANIC_CODE["shift"],
+                    fl.PANIC_CODE["division"])
+    shifted = "<<" in run.text
     foreign = target in fl.UART_TARGETS and FOREIGN_WRITE.search(run.text)
     if not same and not stack_difference(x86, rv) and not width \
-            and not foreign:
+            and not shifted and not foreign:
         findings.append(("diff-target",
                          f"{target} {bucket(x86)} vs {bucket(rv)} "
                          f"output {x86.stdout == rv.stdout}",
                          f"x86 {x86}\n{target} {rv}"))
+    return rv
 
 
-# how much slower than x86_64 the rv32i targets may run a program, the
-# emulator of rv32i-fpga about 50 times
-SLOWER = 100
+def report_signals(run, outcomes, findings):
+    # a program built with 'noub' ends without a crash signal on x86_64 and
+    # rv32i, but for a recursion too deep for the stack the operating system
+    # gives there, which the stack check of rv32i-fpga stops (README 8 item
+    # 4); 'outcomes' maps a target to its outcome, None when not run
+    if not run.noub:
+        return
+    fpga = outcomes.get("rv32i-fpga")
+    deep = fpga is not None and fpga.kind == "panic" and \
+        fpga.code == fl.PANIC_CODE["stack overflow"]
+    recursion = "noinline" in run.text
+    for target, o in outcomes.items():
+        if o is None or o.kind != "signal" or \
+                o.code not in [int(s) for s in fl.CRASH_SIGNALS]:
+            continue
+        if deep and o.code == signal.SIGSEGV:
+            continue
+        findings.append(("ub-signal", f"{target} {o.detail} "
+                         f"recursion={recursion}", str(o)))
+
+
+# the target that the run time of an rv32i target is measured against and how
+# much slower the rv32i target may run a program: a run takes 0.01 s to
+# start on x86_64, a loop of 3 million steps takes 0.02 s there, 0.4 s on
+# rv32i and 2.5 s on rv32i-fpga, rv32i-qemu takes 2.3 times as long as
+# rv32i-fpga ('with_rotated' runs rv32i-fpga before it)
+FASTER = {"rv32i": "x86_64", "rv32i-fpga": "x86_64",
+          "rv32i-qemu": "rv32i-fpga"}
+SLOWER = {"rv32i": 250, "rv32i-fpga": 250, "rv32i-qemu": 5}
 
 
 def bucket(outcome):
@@ -449,7 +477,9 @@ FOREIGN_WRITE = re.compile(r"write\(\s*(?!1\s*,)")
 def is_default_width_output(x86_stdout, rv_stdout):
     # a written array of the default integer has 8-byte elements on x86_64 and
     # 4-byte ones on rv32i, the same values are the same output
-    if len(x86_stdout) != 2 * len(rv_stdout) or len(rv_stdout) % 4 != 0:
+    # note: an empty output is no array, the exit codes are compared
+    if not rv_stdout or len(x86_stdout) != 2 * len(rv_stdout) or \
+            len(rv_stdout) % 4 != 0:
         return False
 
     def values(data, size):

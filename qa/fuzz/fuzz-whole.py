@@ -1508,8 +1508,12 @@ class Gen:
         x = self.int_expr(ctx, "int", True, 0, nonconst=True, calls=False)
         if x is None:
             return Lit(0)
+        # note: now and then up to one past the room, the edge of the bounds
+        #       check of a run-time count
+        past = 1 if self.chance(0.1) else 0
         if self.chance(0.8):
-            return self.hoist(Bin("%", Bin("&", x, Lit(0x7fff)), Lit(n + 1)))
+            return self.hoist(Bin("%", Bin("&", x, Lit(0x7fff)),
+                                  Lit(n + 1 + past)))
         return Bin("&", x, Lit(3))
 
     # calls

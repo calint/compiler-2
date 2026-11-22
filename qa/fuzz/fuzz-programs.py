@@ -271,10 +271,14 @@ class Generator:
         self.indent += 1
         self.emit(f"if {counter} >= {rnd.randint(1, 6)} break")
         self.emit(f"{counter} = {counter} + 1")
+        # note: the body reads the counter and does not write it, so the
+        #       loop ends
         self.scalars.append(counter)
+        self.read_only.add(counter)
         self.indent -= 1
         self.block(rnd.randint(1, 3), True)
         self.scalars.remove(counter)
+        self.read_only.discard(counter)
         self.emit("}")
 
     def copy_statement(self):

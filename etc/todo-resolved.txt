@@ -1,6 +1,33 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 585 (2026-11-22, bug hunt: the judges of the fuzzers and
+    what they catch; design: the address walk of a path; readability: a
+    newcomer walks the bulk operands)
+    => bug hunt: defects of the fuzzers fixed: 'fuzz-compiler.py' took an
+       empty output for an array of the default integer and so never
+       reported a difference of exit code alone, did not exempt 'MIN / -1'
+       of the default integer and a left shift past 31 bits, reported the
+       SIGSEGV of a recursion that rv32i-fpga stops as a stack overflow,
+       and measured an rv32i-qemu timeout against x86_64 (now against the
+       faster target of each); 'fuzz-exprs.py' let a compiler crash pass
+       where a rejection was expected; 'fuzz-programs.py' let a loop body
+       write its counter, so a fifth of its programs never ended; no
+       fuzzer generated a 'foo' count of the length plus one
+       ('fuzz-whole.py' now does); 'fuzzlib.classify_compile' could take
+       a source line echoed by a rejection for a crash; 'fuzz-all.sh' had
+       no time limit on a fuzzer that hangs (now 'timeout' with the
+       workers stopped); 14 compiler mutants, all caught by some fuzzer;
+       gaps kept as a todo item
+    => design: 'compile_checked_index' moved from the statics of
+       'stmt_identifier' into 'path_address', which now handles a run-time
+       index whole; the compare of instances in 'expr_bool.hpp' takes its
+       operands through 'operand_of' like reads, writes and arguments, so
+       only the bulk built-ins call 'compile_lea' themselves (listings
+       equal, +2 lines)
+    => readability: only 'array_copy' with the overlap check sends a
+       constant count to 'count()'; why a copy onto itself or down needs
+       no overlap check; 29 functions, 2 predictions wrong
 [x] easy: round 584 (2026-11-22, bug hunt: arrays of arrays through
     records; design: 'array_copy' and 'arrays_equal'; readability: a
     newcomer walks the scopes of 'toc.hpp')

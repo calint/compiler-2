@@ -118,9 +118,9 @@ class bulk_operands final {
                 operands_.count().compile(
                     tc_, destination::of_register(count_register));
 
-                // note: a constant count comes from the overlap check of
-                //       'array_copy', its ranges were checked after the second
-                //       address
+                // note: only 'array_copy' with the overlap check emits a
+                //       constant count here, its ranges were checked after the
+                //       second address
 
                 if (constant_count_) {
                     return;

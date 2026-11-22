@@ -784,10 +784,10 @@ class expr_bool_op final : public statement {
         machine::held_registers held{x, {src_loc_tk, tc.indent()}};
 
         lhs.comment_source(tc);
-        const operand lhs_address{lhs.compile_lea(tc, held, {})};
+        const operand lhs_address{lhs.operand_of(tc, held)};
 
         rhs.comment_source(tc);
-        const operand rhs_address{rhs.compile_lea(tc, held, {})};
+        const operand rhs_address{rhs.operand_of(tc, held)};
 
         x.memory_equal({src_loc_tk, tc.indent()}, *size_bytes, lhs_address,
                        rhs_address,

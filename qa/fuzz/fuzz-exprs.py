@@ -631,8 +631,11 @@ def run_target(work, source, target, options):
     fl.write_source(path, source)
     c, o, problem = fl.run_target(fl.COMPILER, path, list(options), work,
                                   target)
-    if c.timed_out:
-        return ("timeout", "")
+    # a crash or hang of the compiler is no rejection, also where the model
+    # expects one
+    failure = fl.classify_compile(c)
+    if failure:
+        return failure[:2]
     if c.returncode:
         return ("compile", c.stderr)
     if problem:

@@ -307,6 +307,16 @@ class stmt_identifier final : public statement {
         }
 
       private:
+        // the index goes into 'index_register'; without bounds checks a
+        // trailing '+ c' or '- c' is left out and returned for the
+        // displacement, e.g. 'ix + 1' compiles 'ix' and returns 1; otherwise
+        // the whole index is compiled, checked when bounds checks are on, and
+        // 0 returned
+        [[nodiscard]] auto compile_checked_index(const expr_any& index_expr,
+                                                 const operand& index_register,
+                                                 const array_shape& shape,
+                                                 bool is_range) -> int64_t;
+
         // computes 'address' into a register so another index can be added
         [[nodiscard]] auto fold_indexed_address(const operand& address)
             -> operand {
@@ -1199,16 +1209,6 @@ class stmt_identifier final : public statement {
                                                 in_quotes(tk.text()))};
         }
     }
-
-    // the index goes into 'index_register'; without bounds checks a trailing
-    // '+ c' or '- c' is left out and returned for the displacement, e.g.
-    // 'ix + 1' compiles 'ix' and returns 1; otherwise the whole index is
-    // compiled, checked when bounds checks are on, and 0 returned
-    [[nodiscard]] static auto
-    compile_checked_index(compile_toc& tc, const expr_any& index_expr,
-                          const operand& index_register,
-                          const array_shape& shape, const bool is_range)
-        -> int64_t;
 
     // the field 'name_tk' of what the path up to it resolved to, a constant
     // named 'root' has none

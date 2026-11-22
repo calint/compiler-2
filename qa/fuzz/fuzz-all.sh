@@ -31,14 +31,31 @@ fi
 # the findings stay in 'findings/'
 TMPDIR=$(mktemp -d -t fuzz-all.XXXXXX)
 export TMPDIR
-trap 'rm -rf -- "$TMPDIR"' EXIT
+# the fuzzer that runs, stopped with the run
+child=""
+trap '[ -z "$child" ] || kill "$child" 2>/dev/null || true; rm -rf -- "$TMPDIR"' EXIT
 trap 'exit 130' INT TERM HUP
 
-# the fuzzers that failed, a finding or a failure of the fuzzer itself
+# a fuzzer that hangs is stopped after an hour per unit of 'scale' and fails
+# the run
+# note: 'timeout' stops the fuzzer's process group, also its workers; it
+#       runs in the background so that the traps run while it waits
+limit=$((3600 * scale))
+
+# the fuzzers that failed, a finding, a failure of the fuzzer itself or a
+# fuzzer stopped by 'limit'
 failed=""
 run() {
     echo "=== $*"
-    "$@" || failed="$failed $1"
+    timeout "$limit" "$@" &
+    child=$!
+    status=0
+    wait "$child" || status=$?
+    child=""
+    if [ "$status" -eq 124 ]; then
+        echo "=== $1: stopped after $limit s"
+    fi
+    [ "$status" -eq 0 ] || failed="$failed $1"
 }
 
 # the coverage of the generators is checked with its own fixed seed, so a

@@ -10,6 +10,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 585, fuzzers) 'fuzz-compiler.py' waives every target
+    difference of a program whose text has '<<' (56 of 2648 tests), since
+    '1 << 31' is negative on rv32i only; a narrower rule would waive only
+    a difference in a shifted value; the judges of 'fuzzlib.judge',
+    'fuzz-exprs', 'fuzz-ub' and 'fuzz-effects' do not exempt running out
+    of registers or a register an operation fixes (chapter 8 item 3), no
+    generated program reached it; 'fuzz-programs' 'compare_rv32i' has no
+    timing guard on an rv32i timeout; 'mutate', 'options' and
+    'alias-foo-fuzz' caught none of 14 mutants, the model fuzzers missed
+    'x + -y' emitted as 'x + y' (only the difference fuzzers caught it)
 [ ] easy: (round 584, listings) with '--checks=lower' without 'upper', a
     bulk built-in whose second array has a constant start and whose count
     is run-time tests the sign of the count twice, e.g. 'array_copy(a[1],
