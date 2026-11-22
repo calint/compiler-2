@@ -144,7 +144,7 @@ struct func_head {
 
         const bool is_constructor{result and result->is_self()};
 
-        assert_mut_has_receiver(is_constructor);
+        assert_mut_on_method(is_constructor);
 
         // e.g. 'func main(x) { x = 1 }' is rejected for its parameter, not
         // for the write to it
@@ -250,8 +250,9 @@ struct func_head {
         }
     }
 
-    // e.g. 'func mut point.move(dx)', a constructor writes its 'self' anyway
-    auto assert_mut_has_receiver(const bool is_constructor) const -> void {
+    // e.g. 'func mut point.move(dx)', not a function or a constructor, which
+    // writes its 'self' anyway
+    auto assert_mut_on_method(const bool is_constructor) const -> void {
         if (not mut_tk or (is_type_member() and not is_constructor)) {
             return;
         }
@@ -567,7 +568,8 @@ class stmt_def_func final : public statement {
     }
 
     // the body is compiled by its calls: in place by 'compile_inlined', else
-    // once per array lengths by 'emit_noinline_body'
+    // once per array lengths by 'emit_noinline_body'; that of 'main' by
+    // 'compile_main'
     auto compile([[maybe_unused]] compile_toc& tc,
                  [[maybe_unused]] const destination& dst) const
         -> void override {}
@@ -1095,8 +1097,8 @@ class stmt_def_func final : public statement {
                            array_lengths_path(array_lengths));
     }
 
-    // the function scope is established before the body is parsed, its
-    // variables are registered without emitting output
+    // the scope of the function, of the kind its calls compile it in, holds
+    // the constants, the result and the parameters before the body is parsed
     auto parse_body(parse_toc& tc, tokenizer& tz) -> void {
         const parse_toc::scope_entry body{
             tc,

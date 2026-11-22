@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 588 (2026-11-22, bug hunt: unsized array parameters;
+    design: the driver 'main.cpp'; readability: a newcomer walks
+    'stmt_def_func.hpp')
+    => bug hunt: no defect; 2050 generated programs passing arrays of
+       lengths 1 to 4096 of four element types as locals, fields and
+       fields of elements to inline and noinline functions, passing them
+       on, to the bulk built-ins, recursions and generics, against a
+       model, about 23600 runs on three targets under six option sets; 11
+       mutants of the binding of lengths and the choice of bodies, all
+       caught, two only by the generator: tests 8160 (a body asked for
+       only in skipped code is checked for its own lengths) and 8161 (a
+       run-time 'foo' count one past a length above 8)
+    => design: the range of '--vars' for the target is checked in the
+       driver before the source is read, as '--stack' and '--memory'
+       are, so a bad '--vars' with a missing file names '--vars'; the
+       throw in 'storage_layout' is an assert, '--vars' is validated in
+       one place (a test of 'test-cli.sh'); the exit codes in '--help' are
+       a todo item
+    => readability: 'assert_mut_has_receiver' renamed
+       'assert_mut_on_method', it also rejects a constructor; the body of
+       'main' is compiled by 'compile_main'; the scope of 'parse_body' is
+       of the kind the calls compile the body in; 61 functions, 3
+       predictions wrong
 [x] easy: round 587 (2026-11-22, bug hunt: combinations of options;
     design: function definitions; readability: a newcomer walks the
     inlined call)

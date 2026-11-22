@@ -1400,15 +1400,11 @@ class storage_layout final {
         : machine_{backend}, scopes_{scopes}, data_{data},
           vars_capacity_bytes_{vars_capacity_bytes} {
 
-        // the option is wrong, not the source; the capacity alone stays
-        // below what the target addresses, as do the dats with it
-        // ('assert_dats_and_vars_fit_target')
-        if (vars_capacity_bytes >= backend.max_storage_bytes()) {
-            throw option_error{std::format(
-                "invalid --vars: {} B reaches the {} B that the target "
-                "addresses",
-                vars_capacity_bytes, backend.max_storage_bytes())};
-        }
+        // note: 'main' rejects a '--vars' that reaches what the target
+        //       addresses; the dats with it stay below it too
+        //       ('assert_dats_and_vars_fit_target')
+
+        assert(vars_capacity_bytes < backend.max_storage_bytes());
     }
 
     // places 'var' after the storage in use of the nearest scope with a

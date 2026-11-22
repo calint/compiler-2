@@ -1,0 +1,27 @@
+# a run-time 'foo' count over an unsized parameter is checked against the
+# length of each noinline body, here one past the end of 255 elements
+func noinline id(x) res {
+    res = x
+}
+
+func noinline sum(a i8[], c) res {
+    res = 0
+    foo a, c {
+        res = res + e
+    }
+}
+
+func main() {
+    var a9 = i8[9]
+    var a255 = i8[255]
+    foo a9 {
+        e = 1
+    }
+    foo a255 {
+        e = 1
+    }
+    if sum(a9, id(9)) != 9 or sum(a255, id(255)) != 255 {
+        exit(1)
+    }
+    exit(sum(a255, id(256)))
+}

@@ -1,0 +1,15 @@
+# a noinline call in skipped code checks the body for its array lengths also
+# when a body for other lengths is emitted
+func noinline f(s i8[]) res {
+    res = s[5]
+}
+
+func main() {
+    var a = i8[4]
+    var b = i8[8]
+    var r = f(b)
+    if 1 == 2 {
+        r = f(a)
+    }
+    exit(r)
+}

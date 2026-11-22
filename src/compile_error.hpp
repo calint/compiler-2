@@ -27,9 +27,9 @@ class unlocated_error final : public std::runtime_error {
     using std::runtime_error::runtime_error;
 };
 
-// a wrong command line option, found by the option parse in 'main', or by the
-// backend and 'storage_layout' when it is wrong only with the target or the
-// sources, e.g. a '--stack' larger than its memory
+// a wrong command line option, found by the option parse in 'main', or later
+// when it is wrong only with the target or the sources, e.g. a '--stack'
+// larger than its memory
 class option_error final : public std::runtime_error {
   public:
     using std::runtime_error::runtime_error;

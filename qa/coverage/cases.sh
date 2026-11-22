@@ -8548,3 +8548,11 @@ SRC=8120 && COMPERR
 # or function is a frame, its text is that of the recursive call
 SRC=8121 && COMPERR
 SRC=8122 && COMPERR
+
+# a noinline call in skipped code checks the body for its array lengths also
+# when a body for other lengths is emitted
+SRC=8160 && COMPERR
+
+# a run-time 'foo' count over an unsized parameter is checked against the
+# length of each noinline body
+SRC=8161 && EXP=255 && RUN_ERR

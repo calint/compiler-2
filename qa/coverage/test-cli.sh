@@ -988,6 +988,10 @@ CLI_VARS_RANGE() {
     # large too
     expect_exit_1 "$BIN" --vars=0x100000000 --target=rv32i 0418.baz >gen.s 2>err
     grep -Fq "invalid --vars: 4294967296 B reaches the 4294967296 B that the target addresses" err
+    # like the options the backend checks, before the source is read
+    expect_exit_1 "$BIN" --vars=0x100000000 --target=rv32i missing.baz >gen.s 2>err
+    grep -Fq "invalid --vars" err
+    grep -Fq "cannot" err && fail
     echo ok
 }
 

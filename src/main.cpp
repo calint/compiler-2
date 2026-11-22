@@ -1124,6 +1124,21 @@ auto check_listing_written(const machine& backend) -> void {
     throw unlocated_error{"cannot write the assembly to stdout"};
 }
 
+// the variables stay below what the target addresses, checked like the
+// options of the backend before the source is read
+auto check_vars_fit_target(const machine& backend, const size_t vars_size_bytes)
+    -> void {
+
+    if (vars_size_bytes < backend.max_storage_bytes()) {
+        return;
+    }
+
+    throw option_error{
+        std::format("invalid --vars: {} B reaches the {} B that the target "
+                    "addresses",
+                    vars_size_bytes, backend.max_storage_bytes())};
+}
+
 // the source file compiled for the target, the listing written to stdout;
 // 'files' holds the sources read, for the report of an error
 auto compile_to_stdout(const options& opts, source_files& files) -> void {
@@ -1143,6 +1158,8 @@ auto compile_to_stdout(const options& opts, source_files& files) -> void {
     const std::unique_ptr<machine> backend{
         target.make(files, resolved),
     };
+
+    check_vars_fit_target(*backend, opts.vars_size_bytes);
 
     files.load(std::string{src_file_name}, std::nullopt);
 
