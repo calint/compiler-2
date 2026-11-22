@@ -1,0 +1,28 @@
+# --checks=shift: a count is checked at the width of the value, also after a
+# system call that leaves high bits in the count register ('rcx' on x86_64),
+# an 'i8' and an 'i16' count of their width and an 'i8' count of an 'i32'
+func noinline id8(x i8) res i8 {
+    res = x
+}
+
+func noinline id16(x i16) res i16 {
+    res = x
+}
+
+func noinline id32(x i32) res i32 {
+    res = x
+}
+
+func main() {
+    var s = "ok\n"
+    var n = id8(30)
+    write(1, s)
+    var b = id8(3) << id8(5)
+    write(1, s)
+    var h = id16(3) >> id16(1) << id16(14)
+    write(1, s)
+    var w = id32(1) << n
+    if b != 96 or h != 16384 or w != 1073741824 {
+        exit(1)
+    }
+}

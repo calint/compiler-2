@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 578 (2026-11-22, bug hunt: bitwise and shift operators;
+    design: the interface of the backends; readability: a newcomer walks
+    'generics.hpp')
+    => bug hunt: no defect; 3400 generated programs of shifts and bitwise
+       operators at every width against a model of wrapping and the shift
+       check (37700 runs under ten option sets on two targets, a share on
+       the other two), 32000 single shifts at every count edge, the
+       immediate limits of both targets, 26000 runs of multiply and
+       divide by constants, probes; 19 mutants, 18 caught; test 8000 (a
+       'write' before a narrow shift leaves rcx high) catches the x86_64
+       check that compares the whole 'rcx' after a narrow move
+    => design: 'add_subtract' and 'multiply' of 'machine' take their
+       'runtime_check' without a default, as 'divide', 'shift' and
+       'unary' do, so 'runtime_check' is nested in 'machine' and the
+       struct and alias at namespace scope are gone (listings equal, -2
+       lines); every public entry point has a caller; nine ideas kept
+    => readability: the 'definition' of a generic function and of a
+       generic type is its place in the order and the last definition its
+       body or fields see; 43 functions, 5 predictions wrong
 [x] easy: round 577 (2026-11-22, bug hunt: numeric literals; design: how
     generic instances are made; readability: a newcomer walks
     'ub_assigned.hpp')

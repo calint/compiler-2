@@ -231,10 +231,10 @@ class stmt_builtin_foo final : public statement {
         const type& default_type{tc.builtins().default_type()};
 
         x.add_subtract({tok(), indent}, arithmetic_operator::add, iterator,
-                       operand::imm(element_size_bytes, default_type));
+                       operand::imm(element_size_bytes, default_type), {});
 
         x.add_subtract({tok(), indent}, arithmetic_operator::add, counter,
-                       operand::imm(1, default_type));
+                       operand::imm(1, default_type), {});
 
         x.compare_and_branch({tok(), indent}, counter, limit,
                              {

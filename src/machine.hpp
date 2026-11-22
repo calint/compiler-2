@@ -54,13 +54,6 @@ struct check_options {
     }
 };
 
-// a check of an operation at run time: enabled, a failure jumps to the failure
-// handler of the check, which reports the line when
-// 'check_options::reports_line'; the operation that takes it tells what fails
-struct runtime_check {
-    bool enabled{};
-};
-
 // where an emitted instruction comes from: the source token the listing
 // attributes it to and the indent it is written at
 //
@@ -219,9 +212,13 @@ class machine {
 
     using frame_kind = register_trace::frame_kind;
 
-    // at namespace scope because a default argument '= {}' of a member
-    // function cannot use a nested class with default member initializers
-    using runtime_check = ::runtime_check;
+    // a check of an operation at run time: enabled, a failure jumps to the
+    // failure handler of the check, which reports the line when
+    // 'check_options::reports_line'; the operation that takes it tells what
+    // fails
+    struct runtime_check {
+        bool enabled{};
+    };
 
     // what the command line chooses for the target, a target reads what it
     // has, e.g. only the bare-metal ones a stack
@@ -924,7 +921,7 @@ class machine {
     virtual auto add_subtract(const emit_site site,
                               const arithmetic_operator operation,
                               const operand& dst, const operand& src,
-                              const runtime_check& check = {}) -> void = 0;
+                              const runtime_check& check) -> void = 0;
 
     virtual auto address_of(const emit_site site, const operand& dst,
                             const operand& address) -> void = 0;
@@ -1526,7 +1523,7 @@ class machine {
     // other factors go to 'emit_multiply'
     auto multiply(const emit_site site, const operand& product,
                   const operand& factor, const factor_use use,
-                  const runtime_check& check = {}) -> void {
+                  const runtime_check& check) -> void {
 
         const std::optional<uint64_t> bits{immediate_bits(factor)};
 
@@ -1604,7 +1601,7 @@ class machine {
         assert(element_size_bytes <= max_storage_bytes());
 
         multiply(site, index, operand::imm(element_size_bytes, default_type()),
-                 factor_use::read_only);
+                 factor_use::read_only, {});
     }
 
     // a blank line that separates the code from the report

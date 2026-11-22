@@ -3112,6 +3112,10 @@ SRC=0968 && EXP=252 && OPTS="--checks=shift,line" RUN_ERR
 # --checks=shift: constant count outside the width
 SRC=0969 && OPTS="--checks=shift" COMPERR
 
+# --checks=shift: a count checked at the width of the value after a system
+# call that leaves high bits in the count register ('rcx' on x86_64)
+SRC=8000 && OPTS="--checks=shift" DIFF
+
 # --checks=overlap: disjoint, adjacent, identical and shifted down ranges pass
 SRC=0970 && EXP=0 && OPTS="--checks=overlap" RUN_ERR
 

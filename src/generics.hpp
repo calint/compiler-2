@@ -394,7 +394,8 @@ struct generic_type_info {
     std::optional<token> base_tk;
     // e.g. 'i8' and 'size' of 'list<i8, size>'
     std::vector<token> base_arg_tks;
-    // see 'definition_order'
+    // its place in 'definition_order', also the last definition its fields
+    // and the arguments of its base see
     size_t definition{};
 };
 
@@ -520,7 +521,7 @@ struct generic_func_info {
     // the instance of the generic type of a method, e.g. 'text<8>' for
     // 'str.append'
     std::optional<generic_type_instance> receiver;
-    // the last definition the body sees, see 'definition_order'
+    // its place in 'definition_order', also the last definition its body sees
     size_t definition{};
     // the name after the '.' of a method, e.g. 'append' of 'text.append'
     std::optional<token> method_tk;

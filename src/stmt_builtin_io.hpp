@@ -462,7 +462,8 @@ class stmt_builtin_io final : public statement {
         machine& x{tc.machine()};
 
         x.add_subtract({tok(), tc.indent()}, arithmetic_operator::add,
-                       buffer_reg, operand::imm(offset_bytes, default_type));
+                       buffer_reg, operand::imm(offset_bytes, default_type),
+                       {});
     }
 
     // a run-time start is checked with the count, e.g. the 's' of
@@ -493,7 +494,7 @@ class stmt_builtin_io final : public statement {
                       buffer_info.type_ref().size_bytes());
 
         x.add_subtract({tok(), tc.indent()}, arithmetic_operator::add,
-                       buffer_reg, start);
+                       buffer_reg, start, {});
     }
 
     // the range is checked and the buffer address moves to the start, which
