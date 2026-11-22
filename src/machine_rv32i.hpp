@@ -41,7 +41,7 @@
 //                'scratch_registers_' and the roles in 'rv32i_target'
 //   addresses    'lower_address': an operand into a base register and a
 //                12-bit offset, which 'load_at' and 'store_at' access; two
-//                accesses share an upper part ('shares_address_base',
+//                accesses share a base step ('shares_address_base',
 //                'rebased'); 'start_of' and 'is_word_based' know where an
 //                address is within its word
 //   operations   'binary_operation', 'emit_binary_instruction',
@@ -2020,8 +2020,8 @@ class machine_rv32i : public machine {
         return {left, right};
     }
 
-    // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
-    // both loads and the base register ends up holding the left value
+    // both addresses are 'base + step + low', so one step serves both loads
+    // and the base register ends up holding the left value
     [[nodiscard]] auto comparison_operands_through_shared_base(
         const emit_site site, const operand& lhs, const operand& rhs)
         -> std::array<operand, 2> {
@@ -2190,8 +2190,8 @@ class machine_rv32i : public machine {
             bulk);
     }
 
-    // both addresses are 'base + upper + low', so one 'lui' and 'add' serve
-    // the load and the store
+    // both addresses are 'base + step + low', so one step serves the load and
+    // the store
     auto copy_through_shared_base(const emit_site site, const operand& dst,
                                   const operand& src) -> void {
 
@@ -2961,12 +2961,14 @@ class machine_rv32i : public machine {
         const std::string& index{address.index_register()};
 
         const int64_t offset{address.displacement()};
+        const int64_t step{base_step(offset)};
+        const bool is_near_step{assembler_rv32i::fits_immediate(step)};
         const uint32_t upper{assembler_rv32i::upper_part(offset)};
-        const int32_t low{assembler_rv32i::lower_part(offset)};
+        const int64_t low{offset - step};
 
-        // no index and no upper part: the memory instruction handles the
-        // entire offset
-        if (index.empty() and upper == 0) {
+        // no index and no step: the memory instruction handles the entire
+        // offset
+        if (index.empty() and step == 0) {
             return operand::mem(base, {}, 1, low, address.type_ref());
         }
 
@@ -2980,17 +2982,22 @@ class machine_rv32i : public machine {
 
         const std::string& result_name{result.register_name()};
 
-        // only the upper part; the memory instruction adds the low
+        // only the step; the memory instruction adds the low
         if (index.empty()) {
-            assembler_.lui(site.indent, result_name, upper);
-            assembler_.add(site.indent, result_name, result_name, base);
+            if (is_near_step) {
+                assembler_.addi(site.indent, result_name, base, step);
+            } else {
+                assembler_.lui(site.indent, result_name, upper);
+                assembler_.add(site.indent, result_name, result_name, base);
+            }
+
             return operand::mem(result_name, {}, 1, low, address.type_ref());
         }
 
         // a result apart from the register inputs gathers the terms itself,
         // upper part first, so the upper part takes no register of its own
-        if (upper != 0 and address.scale() == 1 and result_name != base and
-            result_name != index) {
+        if (not is_near_step and address.scale() == 1 and
+            result_name != base and result_name != index) {
 
             assembler_.lui(site.indent, result_name, upper);
             assembler_.add(site.indent, result_name, result_name, base);
@@ -3013,7 +3020,13 @@ class machine_rv32i : public machine {
             assembler_.add(site.indent, result_name, result_name, base);
         }
 
-        if (upper != 0) {
+        if (step == 0) {
+            return operand::mem(result_name, {}, 1, low, address.type_ref());
+        }
+
+        if (is_near_step) {
+            assembler_.addi(site.indent, result_name, result_name, step);
+        } else {
             const operation_scope scope{*this};
 
             const operand displacement{alloc_word_register(site)};
@@ -3850,6 +3863,29 @@ class machine_rv32i : public machine {
         }
     }
 
+    // what the base register of an access at 'offset' adds so the rest fits
+    // the 12-bit offset: nothing, one 'addi' immediate (offsets that two
+    // 'addi' reach) or the part that 'lui' loads
+    [[nodiscard]] static auto base_step(const int64_t offset) -> int64_t {
+        if (assembler_rv32i::fits_immediate(offset)) {
+            return 0;
+        }
+
+        if (assembler_rv32i::fits_immediate(offset -
+                                            assembler_rv32i::immediate_max)) {
+
+            return assembler_rv32i::immediate_max;
+        }
+
+        if (assembler_rv32i::fits_immediate(offset -
+                                            assembler_rv32i::immediate_min)) {
+
+            return assembler_rv32i::immediate_min;
+        }
+
+        return offset - assembler_rv32i::lower_part(offset);
+    }
+
     // the branch taken when 'holds' does, of the comparisons that have one
     [[nodiscard]] static auto
     branch_for_comparison(const comparison_operator holds) -> op {
@@ -4271,14 +4307,15 @@ class machine_rv32i : public machine {
         };
     }
 
-    // 'address' from the register of 'lowered', which holds the upper part
-    // of their shared base, see 'shares_address_base'
+    // 'address' from the register of 'lowered', which holds the step of
+    // their shared base, see 'shares_address_base'
     [[nodiscard]] static auto rebased(const operand& address,
                                       const operand& lowered) -> operand {
 
+        const int64_t offset{address.displacement()};
+
         return operand::mem(lowered.base_register(), {}, 1,
-                            assembler_rv32i::lower_part(address.displacement()),
-                            address.type_ref());
+                            offset - base_step(offset), address.type_ref());
     }
 
     // a narrow register gets high bits from a wider source
@@ -4308,7 +4345,7 @@ class machine_rv32i : public machine {
     }
 
     // two memory operands of one base register without index whose offsets
-    // have the same nonzero 'upper_part'
+    // have the same nonzero 'base_step'
     [[nodiscard]] static auto shares_address_base(const operand& dst,
                                                   const operand& src) -> bool {
 
@@ -4326,13 +4363,10 @@ class machine_rv32i : public machine {
             return false;
         }
 
-        const uint32_t src_upper{
-            assembler_rv32i::upper_part(src.displacement()),
-        };
+        const int64_t src_step{base_step(src.displacement())};
 
-        // without an upper part the access needs no base register of its own
-        return src_upper != 0 and
-               src_upper == assembler_rv32i::upper_part(dst.displacement());
+        // without a step the access needs no base register of its own
+        return src_step != 0 and src_step == base_step(dst.displacement());
     }
 
     // the widest aligned parts like the unrolled 'copy_block'

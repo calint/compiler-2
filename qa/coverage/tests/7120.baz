@@ -1,5 +1,5 @@
 func main() {
-    var big = i8[6000]
+    var big = i8[9000]
     var v = i32[4]
     var i = 1
     v[i] = 3
