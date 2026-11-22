@@ -10,11 +10,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] easy: (round 586, messages) an error in the body of a deep inlined
-    recursion prints one identical "called from" frame per level, up to
-    about 60, while a limit error collapses them; "instantiated by
-    'str.put<i8>'" points at the method name where "called from" points at
-    the receiver
 [ ] easy: (round 585, fuzzers) 'fuzz-compiler.py' waives every target
     difference of a program whose text has '<<' (56 of 2648 tests), since
     '1 << 31' is negative on rv32i only; a narrower rule would waive only

@@ -109,6 +109,17 @@ class compile_error final : public std::exception {
                 .relation{std::move(relation)},
             };
         }
+
+        // the same text at the same place, e.g. each level of an inlined
+        // recursion at its recursive call
+        [[nodiscard]] static auto is_same(const call_frame& lhs,
+                                          const call_frame& rhs) -> bool {
+
+            return lhs.where.file_ix == rhs.where.file_ix and
+                   lhs.where.start_index == rhs.where.start_index and
+                   lhs.where.end_index == rhs.where.end_index and
+                   lhs.text == rhs.text and lhs.relation == rhs.relation;
+        }
     };
 
     // a token without a place gives an error without one like 'file_level'

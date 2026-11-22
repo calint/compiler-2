@@ -1,0 +1,14 @@
+# an error at the bottom of an inlined recursion prints the frame of the
+# recursive call once with the count of its levels
+func f(n) {
+    var a = i8[4]
+    if n == 0 {
+        a[n + 5] = 1
+    } else {
+        f(n - 1)
+    }
+}
+
+func main() {
+    f(40)
+}

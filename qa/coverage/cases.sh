@@ -8556,3 +8556,7 @@ SRC=8160 && COMPERR
 # a run-time 'foo' count over an unsized parameter is checked against the
 # length of each noinline body
 SRC=8161 && EXP=255 && RUN_ERR
+
+# an error at the bottom of an inlined recursion prints the frame of the
+# recursive call once with the count of its levels
+SRC=8162 && COMPERR

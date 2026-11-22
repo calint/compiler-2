@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 586, messages) an error in the body of a deep inlined
+    recursion prints one identical "called from" frame per level, up to
+    about 60, while a limit error collapses them; "instantiated by
+    'str.put<i8>'" points at the method name where "called from" points at
+    the receiver
+    => done (2026-11-23): 'print_call_frames' prints a run of equal frames
+       ('call_frame::is_same') once, e.g. "called from, 40 times"; the
+       instance of a generic function or method is located at the start of
+       its call ('generic_call' keeps 'call_begin_tk_', a method call adds
+       its receiver before it resolves the callee), test 2999 moves to the
+       receiver; test 8162; docs 1.9 item 1 say both
 [x] easy: (round 588, the usage text) '--help' does not say the exit
     codes (0 when compiled, 1 on any error: option, source, unlocated,
     stdout, internal) nor that '--vars' must be below what the target

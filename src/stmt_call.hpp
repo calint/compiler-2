@@ -161,6 +161,9 @@ parse_array_param_argument(parse_toc& tc, tokenizer& tz,
 class generic_call {
     // e.g. 'to' of 'tz.to()', the errors of the deduction are located at it
     token name_tk_;
+    // e.g. 'tz' of 'tz.to()', where an error in the instance is reported like
+    // the call frames are
+    token call_begin_tk_;
     // e.g. 'tokenizer.to'
     std::string generic_name_;
     // kept by 'generic_registry', a body defines no generic function
@@ -192,9 +195,11 @@ class generic_call {
     // type parameter that the result is declared with is the destination's
     // unless its deducing argument tells it
     generic_call(const parse_toc& tc, const token& name_tk,
+                 const token& call_begin_tk,
                  const std::string_view generic_name,
                  const type* const expected_type)
-        : name_tk_{name_tk}, generic_name_{generic_name},
+        : name_tk_{name_tk}, call_begin_tk_{call_begin_tk},
+          generic_name_{generic_name},
           generic_{&tc.generics().get_func(generic_name)} {
 
         for (const generic_param& type_param :
@@ -289,8 +294,8 @@ class generic_call {
             });
         }
 
-        return func_instantiator::instantiate_func(tc, name_tk_, generic_name_,
-                                                   type_args);
+        return func_instantiator::instantiate_func(tc, call_begin_tk_,
+                                                   generic_name_, type_args);
     }
 
     // e.g. 'x U' of '(x U)', counted without a receiver
@@ -353,6 +358,7 @@ class generic_call {
     // reads '<...>' and makes the instance it names, 'tz' is at the '<'
     [[nodiscard]] static auto
     written_instance(parse_toc& tc, tokenizer& tz, const token& name_tk,
+                     const token& call_begin_tk,
                      const std::string_view generic_name) -> written {
 
         const token open_tk{tz.seen_char_token('<')};
@@ -367,8 +373,8 @@ class generic_call {
 
         return {
             .func{
-                &func_instantiator::instantiate_func(tc, name_tk, generic_name,
-                                                     type_args),
+                &func_instantiator::instantiate_func(tc, call_begin_tk,
+                                                     generic_name, type_args),
             },
             .generic_tks{args.list_tks},
         };
@@ -1925,12 +1931,12 @@ class stmt_call final : public statement {
             throw_not_generic(tok(), "method", name);
         }
 
+        // the receiver is the first argument, the call begins at it
+        args_.push_back(path_argument(std::move(receiver)));
+
         std::optional<generic_call> deduction{
             resolve_callee(tc, tz, name, expected_type),
         };
-
-        // the receiver is the first argument
-        args_.push_back(path_argument(std::move(receiver)));
 
         parse_arguments(tc, tz, "method name", std::move(deduction));
     }
@@ -2644,11 +2650,13 @@ class stmt_call final : public statement {
 
         // e.g. not the '<=' of 'p.get <= 3', which the '(' expected reports
         if (not tz.is_type_args_next()) {
-            return generic_call{tc, tok(), name, expected_type};
+            return generic_call{tc, tok(), call_begin_token(), name,
+                                expected_type};
         }
 
         generic_call::written instance{
-            generic_call::written_instance(tc, tz, tok(), name),
+            generic_call::written_instance(tc, tz, tok(), call_begin_token(),
+                                           name),
         };
 
         generic_tks_ = std::move(instance.generic_tks);

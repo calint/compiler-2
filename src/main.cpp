@@ -918,12 +918,17 @@ auto print_located(const source_files& files, const source_span& where,
 }
 
 // the calls and generic instances the error was found through,
-// innermost first
+// innermost first; the equal frames of each level of an inlined recursion
+// print once with their count
 auto print_call_frames(const source_files& files,
                        const std::span<const compile_error::call_frame> frames)
     -> void {
 
-    for (const compile_error::call_frame& frame : frames) {
+    for (const auto run :
+         frames | std::views::chunk_by(&compile_error::call_frame::is_same)) {
+
+        const compile_error::call_frame& frame{run.front()};
+        const size_t count{std::ranges::size(run)};
         const source_span& where{frame.where};
         const std::string_view src{files.text(where.file_ix)};
 
@@ -938,6 +943,10 @@ auto print_call_frames(const source_files& files,
         if (frame.text != line) {
             text = std::format("{} {}", frame.relation,
                                in_quotes(printable(frame.text)));
+        }
+
+        if (count > 1) {
+            text = std::format("{}, {} times", text, count);
         }
 
         print_located(files, where, text);

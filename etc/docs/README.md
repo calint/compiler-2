@@ -752,7 +752,9 @@ e.g. the register use at the failure that 'machine::register_error' adds.
    by the name of the instance when the callee is one of a generic function
    or method, the instance of a generic function or type adds the instances
    that led to it ('generic_trace'), and the error of a noinline body gets
-   the call that needed the body (4.1).
+   the call that needed the body (4.1). A frame is at the start of its
+   call, e.g. the receiver of a method; equal frames in a row, one per level
+   of an inlined recursion, print once with their count.
 2. Kinds ('compile_error::error_kind'): 'source', an error of the program, and
    the limits of the compile, which depend on the code compiled or on the
    arguments of a call ('compile_error::is_limit'): 'out_of_registers',
