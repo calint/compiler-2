@@ -887,11 +887,11 @@ class expr_arith final : public statement {
         // the element is computed into a scratch register or read where it
         // is stored
         if (src.is_computed()) {
-            compile_computed_operand(tc, s.op, dst, src);
+            compile_computed_step(tc, s.op, dst, src);
             return;
         }
 
-        compile_stored_operand(tc, dst, s);
+        compile_stored_step(tc, dst, s);
     }
 
     // the steps that 'plan_steps' made for 'dst'; a nested list plans its
@@ -1209,12 +1209,14 @@ class expr_arith final : public statement {
                         converted)};
     }
 
-    // the operand in a scratch register that the operation may overwrite
-    static auto compile_computed_operand(compile_toc& tc,
-                                         const arithmetic_operator op,
-                                         const destination& dst,
-                                         const statement& src) -> void {
+    // the element computed into a scratch register, which the operation may
+    // overwrite
+    static auto compile_computed_step(compile_toc& tc,
+                                      const arithmetic_operator op,
+                                      const destination& dst,
+                                      const statement& src) -> void {
 
+        // note: 'compile_step' sends a step without a value
         assert(not src.fold(tc, tc.use_of(dst)));
 
         machine& x{tc.machine()};
@@ -1250,10 +1252,11 @@ class expr_arith final : public statement {
                      constant_operand(dst, value));
     }
 
-    // a name read in place, a register that holds the result of unary ops
-    // may be overwritten; 'a + -b' is 'a - b' and 'a - -b' is 'a + b'
-    static auto compile_stored_operand(compile_toc& tc, const destination& dst,
-                                       const step& s) -> void {
+    // the element read where it is stored, a register that holds the result
+    // of unary ops may be overwritten;
+    // 'a + -b' is 'a - b' and 'a - -b' is 'a + b'
+    static auto compile_stored_step(compile_toc& tc, const destination& dst,
+                                    const step& s) -> void {
 
         const arithmetic_operator op{s.op};
         const statement& src{*s.element};
@@ -1307,9 +1310,9 @@ class expr_arith final : public statement {
     }
 
     // the first step writes the destination, a later step that reads it
-    // would read that; a name or literal first element is copied before
-    // anything writes and its unary ops apply in place after the copy, a
-    // constant step reads nothing; a read under another name counts,
+    // would read that; a name as the first element is copied before anything
+    // writes and its unary ops apply in place after the copy, a constant step
+    // reads nothing; a read under another name counts,
     // e.g. the 'e' of 'a[0] = e * 2 + e' in a 'foo a'
     // note: the steps are those 'compile_steps' emits in place, e.g. 'n = -n
     //       + 1' leads with the constant, then reads 'n'
@@ -1320,7 +1323,7 @@ class expr_arith final : public statement {
 
         const step& first{steps.front()};
 
-        // a constant, or a name or literal with or without unary ops
+        // a constant, or a name with or without unary ops
         const bool reads_before_writing{
             first.value or not first.element->is_computed(),
         };

@@ -1098,6 +1098,14 @@ def rule_multiline(b, want):
         want(i + 1, BLANK)
 
 
+def rule_switch_branches(b, want):
+    # the branches of a switch are set apart, labels sharing a body are one
+    # statement
+    for i, s in enumerate(b.stmts):
+        if i > 0 and s.after_label:
+            want(i, BLANK)
+
+
 def rule_assert_groups(b, want):
     # consecutive asserts form a group, set apart on both sides
     i = 0
@@ -1155,6 +1163,7 @@ BLANK_LINE_RULES = [
     # line after the '{' of a lambda head whatever its 'KeepEmptyLines' is
     # rule_lambda_head,
     rule_multiline,
+    rule_switch_branches,
     rule_assert_groups,
 ]
 

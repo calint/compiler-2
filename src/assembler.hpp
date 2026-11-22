@@ -614,8 +614,9 @@ class assembler {
     // virtual methods
     //
 
-    // folds the copy that starts 'block' into the lines after it, see above
-    // the class; false when the first line is no copy or the copy is kept
+    // rewrites the reads of the copy that starts 'block' to take its source,
+    // see above the class; false when the first line is no copy or its reads
+    // cannot take the source
     virtual auto fold_copy(std::span<line> block) -> bool = 0;
 
     // the code size of one instruction in the target's unit
@@ -843,6 +844,7 @@ class assembler {
                 }
 
                 if (fold_copy(block)) {
+                    remove(block.front());
                     ++optimizations_.removed_copies;
                 }
             }

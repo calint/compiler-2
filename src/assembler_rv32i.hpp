@@ -989,8 +989,6 @@ class assembler_rv32i final : public assembler {
             }
         }
 
-        remove(block.front());
-
         return true;
     }
 

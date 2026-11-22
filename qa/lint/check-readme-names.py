@@ -19,7 +19,9 @@ CASES = os.path.join(ROOT, 'qa', 'coverage', 'cases.sh')
 
 # a 'scope::name' must also name a member of the class, struct, enum or
 # namespace 'scope', e.g. 'toc::fold_let' fails when only another class of
-# 'src/' has a 'fold_let'
+# 'src/' has a 'fold_let'; a scope that 'src/' does not define, e.g. a function
+# 'plan_writes::x', fails too, except these
+EXTERNAL_SCOPES = {'std'}
 
 # a whole quoted text that is a name, a scoped name or a file name
 QUOTED = re.compile(r"'([A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_~][A-Za-z0-9_]*)*(?:\.[ch]pp)?)'")
@@ -71,9 +73,9 @@ def scope_bodies(texts, scope):
 def is_member_of_scopes(texts, name):
     parts = name.split('::')
     for scope, member in zip(parts, parts[1:]):
-        bodies = scope_bodies(texts, scope)
-        if not bodies:
+        if scope in EXTERNAL_SCOPES:
             continue
+        bodies = scope_bodies(texts, scope)
         word = re.compile(r'\b' + re.escape(member.lstrip('~')) + r'\b')
         out_of_body = f'{scope}::{member}'
         if not any(word.search(b) for b in bodies) and not any(
@@ -95,9 +97,14 @@ def catalog_tests():
         if not line.startswith('|'):
             continue
         column = line.rstrip(' |').split('|')[-1]
-        for first, last in re.findall(r'\b(\d{4})(?:-(\d{4}))?\b', column):
-            for n in range(int(first), int(last or first) + 1):
-                tests.append((line_no + 1, f'{n:04}'))
+        for token in re.findall(r'\d+(?:-\d+)?', column):
+            bounds = token.split('-')
+            numbers = range(int(bounds[0]), int(bounds[-1]) + 1)
+            # e.g. '296' or '1291-1289', which name no case
+            if not re.fullmatch(r'\d{4}(?:-\d{4})?', token) or not numbers:
+                tests.append((line_no + 1, token))
+                continue
+            tests += [(line_no + 1, f'{n:04}') for n in numbers]
     return tests
 
 

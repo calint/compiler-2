@@ -1,6 +1,30 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 581 (2026-11-22, bug hunt: the linters against their
+    contracts; design: the assembler and its passes; readability: a
+    newcomer walks the run-time compile of 'expr_arith.hpp')
+    => bug hunt: five defects in four checkers, each seeded violation
+       now reported: 'check-error-tests.py' missed the messages of
+       'register_error', of 'print_unlocated_error' and of an error built
+       past its 6-line window (it now scans to the matching bracket), and
+       counted a commented 'grep' of 'test-cli.sh' as a test;
+       'check-messages.py' skipped all of 'compile_error.hpp' where only
+       'in_quotes' may quote; 'check-readme-names.py' passed a scope that
+       src does not define ('std' excepted) and test numbers of the
+       catalog that are not 4 digits or a reversed range; the formatter
+       had no rule for the blank line between switch branches that
+       AGENTS.md states ('rule_switch_branches'); 'check-layers.py', the
+       line check of 'cases.sh' and 'check-all.sh' caught every seed
+    => design: the base 'remove_copies' removes the copy that
+       'fold_copy' folded, as the other passes leave removal and counting
+       to the base; 'fold_copy' of rv32i only rewrites the reads
+       (listings equal); nine ideas kept with reasons
+    => readability: 'compile_computed_operand' and
+       'compile_stored_operand' emit a whole step, renamed
+       'compile_computed_step' and 'compile_stored_step'; a non-computed
+       first element is a name, not a literal (the literal folds); 22
+       functions, 3 predictions wrong
 [x] easy: round 580 (2026-11-22, bug hunt: explicit conversions; design:
     the compile of arithmetic; readability: a newcomer walks
     'stmt_def_var.hpp')

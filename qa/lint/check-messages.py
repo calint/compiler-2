@@ -13,7 +13,7 @@ import sys
 CALLS = re.compile(r'(std::format|std::println|std::print|\bcomment)\s*(<[^<>()]*>)?\s*\(')
 
 # 'in_quotes' itself is the one place that quotes
-EXEMPT = {'compile_error.hpp'}
+EXEMPT = re.compile(r'auto in_quotes\(.*?\n\}', re.S)
 
 
 def skip_literal(src, ix):
@@ -72,11 +72,14 @@ def main():
     found = 0
     calls = 0
     for name in sorted(os.listdir('.')):
-        if name in EXEMPT or not name.endswith(('.hpp', '.cpp')):
+        if not name.endswith(('.hpp', '.cpp')):
             continue
         src = open(name).read()
+        exempt = [m.span() for m in EXEMPT.finditer(src)]
         for match in CALLS.finditer(src):
             calls += 1
+            if any(start <= match.start() < end for start, end in exempt):
+                continue
             text = format_string(src, match.end())
             if text is None or not re.search(r"'\{[^{}]*\}'", text):
                 continue

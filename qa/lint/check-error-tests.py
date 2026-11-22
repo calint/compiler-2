@@ -17,17 +17,20 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
 SRC = os.path.join(ROOT, 'src')
 COVERAGE = os.path.join(ROOT, 'qa', 'coverage')
 
-# where an error is made: the literals of the next lines are its message
+# where an error is made: the literals up to the bracket that closes it are
+# its message; also the body of a function that returns one, e.g.
+# 'recursion_error', and the calls that make one from a message
 ERROR = re.compile(r'(?:compile_error|unlocated_error|option_error)\s*'
-                   r'(?:error\s*)?\{|compile_error::file_level\(')
+                   r'(?:error\s*)?\{|compile_error::file_level\(|'
+                   r'\bregister_error\(|\bprint_unlocated_error\(')
 
 LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
 
+# what the brackets of an error do not count: literals and comments
+NOT_CODE = re.compile(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)\'|//[^\n]*')
+
 # a fixed part shorter than this is too common to tell a message
 MIN_FRAGMENT = 6
-
-# the lines after the error that may hold its message
-MESSAGE_LINES = 6
 
 
 # the fixed parts of a message between its '{}' placeholders
@@ -54,24 +57,39 @@ def strings_of(text):
     return strings
 
 
+# the text from 'start', after an opening bracket, to the bracket that closes
+# it
+def bracketed(text, start):
+    depth = 1
+    ix = start
+    while depth and ix < len(text):
+        skipped = NOT_CODE.match(text, ix)
+        if skipped:
+            ix = skipped.end()
+            continue
+        if text[ix] in '{(':
+            depth += 1
+        elif text[ix] in '})':
+            depth -= 1
+        ix += 1
+    return text[start:ix]
+
+
 def messages():
     found = []
     paths = glob.glob(os.path.join(SRC, '*.hpp'))
     paths += glob.glob(os.path.join(SRC, '*.cpp'))
     for path in sorted(paths):
         with open(path, encoding='utf-8') as f:
-            lines = f.read().split('\n')
-        for ix, line in enumerate(lines):
-            if not ERROR.search(line):
-                continue
-            text = '\n'.join(lines[ix:ix + MESSAGE_LINES])
-            # the message ends at the brace that closes the error
-            text = text[ERROR.search(text).end():]
-            text = re.split(r'\}\s*;|\)\s*;', text)[0]
+            source = f.read()
+        for match in ERROR.finditer(source):
+            line_no = source.count('\n', 0, match.start()) + 1
+            text = NOT_CODE.sub(lambda m: m.group(0) if m.group(0)[0] == '"'
+                                else '', bracketed(source, match.end()))
             for string in strings_of(text):
                 fragment = fragment_of(string)
                 if fragment:
-                    found.append((os.path.basename(path), ix + 1, fragment,
+                    found.append((os.path.basename(path), line_no, fragment,
                                   parts_of(string)))
     return found
 
@@ -80,8 +98,10 @@ def messages():
 # part of a message, e.g. "of device memory"
 def grepped():
     with open(os.path.join(COVERAGE, 'test-cli.sh'), encoding='utf-8') as f:
-        return [g for g in re.findall(r'grep -F\w* "([^"]+)"', f.read())
-                if len(g) >= MIN_EXPECTED // 2]
+        code = ''.join(line for line in f
+                       if not line.lstrip().startswith('#'))
+    return [g for g in re.findall(r'grep -F\w* "([^"]+)"', code)
+            if len(g) >= MIN_EXPECTED // 2]
 
 
 def corpus():
