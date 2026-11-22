@@ -10,6 +10,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 584, listings) with '--checks=lower' without 'upper', a
+    bulk built-in whose second array has a constant start and whose count
+    is run-time tests the sign of the count twice, e.g. 'array_copy(a[1],
+    b[2], n)' (x86_64 'test rcx, rcx; js' twice, rv32i 'blt' twice): the
+    flag 'start_lower_checked' of 'bounds_range' is set only on a range
+    with its own '.count'; it could describe 'checked' instead
+    ('argument_emitters::range_of', 'machine::lower_bound_tests'); no test
+    listing changes, since 'upper' covers the sign
 [p] easy: (round 582, the formatter) need approval: two rules of blank
     lines that AGENTS.md does not state; both patches are in the
     scratchpad 'keep/'

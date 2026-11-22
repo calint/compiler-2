@@ -978,9 +978,11 @@ class scope_stack final {
     std::map<std::string, size_t, std::less<>> global_definitions_;
 
   public:
-    // whether the code after the current statement is reached, saved around
-    // code compiled only for its checks, see 'compile_toc::check_skipped': a
-    // 'break' or a 'return' there must not end the paths of the code that runs
+    // whether the code after the current statement is reached, put back
+    // after a dry run or a version ('compile_toc::compile_state'), e.g. a
+    // 'break' or a 'return' of code compiled only for its checks
+    // ('compile_toc::check_skipped') must not end the paths of the code
+    // that runs
     struct reach_state {
         // the innermost loop, the one a 'break' or a 'continue' of skipped
         // code marks
@@ -1245,6 +1247,7 @@ class scope_stack final {
             func.param_index(storage.root.name), storage.path, is_written);
     }
 
+    // the scopes of 'reach_state_now' are open ('compile_toc::version_scope')
     auto restore_reach_state(const reach_state& state) -> void {
         if (not is_in_func()) {
             return;

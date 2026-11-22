@@ -1,0 +1,16 @@
+# a 3-byte record that ends one byte past the 12-bit offset of rv32i is
+# stored, copied and compared through a pointer: the variables start 2032
+# below 's0', so 'v[4090]' starts at 2046 past a multiple of 4096 from 's0'
+# and its last byte at 2048
+
+type t3 { a i8, b i8, c i8 }
+
+func main() {
+    var v = t3[4100]
+    v[4090] = { 1, 2, 3 }
+    v[4089] = v[4090]
+    v[4091] = v[4090]
+    if v[4089] != v[4090] or v[4091] != v[4090] or v[4091].c != 3 {
+        exit(1)
+    }
+}

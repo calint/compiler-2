@@ -1,6 +1,37 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 584 (2026-11-22, bug hunt: arrays of arrays through
+    records; design: 'array_copy' and 'arrays_equal'; readability: a
+    newcomer walks the scopes of 'toc.hpp')
+    => bug hunt: no defect; 13660 generated programs of two and three
+       levels of arrays through records, leaves of every width and padded
+       records, indexes of every kind at every level, bulk built-ins,
+       rows, 'foo', calls and I/O on rows, 35% ending in a bounds panic at
+       a chosen level, about 135000 runs against a model; offsets past
+       2^31 on both targets; 11 mutants of index scaling and bounds, all
+       caught, four of them only by the generators: tests 8080 (a record
+       whose end lands at a 12-bit offset of 2048), 8081 (two constant
+       indexes with other upper parts), 8082 (non-power-of-two elements
+       without checks)
+    => design: no change; the bulk built-ins share one parse and check of
+       their ranges, a constant range folds in one place, one overlap
+       check each at compile and run time; a sign test of the count
+       repeated with '--checks=lower' alone is a todo item
+    => readability: 'reach_state' is put back after every dry run and
+       version, not only after 'check_skipped'; 'restore_reach_state'
+       needs the scopes of its saved state open; 72 functions, 3
+       predictions wrong
+    => fuzzers (full checks of the round): two findings were fuzzer
+       defects, the compiler was right: 'fuzz-whole.py' expected exit 0
+       of a noinline recursion whose frames (two copies of a 36 KiB
+       global, 48 levels) exceed '--vars', where the frame check panics
+       as documented (chapter 8 item 4): a frame overflow whose output is
+       a prefix of the model's is now the limit 'frame-limit';
+       'fuzz-compiler.py' took a timeout of the emulator on a mutant that
+       loops 2^31 times for a difference: an rv32i timeout is a finding
+       only when x86_64 ended within 'RUN_TIMEOUT / SLOWER' ('fuzzlib'
+       records the time of a run)
 [x] easy: round 583 (2026-11-22, bug hunt: the runtime routines and the
     start and exit of each target; design: the scopes of 'toc.hpp';
     readability: a newcomer walks the formatter)

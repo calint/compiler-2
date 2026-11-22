@@ -1,0 +1,25 @@
+# without bounds checks the constant of an index such as 'i + 3' goes into
+# the displacement scaled by the element size, at each level of a nested
+# array, also for records of 6 and 12 bytes
+
+type p6 { a i16, b i16, c i16 }
+
+type p12 { a i32, b i8, c i32 }
+
+type row { pre i8, s p6[5], t p12[5] }
+
+func main() {
+    var v = row[4]
+    var i = 1
+    v[i + 2].s[i + 3].c = 7
+    v[i - 1].t[i + 2].c = 9
+    v[i + 1].t[i - 1].b = 5
+    if v[3].s[4].c != 7 or v[0].t[3].c != 9 or v[2].t[0].b != 5 {
+        exit(1)
+    }
+    v[2].s[3].b = 4
+    v[1].t[4].a = 3
+    if v[i + 1].s[i + 2].b != 4 or v[i].t[i + 3].a != 3 {
+        exit(2)
+    }
+}

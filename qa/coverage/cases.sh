@@ -8527,3 +8527,15 @@ SRC=8020 && EXP=0 && RUN
 # the line of a failed check is printed with every decimal place below its
 # first, a zero inside too, here line 1203
 SRC=8060 && EXP=255 && RUN_ERR
+
+# rv32i: a 3-byte record that ends one byte past the 12-bit offset is
+# stored, copied and compared through a pointer
+SRC=8080 && EXP=0 && RUN
+
+# rv32i: two constant-index elements whose offsets have different upper
+# parts share no base register
+SRC=8081 && EXP=0 && RUN
+
+# without bounds checks the constant of an index goes into the displacement
+# scaled by the element size at each level, also of 6 and 12 byte records
+SRC=8082 && EXP=0 && OPTS="" RUN

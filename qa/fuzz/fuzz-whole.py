@@ -2544,6 +2544,11 @@ def judge(work, source, expected, variant, rnd, const_args, counts, stdin):
         # a tool stopped by a limit says nothing about the code
         if got == want or got[0] == "skip":
             continue
+        if frame_limit(got, want):
+            # note: the model has no '--vars', and the later run without
+            #       checks would write past it
+            counts["frame-limit"] = 1
+            return found
         if got[0] == "compile" and limit_of_registers(got[1]):
             counts["out-of-registers"] = 1
             continue
@@ -2613,6 +2618,13 @@ def limit_of_registers(text):
     # a register that an operation fixes is a limit too (chapter 8 item 3)
     return fl.out_of_registers(text) or "is always used by the operation" \
         in text or "does not fit in the variable storage" in text
+
+
+def frame_limit(got, want):
+    # a noinline recursion whose frames fill '--vars' (chapter 8 item 4),
+    # e.g. a copy of a large global in each frame: the output so far matches
+    return got[0] == "panic" and got[1] == fl.PANIC_CODE["frame overflow"] \
+        and want[2].startswith(got[2])
 
 
 def short(o):

@@ -402,8 +402,11 @@ def compare_rv32i(run, target, x86, findings, stats):
         recursion = "noinline" in run.text
         findings.append(("ub-signal", f"{target} {rv.detail} "
                          f"recursion={recursion}", str(rv)))
-    # note: a crash in the qemu system traps without end, it times out
-    if run.noub and x86.finished() and rv.kind == "timeout":
+    # note: a crash in the qemu system traps without end, it times out; a
+    #       program that x86_64 does not end quickly can time out on the
+    #       slower rv32i targets, e.g. a loop of 2^31 iterations
+    if run.noub and x86.finished() and rv.kind == "timeout" and \
+            x86.seconds < fl.RUN_TIMEOUT / SLOWER:
         findings.append(("diff-target", f"{target} {bucket(x86)} vs timeout",
                          f"x86 {x86}\n{target} {rv}"))
     if not (run.noub and x86.finished() and rv.finished()):
@@ -425,6 +428,11 @@ def compare_rv32i(run, target, x86, findings, stats):
                          f"{target} {bucket(x86)} vs {bucket(rv)} "
                          f"output {x86.stdout == rv.stdout}",
                          f"x86 {x86}\n{target} {rv}"))
+
+
+# how much slower than x86_64 the rv32i targets may run a program, the
+# emulator of rv32i-fpga about 50 times
+SLOWER = 100
 
 
 def bucket(outcome):

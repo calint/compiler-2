@@ -1,0 +1,21 @@
+# two elements at constant indexes whose offsets from 's0' on rv32i have
+# different upper parts share no base register: the variables start 2032
+# below 's0', so 'v[1500]' is at 3968 (upper part 1) and 'v[3000]' at 9968
+# (upper part 2), 'v[3001]' shares the upper part of 'v[3000]'
+
+func main() {
+    var v = i32[3100]
+    v[1500] = 7
+    v[3000] = v[1500]
+    if v[3000] != 7 or v[1499] != 0 or v[2999] != 0 {
+        exit(1)
+    }
+    v[3001] = v[3000]
+    if v[3001] != v[3000] or v[3001] != v[1500] {
+        exit(2)
+    }
+    v[2999] = 9
+    if v[1500] == v[2999] {
+        exit(3)
+    }
+}

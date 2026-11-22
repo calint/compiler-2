@@ -123,11 +123,14 @@ def group(text):
 
 
 class Result:
-    def __init__(self, returncode, stdout, stderr, timed_out=False):
+    def __init__(self, returncode, stdout, stderr, timed_out=False,
+                 seconds=0.0):
         self.returncode = returncode
         self.stdout = stdout
         self.stderr = stderr
         self.timed_out = timed_out
+        # the wall time of the run
+        self.seconds = seconds
 
     @property
     def signal(self):
@@ -156,6 +159,7 @@ def run(command, timeout, cwd=None, env=None,
         if stdin_bytes is not None:
             given.write(stdin_bytes)
             given.seek(0)
+        begin = time.time()
         process = subprocess.Popen(
             command, stdin=given if stdin_bytes is not None
             else subprocess.DEVNULL, stdout=out, stderr=err,
@@ -169,6 +173,7 @@ def run(command, timeout, cwd=None, env=None,
             process.kill()
             process.wait()
             timed_out = True
+        seconds = time.time() - begin
         stdout = b""
         if stdout_path is None:
             out.seek(0)
@@ -177,7 +182,7 @@ def run(command, timeout, cwd=None, env=None,
         return Result(process.returncode,
                       stdout,
                       err.read(OUTPUT_LIMIT).decode("utf-8", "replace"),
-                      timed_out)
+                      timed_out, seconds)
 
 
 # the compilers found as new as the sources, see 'assert_fresh'
@@ -272,6 +277,8 @@ class Outcome:
         self.code = code
         self.stdout = stdout
         self.detail = detail
+        # the wall time of the run, set by 'run_program'
+        self.seconds = 0.0
 
     def same(self, other):
         # an exit with the code of a panic is not the panic
@@ -430,18 +437,20 @@ def run_program(target, program, stdin=b"", cwd=None, sdcard=os.devnull):
     # the image of 'UART_TARGETS'; the uart takes the input followed by
     # 'UART_END_OF_INPUT'
     if target == "x86_64":
-        return outcome_stdio(run([program], RUN_TIMEOUT, cwd=cwd,
-                               stdin_bytes=stdin))
-    if target == "rv32i":
-        return outcome_stdio(run([QEMU_USER, program], RUN_TIMEOUT, cwd=cwd,
-                               stdin_bytes=stdin))
-    assert target in UART_TARGETS
-    if target == "rv32i-qemu":
-        command = QEMU_SYSTEM + [program]
+        command, outcome_of = [program], outcome_stdio
+    elif target == "rv32i":
+        command, outcome_of = [QEMU_USER, program], outcome_stdio
+    elif target == "rv32i-qemu":
+        command, outcome_of = QEMU_SYSTEM + [program], outcome_uart
     else:
-        command = [EMULATOR, program, sdcard]
-    return outcome_uart(run(command, RUN_TIMEOUT, cwd=cwd,
-                            stdin_bytes=stdin + UART_END_OF_INPUT))
+        assert target == "rv32i-fpga"
+        command, outcome_of = [EMULATOR, program, sdcard], outcome_uart
+    if outcome_of is outcome_uart:
+        stdin = stdin + UART_END_OF_INPUT
+    result = run(command, RUN_TIMEOUT, cwd=cwd, stdin_bytes=stdin)
+    outcome = outcome_of(result)
+    outcome.seconds = result.seconds
+    return outcome
 
 
 # diagnostics are 'file:line:column: message'
