@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 591 (2026-11-22, bug hunt: x86_64 addresses after the
+    base moved to 'vars'; design: the forming of x86_64 memory operands;
+    readability: a newcomer walks the addressing of x86_64)
+    => bug hunt: a regression of round 590: the 'rip' relative 'lea rbp,
+       [vars]' cannot reach 'vars' behind 2 GiB of dats, so such a program
+       failed to link ("relocation truncated to fit"); fix: the base is
+       loaded from the absolute address, 'mov rbp, strict qword vars', as
+       the frame check loads 'vars.end' (one instruction, 3 B more per
+       binary); 'test-arena.py' links and runs a program with a dat of 2
+       GiB ('resb' for the zeroes); about 1300 generated runs of dats and
+       variables at the edges of every displacement, also past 2^31 both
+       ways; 13 mutants, all caught
+    => design: global variables are counted from 'vars', not from 'dat':
+       'next_storage_location' returns 'used_vars_size_bytes',
+       'address_past_dat' became 'address_past_vars', and 'place_dat'
+       alone places the dats below 'vars' (listings equal); one routine
+       lowers an address, frames and globals share it
+    => readability: the locals of 'lower_address' renamed 'displacement'
+       and 'reg', the register holds only the displacement without an
+       index; the base load relies on 'variables_base_past_vars_bytes' of
+       0; 27 functions, 3 predictions wrong
+    => 'README.md' and the listings of 'prog.baz' written again after the
+       change of the base
 [x] easy: round 590 (2026-11-22, bug hunt: constant parameters of
     generics; design: one convention of the variables base; readability:
     a newcomer walks the storage layout)

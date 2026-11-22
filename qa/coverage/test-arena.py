@@ -252,7 +252,7 @@ with tempfile.TemporaryDirectory(prefix="baz-arena-") as temporary:
                 assert segment[6] >= variables[3] - segment[3] + vars_size
                 # Startup uses rbp for the arena base, not the OS-provided rsp.
                 assert "default rel" in result.stdout
-                assert "lea rbp, [vars]" in result.stdout
+                assert "mov rbp, strict qword vars" in result.stdout
                 assert "mov rsp," not in result.stdout
                 # (whole file bytes, RW segment file bytes, RW segment memory bytes)
                 measurements.append((executable.stat().st_size, segment[5], segment[6]))
@@ -382,6 +382,47 @@ func main() {
             run = subprocess.run([str(directory / "frame")], capture_output=True)
             assert run.returncode == 0, (vars_size, options, run.returncode, run.stderr)
         print(f"arena large frame capacity {vars_size}: ok", flush=True)
+
+    # dats of 2 GiB put 'vars' beyond the reach of an address relative to the
+    # code, and 'low' below the base beyond a 32-bit displacement
+    source = COMMON + """dat low = i32[4]{1, 2, 3, 4}
+dat gap = i8[2147483648]
+dat high = i8[2]{5, 6}
+func noinline sum(values i32[], count) total {
+    total = 0
+    var index = 0
+    loop {
+        if index == count break
+        total = total + values[index]
+        index = index + 1
+    }
+}
+func main() {
+    var index = 3
+    assert(1, low[index] == 4)
+    low[index] = 40
+    assert(2, sum(low, 4) == 46)
+    var copy = i32[4]
+    array_copy(low, copy, 4)
+    assert(3, arrays_equal(copy, low, 4))
+    assert(4, high[1] == 6)
+    assert(5, gap[2147483647] == 0)
+}
+"""
+    for options in ([], ["--checks=noub"], ["--checks=noub", "--nopt"]):
+        result = compile_source(directory, source, 4096, options)
+        assert result.returncode == 0, (options, result.stderr)
+        # note: nasm writes the zeros of a 'resb' at once, those of a 'times'
+        #       one by one, which takes minutes
+        assembly = directory / "gap.s"
+        assembly.write_text(re.sub(r"^times (\d+) db 0$", r"resb \1", result.stdout, flags=re.MULTILINE))
+        subprocess.run(["nasm", "-Werror", "-w-zeroing", "-f", "elf64", "gap.s"], cwd=directory, check=True)
+        subprocess.run(["ld", "-s", "-T", str(ROOT / "baz.ld"), "-o", "gap", "gap.o"], cwd=directory, check=True)
+        (directory / "gap.o").unlink()
+        run = subprocess.run([str(directory / "gap")], capture_output=True)
+        (directory / "gap").unlink()
+        assert run.returncode == 0, (options, run.returncode, run.stderr)
+    print("arena dats beyond 2 GiB: ok", flush=True)
 
     for declaration in (
         "type huge { values i64[2305843009213693952] }",

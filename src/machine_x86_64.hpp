@@ -1027,10 +1027,13 @@ class machine_x86_64 final : public machine {
         call_saving_live(site.indent, label, sector_clobbered);
     }
 
+    // an absolute address: 'vars' follows the dats, which may put it beyond
+    // the 2 GiB of a 'rip' relative 'lea'
+    // note: 'variables_base_past_vars_bytes' is 0, so the base is 'vars'
     auto emit_variables_base_load() -> void override {
         assembler_.instruction(
-            0, op::lea, variables_base_register(),
-            assembler_x86_64::memory::of_symbol(variables_label_));
+            0, op::mov, variables_base_register(),
+            assembler_x86_64::immediate::of_qword_expression(variables_label_));
     }
 
     [[nodiscard]] auto make_register_operand(const std::string_view name,
@@ -1601,24 +1604,24 @@ class machine_x86_64 final : public machine {
             return value;
         }
 
-        const operand address{
+        const operand displacement{
             alloc_scratch_register(site, builtins().i64),
         };
 
-        const std::string_view sum{address.register_name()};
-        assembler_.instruction(site.indent, op::mov, sum, value.displacement());
+        const std::string_view reg{displacement.register_name()};
+        assembler_.instruction(site.indent, op::mov, reg, value.displacement());
 
         if (value.index_register().empty()) {
-            return operand::mem(value.base_register(), address.register_name(),
-                                1, 0, value.type_ref());
+            return operand::mem(value.base_register(), reg, 1, 0,
+                                value.type_ref());
         }
 
-        assembler_.instruction(site.indent, op::lea, sum,
-                               register_sum(value.base_register(), sum, 1));
+        assembler_.instruction(site.indent, op::lea, reg,
+                               register_sum(value.base_register(), reg, 1));
 
         // note: 'address_is_encodable' asserted the index and its scale
-        return operand::mem(address.register_name(), value.index_register(),
-                            value.scale(), 0, value.type_ref());
+        return operand::mem(reg, value.index_register(), value.scale(), 0,
+                            value.type_ref());
     }
 
     // an unrolled part of 'address'

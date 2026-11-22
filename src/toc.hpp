@@ -1368,7 +1368,7 @@ class scope_stack final {
 class storage_layout final {
     // where the next variable is placed: 'next_offset_bytes' counts from the
     // base of the frame of the nearest scope with one or, outside a frame,
-    // from the label 'dat', the start of the data section
+    // from the label 'vars'
     struct storage_location {
         bool is_in_frame{};
         size_t next_offset_bytes{};
@@ -1414,7 +1414,7 @@ class storage_layout final {
         const size_t var_size_bytes{var_storage_size_bytes(src_loc_tk, var)};
         const size_t var_alignment{var_storage_alignment(var)};
 
-        // note: a frame base and 'dat' are both aligned
+        // note: a frame base and 'vars' are both aligned
         const storage_location location{next_storage_location()};
         const size_t next_offset_bytes{location.next_offset_bytes};
 
@@ -1539,7 +1539,13 @@ class storage_layout final {
         assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <
                x.max_storage_bytes());
 
-        const storage_address address{address_past_dat(dat.offset_bytes)};
+        // note: the dats end 'vars_start_bytes' before the label 'vars'
+        const int64_t offset{
+            address_offset(dat.offset_bytes) -
+                address_offset(vars_start_bytes()),
+        };
+
+        const storage_address address{address_past_vars(offset)};
 
         std::get<in_storage>(var.placement).address = address;
     }
@@ -1578,13 +1584,13 @@ class storage_layout final {
 
   private:
     // the storage 'offset_bytes' past the base of the frame or, outside a
-    // frame, past the label 'dat'
+    // frame, past the label 'vars'
     [[nodiscard]] auto address_at(const bool is_in_frame,
                                   const size_t offset_bytes) const
         -> storage_address {
 
         if (not is_in_frame) {
-            return address_past_dat(offset_bytes);
+            return address_past_vars(address_offset(offset_bytes));
         }
 
         const ::machine& x{machine_.get()};
@@ -1595,26 +1601,18 @@ class storage_layout final {
         };
     }
 
-    // the storage 'offset_bytes' past the label 'dat': the variables base
-    // points 'variables_base_past_vars_bytes' past the label 'vars', which
-    // makes the dats negative
-    [[nodiscard]] auto address_past_dat(const size_t offset_bytes) const
+    // the storage 'offset' past the label 'vars', negative for a dat; the
+    // variables base points 'variables_base_past_vars_bytes' past the label
+    [[nodiscard]] auto address_past_vars(const int64_t offset) const
         -> storage_address {
-
-        const int64_t offset{address_offset(offset_bytes)};
 
         const ::machine& x{machine_.get()};
 
-        const size_t shift_bytes{
-            sum_storage_size(vars_start_bytes(),
-                             x.variables_base_past_vars_bytes()),
-        };
-
-        const int64_t shift{address_offset(shift_bytes)};
+        const int64_t shift{address_offset(x.variables_base_past_vars_bytes())};
 
         return {
             .base_register{x.variables_base_register()},
-            .offset{add_address_offset(offset, -shift)},
+            .offset{offset - shift},
         };
     }
 
@@ -1682,7 +1680,7 @@ class storage_layout final {
 
         return {
             .is_in_frame{},
-            .next_offset_bytes{dats_and_vars_size_bytes()},
+            .next_offset_bytes{used_vars_size_bytes()},
         };
     }
 
