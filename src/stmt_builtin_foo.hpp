@@ -84,9 +84,6 @@ class stmt_builtin_foo final : public statement {
             compile_limit(tc, array_info.element_count(), held),
         };
 
-        // e.g. not after 'foo a, stop() { }' with 'stop' an inlined 'exit'
-        const bool is_reachable_after_count{tc.is_reachable()};
-
         const compile_toc::scope_entry foo{
             tc,
             scope::loop(loop_label, compile_toc::continue_label(loop_label)),
@@ -120,15 +117,9 @@ class stmt_builtin_foo final : public statement {
             x.label(tc.indent(), end_label);
         }
 
-        // the check that skips the body runs out the loop at its entry; a
-        // constant limit above 0 never skips and a count that is not reached
-        // never checks, so the loop runs out only where the body reaches its
-        // counter step, e.g. not after 'foo a, 2 { stop() }'
-        const bool runs_body{limit.is_immediate() and limit.immediate() != 0};
-        const bool may_skip_body{is_reachable_after_count and not runs_body};
-
-        tc.join_loop(may_skip_body ? loop_end::also_when_done
-                                   : loop_end::when_stepped);
+        // the end is reached by a 'break', the skip of a body that runs zero
+        // times or the counter step, e.g. not after 'foo a, 2 { stop() }'
+        tc.join_loop(loop_end::when_stepped);
     }
 
     auto trace_assignment(assignment_flow& flow) const -> void override {
@@ -385,6 +376,8 @@ class stmt_builtin_foo final : public statement {
                                  .target{end_label},
                                  .branch_on_true{true},
                              });
+
+        tc.record_jump_to_loop_end();
     }
 
     //

@@ -10,6 +10,19 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 575, registers) x86_64 with '--checks=noub' rejects an
+    ordinary call of an inlined wrapper of 'arrays_equal' whose arguments
+    index fields at run time, e.g. 'not ae1(v1[k + 0].g1, v4[k + 0].g1,
+    k + 0, k + 0, 1)' with 'ae1(x i32[], y i32[], s1, s2, c)' returning
+    'arrays_equal(x[s1], y[s2], c)': "register rsi holds a value computed
+    at ..."; without checks and on rv32i it compiles (29 of 1500
+    generated programs of the round 575 hunt); the bounds checks hold
+    'rsi' that the compare needs (chapter 8, item 3)
+[ ] easy: (round 575, listings) a 'foo' of a constant count of 0 ('foo a,
+    0' or an inlined length of 0) still emits the iterator setup and the
+    counter clear before its dry-run body (2 dead instructions per such
+    loop, e.g. 'lea r15, [rbp]' and 'xor r14d, r14d'); dropping them means
+    declaring the names without those steps, which complicates 'compile'
 [ ] easy: (round 573, listings) 'held_registers' could write its "free
     ... register" comment at the place the register was allocated, as
     'operation_scope' does, and its 22 constructions would drop their

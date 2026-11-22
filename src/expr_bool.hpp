@@ -1276,7 +1276,8 @@ class expr_bool final : public statement {
         return last;
     }
 
-    // an element that does not decide the list continues at the next element
+    // an element before the last: it branches out of the list when it decides
+    // the list, else it continues at the next element
     [[nodiscard]] auto
     compile_inner_element(compile_toc& tc, const size_t expr_index,
                           const branch_targets& targets, const bool inverted,
@@ -1351,12 +1352,13 @@ class expr_bool final : public statement {
 
         // the run decides the list; a constant false has branched to
         // 'if_false' and a nested list decided at run time has emitted its
-        // final branch, else the list holds here
-        const bool is_true_here{
+        // final branch, else the code that falls through here is the list
+        // holding and still branches to 'if_true'
+        const bool needs_true_branch{
             const_eval ? *const_eval : nested_expr == nullptr,
         };
 
-        if (not is_true_here or is_stored_only) {
+        if (not needs_true_branch or is_stored_only) {
             return std::nullopt;
         }
 

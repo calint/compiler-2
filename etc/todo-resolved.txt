@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 575 (2026-11-22, bug hunt: the equality of records and
+    arrays; design: how loops are compiled; readability: a newcomer walks
+    'expr_bool.hpp')
+    => bug hunt: no defect; 10000 generated programs of nested records
+       with padding built every way (literals in part, '{}', copies,
+       fields, calls inline and noinline, 'array_copy', 'foo', 'dat',
+       frames filled with 0xff before each call) compared with '==',
+       '!=' and 'arrays_equal' against a model of field-wise equality,
+       about 106000 runs; 1500 programs of parts at other offsets, 22000
+       runs, also on fpga; 14 mutants of the zeroing of padding and of the
+       compare, all caught; a rejection of x86_64 with noub of an
+       ordinary call is a todo item (registers)
+    => design: the reach after a loop is decided by 'join_loop' alone: the
+       skip of an empty 'foo' records a jump to the loop end as a 'break'
+       does ('record_jump_to_loop_end', reached code only), so 'foo' no
+       longer works out 'runs_body' and 'may_skip_body' and always joins
+       'when_stepped'; 'is_left_by_break' renamed 'is_end_jumped_to' and
+       'record_break' of the scopes 'record_jump_to_end' (listings equal,
+       +7 lines, mostly comments); the setup of a 'foo' of count 0 is a
+       todo item (listings)
+    => readability: 'compile_inner_element' also branches out when its
+       element decides the list; the local 'is_true_here' renamed
+       'needs_true_branch'; 74 functions, 3 predictions wrong
 [x] easy: round 574 (2026-11-22, bug hunt: loop control; design:
     conditions; readability: a newcomer walks the register pool)
     => bug hunt: no defect; 1400 generated nests of 'loop' and 'foo' up to

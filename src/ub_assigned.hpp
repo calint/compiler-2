@@ -20,24 +20,25 @@
 enum class loop_end : uint8_t {
     // only at a 'break', e.g. 'loop'
     at_break,
-    // also when it runs out, e.g. 'foo'
+    // also when it runs out, e.g. 'foo' at the parse, which does not fold
+    // its count
     also_when_done,
-    // known only to the compile: at a 'break' or where its counter step is
-    // reached, e.g. a 'foo' whose count is a constant above 0 or not reached,
-    // so it never skips its body
+    // known only to the compile: at a jump to its end or where its counter
+    // step is reached, e.g. a 'foo', whose skip of the body for a count of 0
+    // or less is such a jump ('compile_toc::record_jump_to_loop_end')
     when_stepped,
 };
 
 // the rule both reach walks end a loop by ('assignment_flow::trace_loop',
-// 'compile_toc::join_loop'): the code after it is reached at a 'break' or
-// where it runs out as 'end' says; 'is_step_reached' when the end of its body
-// or a 'continue' reaches the counter step
+// 'compile_toc::join_loop'): the code after it is reached at a jump to its
+// end, e.g. a 'break', or where it runs out as 'end' says; 'is_step_reached'
+// when the end of its body or a 'continue' reaches the counter step
 [[nodiscard]] inline auto is_loop_end_reached(const loop_end end,
-                                              const bool is_left_by_break,
+                                              const bool is_end_jumped_to,
                                               const bool is_step_reached)
     -> bool {
 
-    if (is_left_by_break or end == loop_end::also_when_done) {
+    if (is_end_jumped_to or end == loop_end::also_when_done) {
         return true;
     }
 

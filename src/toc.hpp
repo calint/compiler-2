@@ -247,10 +247,11 @@ struct const_info {
 // a parameter or the result
 enum class var_kind : uint8_t { var, dat, param, result };
 
-// whether a 'break' or a 'continue' of a loop was compiled, so its end or its
-// counter step is reached by a jump; read by 'compile_toc::join_loop'
+// whether a jump to the end of a loop, e.g. a 'break', or a 'continue' was
+// compiled, so its end or its counter step is reached by it; read by
+// 'compile_toc::join_loop'
 struct loop_reach {
-    bool is_left_by_break{};
+    bool is_end_jumped_to{};
     bool is_continued{};
 };
 
@@ -1181,12 +1182,6 @@ class scope_stack final {
         };
     }
 
-    // a 'break' of the innermost 'loop' or 'foo' is compiled, see
-    // 'loop_reach'
-    auto record_break() -> void {
-        innermost_loop().reach_of_loop().is_left_by_break = true;
-    }
-
     // a 'continue' of the innermost 'loop' or 'foo' is compiled, see
     // 'loop_reach'
     auto record_continue() -> void {
@@ -1201,6 +1196,12 @@ class scope_stack final {
         }
 
         global_definitions_.emplace(std::string{name}, order_.get().current());
+    }
+
+    // a jump to the end of the innermost 'loop' or 'foo' is compiled, see
+    // 'loop_reach'
+    auto record_jump_to_end() -> void {
+        innermost_loop().reach_of_loop().is_end_jumped_to = true;
     }
 
     // the body being parsed passes its result to a 'mut' parameter
@@ -3062,8 +3063,8 @@ struct usage_statistics {
 //                  'use_of', 'overflow_check' of a destination, the machine
 //   listing        'indent', 'indent_scope', 'end_label', 'continue_label'
 //   reachability   'is_reachable', 'end_path', 'record_break',
-//                  'record_continue', 'record_return', 'join_loop',
-//                  'path_merge'
+//                  'record_continue', 'record_jump_to_loop_end',
+//                  'record_return', 'join_loop', 'path_merge'
 //
 // a statement may be compiled more than once (each inlined call, both
 // versions of 'emit_most_efficient', dry runs, 'check_body'), so what a
@@ -3522,7 +3523,7 @@ class compile_toc final : public toc {
         const bool is_step_reached{is_reachable() or reach.is_continued};
 
         tables().scopes.set_reachable(
-            is_loop_end_reached(end, reach.is_left_by_break, is_step_reached));
+            is_loop_end_reached(end, reach.is_end_jumped_to, is_step_reached));
     }
 
     [[nodiscard]] auto layout() const -> const storage_layout& {
@@ -3548,7 +3549,7 @@ class compile_toc final : public toc {
     // a 'break' leaves the innermost 'loop' or 'foo', whose end is then
     // reached, and the code after it unreached
     auto record_break() -> void {
-        tables().scopes.record_break();
+        tables().scopes.record_jump_to_end();
         end_path();
     }
 
@@ -3558,6 +3559,18 @@ class compile_toc final : public toc {
     auto record_continue() -> void {
         tables().scopes.record_continue();
         end_path();
+    }
+
+    // a branch to the end of the innermost 'loop' or 'foo' that the code
+    // after it may pass, e.g. the skip of a 'foo' whose count is 0 or less;
+    // the end is reached when the branch is, e.g. not after 'foo a, stop()'
+    // with 'stop' an inlined 'exit'
+    auto record_jump_to_loop_end() -> void {
+        if (not is_reachable()) {
+            return;
+        }
+
+        tables().scopes.record_jump_to_end();
     }
 
     // a 'return' leaves the code after it unreached and reaches the end of an
