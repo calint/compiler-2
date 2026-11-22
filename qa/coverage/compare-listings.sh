@@ -44,6 +44,10 @@ grep -vE '^ *#' cases.sh | grep -oE 'SRC=[0-9]+[^;]*' | while read -r line; do
     if [[ "$line" =~ OPTS=\"([^\"]*)\" ]]; then
         options=${BASH_REMATCH[1]}
     fi
+    # a 'LISTING' case compiles with the defaults of the compiler
+    if [[ "$line" == *' LISTING '* ]]; then
+        options=
+    fi
     printf '%s\t%s\n' "$src" "$options"
 done | sort -u >"$WORK/jobs"
 

@@ -2,6 +2,7 @@
 
 import subprocess
 import os
+import sys
 
 # the command of the target, from the runner
 command = os.environ['PROGRAM_COMMAND_LINES'].splitlines()
@@ -27,4 +28,5 @@ p.stdin.flush()
 p.stdin.close()
 p.stdout.close()
 p.stderr.close()
-p.wait()
+# a program judged by its output exits 0, see 'cases.sh'
+sys.exit(p.wait())

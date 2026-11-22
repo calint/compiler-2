@@ -1,6 +1,29 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 582 (2026-11-22, bug hunt: the test scripts against
+    their contracts; design: the formatter; readability: a newcomer walks
+    'assembler.hpp')
+    => bug hunt: three scripts passed a seeded failure: the 'DIFFPY' test
+       0058 dropped the exit code of the program (it now exits with it);
+       'compare-listings.sh' compiled the 'LISTING' cases with the suite
+       options instead of the defaults; 'test-far-jumps-no-scratch.sh'
+       compiled the exit routine of rv32i-qemu and fpga without
+       assembling and comparing the image (now with llvm, which rejects a
+       jump out of reach); every other seed was caught by the coverage,
+       cli, versions and far jump scripts, roome, growth, the emulator
+       test, the fuzzers and the doc examples
+    => design: the formatter broke code when nested designated
+       initializers both lacked the trailing comma (inserts were done out
+       of order); its dry run exits 1 when something is pending and
+       counts the files that need commas; the dead lambda head rule, the
+       exceptions made moot by 'rule_switch_branches' and a twice built
+       gap are gone (-13 lines); two unstated rules of blank lines need
+       approval (todo)
+    => readability: 'defines_label' does not search open captures; the
+       caller removes what 'fold_copy' folded; 'invert' also retargets the
+       branch; the local 'known' renamed 'entry'; 63 functions, 4
+       predictions wrong
 [x] easy: round 581 (2026-11-22, bug hunt: the linters against their
     contracts; design: the assembler and its passes; readability: a
     newcomer walks the run-time compile of 'expr_arith.hpp')

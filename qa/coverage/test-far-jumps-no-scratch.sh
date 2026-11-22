@@ -233,10 +233,16 @@ open("exit.baz", "w").write("\n".join(source) + "\n")
 EOF
 
 # the far jump to the shared exit routine takes a register that is dead there;
-# rv32i last, its listing is run
+# the image has the bytes llvm assembles from the listing, which fails for a
+# jump out of reach; rv32i last, its listing is run
 for target in rv32i-qemu rv32i-fpga rv32i; do
     echo -n "far jump to exit routine $target: "
     "$BIN" exit.baz --target=$target --bin=exit.bin >exit.s
+    llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj exit.s -o exit.o
+    ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start \
+        -o exit.elf exit.o
+    llvm-objcopy -O binary exit.elf image.bin
+    cmp -s image.bin exit.bin
     echo ok
 done
 echo -n "far jump to exit routine rv32i run: "

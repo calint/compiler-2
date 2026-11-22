@@ -10,6 +10,21 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[p] easy: (round 582, the formatter) need approval: two rules of blank
+    lines that AGENTS.md does not state; both patches are in the
+    scratchpad 'keep/'
+    1. a one-line signature gets no blank line after its '{' but a
+       one-line condition keeps one if it is there; one 'rule_head' (a
+       blank line after '{' only when the head spans several lines)
+       removes 7 blank lines in 5 files ('d-proposal-rule-head.patch',
+       -13 lines of the formatter); with it AGENTS.md "Blank lines" would
+       say "after the '{' of a body only when its head spans several
+       lines"
+    2. a multiline 'if' gets a blank line above it, a multiline loop,
+       'switch', 'do' or 'try' only below; either AGENTS.md states "a
+       multiline loop, switch or try stays with the statement above it"
+       or 'e-proposal-control-above.patch' removes the exception (+47
+       blank lines in 9 files)
 [ ] easy: (round 579, lexical) 'include"e1.baz"' without a space is read
     as the word 'include"e1' ("expected a definition ... got
     'include"e1'"), as '"' does not end a word; no other keyword is

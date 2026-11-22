@@ -294,6 +294,7 @@ class assembler {
         return captured;
     }
 
+    // lines in a capture not yet appended are not searched
     [[nodiscard]] auto defines_label(const std::string_view name) const
         -> bool {
 
@@ -353,7 +354,7 @@ class assembler {
         // the index in 'summaries' of each function
         std::unordered_map<std::string_view, size_t> summary_indexes;
         for (const body& b : bodies_) {
-            const auto [known, is_new]{
+            const auto [entry, is_new]{
                 summary_indexes.try_emplace(b.function, summaries.size()),
             };
 
@@ -366,7 +367,7 @@ class assembler {
                 });
             }
 
-            function_summary& summary{summaries.at(known->second)};
+            function_summary& summary{summaries.at(entry->second)};
 
             ++summary.body_count;
             summary.call_count += calls[b.label];
@@ -614,9 +615,10 @@ class assembler {
     // virtual methods
     //
 
-    // rewrites the reads of the copy that starts 'block' to take its source,
-    // see above the class; false when the first line is no copy or its reads
-    // cannot take the source
+    // rewrites the reads of the copy that starts 'block', the rest of its
+    // run, to take its source, see above the class; the caller removes the
+    // copy; false, changing nothing, when the first line is no copy or its
+    // reads cannot take the source
     virtual auto fold_copy(std::span<line> block) -> bool = 0;
 
     // the code size of one instruction in the target's unit
@@ -679,8 +681,9 @@ class assembler {
         return code_size / instruction_size();
     }
 
-    // every branch the optimizer sees has an inverse; the branch takes the
-    // removed jump's scratch, chosen after the compared registers were freed
+    // the branch 'l' inverted to go where 'removed' went, with its scratch,
+    // chosen after the compared registers were freed; every branch the
+    // optimizer sees has an inverse
     auto invert(line& l, const jump_info& removed) -> void {
         jump_info& jump{*l.jump};
 

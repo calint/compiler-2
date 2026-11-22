@@ -3,7 +3,8 @@
 # of the classes, the trailing commas of designated initializers and the blank
 # lines of AGENTS.md
 # usage: qa/lint/format-source.py [--apply] [files relative to the root...]
-# without '--apply' it prints the files that would change
+# without '--apply' it prints the files that would change and exits 1 when
+# there is one
 #
 # the classes and the statements are found in the syntax tree of 'src/main.cpp'
 # parsed by libclang, the text is rearranged by whole lines of the members,
@@ -260,6 +261,10 @@ def class_keyword(cursor):
     return "class"
 
 
+def default_access(cursor):
+    return "private" if class_keyword(cursor) == "class" else "public"
+
+
 def is_class_definition(cursor):
     return cursor.kind in CLASS_KINDS and cursor.is_definition()
 
@@ -305,7 +310,7 @@ def declaration_lines(cursor, lines, start, end):
 def written_accesses(cursor):
     # the access of the section each member is written in, for the members
     # that have none of their own, e.g. a 'friend' or a 'static_assert'
-    access = "private" if class_keyword(cursor) == "class" else "public"
+    access = default_access(cursor)
     accesses = {}
     for c in cursor.get_children():
         if c.kind == K.CXX_ACCESS_SPEC_DECL:
@@ -572,7 +577,6 @@ def format_body(cursor, lines):
         return lines[open_n + 1 : close_n]
 
     class_name = cursor.spelling
-    default_access = "private" if class_keyword(cursor) == "class" else "public"
     label_indent = re.match(r"\s*", lines[close_n]).group(0) + "  "
     member_indent = label_indent + "  "
     leading_methods = []
@@ -586,8 +590,7 @@ def format_body(cursor, lines):
     # functions go to the bottom sorted by name after the constructors and
     # destructors
     private = [m for m in members if m.access == "private"]
-    _, private_data = take(private, lambda m: not is_function(m))
-    _, private_functions = take(private, is_function)
+    private_data, private_functions = take(private, is_function)
     private_functions, private_lifecycle = take(
         private_functions, lambda m: is_lifecycle(m, class_name)
     )
@@ -658,10 +661,10 @@ def format_body(cursor, lines):
     )
     body_sections.append(["private", private_content])
 
-    return emit_body(body_sections, default_access, label_indent)
+    return emit_body(body_sections, default_access(cursor), label_indent)
 
 
-def emit_body(sections, default_access, label_indent):
+def emit_body(sections, unlabeled_access, label_indent):
     # adjacent sections of one access become one
     merged = []
     for access, content in sections:
@@ -677,7 +680,7 @@ def emit_body(sections, default_access, label_indent):
     body = []
     for i, (access, content) in enumerate(merged):
         # the first section needs no label when it has the default access
-        if i == 0 and access == default_access:
+        if i == 0 and access == unlabeled_access:
             body += content
             continue
 
@@ -849,15 +852,11 @@ def format_file(tu, path):
     out = []
     n = 0
     for c in classes:
-        open_n, close_n = body_lines(c)
-
-        # a body on one line, e.g. 'struct tag {};', has nothing to lay out
-        if open_n == close_n:
-            continue
-
-        out += lines[n : open_n + 1]
-        out += format_body(c, lines)
-        n = close_n
+        start = c.extent.start.line - 1
+        end = c.extent.end.line - 1
+        out += lines[n:start]
+        out += declaration_lines(c, lines, start, end)
+        n = end + 1
 
     out += lines[n:]
 
@@ -907,7 +906,7 @@ class stmt:
     first: int
     start: int
     last: int
-    # the first statement after a case label needs no blank line before it
+    # the statement starts a branch of a switch
     after_label: bool
     is_assert: bool
 
@@ -931,8 +930,12 @@ class block:
     # the block is the body of a control statement whose condition spans
     # several lines
     has_multiline_condition: bool = False
-    # the block is the body of a lambda whose head spans several lines
-    has_multiline_lambda_head: bool = False
+
+    def gap(self, index):
+        # the lines before statement 'index', after the '{' for index 0
+        above = self.open_line if index == 0 else self.stmts[index - 1].last
+
+        return range(above + 1, self.stmts[index].first)
 
     def has_multiline_signature(self):
         if self.function is None:
@@ -990,7 +993,6 @@ def blocks_by_file(tu, paths, texts):
     resolved = {}
     bodies = {}
     conditions = set()
-    lambda_heads = set()
     seen = set()
     found = {p: [] for p in wanted}
     for top in tu.cursor.get_children():
@@ -1017,16 +1019,6 @@ def blocks_by_file(tu, paths, texts):
                 ):
                     conditions.add(brace_of(body, path))
 
-            if cursor.kind == K.LAMBDA_EXPR:
-                body = next(
-                    (c for c in cursor.get_children() if c.kind == K.COMPOUND_STMT),
-                    None,
-                )
-                if body is not None and (
-                    body.extent.start.line != cursor.extent.start.line
-                ):
-                    lambda_heads.add(brace_of(body, path))
-
             if cursor.kind != K.COMPOUND_STMT:
                 continue
 
@@ -1046,7 +1038,6 @@ def blocks_by_file(tu, paths, texts):
                     stmts,
                     bodies.get((path, open_line)),
                     brace in conditions,
-                    brace in lambda_heads,
                 )
             )
 
@@ -1064,22 +1055,15 @@ def rule_signature(b, want):
         return
 
     # a comment at the start of the body keeps the gap
-    gap = range(b.open_line + 1, b.stmts[0].first)
-    if all(is_blank(b.lines[n]) for n in gap):
+    if all(is_blank(b.lines[n]) for n in b.gap(0)):
         want(0, TIGHT)
 
 
 def rule_condition(b, want):
     # the body of a control statement whose condition spans several lines has a
-    # blank line after its '{'
+    # blank line after its '{'; a lambda body has none: 'format-source.sh' ends
+    # with clang-format, which removes it whatever its 'KeepEmptyLines' is
     if b.stmts and b.has_multiline_condition:
-        want(0, BLANK)
-
-
-def rule_lambda_head(b, want):
-    # the body of a lambda whose head spans several lines has a blank line
-    # after its '{'
-    if b.stmts and b.has_multiline_lambda_head:
         want(0, BLANK)
 
 
@@ -1092,8 +1076,7 @@ def rule_multiline(b, want):
 
         # the first statement of a block needs no blank line above it
         if i > 0 and (not s.is_control or s.kind == K.IF_STMT):
-            if not s.after_label:
-                want(i, BLANK)
+            want(i, BLANK)
 
         want(i + 1, BLANK)
 
@@ -1118,7 +1101,7 @@ def rule_assert_groups(b, want):
         while end + 1 < len(b.stmts) and b.stmts[end + 1].is_assert:
             end += 1
 
-        if i > 0 and not b.stmts[i].after_label:
+        if i > 0:
             want(i, BLANK)
 
         want(end + 1, BLANK)
@@ -1139,17 +1122,14 @@ def rule_return_by_block(b, wants, want):
         if wants.get(index) == TIGHT:
             return False
 
-        region = range(b.stmts[index - 1].last + 1, b.stmts[index].first)
-
-        return any(is_blank(b.lines[n]) for n in region)
+        return any(is_blank(b.lines[n]) for n in b.gap(index))
 
     for i, s in enumerate(b.stmts):
         if i == 0 or s.kind != K.RETURN_STMT or s.is_multiline:
             continue
 
         # a comment above the return keeps the gap
-        gap = range(b.stmts[i - 1].last + 1, s.first)
-        if any(not is_blank(b.lines[n]) for n in gap):
+        if any(not is_blank(b.lines[n]) for n in b.gap(i)):
             continue
 
         spread = any(gap_is_blank(j) for j in range(1, i))
@@ -1159,9 +1139,6 @@ def rule_return_by_block(b, wants, want):
 BLANK_LINE_RULES = [
     rule_signature,
     rule_condition,
-    # off: 'format-source.sh' ends with clang-format, which removes the blank
-    # line after the '{' of a lambda head whatever its 'KeepEmptyLines' is
-    # rule_lambda_head,
     rule_multiline,
     rule_switch_branches,
     rule_assert_groups,
@@ -1188,19 +1165,18 @@ def block_gaps(b):
     return wants
 
 
-def blank_line_edits(blocks, lines):
+def blank_line_edits(blocks):
     # the lines to insert a blank line before and the blank lines to remove
     inserts = set()
     removes = set()
     for b in blocks:
         for index, state in block_gaps(b).items():
-            above = b.open_line if index == 0 else b.stmts[index - 1].last
-            region = range(above + 1, b.stmts[index].first)
-            blanks = [n for n in region if is_blank(lines[n])]
+            gap = b.gap(index)
+            blanks = [n for n in gap if is_blank(b.lines[n])]
             if state == TIGHT:
                 removes.update(blanks)
             elif not blanks:
-                inserts.add(above + 1)
+                inserts.add(gap.start)
 
     return inserts, removes
 
@@ -1296,8 +1272,10 @@ def designated_commas(text):
     def is_row(n):
         return 0 <= n < len(lines) and TABLE_ROW.match(lines[n].strip())
 
+    # from the last place back so that a comma moves no place still to use,
+    # e.g. the place of an outer initializer is after those of its inner ones
     result = text
-    for start, end, at in sorted(inserts, reverse=True):
+    for start, end, at in sorted(inserts, key=lambda x: x[2], reverse=True):
         first = line_of(start)
         if first == line_of(end) and is_row(first):
             continue
@@ -1408,12 +1386,14 @@ def main():
     root = pathlib.Path("src").resolve()
     # designated initializers first: clang-format breaks them into lines, which
     # the blank lines below must see
+    commas = 0
     for path in paths:
         text = path.read_text()
         fixed = designated_commas(text)
         if fixed == text:
             continue
 
+        commas += 1
         if not apply:
             print(f"would add designated initializer commas: {path}")
             continue
@@ -1480,7 +1460,7 @@ def main():
     changes = 0
     for path in paths:
         lines = texts[path.resolve()]
-        inserts, removes = blank_line_edits(blocks[path.resolve()], lines)
+        inserts, removes = blank_line_edits(blocks[path.resolve()])
         if not inserts and not removes:
             continue
 
@@ -1494,9 +1474,16 @@ def main():
 
     verb = "done" if apply else "pending"
     print(
+        f"{commas} file(s) with designated initializer commas, "
         f"{laid_out} file(s) laid out, {noted} file(s) with notes set apart, "
         f"{changes} blank line change(s) {verb}"
     )
+
+    # note: a dry run that finds nothing means '--apply' changes nothing, the
+    # steps see the text '--apply' would show them until one finds something
+    pending = commas + laid_out + noted + changes
+    if not apply and pending:
+        sys.exit(1)
 
 
 main()
