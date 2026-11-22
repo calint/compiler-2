@@ -134,8 +134,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'construct-reject' (needs a 'build' of several files); fuzz-exprs keeps
     a local 'run_target' without the include split; the category lists in
     the fuzzer headers miss 'compiler-crash' and 'bad-diagnostic'
-[ ] easy: (round 557, qa) the case helper 'DIFFINP2' (7 cases) feeds one
-    line per read; a name such as 'DIFFLINES' would say so
 [ ] easy: (round 555, messages) a missing token is located three ways:
     "expected '=' followed by an initializer" at the end of the name,
     "expected '{' to begin block" and others at the next token (README

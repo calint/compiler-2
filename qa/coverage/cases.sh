@@ -8,7 +8,7 @@
 #   RUN_ERR      like 'RUN', and compare the error output with 'NNN.out'
 #   DIFF         run, and compare the output with 'NNN.out'
 #   DIFFINP      like 'DIFF' with 'NNN.in' as input
-#   DIFFINP2     like 'DIFFINP' with the input given one line per read
+#   DIFFLINES    like 'DIFFINP' with the input given one line per read
 #   DIFFPY       compile, run the script 'NNN.py' and compare its output with
 #                'NNN.out'
 #   DIFFNOPT     like 'RUN', and compare the difference of the listings of
@@ -35,7 +35,7 @@
 # it is the target of the run, else that of the compiler. A 'DIFFNOPT' case
 # has one 'NNN.TARGET.diff' for each target of a run, e.g.
 # '0006.rv32i-qemu.diff'. A program judged by its output (DIFF, DIFFINP,
-# DIFFINP2, DIFFPY) must exit 0.
+# DIFFLINES, DIFFPY) must exit 0.
 #
 # A case inside 'if [[ $MACHINE ... ]]' runs only for those targets (x86_64,
 # rv32i, rv32i-qemu, rv32i-fpga), e.g. a 'RUN' whose exit code differs by
@@ -150,7 +150,7 @@ SRC=0032 && EXP=0 && RUN
 SRC=0033 && EXP=0 && RUN
 
 # bytes read from input into a data array and printed minus the newline
-SRC=0034 && DIFFINP2
+SRC=0034 && DIFFLINES
 
 # negated function result
 SRC=0035 && EXP=0 && RUN
@@ -298,13 +298,13 @@ SRC=0080 && EXP=0 && RUN
 SRC=0081 && EXP=0 && RUN
 
 # reads lines into struct array elements and prints them with their lengths
-SRC=0082 && DIFFINP2
+SRC=0082 && DIFFLINES
 
 # reads input into a local byte array and prints it
-SRC=0083 && DIFFINP2
+SRC=0083 && DIFFLINES
 
 # reads lines into nested struct fields in an array and prints them
-SRC=0084 && DIFFINP2
+SRC=0084 && DIFFLINES
 
 # assignments and conversions between 'i8', 'i16', 'i32' and default integers
 SRC=0085 && EXP=0 && RUN
@@ -316,7 +316,7 @@ SRC=0086 && DIFF
 SRC=0087 && DIFF
 
 # reads lines into nested struct arrays and prints them by stored size
-SRC=0088 && DIFFINP2
+SRC=0088 && DIFFLINES
 
 # block-local variable shadowing
 SRC=0089 && EXP=0 && RUN
@@ -328,13 +328,13 @@ SRC=0090 && EXP=0 && RUN
 SRC=0091 && DIFF
 
 # remove an input prefix with array_copy
-SRC=0092 && DIFFINP2
+SRC=0092 && DIFFLINES
 
 # array_copy from an indexed struct element
 SRC=0093 && EXP=0 && RUN
 
 # 'arrays_equal' on input arrays, equal and different prefixes
-SRC=0094 && DIFFINP2
+SRC=0094 && DIFFLINES
 
 # function argument cannot read its own uninitialized caller variable
 SRC=0095 && COMPERR

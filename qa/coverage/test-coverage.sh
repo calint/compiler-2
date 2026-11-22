@@ -401,7 +401,7 @@ DIFFINP() {
     check_output "$(expected_run_output)"
 }
 
-DIFFINP2() {
+DIFFLINES() {
     begin_case
     compile_and_build
     program_command
@@ -479,7 +479,7 @@ COMPERR() {
 check_cases_lines() {
     # one case: its source, the expectations of the helper and its options
     # note: 'LISTING' compiles with the defaults, so it takes no 'OPTS'
-    local case_line='SRC=[0-9]{4} && ((EXP=[0-9]+ && )?(OPTS="[^"]*" )?(SDCARD=[0-9]+[KMGT]? )?(RUN|RUN_ERR|DIFF|DIFFINP|DIFFINP2|DIFFPY|DIFFNOPT|COMPERR)|LISTING [a-z]+)'
+    local case_line='SRC=[0-9]{4} && ((EXP=[0-9]+ && )?(OPTS="[^"]*" )?(SDCARD=[0-9]+[KMGT]? )?(RUN|RUN_ERR|DIFF|DIFFINP|DIFFLINES|DIFFPY|DIFFNOPT|COMPERR)|LISTING [a-z]+)'
     # a guard on the targets that run the cases after it
     local guard_line='if \[\[ \$MACHINE [!=]= (x86_64|rv32i|rv32i-qemu|rv32i-fpga)( \|\| \$MACHINE == (rv32i|rv32i-fpga))? \]\]; then'
     local line_numbers
