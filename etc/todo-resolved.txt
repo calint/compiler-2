@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 588, the usage text) '--help' does not say the exit
+    codes (0 when compiled, 1 on any error: option, source, unlocated,
+    stdout, internal) nor that '--vars' must be below what the target
+    addresses, as '--stack' names its limits; one line each changes the
+    help text and the generated README.md
+    => done (2026-11-23): the help says "exits with 0 when compiled, 1 on
+       any error" and that '--vars' is "below the address space of the
+       target"; README.md written again
 [x] easy: (round 592, rv32i code size) an address offset that two 'addi'
     reach (2048 to 4094, -4096 to -2049) costs 'lui' + 'add' and a scratch
     register; one 'addi' of the base by 2047 or -2048 and the access at the

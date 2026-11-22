@@ -176,7 +176,7 @@ the binary image itself.
 ```text
 usage: ./baz [options] [file]
 compiles file (default: prog.baz) to assembly on stdout, rv32i targets also
-write a binary image
+write a binary image; exits with 0 when compiled, 1 on any error
 
 options:
   --target=MACHINE    x86_64 (default): linux, nasm
@@ -189,7 +189,8 @@ options:
                         --memory), fails when code, data, variables and stack
                         do not fit
   --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
-                      nonzero multiple of 16 (default: 65536)
+                      nonzero multiple of 16 below the address space of the
+                      target (default: 65536)
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of 16, at least 48 and at
                       most the memory of the target (default: 65536)
@@ -267,10 +268,10 @@ examples:
 ```text
 Language                     files          blank        comment           code
 -------------------------------------------------------------------------------
-C/C++ Header                    64           9450           8126          27062
-C++                              1            233            130            870
+C/C++ Header                    64           9459           8137          27084
+C++                              1            233            130            871
 -------------------------------------------------------------------------------
-SUM:                            65           9683           8256          27932
+SUM:                            65           9692           8267          27955
 -------------------------------------------------------------------------------
 ```
 

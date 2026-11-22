@@ -182,7 +182,7 @@ struct command_option {
 constexpr std::string_view usage_format{
     R"(usage: {0} [options] [file]
 compiles file (default: {9}) to assembly on stdout, rv32i targets also
-write a binary image
+write a binary image; exits with 0 when compiled, 1 on any error
 
 options:
   --target=MACHINE    x86_64 (default): linux, nasm
@@ -195,7 +195,8 @@ options:
                         --memory), fails when code, data, variables and stack
                         do not fit
   --vars=SIZE         variable storage in bytes, decimal or 0x hex, must be a
-                      nonzero multiple of {1} (default: {2})
+                      nonzero multiple of {1} below the address space of the
+                      target (default: {2})
   --stack=SIZE        rv32i-qemu and rv32i-fpga stack in bytes, decimal or 0x
                       hex, must be a multiple of {3}, at least {7} and at
                       most the memory of the target (default: {4})

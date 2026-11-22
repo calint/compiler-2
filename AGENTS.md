@@ -169,6 +169,9 @@
   from 1; the entries of `etc/todo-resolved.txt` keep one running round
   number); the next round's agents may
   run meanwhile, their patches are applied after the commit.
+- A clean-up round fixes one item of section 1 of `etc/todo.txt`; it is
+  committed with message `.` and tagged `DATE--HH-MM--MODEL--clean-up-round-N`
+  (N counts from 1).
 - Remove a round's agent worktrees and branches when done (check they hold no
   commits).
 - Shell scripts `cd` to their own directory and use relative paths.

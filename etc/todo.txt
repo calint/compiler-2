@@ -10,11 +10,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] easy: (round 588, the usage text) '--help' does not say the exit
-    codes (0 when compiled, 1 on any error: option, source, unlocated,
-    stdout, internal) nor that '--vars' must be below what the target
-    addresses, as '--stack' names its limits; one line each changes the
-    help text and the generated README.md
 [ ] easy: (round 586, messages) an error in the body of a deep inlined
     recursion prints one identical "called from" frame per level, up to
     about 60, while a limit error collapses them; "instantiated by
