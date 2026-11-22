@@ -1,6 +1,28 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 592 (2026-11-22, bug hunt: the memory map of rv32i at its
+    edges; design: the addresses of rv32i; readability: a newcomer walks
+    the storage layout after the change of the base)
+    => bug hunt: no defect; 7400 generated programs of dats, globals and
+       locals whose sizes put accesses at every immediate edge around
+       's0', the split of upper parts and past 64 KiB, about 29600 runs
+       equal on the four targets, 1500 images equal to llvm's; bounds at
+       the edges; the largest '--vars' of each bare-metal target is
+       accepted and runs and 16 B more is rejected at compile time; a 2.5
+       GiB dat wraps its upper parts right; 10 mutants, 8 caught, two
+       only change the count of instructions; the docs (8 item 4) also
+       say that rv32i linux can link and fail when qemu has no room for
+       the stack
+    => design: no change; one routine lowers an address, one place splits
+       an offset, frames and globals share it, one rule shares an upper
+       part; the topic map names the sharing; one 'addi' for an offset
+       that two reach is a todo item (code size, adds a rule)
+    => readability: the comments of 'next_storage_location',
+       'vars_start_bytes', the check of 'add_dat' and a note of
+       'allocate_var' describe the base at 'vars'; the docs (6.6) say the
+       dats are below 'vars' and that x86_64 loads 'rbp' as an absolute
+       address; 16 functions, 4 predictions wrong
 [x] easy: round 591 (2026-11-22, bug hunt: x86_64 addresses after the
     base moved to 'vars'; design: the forming of x86_64 memory operands;
     readability: a newcomer walks the addressing of x86_64)

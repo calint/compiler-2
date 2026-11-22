@@ -1771,8 +1771,9 @@ variables in the source. The compile declares it again like a global
 The variables base points a fixed distance past the start of 'vars'
 ('variables_base_past_vars_bytes'). The variables follow the dats after the
 padding that aligns them ('dat var padding' in the report), so the dats are at
-negative offsets from the base, and 'baz.ld' asserts the order. x86_64
-addresses variables from 'rbp', which points at 'vars'. rv32i addresses them
+negative offsets from 'vars', and 'baz.ld' asserts the order. x86_64
+addresses variables from 'rbp', which points at 'vars' and is loaded as an
+absolute address: 'vars' may be beyond the 2 GiB of a 'rip' relative 'lea'. rv32i addresses them
 from 's0', which points 2032 B past 'vars', so the 12-bit offsets, -2048 to
 2047, reach the first 4080 B of variables directly, further ones need a 'lui'.
 A noinline body addresses its locals from its frame base, 'rbx' or 's1'.
@@ -2167,7 +2168,9 @@ What depends on the target is listed here, nothing else does:
    registers a call saves; on rv32i linux the linker places the program, so
    code, data and variables that fit in 4 GiB from address 0 can still fail
    the link, e.g. '--vars=0xffff0000' with 'ld.lld', which starts it at
-   about 0x11000; on x86_64 '--vars' reaches 2^47 - 16, and variables
+   about 0x11000, or link and fail when qemu starts them without room for
+   the stack, e.g. '--vars=0xff800000' ("mmap stack: Cannot allocate
+   memory", exit code 255); on x86_64 '--vars' reaches 2^47 - 16, and variables
    larger than what the host can map link and fail when the program
    starts; on x86_64 nasm truncates a label to 4095 characters, so the
    listing writes a symbol longer than 4000 characters as its first 4000,

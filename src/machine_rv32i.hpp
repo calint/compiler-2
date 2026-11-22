@@ -40,7 +40,10 @@
 //   registers    'machine' allocates them, here the order
 //                'scratch_registers_' and the roles in 'rv32i_target'
 //   addresses    'lower_address': an operand into a base register and a
-//                12-bit offset, which 'load_at' and 'store_at' access
+//                12-bit offset, which 'load_at' and 'store_at' access; two
+//                accesses share an upper part ('shares_address_base',
+//                'rebased'); 'start_of' and 'is_word_based' know where an
+//                address is within its word
 //   operations   'binary_operation', 'emit_binary_instruction',
 //                'emit_multiply' through 'multiply_by_shifts_and_adds'
 //                (signed digits), 'shift_by_constant', 'shift_by_register'

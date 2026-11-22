@@ -10,6 +10,14 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 592, rv32i code size) an address offset that two 'addi'
+    reach (2048 to 4094, -4096 to -2049) costs 'lui' + 'add' and a scratch
+    register; one 'addi' of the base by 2047 or -2048 and the access at the
+    rest is one instruction shorter, as 'emit_binary_instruction' does for
+    arithmetic; measured on rv32i-fpga: 55 of 1066 listings, -424 B of
+    images, roome -256 B; test 7120 then needs a larger array to reach its
+    error; it adds a 'base_step' rule to 'lower_address' and the sharing
+    of upper parts (experiment in the scratchpad 'keep/r592-near-step.diff')
 [ ] easy: (round 588, the usage text) '--help' does not say the exit
     codes (0 when compiled, 1 on any error: option, source, unlocated,
     stdout, internal) nor that '--vars' must be below what the target

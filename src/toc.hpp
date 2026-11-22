@@ -1435,8 +1435,8 @@ class storage_layout final {
 
         // note: the dats and the whole capacity end below what the target
         //       addresses ('assert_dats_and_vars_fit_target' at each 'dat',
-        //       the constructor without one), so does a variable within the
-        //       capacity
+        //       the constructor when there is none), so does a variable
+        //       within the capacity
 
         assert(sum_storage_size(dats_and_vars_size_bytes(),
                                 allocated_size_bytes) < x.max_storage_bytes());
@@ -1658,8 +1658,8 @@ class storage_layout final {
     }
 
     // a local starts after the storage in use of the nearest scope with a
-    // frame and of the scopes inside it, any other variable after the dats
-    // and the variables in use
+    // frame and of the scopes inside it, any other variable after the
+    // variables in use, counted from 'vars'
     [[nodiscard]] auto next_storage_location() const -> storage_location {
         const std::vector<scope>& scopes{scopes_.get().all()};
         size_t local_size_bytes{};
@@ -1696,8 +1696,9 @@ class storage_layout final {
         return total_bytes;
     }
 
-    // the variables start after the dats and the padding that aligns them;
-    // every dat is placed by the parse, so this is fixed while compiling
+    // how far 'vars' is past the first dat: the dats and the padding that
+    // aligns the variables; every dat is placed by the parse, so this is fixed
+    // while compiling
     [[nodiscard]] auto vars_start_bytes() const -> size_t {
         return sum_storage_size(data_.get().total_size_bytes(),
                                 data_.get().dat_var_padding_bytes());
@@ -2652,8 +2653,9 @@ class parse_toc final : public toc {
         t.data.add_dat(dat, var.src_loc_tk,
                        t.storage.var_storage_alignment(var), size_bytes);
 
-        // the dats reach no further than the target addresses, 'place_dat'
-        // asserts it at the compile
+        // the dats and the '--vars' capacity after them reach no further than
+        // the target addresses, 'place_dat' and 'allocate_var' assert it at
+        // the compile
         t.storage.assert_dats_and_vars_fit_target(var.src_loc_tk);
     }
 
