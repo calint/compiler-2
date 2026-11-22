@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 587 (2026-11-22, bug hunt: combinations of options;
+    design: function definitions; readability: a newcomer walks the
+    inlined call)
+    => bug hunt: no defect; the 1071 run cases of the suite and 5200
+       generated programs of four fuzzers under 28 variants each (every
+       check alone, 'noub' without each check, random subsets with
+       'line', '--nopt' and each '--versions') against the 'noub' run,
+       about 330000 compiles and runs with the asan build on the four
+       targets, and 42416 compiles of random options: a check only adds
+       its tests, each fires where 'noub' fires it, 'line' changes only
+       the panic text, '--nopt' and '--versions' change no result
+    => design: the check that 'main' has no result moved into 'func_head'
+       beside the other rules of 'main' (listings and errors equal); a
+       noinline body, 'check_body' and 'check_noinline_body' share
+       'compile_in_frame'; eight ideas kept with reasons
+    => readability: 'compile_widened' makes the result in a scratch
+       register, a 'mut' argument passes a temporary; a deeper level of a
+       recursion compiles the body again, so an error can lie before the
+       call ('is_located_in_call'); 13 functions, 2 predictions wrong
 [x] easy: round 586 (2026-11-22, bug hunt: the frames of an error reached
     through calls and instances; design: the compile of an inlined call;
     readability: a newcomer walks the address walk of a path)

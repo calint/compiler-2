@@ -87,9 +87,20 @@ struct func_head {
     // none until it is read, e.g. after 'list.add' of 'func list.add('
     std::optional<token> open_paren_tk;
 
+    // checked after the body, a result name may be the first word of a body
+    // without its '{', e.g. the 'exit' of 'func main() exit(0)'
+    auto
+    assert_main_has_no_result(const std::optional<func_result>& result) const
+        -> void {
+
+        if (name == reserved_names::main and result) {
+            throw compile_error{result->name_tk, "'main' cannot have a result"};
+        }
+    }
+
     // no call gives 'main' type arguments or calls it out of line; its
     // parameters follow, 'assert_signature' checks them, and its result,
-    // 'stmt_def_func' checks it after the body
+    // 'assert_main_has_no_result' checks it after the body
     auto assert_main_head() const -> void {
         if (name != reserved_names::main) {
             return;
@@ -888,15 +899,6 @@ class stmt_def_func final : public statement {
             std::ranges::count_if(params_, &stmt_def_func_param::is_array));
     }
 
-    // checked after the body, a result name may be the first word of a body
-    // without its '{', e.g. the 'exit' of 'func main() exit(0)'
-    auto assert_main_has_no_result() const -> void {
-        if (name() == reserved_names::main and result_) {
-            throw compile_error{result_->name_tk,
-                                "'main' cannot have a result"};
-        }
-    }
-
     // every statement is reached and every path through the body sets the
     // result, also the end, which returns like a 'return' statement
     // note: without a result the type is 'void', of no bytes, which every
@@ -1111,7 +1113,7 @@ class stmt_def_func final : public statement {
 
         code_ = {tc, tz, block_braces::required};
 
-        assert_main_has_no_result();
+        head_.assert_main_has_no_result(result_);
 
         // checked here so that the error of an instance gets its frames
         assert_sets_result();

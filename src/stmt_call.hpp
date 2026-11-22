@@ -776,8 +776,8 @@ struct call_site {
     [[nodiscard]] auto is_located_in_call(const compile_error& e) const
         -> bool {
 
-        // note: a recursive call is checked inside its own body, so an error
-        //       can be located after the call
+        // note: a deeper level compiles again the body that holds the call,
+        //       so an error can be located before or after the call
 
         // note: an error in a body is at a token of its source; only a missing
         //       'main' and the registers the backend holds have no place
@@ -1076,8 +1076,8 @@ class inline_call final {
         compile_body(tc, bindings);
     }
 
-    // the result is made at its type in a register that the body names, the
-    // copy into the operand widens it
+    // the result is made at its type in a scratch register, the copy into
+    // the operand widens it
     auto compile_widened(compile_toc& tc, const destination& dst) const
         -> void {
 
