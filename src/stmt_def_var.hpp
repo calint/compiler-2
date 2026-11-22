@@ -33,7 +33,8 @@
 //                            or size from the initializer
 //   'stmt_def_const'         a 'let' that folds, a constant
 //   'stmt_def_var'           a 'var' or a 'let' that is a variable
-//   'make_stmt_def_var'      reads the keyword and picks the statement
+//   'make_stmt_def_var'      reads what follows the keyword and picks the
+//                            statement
 //
 
 // whether the name of a definition is visible in its initializer: a 'var' that
@@ -47,8 +48,8 @@ enum class name_in_initializer : uint8_t { visible, hidden };
 // at them
 class initializer_declaration final {
     token name_tk_;
-    // after the name, where a destination that names it continues
-    tokenizer at_name_;
+    // where a destination that names it continues
+    tokenizer after_name_;
     token equals_tk_;
     name_in_initializer name_visibility_{};
     // a 'let' is read-only from its declaration on, its initializer is not
@@ -65,7 +66,7 @@ class initializer_declaration final {
     initializer_declaration(parse_toc& tc, tokenizer& tz,
                             const std::string_view keyword,
                             const name_in_initializer name_visibility)
-        : name_tk_{read_name(tc, tz)}, at_name_{tz},
+        : name_tk_{read_name(tc, tz)}, after_name_{tz},
           equals_tk_{read_equals(tz, keyword, name_tk_)},
           name_visibility_{name_visibility},
           read_only_why_{
@@ -80,7 +81,7 @@ class initializer_declaration final {
 
     // the destination is read where it ends at '=', past it the '[2]' in
     // 'var a = [2]{}' would read as an index
-    [[nodiscard]] auto at_name() const -> tokenizer { return at_name_; }
+    [[nodiscard]] auto after_name() const -> tokenizer { return after_name_; }
 
     // the variable the definition declares, a 'var', a 'let' or a 'dat'
     [[nodiscard]] auto declared_var() const -> var_info {
@@ -456,14 +457,11 @@ class stmt_def_var final : public statement {
                  const initializer_declaration& declaration, expr_any value)
         : statement{keyword_tk}, declared_{declaration.declared_var()},
           assign_var_{
-              declare_and_assign(tc, declared_, declaration.at_name(),
+              declare_and_assign(tc, declared_, declaration.after_name(),
                                  declaration.equals_tk(), std::move(value)),
           } {
 
         set_type(declaration.type_ref());
-
-        // note: a read of the variable in its initializer was rejected
-        //       where it was parsed ('scope::initializer')
     }
 
     //
@@ -529,14 +527,17 @@ class stmt_def_var final : public statement {
     // the variable is declared during the parse so later statements can name
     // it, its initializer names it as the destination
     [[nodiscard]] static auto
-    declare_and_assign(parse_toc& tc, const var_info& var, tokenizer at_name,
+    declare_and_assign(parse_toc& tc, const var_info& var, tokenizer after_name,
                        const token& equals_tk, expr_any value)
         -> stmt_assign_var {
+
+        // note: a read of the variable in its initializer was rejected
+        //       where it was parsed ('scope::initializer')
 
         tc.add_var(var, var_kind::var);
 
         return {
-            stmt_identifier{tc, var.src_loc_tk, at_name},
+            stmt_identifier{tc, var.src_loc_tk, after_name},
             equals_tk,
             std::move(value),
         };

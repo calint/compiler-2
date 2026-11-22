@@ -1,6 +1,31 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 580 (2026-11-22, bug hunt: explicit conversions; design:
+    the compile of arithmetic; readability: a newcomer walks
+    'stmt_def_var.hpp')
+    => bug hunt: no defect; 61000 generated programs of conversions of
+       every width pair around lists, calls, fields, elements and lets in
+       every context against a model of the width, the wrap and the
+       checks, about 380000 runs under seven option sets on three
+       targets; 150 probes; 23 mutants, 18 caught, 5 equivalent or only
+       changing acceptance
+    => design: no change; 'expr_arith::compile' alone chooses the
+       destination or a scratch register, each operator family has one
+       routine, checks attach in 'emit_operation'; that a single call
+       reading its destination is rejected while a list of it is accepted
+       is added to the round 402 user decision with a patch and its
+       measurements
+    => readability: 'at_name' of 'initializer_declaration' renamed
+       'after_name'; 'make_stmt_def_var' reads what follows the keyword;
+       a note moved to the late 'add_var' it explains; the docs named
+       'initializer_declaration::fold_let' for 'stmt_def_const::fold_let';
+       29 functions, 4 predictions wrong
+    => checks: 'check-readme-names.py' checked each word of a scoped name
+       on its own, so a member under the wrong class passed; it now
+       checks that each 'scope::member' is in the body of its class,
+       struct, enum or namespace or defined out of it (comments and
+       literals left out when the braces are matched)
 [x] easy: round 579 (2026-11-22, bug hunt: the round trip of
     '--reproduce-source'; design: declarations of variables; readability:
     a newcomer walks the public interface of 'machine')

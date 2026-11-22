@@ -17,18 +17,69 @@ README = os.path.join(ROOT, 'etc', 'docs', 'README.md')
 SRC = os.path.join(ROOT, 'src')
 CASES = os.path.join(ROOT, 'qa', 'coverage', 'cases.sh')
 
+# a 'scope::name' must also name a member of the class, struct, enum or
+# namespace 'scope', e.g. 'toc::fold_let' fails when only another class of
+# 'src/' has a 'fold_let'
+
 # a whole quoted text that is a name, a scoped name or a file name
 QUOTED = re.compile(r"'([A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_~][A-Za-z0-9_]*)*(?:\.[ch]pp)?)'")
 WORD = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
 
 
-def source_words():
-    words = set()
+def source_texts():
+    texts = {}
     for name in os.listdir(SRC):
-        words.add(name)
         with open(os.path.join(SRC, name), encoding='utf-8') as f:
-            words.update(WORD.findall(f.read()))
+            texts[name] = f.read()
+    return texts
+
+
+def source_words(texts):
+    words = set(texts)
+    for text in texts.values():
+        words.update(WORD.findall(text))
     return words
+
+
+# the code of a source without comments and literals, whose braces would
+# end a body early or late
+CODE_NOISE = re.compile(r'//[^\n]*|"(?:\\.|[^"\\\n])*"|\'(?:\\.|[^\'\\\n])*\'')
+
+
+# the bodies of the definitions of 'scope', none when 'src/' defines none
+def scope_bodies(texts, scope):
+    head = re.compile(r'\b(?:class|struct|enum|namespace)\s+(?:class\s+)?'
+                      + re.escape(scope) + r'\b[^;{()]*\{')
+    bodies = []
+    for source in texts.values():
+        text = CODE_NOISE.sub('', source)
+        for match in head.finditer(text):
+            end = match.end()
+            depth = 1
+            while depth and end < len(text):
+                if text[end] == '{':
+                    depth += 1
+                elif text[end] == '}':
+                    depth -= 1
+                end += 1
+            bodies.append(text[match.end():end])
+    return bodies
+
+
+# each 'scope::member' pair of a scoped name names a member of its scope, in
+# the body of the scope or in a definition out of it ('scope::member')
+def is_member_of_scopes(texts, name):
+    parts = name.split('::')
+    for scope, member in zip(parts, parts[1:]):
+        bodies = scope_bodies(texts, scope)
+        if not bodies:
+            continue
+        word = re.compile(r'\b' + re.escape(member.lstrip('~')) + r'\b')
+        out_of_body = f'{scope}::{member}'
+        if not any(word.search(b) for b in bodies) and not any(
+                out_of_body in t for t in texts.values()):
+            return False
+    return True
 
 
 # the numbers of the column 'tests' of the catalog with their line
@@ -71,7 +122,8 @@ def missing_from_reading_order():
 
 
 def main():
-    words = source_words()
+    texts = source_texts()
+    words = source_words(texts)
     missing = missing_tests() + missing_from_reading_order()
     with open(README, encoding='utf-8') as f:
         for line_no, line in enumerate(f, start=1):
@@ -82,7 +134,8 @@ def main():
                     parts = name.split('::')
                 else:
                     continue
-                if not all(p in words for p in parts):
+                if not all(p in words for p in parts) or (
+                        '::' in name and not is_member_of_scopes(texts, name)):
                     missing.append(f'README.md:{line_no}: {name}')
     for m in missing:
         print(m)

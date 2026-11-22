@@ -1099,6 +1099,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => the workaround is a temporary; decide whether the first form (the
        argument read whole before the first write of the result) is worth
        an order in the record of a body
+    => round 580: the rule is not even: 'x = inc(x)' and 'x = -inc(x)' are
+       rejected while 'x = inc(x) + 0', 'x = inc(x) * 1' and 'x = 2 +
+       inc(x)' are accepted (a list of two or more elements is computed in
+       a scratch register); moving the clobber check of 'expr_arith::
+       compile' before its in-place branch accepts the single call too
+       (17 rejection tests become accepted, 0520 and 2968 grow by 2
+       instructions, 184 compiles of 23 cases differ; patch in the
+       scratchpad as 'keep/r580-clobber-before-in-place.diff'); need
+       approval
 [ ] easy: user decision (round 405, the vocabulary): two words for one
     thing where neither is few: 'len' (21 declarations, 'array_len')
     against 'length' (about 43, 'array_lengths'); 'ix' (38) against
