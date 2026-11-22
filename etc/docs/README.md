@@ -1799,13 +1799,12 @@ register' above the load.
 '(_impl)' marks a member defined in 'stmt_identifier_impl.hpp'.
 
 ```text
-stmt_identifier::compile_lea          the walk of 6.2
-path_address::indexed_element         a constant or a run-time index (_impl)
-path_address::add_index               the index register and the scale
-                                      (_impl)
+stmt_identifier::compile_lea          the walk of 6.2, a field or a constant
+                                      index into the displacement
+path_address::indexed_element         a run-time index, its register and the
+                                      scale (_impl)
 path_address::fold_indexed_address    the second index
-stmt_identifier::compile_checked_index
-                                      the bounds check and the '+ c' of 6.4
+path_address::compile_checked_index   the bounds check and the '+ c' of 6.4
                                       (_impl)
 stmt_identifier::operand_of           a path without an index or an address
                                       in a slot is not walked

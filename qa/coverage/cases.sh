@@ -8539,3 +8539,12 @@ SRC=8081 && EXP=0 && RUN
 # without bounds checks the constant of an index goes into the displacement
 # scaled by the element size at each level, also of 6 and 12 byte records
 SRC=8082 && EXP=0 && OPTS="" RUN
+
+# an error in an argument of an inlined recursive call names the level of the
+# recursion that makes the call
+SRC=8120 && COMPERR
+
+# a call into an inlined recursion from another instance of the generic method
+# or function is a frame, its text is that of the recursive call
+SRC=8121 && COMPERR
+SRC=8122 && COMPERR

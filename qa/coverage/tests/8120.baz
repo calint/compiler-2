@@ -1,0 +1,14 @@
+# an error in an argument of an inlined recursive call is found in the body of
+# the level that makes the call, so that level is a frame, as for an error in
+# the body
+func f(n) res {
+    if n == 0 {
+        res = 1
+    } else {
+        res = f((n - 1) * (1 + 0 / (n - 2)))
+    }
+}
+
+func main() {
+    exit(f(3))
+}

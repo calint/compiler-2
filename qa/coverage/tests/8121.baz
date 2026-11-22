@@ -1,0 +1,22 @@
+# the call from a method of one instance of a generic type into an inlined
+# recursion of the method of another instance is a frame, though its text is
+# that of the recursive call
+type box<k> { w i32 }
+
+type b8 = box<8>
+
+type b4 = box<4>
+
+var g4 = b4
+
+var g8 = b8
+
+func box.m(n i8) {
+    if n != 0 {
+        g8.m(i8(n + 1))
+    }
+}
+
+func main() {
+    g4.m(1)
+}

@@ -263,9 +263,11 @@ class stmt_identifier final : public statement {
         bool is_last{};
     };
 
-    // builds the memory operand of a path one element at a time, with the
-    // scratch registers it allocates; the registers from 'owned_from_' on are
-    // the path's own and may be overwritten, the earlier ones are the caller's
+    // the start and the run-time indexes of the memory operand that
+    // 'compile_lea' builds, with the scratch registers they allocate; field
+    // offsets and constant indexes go into the displacement in 'compile_lea';
+    // the registers from 'owned_from_' on are the path's own and may be
+    // overwritten, the earlier ones are the caller's
     class path_address final {
         std::reference_wrapper<compile_toc> tc_;
         token src_loc_tk_;
@@ -601,7 +603,8 @@ class stmt_identifier final : public statement {
 
     // the memory operand of this identifier, e.g. '[rbp + r15 * 4 + 248]',
     // 'held' receives the scratch registers of the indexes and of an address
-    // loaded from a slot
+    // loaded from a slot; named after 'lea', which would compute the address
+    // of the operand
     [[nodiscard]] auto compile_lea(compile_toc& tc,
                                    machine::held_registers& held,
                                    const lea_request& request) const
@@ -1023,9 +1026,9 @@ class stmt_identifier final : public statement {
                                                  in_quotes(method_path))};
     }
 
-    // the constant index of the element at 'elem_pos' of the path, checked
-    // against 'array_info' by 'is_constant_index_in_bounds', empty when
-    // computed at run time
+    // the constant index of the element at 'elem_pos' of the path, empty when
+    // computed at run time; one out of 'array_info' is rejected
+    // ('is_constant_index_in_bounds'), 'allow_end' accepts the end
     [[nodiscard]] auto checked_constant_index(const toc& tc, size_t elem_pos,
                                               const ident_info& array_info,
                                               bool allow_end) const

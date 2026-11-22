@@ -1,6 +1,35 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 586 (2026-11-22, bug hunt: the frames of an error reached
+    through calls and instances; design: the compile of an inlined call;
+    readability: a newcomer walks the address walk of a path)
+    => bug hunt: one defect of messages: 'call_site::add_call_frame'
+       dropped the frame of any error inside the text of the call, which
+       only mattered for a recursion, so an error in an argument of a
+       deeper level, a call from one generic instance into another with
+       the same text, or a method of a generic type calling another
+       instance lost frames and could point at a level where nothing
+       fails; fix: only a limit at a call that is itself a level of a
+       recursion skips its frame ('inline_call::compile_body' passes
+       'is_recursion_level'); tests 8120 to 8122; 2770 generated programs
+       with an error 1 to 5 calls deep through every kind of call, 21920
+       runs on two targets and the versions, the 1581 error tests
+       compared on two targets; 13 mutants, all caught
+    => design: 'compile_widened' no longer calls back into
+       'compile_at_result_type': both call a private
+       'inline_call::compile_with_temporaries' (listings equal, +7 lines);
+       one routine binds an argument of any kind, the inline and noinline
+       paths share storing arguments, temporaries, result padding and
+       frames
+    => readability: 'path_address' does the start and the run-time
+       indexes only; 'compile_lea' is named after 'lea' and returns an
+       operand; 'checked_constant_index' rejects an index out of the
+       array; the table of 6.8 named 'path_address::add_index', gone, and
+       the old place of 'compile_checked_index'; 26 functions, 3
+       predictions wrong
+    => checks: 'check-readme-names.py' now also checks a 'scope::name'
+       outside quotes, as in the tables of chapter 6
 [x] easy: round 585 (2026-11-22, bug hunt: the judges of the fuzzers and
     what they catch; design: the address walk of a path; readability: a
     newcomer walks the bulk operands)

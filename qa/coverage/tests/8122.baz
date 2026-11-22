@@ -1,0 +1,11 @@
+# the call from one instance of a generic function into an inlined recursion
+# of another instance is a frame, though its text is that of the recursive call
+func g<T type>(n T) {
+    if n != 0 {
+        g<i8>(i8(n + 1))
+    }
+}
+
+func main() {
+    g<i16>(1)
+}

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # checks that each code name quoted in 'etc/docs/README.md' still exists under
 # 'src/': a quoted identifier with an underscore or a 'scope::name', e.g.
-# 'toc::storage_of' or 'plan_writes'; a quoted baz text without an underscore
-# is not checked; and that each test of the column 'tests' of the catalog
+# 'toc::storage_of' or 'plan_writes', and an unquoted 'scope::name' too, e.g.
+# in the tables of chapter 6; a quoted baz text without an underscore is not
+# checked; and that each test of the column 'tests' of the catalog
 # (8.1) is a case of 'qa/coverage/cases.sh', e.g. '0295' or '1289-1291'; and
 # that the reading order of 1.1 names every file of 'src/', the built-ins as
 # 'stmt_builtin_*.hpp'
@@ -24,6 +25,9 @@ CASES = os.path.join(ROOT, 'qa', 'coverage', 'cases.sh')
 EXTERNAL_SCOPES = {'std'}
 
 # a whole quoted text that is a name, a scoped name or a file name
+# a 'scope::name' outside quotes, e.g. 'path_address::indexed_element' at the
+# start of a row of a table
+SCOPED = re.compile(r"(?<![\w'])([A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_~][A-Za-z0-9_]*)+)(?![\w'])")
 QUOTED = re.compile(r"'([A-Za-z_][A-Za-z0-9_]*(?:::[A-Za-z_~][A-Za-z0-9_]*)*(?:\.[ch]pp)?)'")
 WORD = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
 
@@ -134,7 +138,7 @@ def main():
     missing = missing_tests() + missing_from_reading_order()
     with open(README, encoding='utf-8') as f:
         for line_no, line in enumerate(f, start=1):
-            for name in QUOTED.findall(line):
+            for name in QUOTED.findall(line) + SCOPED.findall(line):
                 if name.endswith(('.hpp', '.cpp')):
                     parts = [name]
                 elif '::' in name or '_' in name:

@@ -1,0 +1,16 @@
+
+8121.baz:16:12: recursion of inlined function 'b8.m' is nested deeper than 64 calls, declare it 'noinline'
+        g8.m(i8(n + 1))
+           ^
+8121.baz:6:6: instantiated by
+type b8 = box<8>
+     ^~
+8121.baz:16:9: 'b8.m' called from
+        g8.m(i8(n + 1))
+        ^~
+8121.baz:8:6: instantiated by
+type b4 = box<4>
+     ^~
+8121.baz:21:5: 'b4.m' called from
+    g4.m(1)
+    ^~

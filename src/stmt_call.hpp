@@ -596,9 +596,13 @@ struct call_site {
     std::vector<std::optional<place>> places;
 
     // an error found while the inlined body compiled gets the call as a
-    // frame, unless it is located in the call itself, e.g. in an argument
-    auto add_call_frame(compile_error& e) const -> void {
-        if (is_located_in_call(e)) {
+    // frame; at a level of an inlined recursion a limit located in the call
+    // itself gets none, a deeper level reached it at the same call, e.g. the
+    // nesting limit, whose message names the recursion
+    auto add_call_frame(compile_error& e, const bool is_recursion_level) const
+        -> void {
+
+        if (is_recursion_level and e.is_limit() and is_located_in_call(e)) {
             return;
         }
 
@@ -1014,10 +1018,7 @@ class inline_call final {
             return;
         }
 
-        call_.compile_with_temporaries(tc, dst,
-                                       [&](const destination& result) -> void {
-                                           compile_with_bindings(tc, result);
-                                       });
+        compile_with_temporaries(tc, dst);
     }
 
     // an error found in the inlined body reports where it was called from,
@@ -1025,11 +1026,18 @@ class inline_call final {
     auto compile_body(compile_toc& tc, const call_bindings& bindings) const
         -> void {
 
+        // note: the body of the callee is not open yet, so this is the count
+        //       of the levels around the call, as 'compile' reads it
+
+        const bool is_recursion_level{
+            tc.scopes().inlined_nesting(call_.func->name()) != 0,
+        };
+
         try {
             call_.func->compile_inlined(tc, call_.tk, bindings.result,
                                         bindings.arguments);
         } catch (compile_error& e) {
-            call_.add_call_frame(e);
+            call_.add_call_frame(e, is_recursion_level);
             throw;
         }
     }
@@ -1076,7 +1084,7 @@ class inline_call final {
         statement::compile_through_scratch(
             tc, call_.tk, dst.operand(), call_.func->result_type(),
             [&](const operand& result) -> void {
-                compile_at_result_type(tc, destination::of_register(result));
+                compile_with_temporaries(tc, destination::of_register(result));
             });
     }
 
@@ -1122,6 +1130,16 @@ class inline_call final {
         tc.emit_most_efficient(
             call_.tk, [&] -> void { compile_body(tc, bindings); },
             [&] -> void { compile_body_with_address_registers(tc, bindings); });
+    }
+
+    // 'dst' is at the result type, empty without a result
+    auto compile_with_temporaries(compile_toc& tc, const destination& dst) const
+        -> void {
+
+        call_.compile_with_temporaries(tc, dst,
+                                       [&](const destination& result) -> void {
+                                           compile_with_bindings(tc, result);
+                                       });
     }
 
     // the call within the nesting limits, 'nesting' inlined bodies of the
