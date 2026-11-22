@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 574 (2026-11-22, bug hunt: loop control; design:
+    conditions; readability: a newcomer walks the register pool)
+    => bug hunt: no defect; 1400 generated nests of 'loop' and 'foo' up to
+       6 deep with 'break', 'continue', 'return' and 'exit' at every depth,
+       inline and noinline bodies over arrays of several lengths, writes to
+       the array during 'foo', counts at 0 and at run time, against a
+       model on three targets under six option sets (about 9300 runs); 75
+       probes; 16 mutants, 15 caught; the 16th: 'runs_body' of 'foo' needs
+       no '!= 0' since a limit of 0 restores the entry reach in
+       'check_skipped', kept since the stated rule is easier to read
+    => design: no change; a condition is compiled by one routine for a
+       branch and a value, 'not' goes into the operator once, elements fold
+       in one place; the comment of 'compile_memory_comparison' fixed; a
+       jump after a nested list a constant ended (removed by the
+       peephole, only the report changes) kept, a fix adds state
+    => readability: 'register_pool::pop' also ends a protection, which
+       only its own scope holds; backend allocations share the stack of
+       'push_allocation'; 46 functions, 4 predictions wrong
 [x] easy: round 573 (2026-11-22, bug hunt: aliases and type parameters
     bound to types; design: the bookkeeping of registers; readability: a
     newcomer walks 'program.hpp')

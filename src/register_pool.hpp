@@ -78,6 +78,10 @@ class register_pool final {
         assert(top().index == index);
 
         allocations_.pop_back();
+
+        // note: ends a protection of it too, which only the
+        //       'operation_scope' it was allocated in holds
+
         unavailable_ &= ~(uint32_t{1} << index);
     }
 

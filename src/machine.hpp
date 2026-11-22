@@ -2635,8 +2635,8 @@ class machine {
         state_.registers.pop(index);
     }
 
-    // named and scratch allocations share one stack, each is recorded for
-    // the report of the use of registers
+    // scratch, named and backend allocations share one stack, each is
+    // recorded for the report of the use of registers
     auto push_allocation(const emit_site site,
                          const std::string_view register_name,
                          const register_pool::holder_kind holder) -> void {

@@ -459,8 +459,9 @@ class expr_bool_op final : public statement {
         return value;
     }
 
-    // the bytes are compared into a 'bool' that holds the inversion of the
-    // action, then branched on as a shorthand that is not inverted
+    // the bytes are compared into a 'bool' that holds the outcome of the
+    // action's '==' or '!=', then branched on as a shorthand that is not
+    // inverted
     auto
     compile_memory_comparison(compile_toc& tc, const comparison& cmp,
                               const machine::comparison_action& action) const
