@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 593 (2026-11-22, bug hunt: the output does not depend on
+    what it should not; design: the rules of order and aliasing;
+    readability: a newcomer walks the addresses of rv32i)
+    => bug hunt: no defect; every case of the suite compiled with its
+       options on the four targets again, from other directories, by
+       './', absolute, symlinked and '..' paths, at another place, with
+       another locale and time zone, by an -O0 and an asan build (about
+       113000 compiles), byte for byte equal but for the documented
+       names of included files relative to the working directory and the
+       name of the main file in comments and messages; valgrind clean;
+       the order of includes changes only file indexes in labels
+    => design: no change; each rule of order and aliasing is checked by
+       one routine, reads and writes are visited in the order of the
+       compile, the effects of a call are summed once
+    => readability: 'lower_address' may compute into 'dst';
+       'store_constant_result' takes a constant already narrowed;
+       'start_of' gives the alignment and phase where accesses start; 16
+       functions, 4 predictions wrong
+    => the loop ends: rounds 592 and 593 fixed no defect and changed no
+       design
 [x] easy: round 592 (2026-11-22, bug hunt: the memory map of rv32i at its
     edges; design: the addresses of rv32i; readability: a newcomer walks
     the storage layout after the change of the base)

@@ -2950,7 +2950,7 @@ class machine_rv32i : public machine {
     }
 
     // lower base + index * scale + displacement to register + signed 12-bit
-    // offset
+    // offset; a register 'dst' may hold the computed address
     [[nodiscard]] auto lower_address(const emit_site site,
                                      const operand& address,
                                      const operand& dst = {}) -> operand {
@@ -3182,6 +3182,8 @@ class machine_rv32i : public machine {
         return right;
     }
 
+    // where accesses at 'address' start: from a word based base, else from
+    // the type 'alignment'
     [[nodiscard]] auto start_of(const operand& address,
                                 const size_t alignment) const -> access_start {
 
@@ -3248,6 +3250,7 @@ class machine_rv32i : public machine {
         }
     }
 
+    // 'constant' is already truncated and extended to the type of 'dst'
     auto store_constant_result(const emit_site site, const operand& dst,
                                const int32_t constant) -> void {
 
