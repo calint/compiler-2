@@ -298,10 +298,12 @@ class bulk_operands final {
                                                 array_count),
             };
 
-            // the walk of the address checked a run-time start, the flag of
-            // the count needs a range with a count ('machine::check_bounds')
-            if (range and start) {
-                range->start_lower_checked = true;
+            // 'checked' is a run-time start, which the walk of the address
+            // checked, else the count; the flag of the count needs a range
+            // with a count ('machine::check_bounds')
+            if (range) {
+                range->checked_lower_checked =
+                    start.has_value() or count_lower_checked;
 
                 range->count_lower_checked =
                     count_lower_checked and range->count.has_value();

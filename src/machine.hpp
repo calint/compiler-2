@@ -275,9 +275,9 @@ class machine {
         operand checked;
         // the count of a range, none otherwise
         std::optional<operand> count;
-        // the start is known not to be negative, e.g. checked by the walk of
-        // its address
-        bool start_lower_checked{};
+        // 'checked' is known not to be negative, e.g. a start checked by the
+        // walk of its address
+        bool checked_lower_checked{};
         // the count is known not to be negative, e.g. checked for the first
         // array of a copy
         bool count_lower_checked{};
@@ -295,7 +295,7 @@ class machine {
             return {
                 .checked{index},
                 .count{},
-                .start_lower_checked{},
+                .checked_lower_checked{},
                 .count_lower_checked{},
                 .array_count{array_count},
                 .allow_end{},
@@ -332,7 +332,7 @@ class machine {
             return {
                 .checked{value},
                 .count{},
-                .start_lower_checked{},
+                .checked_lower_checked{},
                 .count_lower_checked{},
                 .array_count{limit},
                 .allow_end{true},
@@ -353,7 +353,7 @@ class machine {
             return {
                 .checked{start},
                 .count{count},
-                .start_lower_checked{},
+                .checked_lower_checked{},
                 .count_lower_checked{},
                 .array_count{array_count},
                 .allow_end{true},
@@ -2556,8 +2556,8 @@ class machine {
 
         std::vector<operand> tested;
 
-        if (range.start_lower_checked) {
-            comment(site, "start {} lower bound already checked",
+        if (range.checked_lower_checked) {
+            comment(site, "{} lower bound already checked",
                     range.checked.register_name());
         } else {
             tested.push_back(range.checked);

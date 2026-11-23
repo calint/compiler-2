@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 584, listings) with '--checks=lower' without 'upper', a
+    bulk built-in whose second array has a constant start and whose count
+    is run-time tests the sign of the count twice, e.g. 'array_copy(a[1],
+    b[2], n)' (x86_64 'test rcx, rcx; js' twice, rv32i 'blt' twice): the
+    flag 'start_lower_checked' of 'bounds_range' is set only on a range
+    with its own '.count'; it could describe 'checked' instead
+    ('argument_emitters::range_of', 'machine::lower_bound_tests'); no test
+    listing changes, since 'upper' covers the sign
+    => done (2026-11-23): 'bounds_range::checked_lower_checked' describes
+       'checked', a run-time start or else the count, so a count checked
+       for the first array is not tested again; '--checks=lower':
+       rv32i-fpga 12 cases 1 to 3 instructions shorter; the comment says
+       "t0 lower bound already checked" without 'start'
 [x] easy: (round 555, messages) a missing token is located three ways:
     "expected '=' followed by an initializer" at the end of the name,
     "expected '{' to begin block" and others at the next token (README
