@@ -439,6 +439,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     with a 'bool' parameter says "'3' of type 'i64'" on x86_64 and
     "of type 'int'" on rv32i (see the round 433 item on messages that
     name the default type)
+    => 2026-11-23: on x86_64 the default type is 'i64' itself, on rv32i a
+       type 'int' distinct from 'i32' ('builtin_type_set::int32'); one
+       name needs a distinct 'int' on x86_64 too, which changes what
+       mixes with 'i64'; a design question, not done
 [ ] easy: (round 443, bug hunt of names)
     1. a constant parameter named like a type: 'type n { x }' then
        'type buf<n> { a i8[n], q n }' is accepted, 'q n' is the type
@@ -457,26 +461,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        as the plain call does: 'o.put(x, 1)' with an 'int' 'x' for an
        'i8' parameter says "cannot deduce" (the class of the round
        190 GJ item)
-[ ] easy: (round 442, a walk of 'assembler.hpp')
-    'assembler::remove_copies' walks each run from its last line to
-    its first, no comment says why; walking forward removes one more
-    copy in test 0072 on the three rv32i targets (921 -> 920
-    instructions), 3 of 2540 listings differ, the others are equal:
-    backward, 'mv t0, t1' is kept, then the earlier 'mv t1, a0'
-    folds into it and the new 'mv t0, a0' is not visited again;
-    compared by listings only, not run
-[ ] easy: (round 441, bug hunt of text and data)
-    1. an untyped constant list in a typed slot checks each operand at
-       the slot type: 'dat d = i8[1]{449 - 576}' is rejected although
-       the value is -127; same for 'var', consistent with docs 1.7
-    2. 'var c = s' of an unsized parameter 's i8[]' is rejected ("the
-       size of array 's' is not known") although a string assigned to
-       an unsized 'mut' parameter is sized per call
-[ ] easy: (round 441, a walk of 'ident_info.hpp') the names
-    'var_address::by_call' and 'is_address_by_call' are not exact for
-    a destination address that an assignment computed; "computed"
-    no longer collides: round 447 renamed the walked-path predicate
-    'stmt_identifier::has_computed_address' to 'needs_compile_lea'
 [ ] easy: (round 440, bug hunt of calls) a mutant where
     'call_site::has_result_temporary' is false for an inlined call
     passed 550 generated programs; a hand program catches it: an

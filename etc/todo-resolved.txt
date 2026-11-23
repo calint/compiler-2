@@ -1,6 +1,34 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 441, a walk of 'ident_info.hpp') the names
+    'var_address::by_call' and 'is_address_by_call' are not exact for
+    a destination address that an assignment computed; "computed"
+    no longer collides: round 447 renamed the walked-path predicate
+    'stmt_identifier::has_computed_address' to 'needs_compile_lea'
+    => done (2026-11-23, found done): the names are
+       'var_address::computed' and 'is_address_computed'
+[-] easy: (round 441, bug hunt of text and data)
+    1. an untyped constant list in a typed slot checks each operand at
+       the slot type: 'dat d = i8[1]{449 - 576}' is rejected although
+       the value is -127; same for 'var', consistent with docs 1.7
+    2. 'var c = s' of an unsized parameter 's i8[]' is rejected ("the
+       size of array 's' is not known") although a string assigned to
+       an unsized 'mut' parameter is sized per call
+    => discarded (2026-11-23): 1 is the rule of docs 1.7, each operand
+       of a list fits the slot type; 2: a 'var' gets its type and size at
+       the parse, which is one for every call, where an unsized
+       parameter has none; a string written to one is a value per call
+[x] easy: (round 442, a walk of 'assembler.hpp')
+    'assembler::remove_copies' walks each run from its last line to
+    its first, no comment says why; walking forward removes one more
+    copy in test 0072 on the three rv32i targets (921 -> 920
+    instructions), 3 of 2540 listings differ, the others are equal:
+    backward, 'mv t0, t1' is kept, then the earlier 'mv t1, a0'
+    folds into it and the new 'mv t0, a0' is not visited again;
+    compared by listings only, not run
+    => done (2026-11-23, found done): 'remove_copies' walks each run
+       forward and its note says why
 [x] easy: (round 444, bug hunt of the generics rules) the docs are
     silent on
     1. 'var c = k + make(2)' says "cannot deduce" while
