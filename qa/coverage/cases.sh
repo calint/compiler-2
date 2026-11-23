@@ -8576,3 +8576,7 @@ if [[ $MACHINE == x86_64 ]]; then SRC=8165 && OPTS="--checks=noub,-overflow" COM
 # code skipped by a known condition and a function that nothing calls add
 # no scope to 'max scopes in use' ('test-cli.sh' reads it)
 SRC=8167 && EXP=0 && RUN
+
+# an error in the count of a bulk operation while the start register is held
+# unwinds without freeing what the operation already freed
+SRC=8168 && OPTS="--checks=upper" COMPERR

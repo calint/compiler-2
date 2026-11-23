@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 410, the scope guards) the note of
+    'machine::held_registers' on an error that unwinds does not name the
+    case that needs it, the start register of a bulk operation
+    ('held_start::holder' of 'bulk_operands.hpp' outlives the
+    'operation_scope' that already freed it), and no test reaches an error
+    in a bulk operation after the start register is held
+    => 2026-11-23: the note of '~held_registers' names that case; test
+       8168 reaches it (an inlined count that fails at compile time), a
+       destructor that frees then aborts on the backend register
 [x] easy: (round 411, the lines of the listing) docs 1.6.1 and the label
     table at 'compile_toc::call_path_at' do not list '.Lbaz_landing.NAME',
     the rv32i landing of a far jump that borrows 't0'

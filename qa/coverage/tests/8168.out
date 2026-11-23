@@ -1,0 +1,7 @@
+
+8168.baz:5:13: index 9 is out of bounds for array 't' of size 4
+    res = t[k]
+            ^
+8168.baz:12:25: called from 'f(9)'
+    array_copy(a[i], b, f(9))
+                        ^
