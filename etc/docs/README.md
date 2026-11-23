@@ -471,7 +471,9 @@ program does not depend on inlining.
 A statement after a path that cannot continue is rejected at the parse: after
 'return', 'break', 'continue', 'exit', an 'if' that leaves on every path or a
 'loop' without 'break' ('stmt_block::trace_assignment', on the conditions known
-where the code is written). The compile knows more, the conditions that constant
+where the code is written). A constant parameter of a generic type is known
+where each instance is parsed (7.4), so a method of 'box<N>' with 'if N == 2
+return' before a statement is rejected for 'box<2>' alone. The compile knows more, the conditions that constant
 arguments of an inlined call decide: a branch whose condition folds to false is
 not compiled, nor is the code after a statement that leaves on every path, e.g.
 after the 'return' of 'if n > 5 return' in an inlined 'count(6)', which ends the

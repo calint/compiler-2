@@ -1,6 +1,24 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 415, a hunt of control flow) docs 1.5.1 does not say
+    that a generic constant folds at the parse of each instance, so a
+    method is rejected for one instance only: 'if N == 2 return' followed
+    by a statement is "not reached" for 'box<2>' alone (docs 7.4 has the
+    rule); a mutant of 'restore_reach_state' that does not put the loop
+    back changes no verdict and no result, is that part needed; 'foo a, 0'
+    takes and sets its iterator and counter registers before it skips the
+    body
+    => round 494 RA: the loop part keeps dead code out (without it the
+       code after a loop whose only 'break' is in skipped code is emitted
+       as reached, test 2642 pins the listing); 'is_left_by_return' is
+       read only by 'pop_scope' of an inlined call while 'check_skipped'
+       runs in scopes without one, so restoring it shows nowhere (suite
+       and 1500 programs equal); kept: saving the whole 'func_reach' is
+       simpler than the invariant that makes the flag unneeded
+    => done (2026-11-23): docs 1.5.1 say that a constant parameter of a
+       generic type is known per instance, with the 'box<2>' example; the
+       'foo a, 0' setup is the round 575 item
 [x] easy: (round 424, a hunt of arrays and structured types and a walk
     of the 40 longest functions) with '--checks=lower' alone
     'array_copy(a, b, n)' of a run-time count and constant starts tests
