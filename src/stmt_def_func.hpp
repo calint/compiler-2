@@ -29,13 +29,14 @@
 #include "ub_assigned.hpp"
 
 //
-// a function definition, e.g. 'func f(x)', is the classes below, in reading
-// order:
+// a function definition, e.g. 'func f(x)', is the types and functions below,
+// in reading order:
 //
 //   'make_stmt_def_func'     reads the head and picks the statement (last in
 //                            the file, it uses the others)
 //   'func_head'              'func [noinline] [mut] name[.method] [<T type>] ('
-//   'read_func_result'       the result 'name [type]' as written
+//   'assert_plain_result_type', 'read_func_result'
+//                            the result 'name [type]' as written
 //   'frame_slot'             a slot of the frame of a noinline call
 //   'stmt_def_func'          a function, of the user code or an instance
 //   'func_instantiator'      records the generic definitions and makes their
@@ -1211,8 +1212,9 @@ class stmt_def_func final : public statement {
         x.comment({head_.name_tk, indent}, "{}", signature);
     }
 
-    // the definition after its first token, without the body and without
-    // the type parameters, which only an instance has
+    // the definition after its first token, without the body; an instance,
+    // which no source is written back from, names its type parameters, e.g.
+    // 'same<T type>(x T)'
     auto source_signature_to(std::ostream& os) const -> void {
         token::source_to(os, head_.noinline_tk);
         token::source_to(os, head_.mut_tk);
@@ -1221,6 +1223,18 @@ class stmt_def_func final : public statement {
         if (head_.method) {
             head_.method->dot_tk.source_to(os);
             head_.method->name_tk.source_to(os);
+        }
+
+        if (not head_.type_params.empty()) {
+            std::string declared;
+
+            for (const generic_param& param : head_.type_params) {
+                declared +=
+                    std::format("{}{} type", declared.empty() ? "" : ", ",
+                                param.name_tk.text());
+            }
+
+            os << std::format("<{}>", declared);
         }
 
         token::source_to(os, head_.open_paren_tk);

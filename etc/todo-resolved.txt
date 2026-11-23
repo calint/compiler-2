@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 436, a walk of 'stmt_def_func.hpp' and 'generics.hpp')
+    1. the listing comment of a generic instance prints 'T' without
+       the '<T type>' that declares it
+    2. 'generic_func_info::src_loc_tk' is the receiver type name for a
+       method, not the function name
+    3. the header of 'stmt_def_func.hpp' says "classes below" though
+       two entries are functions, and 'assert_plain_result_type' is
+       not listed
+    4. 'frame_slot' is named a slot also for the receiver entry
+    => done (2026-11-23): 1: an instance's comment names its type
+       parameters, 'noinline same<T type>(x T) res T, instance
+       'same<i8>'' (test-cli, README.md); 3: the header lists
+       'assert_plain_result_type' and says types and functions; 2 and 4
+       are kept, the comments of 'generic_func_info::src_loc_tk' and
+       'frame_slot' state the case
 [x] easy: (round 438, bug hunt of arithmetic and comparisons)
     1. 'w = i8(b - 131)' with 'b' an 'i8' says "constant '131' does not
        fit 'i8' (-128 to 127), 'i8(...)' wraps it": the hint names the

@@ -580,14 +580,14 @@ CLI_ZERO_COMMENTS() {
 
 CLI_INSTANCE_COMMENT() {
     echo -n "cli comment of a generic instance: "
-    # the signature names the type parameter, the comment adds the instance
+    # the signature declares the type parameter, the comment adds the instance
     printf 'type pt {\n    x,\n}\n\n' >gen-instance.baz
     printf 'func noinline pt.put<U type>(u U) res U {\n' >>gen-instance.baz
     printf '    res = u\n}\n\nfunc main() {\n' >>gen-instance.baz
     printf '    var p = pt{1}\n' >>gen-instance.baz
     printf '    exit(int(p.put(i16(5))))\n}\n' >>gen-instance.baz
     "$BIN" gen-instance.baz >gen.s 2>err
-    grep -Fq "noinline pt.put(u U) res U, instance 'pt.put<i16>'" gen.s
+    grep -Fq "noinline pt.put<U type>(u U) res U, instance 'pt.put<i16>'" gen.s
     rm -f gen-instance.baz
     echo ok
 }
