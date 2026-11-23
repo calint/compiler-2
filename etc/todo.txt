@@ -488,14 +488,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        not restored ('restore_compile_state', 9 scopes instead of 3); the
        own-peak mutant is open, a second call of one callee with a
        smaller nonzero own peak was not found in ordinary code
-[ ] easy: (round 439, design of the driver) both change text a user
-    sees
-    1. '--bin' with x86_64 says "target 'x86_64' does not read it",
-       for a file a target writes
-    2. the usage names the targets by hand in 5 lines that the
-       'reads_*' flags of 'target_names' decide; taken from the table
-       the text would read "rv32i-qemu, rv32i-fpga" instead of
-       "rv32i-qemu and rv32i-fpga"
 [ ] easy: (round 438, bug hunt of arithmetic and comparisons)
     1. 'w = i8(b - 131)' with 'b' an 'i8' says "constant '131' does not
        fit 'i8' (-128 to 127), 'i8(...)' wraps it": the hint names the

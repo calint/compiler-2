@@ -131,7 +131,7 @@ CLI_BINARY_NAME() {
     # x86_64 writes no binary, so '--bin' is rejected like the other options
     # a target does not read
     expect_exit_1 "$BIN" --bin=gen-rv32i.bin 0418.baz >gen.s 2>err
-    grep -Fq "error: invalid --bin: target 'x86_64' does not read it, the targets that do are: rv32i, rv32i-qemu, rv32i-fpga" err
+    grep -Fq "error: invalid --bin: target 'x86_64' does not use it, the targets that do are: rv32i, rv32i-qemu, rv32i-fpga" err
     [[ ! -e gen-rv32i.bin ]]
     # the image does not replace the source, also named another way
     cp 0418.baz gen-source.baz
@@ -1168,9 +1168,9 @@ CLI_TARGET_OPTIONS() {
     for args in "${rejected[@]}"; do
         # shellcheck disable=SC2086
         expect_exit_1 "$BIN" --bin=gen-rv32i.bin $args >gen.s 2>err
-        grep -Eq "^error: invalid --(stack|memory|sdcard): target '[^']+' does not read it, the targets that do are: " err
+        grep -Eq "^error: invalid --(stack|memory|sdcard): target '[^']+' does not use it, the targets that do are: " err
     done
-    grep -Fq "error: invalid --sdcard: target 'rv32i-qemu' does not read it, the targets that do are: x86_64, rv32i" err
+    grep -Fq "error: invalid --sdcard: target 'rv32i-qemu' does not use it, the targets that do are: x86_64, rv32i" err
     expect_exit_1 "$BIN" --stack=0x10000 0418.baz 2>err >/dev/null
     grep -Fq "the targets that do are: rv32i-qemu, rv32i-fpga" err
     expect_exit_1 "$BIN" --memory=0x100000 0418.baz 2>err >/dev/null

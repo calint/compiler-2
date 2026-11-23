@@ -359,7 +359,7 @@ auto check_target_reads(const options& opts) -> void {
         };
 
         throw option_error{
-            std::format("invalid {}: target {} does not read it, the targets "
+            std::format("invalid {}: target {} does not use it, the targets "
                         "that do are: {}",
                         option.name, in_quotes(chosen.text), readers)};
     }

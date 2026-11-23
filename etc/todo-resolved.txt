@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 439, design of the driver) both change text a user
+    sees
+    1. '--bin' with x86_64 says "target 'x86_64' does not read it",
+       for a file a target writes
+    2. the usage names the targets by hand in 5 lines that the
+       'reads_*' flags of 'target_names' decide; taken from the table
+       the text would read "rv32i-qemu, rv32i-fpga" instead of
+       "rv32i-qemu and rv32i-fpga"
+    => done (2026-11-23): 1: "target 'x86_64' does not use it" for every
+       target-specific option; 2 is kept: the usage is prose ('rv32i-qemu
+       and rv32i-fpga'), a list from 'target_names' would read worse and
+       the five lines change with a target, which is rare
 [-] easy: (round 440, design of the rv32i backend) the handling of a
     register operated with itself ('emit_checked_add_subtract' "the
     value's own register", 'load_helper_arguments', 'load_operand'
