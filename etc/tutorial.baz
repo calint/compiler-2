@@ -418,7 +418,8 @@ func sign(v) res {
 func low_byte(v i32) res i8 {
     res = i8(v & 0xff)
 }
-# types follow the argument and result names
+# types follow the argument and result names; a variable passed has exactly
+# the type of its parameter, an 'i16' parameter takes 'i16(b)' of an 'i8' 'b'
 
 func first(arr i32[]) res i32 {
     res = arr[0]
