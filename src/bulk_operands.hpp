@@ -174,36 +174,23 @@ class bulk_operands final {
             };
         }
 
-        // the range from the start of 'array': 'start' holds a run-time
-        // start, which the walk of the address checked up to the length,
-        // 'count_register' a run-time count, none for a constant one;
-        // 'count_lower_checked' when an earlier range tested the count's sign
-        auto check_range(const stmt_identifier& array,
-                         const std::optional<operand>& start,
-                         const std::optional<operand>& count_register,
-                         const bool count_lower_checked) const -> void {
+        // the ranges of both arrays after the later arguments,
+        // 'count_register' holds a run-time count, none for a constant one
+        auto check_ranges(const std::optional<operand>& count_register)
+            -> void {
 
-            if (not has_range_check()) {
-                return;
-            }
-
-            const array_shape shape{array.resolve_path(tc_).shape()};
-
-            // note: an unknown length is the check of a function without its
-            //       calls or a body it checks, its code is discarded
-
-            if (shape.is_length_unknown()) {
-                return;
-            }
-
-            const std::optional<machine::bounds_range> range{
-                range_of(array, shape.element_count(), start, count_register,
-                         count_lower_checked),
+            const std::optional<machine::bounds_range> first{
+                range_to_check(operands_.first(), starts_.at(0).start(),
+                               count_register, false),
             };
 
-            if (not range) {
-                return;
-            }
+            // note: the check of the first range tested the sign of a
+            //       run-time count where '--checks=lower' asks for it
+
+            const std::optional<machine::bounds_range> second{
+                range_to_check(operands_.second(), starts_.at(1).start(),
+                               count_register, true),
+            };
 
             // a range past the end names the count, as the check of a
             // constant count does ('assert_count_in_bounds')
@@ -211,22 +198,15 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            x.check_bounds({count_tk, tc_.indent()}, *range);
-        }
+            if (first) {
+                x.check_bounds({count_tk, tc_.indent()}, *first);
+            }
 
-        // the ranges of both arrays after the later arguments,
-        // 'count_register' holds a run-time count, none for a constant one
-        auto check_ranges(const std::optional<operand>& count_register)
-            -> void {
-
-            check_range(operands_.first(), starts_.at(0).start(),
-                        count_register, false);
-
-            // note: the check of the first range tested the sign of a
-            //       run-time count where '--checks=lower' asks for it
-
-            check_range(operands_.second(), starts_.at(1).start(),
-                        count_register, true);
+            // e.g. 'array_copy(a, b, n)' of two arrays of one length tests
+            // 'n' once
+            if (second and not(first and tests_alike(*first, *second))) {
+                x.check_bounds({count_tk, tc_.indent()}, *second);
+            }
 
             are_ranges_checked_ = true;
         }
@@ -260,7 +240,7 @@ class bulk_operands final {
             return tc_.checks().is_bounds() and constant_count_ != 0;
         }
 
-        // the range 'check_range' checks, none when the start and the count
+        // the range 'range_to_check' tests, none when the start and the count
         // are constant
         [[nodiscard]] auto
         range_of(const stmt_identifier& array, const size_t array_count,
@@ -309,6 +289,35 @@ class bulk_operands final {
             return range;
         }
 
+        // the range from the start of 'array': 'start' holds a run-time
+        // start, which the walk of the address checked up to the length,
+        // 'count_register' a run-time count, none for a constant one;
+        // 'count_lower_checked' when an earlier range tested the count's sign
+        // the range of 'array' that a run-time check tests, none without one
+        [[nodiscard]] auto
+        range_to_check(const stmt_identifier& array,
+                       const std::optional<operand>& start,
+                       const std::optional<operand>& count_register,
+                       const bool count_lower_checked) const
+            -> std::optional<machine::bounds_range> {
+
+            if (not has_range_check()) {
+                return std::nullopt;
+            }
+
+            const array_shape shape{array.resolve_path(tc_).shape()};
+
+            // note: an unknown length is the check of a function without its
+            //       calls or a body it checks, its code is discarded
+
+            if (shape.is_length_unknown()) {
+                return std::nullopt;
+            }
+
+            return range_of(array, shape.element_count(), start, count_register,
+                            count_lower_checked);
+        }
+
         // the address of 'array' passed to 'use' while the registers of its
         // walk are held, then they are freed; 'checks_ranges' checks the
         // ranges first
@@ -340,6 +349,25 @@ class bulk_operands final {
             }
 
             use(address);
+        }
+
+        //
+        // statics
+        //
+
+        // the second test would repeat the first: one value in one register
+        // against one limit, the first test covers both bounds
+        [[nodiscard]] static auto
+        tests_alike(const machine::bounds_range& first,
+                    const machine::bounds_range& second) -> bool {
+
+            return not first.count and not second.count and
+                   first.checked.is_register() and
+                   second.checked.is_register() and
+                   first.checked.register_name() ==
+                       second.checked.register_name() and
+                   first.array_count == second.array_count and
+                   first.allow_end == second.allow_end;
         }
     };
 

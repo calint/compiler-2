@@ -523,6 +523,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     4. (round 456) 'baz_read' emits 'cmp rdi, 0' where 'test rdi, rdi'
        is shorter, 'baz_report_line' 'xor rdx, rdx' where 'xor edx, edx'
        is
+    => 2026-11-23: 1: 'check_ranges' skips a second range that tests the
+       same register against the same limit ('tests_alike'), with 'noub'
+       rv32i-fpga 10 cases -40 instructions; 3: nasm already encodes
+       'mov rax, 60' as 'mov eax'; 4: 'test rdi, rdi' and 'xor edx, edx';
+       2 is open
 [p] medium: (round 433, bug hunt of 'int' beside the sized types) need
     approval: a verdict depends on '--checks', alike on every target:
     'v = -int(same(v))' (also '~', and 'v = -i32(f(v))' of an 'i32'

@@ -681,7 +681,12 @@ class machine_x86_64 final : public machine {
 
         if (read_used) {
             assembler_.label(0, read_label_);
-            assembler_.instruction(1, op::cmp, "rdi", stdin_descriptor_);
+
+            // note: stdin is descriptor 0, which a 'test' compares with
+            //       shorter
+
+            static_assert(stdin_descriptor_ == 0);
+            assembler_.instruction(1, op::test, "rdi", "rdi");
             assembler_.jcc(1, condition::ne, bad_descriptor_label);
             // note: the 'read' number is zero, which 'xor' sets shorter
             static_assert(syscall_read_ == 0);
@@ -809,7 +814,8 @@ class machine_x86_64 final : public machine {
         assembler_.instruction(1, op::dec, "rdi");
         assembler_.instruction(1, op::mov, "rcx", decimal_base);
         assembler_.label(0, ".convert_loop");
-        assembler_.instruction(1, op::xor_op, "rdx", "rdx");
+        // note: a write of 'edx' clears all of 'rdx', in a shorter form
+        assembler_.instruction(1, op::xor_op, "edx", "edx");
         assembler_.instruction(1, op::div, "rcx");
 
         assembler_.instruction(
