@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 555, messages) a missing token is located three ways:
+    "expected '=' followed by an initializer" at the end of the name,
+    "expected '{' to begin block" and others at the next token (README
+    1.9), "expected '=' for assignment or '('" at the name; and a
+    parenthesized operand two ways: 'x / (1 - 1)' points inside the
+    parentheses, 'a[(1 + 1)]' at the '('; moving the first to the next
+    token changes 13 expected files
+    => done (2026-11-23): both "expected '='" messages are at the next
+       token like the others (README 1.9), 'token::end_position' removed;
+       a list in parentheses is located at its '(' ('expr_arith::start_of'),
+       so are the register comments and errors of its first element; 40
+       expected files; instructions equal on x86_64 and rv32i-fpga
 [x] easy: (round 559, rv32i) in a noinline 'x = x * y' with a 'mut'
     parameter 'x' the listing stores 'x' to itself before the multiply
     ('lh t1, 0(t1)' then 'sh t1, 0(t0)'), e.g. 'func.mulby'

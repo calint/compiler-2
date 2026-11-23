@@ -426,12 +426,9 @@ class expr_arith final : public statement {
     expr_arith(parse_toc& tc, tokenizer& tz)
         : expr_arith{tc, tz, options::plain(nullptr)} {}
 
-    // the list is located where its first element starts
+    // the list is located at its '(' or where its first element starts
     expr_arith(parse_toc& tc, tokenizer& tz, options opts)
-        : statement{opts.first_expression
-                        ? opts.first_expression->tok().start_position()
-                        : tz.peek_token_position(),
-                    std::move(opts.uops)},
+        : statement{start_of(tz, opts), std::move(opts.uops)},
           parens_{
               .open_tk{opts.open_paren_tk},
               .close_tk{},
@@ -1494,6 +1491,21 @@ class expr_arith final : public statement {
             .node{std::move(element)},
             .is_enclosed{},
         };
+    }
+
+    // where a list starts, e.g. the '(' of '(a + b)' or the 'a' of 'a + b'
+    [[nodiscard]] static auto start_of(const tokenizer& tz, const options& opts)
+        -> token {
+
+        if (opts.first_expression) {
+            return opts.first_expression->tok().start_position();
+        }
+
+        if (opts.open_paren_tk) {
+            return opts.open_paren_tk->start_position();
+        }
+
+        return tz.peek_token_position();
     }
 
     [[nodiscard]] static auto

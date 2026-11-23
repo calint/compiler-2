@@ -67,7 +67,7 @@ class initializer_declaration final {
                             const std::string_view keyword,
                             const name_in_initializer name_visibility)
         : name_tk_{read_name(tc, tz)}, after_name_{tz},
-          equals_tk_{read_equals(tz, keyword, name_tk_)},
+          equals_tk_{read_equals(tz, keyword)},
           name_visibility_{name_visibility},
           read_only_why_{
               keyword == "let" ? read_only_cause::let : read_only_cause::none,
@@ -302,20 +302,17 @@ class initializer_declaration final {
     // statics
     //
 
-    // the '=' after 'name_tk', 'keyword' starts the example of the error;
-    // the error is at the end of the name, the next token can be on another
-    // line
+    // the '=' after the name, 'keyword' starts the example of the error
     [[nodiscard]] static auto read_equals(tokenizer& tz,
-                                          const std::string_view keyword,
-                                          const token& name_tk) -> token {
+                                          const std::string_view keyword)
+        -> token {
 
         // e.g. 'var x == 1', a comparison is not the '=' of an initializer
         if (not tz.is_lone_equals_next()) {
             throw compile_error{
-                name_tk.end_position(),
-                std::format("expected '=' followed by an initializer, "
-                            "e.g. '{} x = i32'",
-                            keyword)};
+                tz, std::format("expected '=' followed by an initializer, "
+                                "e.g. '{} x = i32'",
+                                keyword)};
         }
 
         return tz.seen_char_token('=');

@@ -1,5 +1,5 @@
 
-0527.baz:18:87: register rax holds a value computed at 18:73 and is needed here too, compute a part of the expression with 'let' before it
+0527.baz:18:87: register rax holds a value computed at 18:72 and is needed here too, compute a part of the expression with 'let' before it
     var result = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n / 2)))))))))))))
                                                                                       ^
 
@@ -7,16 +7,16 @@ register use at the failure: 13 of 14 registers live
 
   held  frame, registers (allocated at)
     13  main
-          r15 18:23
-          r14 18:28
-          r13 18:33
-          r12 18:38
-          r10 18:43
-          r9 18:48
-          r8 18:53
-          r11 18:58
-          rbx 18:63
-          rdx 18:68
-          rax 18:73
-          rsi 18:78
-          rdi 18:83
+          r15 18:22
+          r14 18:27
+          r13 18:32
+          r12 18:37
+          r10 18:42
+          r9 18:47
+          r8 18:52
+          r11 18:57
+          rbx 18:62
+          rdx 18:67
+          rax 18:72
+          rsi 18:77
+          rdi 18:82

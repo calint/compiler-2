@@ -1,7 +1,7 @@
 
-2342.baz:4:86: out of scratch registers, simplify the expression
+2342.baz:4:85: out of scratch registers, simplify the expression
     res = x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + (x + 1))))))))))))))))
-                                                                                     ^
+                                                                                    ^
 2342.baz:9:13: called from 'deep(y)'
     var r = deep(y)
             ^~~~
@@ -11,20 +11,20 @@ register use at the failure: 14 of 14 registers live
   held  frame, registers (allocated at)
      0  main
     14  deep called at 9:13
-          r15 4:16
-          r14 4:21
-          r13 4:26
-          r12 4:31
-          r10 4:36
-          r9 4:41
-          r8 4:46
-          r11 4:51
-          rbx 4:56
-          rdx 4:61
-          rax 4:66
-          rsi 4:71
-          rdi 4:76
-          rcx 4:81
+          r15 4:15
+          r14 4:20
+          r13 4:25
+          r12 4:30
+          r10 4:35
+          r9 4:40
+          r8 4:45
+          r11 4:50
+          rbx 4:55
+          rdx 4:60
+          rax 4:65
+          rsi 4:70
+          rdi 4:75
+          rcx 4:80
 
 no noinline frame helps, the registers are held by the innermost frame, simplify
 its expression

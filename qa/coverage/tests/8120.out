@@ -1,7 +1,7 @@
 
-8120.baz:8:37: divisor must not be zero
+8120.baz:8:36: divisor must not be zero
         res = f((n - 1) * (1 + 0 / (n - 2)))
-                                    ^
+                                   ^
 8120.baz:8:15: called from 'f((n - 1) * (1 + 0 / (n - 2)))'
         res = f((n - 1) * (1 + 0 / (n - 2)))
               ^

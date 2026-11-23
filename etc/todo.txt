@@ -133,13 +133,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'construct-reject' (needs a 'build' of several files); fuzz-exprs keeps
     a local 'run_target' without the include split; the category lists in
     the fuzzer headers miss 'compiler-crash' and 'bad-diagnostic'
-[ ] easy: (round 555, messages) a missing token is located three ways:
-    "expected '=' followed by an initializer" at the end of the name,
-    "expected '{' to begin block" and others at the next token (README
-    1.9), "expected '=' for assignment or '('" at the name; and a
-    parenthesized operand two ways: 'x / (1 - 1)' points inside the
-    parentheses, 'a[(1 + 1)]' at the '('; moving the first to the next
-    token changes 13 expected files
 [p] easy: need approval (round 555, messages) a stray ';' gets a message
     that depends on spacing and place in eight forms ('func f(a i8; b i8)'
     points at 'b', 'func f() res i8 ; {', 'type b<n ;>', 't{1 ;}',

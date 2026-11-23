@@ -1,4 +1,4 @@
 
-1893.baz:5:5: expected '=' for assignment or '(' for function call after 'n'
+1893.baz:5:7: expected '=' for assignment or '(' for function call after 'n'
     n == 2
-    ^
+      ^

@@ -1,4 +1,4 @@
 
-2424.baz:5:5: expected '=' for assignment or '(' for function call after 'x'
+2424.baz:5:7: expected '=' for assignment or '(' for function call after 'x'
     x + = 1
-    ^
+      ^

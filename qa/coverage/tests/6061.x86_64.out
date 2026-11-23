@@ -3,16 +3,16 @@ register use at the peak: 10 of 14 registers live
 
   held  frame, registers (allocated at)
      4  main
-          r15 21:18
-          r14 21:23
+          r15 21:17
+          r14 21:22
           r13 21:27
           r12 21:29
      2  k called at 21:27
           r10 15:15
           r9 15:20
      4  h called at 15:15
-          r8 11:16
-          r11 11:21
+          r8 11:15
+          r11 11:20
           rbx 11:25
           rdx 11:25
 

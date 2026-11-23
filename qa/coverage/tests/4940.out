@@ -1,5 +1,5 @@
 
-4940.baz:22:108: register rcx holds a value computed at 22:101 and is needed here too, compute a part of the expression with 'let' before it
+4940.baz:22:108: register rcx holds a value computed at 22:100 and is needed here too, compute a part of the expression with 'let' before it
     var r = v0 + (v1 + (v2 + (v3 + (v4 + (v5 + (v6 + (v7 + (v8 + (v9 + (v10 + (v11 + (v12 + (v13 + (v14 << v15))))))))))))))
                                                                                                            ^~~
 
@@ -7,17 +7,17 @@ register use at the failure: 14 of 14 registers live
 
   held  frame, registers (allocated at)
     14  main
-          r15 22:19
-          r14 22:25
-          r13 22:31
-          r12 22:37
-          r10 22:43
-          r9 22:49
-          r8 22:55
-          r11 22:61
-          rbx 22:67
-          rdx 22:73
-          rax 22:80
-          rsi 22:87
-          rdi 22:94
-          rcx 22:101
+          r15 22:18
+          r14 22:24
+          r13 22:30
+          r12 22:36
+          r10 22:42
+          r9 22:48
+          r8 22:54
+          r11 22:60
+          rbx 22:66
+          rdx 22:72
+          rax 22:79
+          rsi 22:86
+          rdi 22:93
+          rcx 22:100

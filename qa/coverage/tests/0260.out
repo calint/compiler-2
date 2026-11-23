@@ -1,4 +1,4 @@
 
-0260.baz:5:5: expected '=' for assignment or '(' for function call after 'x'
+0260.baz:5:7: expected '=' for assignment or '(' for function call after 'x'
     x 2
-    ^
+      ^

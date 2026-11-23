@@ -427,12 +427,10 @@ inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
 
     assert_not_compound_assignment(tz, dst);
 
-    // at the name, the next token can be on a later line
     throw compile_error{
-        dst.tok(),
-        std::format("expected '=' for assignment or '(' for function call "
-                    "after {}",
-                    in_quotes(statement::trimmed_source(dst)))};
+        tz, std::format("expected '=' for assignment or '(' for function call "
+                        "after {}",
+                        in_quotes(statement::trimmed_source(dst)))};
 }
 
 // no operand starts at the empty token 'tk', 'tz' is after it

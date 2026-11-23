@@ -1,4 +1,4 @@
 
-0603.baz:5:10: expected '=' followed by an initializer, e.g. 'var x = i32'
+0603.baz:5:11: expected '=' followed by an initializer, e.g. 'var x = i32'
     var x i32
-         ^
+          ^

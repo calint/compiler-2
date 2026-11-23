@@ -1,4 +1,4 @@
 
-1108.baz:5:18: divisor must not be zero
+1108.baz:5:17: divisor must not be zero
     var x = n % (2 - 2)
-                 ^
+                ^

@@ -1201,8 +1201,8 @@ CLI_REGISTER_REPORT_COUNTS() {
     "$BIN" --report=registers 2474.baz >out 2>err
     [[ ! -s err ]]
     # the first of the equal peaks of lines 15 and 16
-    grep -Fxq ";           r15 15:18" out
-    grep -Fxq ";           r14 15:23" out
+    grep -Fxq ";           r15 15:17" out
+    grep -Fxq ";           r14 15:22" out
     # a noinline body counts what it holds, not the frame base; an inlined
     # callee counts its calls
     grep -Fxq ";     2      3  g (noinline body)" out
