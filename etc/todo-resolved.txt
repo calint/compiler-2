@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 448, a walk of 'machine_rv32i.hpp') a run-time count
+    walk ('walk_runtime_count') whose access width is no wider than
+    the alignment of the element type has a byte count that is a
+    multiple of that width, its halfword and byte tails are dead:
+    'array_copy(c, d, n)' of two 'i32[10]' emits 10 dead instructions
+    ('andi t2, t2, 3', the 2-byte and the final-byte blocks), also
+    'i16' copies and 'arrays_equal'; an optimization, not measured
+    => done (2026-11-23): 'walk_runtime_tail' takes the element
+       alignment and emits no tail narrower than it, the byte count being
+       a whole number of elements; rv32i-fpga 9 cases -114 instructions
 [x] easy: (round 449, bug hunt of several source files) docs do not
     say that a column counts bytes ('é' is 2) while the caret is placed
     by characters, so a double-width character puts the caret off by

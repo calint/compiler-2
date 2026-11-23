@@ -3577,7 +3577,7 @@ class machine_rv32i : public machine {
         }
 
         walk_runtime_chunks(walk, chunks, start.width);
-        walk_runtime_tail(walk, chunks, start.width);
+        walk_runtime_tail(walk, chunks, start.width, bulk.alignment);
     }
 
     // each head access first checks that the count still covers it, otherwise
@@ -3635,11 +3635,15 @@ class machine_rv32i : public machine {
     // fewer than 'width' bytes remain: after words bit 1 of the count selects
     // a halfword, then bit 0 the final byte
     auto walk_runtime_tail(const runtime_walk& walk, const operand& chunks,
-                           const size_t width) -> void {
+                           const size_t width, const size_t alignment) -> void {
+
+        // note: the byte count is a whole number of elements, so of their
+        //       alignment, a tail narrower than it is never left
 
         const std::string_view count{walk.count.register_name()};
+        const bool has_byte_tail{alignment == byte_size_bytes_};
 
-        if (width == word_size_bytes_) {
+        if (width == word_size_bytes_ and alignment < width) {
             comment(walk.site, "{} optional 2-byte tail", walk.verb);
 
             assembler_.andi(walk.site.indent, chunks.register_name(), count, 2);
@@ -3649,7 +3653,14 @@ class machine_rv32i : public machine {
 
             walk_runtime_step(walk, 2);
             assembler_.label(walk.site.indent, after_halfword_.name);
-            assembler_.andi(walk.site.indent, count, count, 1);
+
+            if (has_byte_tail) {
+                assembler_.andi(walk.site.indent, count, count, 1);
+            }
+        }
+
+        if (not has_byte_tail) {
+            return;
         }
 
         comment(walk.site, "{} optional final byte", walk.verb);

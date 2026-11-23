@@ -352,13 +352,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        after 'a'", where 'return a + b' gets "'return' takes no value";
        '<=' and '<<' alike; exact needs to know whether the name is a
        generic function
-[ ] easy: (round 448, a walk of 'machine_rv32i.hpp') a run-time count
-    walk ('walk_runtime_count') whose access width is no wider than
-    the alignment of the element type has a byte count that is a
-    multiple of that width, its halfword and byte tails are dead:
-    'array_copy(c, d, n)' of two 'i32[10]' emits 10 dead instructions
-    ('andi t2, t2, 3', the 2-byte and the final-byte blocks), also
-    'i16' copies and 'arrays_equal'; an optimization, not measured
 [p] easy: (round 448, design of the test harness) need approval: a
     new sourced 'qa/coverage/targets.sh' holding once the target list,
     the default options ('DEFAULT_OPTS' of 'test-coverage.sh' and
