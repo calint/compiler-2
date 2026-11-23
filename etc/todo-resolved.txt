@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 393) a reviewer stumbles on: '.gitignore' does not cover
+    the outputs of the README's first program ('hello', 'hello.s',
+    'hello-without-comments.s'); 'scripts/perf.sh'
+    and 'qa/perf/perf.sh' are two profilers with one name;
+    'etc/nvim/tree-sitter-baz/make.sh' needs a sibling checkout outside the
+    repository and 'scripts/prepare-for-commit.sh' depends on it;
+    'scripts/fpga-config-*.sh' name a generator of another repository; the
+    emulator namespace 'osqa' is not explained; 'source_files::contains'
+    is the subject of three items here
+    => done (2026-11-23): '.gitignore' covers 'hello', 'hello.s' and
+       'hello-without-comments.s'; the two 'perf.sh' name each other in
+       their headers; 'scripts/fpga-config-*.sh' say they are generated;
+       the rest is a note for a reader: the meaning of 'osqa' is not
+       written in the repository, the tree-sitter checkout is the owner's
+       setup
 [x] easy: (round 462, bug hunt of the command line) messages:
     '--target=rv32i --sdcard=./p-rv32i.bin p.baz' says "invalid --bin:
     'p-rv32i.bin' is the sd card image" without a '--bin' given, and a

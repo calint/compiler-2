@@ -187,6 +187,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     register again after a unary op just before a byte store, which drops
     the bits anyway (the second 'slli'/'srai' pair at 's = -i8(b)' of
     2721); removing it is a backend optimization
+    => 2026-11-23: the unary op extends its scratch register as any
+       narrow result ('unary_ops::compile'), the store comes after from
+       the list; both pairs (of the conversion and of the negation) are
+       dead before 'sb', dropping them needs the extension deferred to
+       the consumer of the register, a design change; not done
 [p] easy: need approval (round 414, a hunt of names and scopes, 57000
     programs with a model of every name, no wrong resolution): a value
     that hides a type is rejected before '{' also where the braces are a
@@ -230,15 +235,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     and analyses nothing (cppcheck 2.22 on c++23 code)
     => remove the script and its mention in 'etc/docs/README.md', or write
        the lambda with '()' if cppcheck then gets through
-[ ] easy: (round 393) a reviewer stumbles on: '.gitignore' does not cover
-    the outputs of the README's first program ('hello', 'hello.s',
-    'hello-without-comments.s'); 'scripts/perf.sh'
-    and 'qa/perf/perf.sh' are two profilers with one name;
-    'etc/nvim/tree-sitter-baz/make.sh' needs a sibling checkout outside the
-    repository and 'scripts/prepare-for-commit.sh' depends on it;
-    'scripts/fpga-config-*.sh' name a generator of another repository; the
-    emulator namespace 'osqa' is not explained; 'source_files::contains'
-    is the subject of three items here
 [p] medium: need approval (round 395): a 'dat' laid out by the
     'write_plan' of its value instead of its own tree: 'stmt_def_dat' has
     'elem' with four forms, 'fold_data*' and six 'compile_data_*' beside
