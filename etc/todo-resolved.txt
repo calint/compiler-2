@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 432, a walk of 'src/stmt_call.hpp') names and texts
+    left:
+    1. three names for one 'places.at(i)': 'arg_place', 'written' and
+       'passed'
+    2. "written" means a type written in the source ('is_written_type',
+       'written_type_arguments') and storage that is assigned
+       ('is_written')
+    3. "reference" means 'shared_storage_check::reference' and a
+       binding that keeps a computed address
+       ('stmt_identifier::info_at_address', 'is_indexed_reference')
+    4. 'noinline_call::populate_frame': "the check must not change a
+       register that is free but used by the call" reads against the
+       "still allocated" of the line before
+    5. the header says "in reading order", yet about 600 lines of
+       'generic_call' come before 'call_site', 'inline_call' and
+       'noinline_call'; nothing says they can be skipped at first
+    => done (2026-11-23): 1: 'places.at(i)' is 'arg_place' everywhere; 4
+       found done; 5: the header says that a first reading of a plain
+       call can skip 'generic_call'; 2 and 3 are kept: 'written' and
+       'reference' each read right in their place, a rename of one
+       sense touches many names for little
 [x] easy: (round 433, a walk of 'src/toc.hpp') names left:
     1. 'scope': the factory 'loop(...)' and the private accessor
        'loop()' share a name, the function side has 'function(...)' and

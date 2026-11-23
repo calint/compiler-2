@@ -58,6 +58,9 @@
 //                     the result and the arguments that may share storage
 //                     ('stmt_call::assert_no_shared_storage')
 //
+// 'generic_call' is long and only a call of a generic function needs it, a
+// first reading of a plain call can skip to 'call_site'
+//
 // an argument, from the parse to the body:
 //
 //   'stmt_call::argument_places' the place each argument names, none for a
@@ -2236,14 +2239,14 @@ class stmt_call final : public statement {
 
         for (size_t i{}; i < args_.size(); ++i) {
             // a value or a constant is passed as a copy
-            const std::optional<place>& passed{places.at(i)};
+            const std::optional<place>& arg_place{places.at(i)};
 
-            if (not passed) {
+            if (not arg_place) {
                 continue;
             }
 
             const expr_any& arg{args_.at(i)};
-            const storage_path target{place_storage(tc, *passed)};
+            const storage_path target{place_storage(tc, *arg_place)};
 
             check.add(
                 make_reference(tc, i, arg.tok(),
