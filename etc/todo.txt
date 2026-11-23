@@ -712,6 +712,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     start; the x86_64 listing of a 'foo' says "e: i64 (r15)" where 'r15'
     holds the address of the element; rv32i "copy optional final byte"
     stands after its 'andi', "copy optional 2-byte tail" before
+    => 2026-11-23: the element is 'e: i8 (@ [r15])'; the final byte's
+       comment comes before its 'andi'; 'memory_end_address' no longer
+       exists; open: the scan of quoted tokens and the messages of a
+       broken deducing argument
 [ ] easy: (round 419, a walk of the backend interface and a hunt of
     generics) 'check_bounds' could open the 'operation_scope' itself as
     the two capacity checks do, both backends would drop theirs (moves

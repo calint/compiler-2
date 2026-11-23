@@ -3652,14 +3652,22 @@ class compile_toc final : public toc {
         }
 
         // the iterator 'e' is memory at its register, the counter 'i' is the
-        // register
+        // register, e.g. 'e: i8 (@ [r15])' and 'i: i64 (r14)'
         const std::optional<operand> reg{register_of(var.placement)};
 
         ::machine& x{machine()};
 
         if (reg) {
-            x.comment({src_loc_tk, indent_}, "{} ({})", text,
-                      reg->register_name());
+            const bool is_at_register{
+                std::holds_alternative<at_address_register>(var.placement),
+            };
+
+            const std::string place{
+                is_at_register ? std::format("@ [{}]", reg->register_name())
+                               : reg->register_name(),
+            };
+
+            x.comment({src_loc_tk, indent_}, "{} ({})", text, place);
 
             return;
         }

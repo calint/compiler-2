@@ -3653,10 +3653,6 @@ class machine_rv32i : public machine {
 
             walk_runtime_step(walk, 2);
             assembler_.label(walk.site.indent, after_halfword_.name);
-
-            if (has_byte_tail) {
-                assembler_.andi(walk.site.indent, count, count, 1);
-            }
         }
 
         if (not has_byte_tail) {
@@ -3664,6 +3660,11 @@ class machine_rv32i : public machine {
         }
 
         comment(walk.site, "{} optional final byte", walk.verb);
+
+        // the 2-byte tail left its bit in the count
+        if (width == word_size_bytes_) {
+            assembler_.andi(walk.site.indent, count, count, 1);
+        }
 
         assembler_.beqz(walk.site.indent, count, walk_end_.reference);
         walk.access(1);
