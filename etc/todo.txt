@@ -20,6 +20,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     timing guard on an rv32i timeout; 'mutate', 'options' and
     'alias-foo-fuzz' caught none of 14 mutants, the model fuzzers missed
     'x + -y' emitted as 'x + y' (only the difference fuzzers caught it)
+    => 2026-11-23: 'compare_rv32i' reports a timeout only when x86_64 ran
+       fast enough ('fl.slowdown_from_x86', 'FASTER' and 'SLOWER' moved to
+       'fuzzlib'); open: the narrower '<<' waiver, the judges on register
+       limits and the mutants
 [p] easy: (round 582, the formatter) need approval: two rules of blank
     lines that AGENTS.md does not state; both patches are in the
     scratchpad 'keep/'
@@ -767,6 +771,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     x86_64 (docs 7.11); the read-only constants of rv32i are told apart by
     their laid-out bytes, so equal strings may keep two labels;
     the begin of a source line is found in two ways
+    => 2026-11-23: the two are 'source_files::line_begins', a table for
+       the locations, and 'line_at' of 'main.cpp', a search in the text
+       the printing functions get; one way passes 'source_files' through
+       them; kept
 [ ] easy: (round 411, a hunt of the run-time checks) the line a check
     reports is where the right operand of the failing operation starts, and
     with a unary operator on a line of its own the token differs by form:

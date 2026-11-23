@@ -400,12 +400,12 @@ def compare_rv32i(run, target, outcomes, findings, stats):
     # note: a crash in the qemu system traps without end, it times out; a
     #       program that does not end quickly on a faster target can time
     #       out on the slower rv32i targets, e.g. a loop of 2^31 iterations
-    faster = outcomes.get(FASTER[target])
+    faster = outcomes.get(fl.FASTER[target])
     if run.noub and rv.kind == "timeout" and faster is not None and \
             faster.finished() and \
-            faster.seconds < fl.RUN_TIMEOUT / SLOWER[target]:
+            faster.seconds < fl.RUN_TIMEOUT / fl.SLOWER[target]:
         findings.append(("diff-target", f"{target} {bucket(faster)} vs timeout",
-                         f"{FASTER[target]} {faster}\n{target} {rv}"))
+                         f"{fl.FASTER[target]} {faster}\n{target} {rv}"))
     if not (run.noub and x86.finished() and rv.finished()):
         return rv
     stats["compared"] += 1
@@ -453,14 +453,6 @@ def report_signals(run, outcomes, findings):
                          f"recursion={recursion}", str(o)))
 
 
-# the target that the run time of an rv32i target is measured against and how
-# much slower the rv32i target may run a program: a run takes 0.01 s to
-# start on x86_64, a loop of 3 million steps takes 0.02 s there, 0.4 s on
-# rv32i and 2.5 s on rv32i-fpga, rv32i-qemu takes 2.3 times as long as
-# rv32i-fpga ('with_rotated' runs rv32i-fpga before it)
-FASTER = {"rv32i": "x86_64", "rv32i-fpga": "x86_64",
-          "rv32i-qemu": "rv32i-fpga"}
-SLOWER = {"rv32i": 250, "rv32i-fpga": 250, "rv32i-qemu": 5}
 
 
 def bucket(outcome):

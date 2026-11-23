@@ -460,6 +460,25 @@ SANITIZER_TEXT = ("AddressSanitizer", "runtime error:", "LeakSanitizer",
                   "SUMMARY:", "libc++abi", "std::bad_alloc")
 
 
+# the target that the run time of an rv32i target is measured against and how
+# much slower the rv32i target may run a program: a run takes 0.01 s to
+# start on x86_64, a loop of 3 million steps takes 0.02 s there, 0.4 s on
+# rv32i and 2.5 s on rv32i-fpga, rv32i-qemu takes 2.3 times as long as
+# rv32i-fpga ('with_rotated' runs rv32i-fpga before it)
+FASTER = {"rv32i": "x86_64", "rv32i-fpga": "x86_64",
+          "rv32i-qemu": "rv32i-fpga"}
+SLOWER = {"rv32i": 250, "rv32i-fpga": 250, "rv32i-qemu": 5}
+
+
+def slowdown_from_x86(target):
+    # how much slower than x86_64 'target' may run a program, along 'FASTER'
+    factor = 1
+    while target != "x86_64":
+        factor *= SLOWER[target]
+        target = FASTER[target]
+    return factor
+
+
 def sanitizer_reported(result):
     # a report of the sanitizers; a rejection, exit code 1, echoes its source
     # line, which may hold the words of a report, e.g. in a comment
