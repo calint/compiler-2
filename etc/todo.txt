@@ -776,6 +776,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     ('held_start::holder' of 'bulk_operands.hpp' outlives the
     'operation_scope' that already freed it), and no test reaches an error
     in a bulk operation after the start register is held
+    => 2026-11-23: the note of '~held_registers' names that case; open: a
+       test that reaches it
 [ ] medium: user decision (round 402 bug hunt of the no-UB rules): safe
     programs a user would write that the aliasing and assignment rules
     reject: 'x = inc(x)', 'x = max(x, y)', 'total = add(total, e)',

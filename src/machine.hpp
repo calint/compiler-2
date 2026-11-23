@@ -469,6 +469,11 @@ class machine {
         auto operator=(held_registers&&) -> held_registers& = delete;
 
         ~held_registers() {
+            // note: an error unwinds through scopes that already put the pool
+            //       back, e.g. the 'operation_scope' of a bulk operation frees
+            //       the start register that 'held_start::holder' of
+            //       'bulk_operands.hpp' still holds; the error ends the compile
+
             if (std::uncaught_exceptions() > uncaught_at_start_) {
                 return;
             }
