@@ -388,7 +388,7 @@ class scope final {
     }
 
     [[nodiscard]] auto continue_label() const -> std::string_view {
-        return loop().continue_label;
+        return this_loop().continue_label;
     }
 
     [[nodiscard]] auto get_binding(const std::string_view name) const
@@ -487,10 +487,12 @@ class scope final {
         return func_part().reach;
     }
 
-    [[nodiscard]] auto reach_of_loop() -> loop_reach& { return loop().reach; }
+    [[nodiscard]] auto reach_of_loop() -> loop_reach& {
+        return this_loop().reach;
+    }
 
     [[nodiscard]] auto reach_of_loop() const -> const loop_reach& {
-        return loop().reach;
+        return this_loop().reach;
     }
 
     [[nodiscard]] auto return_label() const -> std::string_view {
@@ -607,13 +609,13 @@ class scope final {
         return *func_;
     }
 
-    [[nodiscard]] auto loop() -> loop_part& {
+    [[nodiscard]] auto this_loop() -> loop_part& {
         assert(loop_);
 
         return *loop_;
     }
 
-    [[nodiscard]] auto loop() const -> const loop_part& {
+    [[nodiscard]] auto this_loop() const -> const loop_part& {
         assert(loop_);
 
         return *loop_;
@@ -3042,9 +3044,10 @@ struct usage_statistics {
 };
 
 // the context of the compile, made after the parse: the declarations are
-// placed, commented where they are stored and the storage capacity is checked,
-// e.g. a parameter 'self' of a type larger than the vars section holds an
-// address once the body is compiled; it holds what only the compile has:
+// placed, a comment tells where each is stored, and the storage capacity is
+// checked, e.g. a parameter 'self' of a type larger than the vars section
+// holds an address once the body is compiled; it holds what only the compile
+// has:
 //
 //   program        'emitted_bodies', 'checked_bodies', 'usage'
 //   tables         'data', 'layout'
@@ -3268,8 +3271,8 @@ class compile_toc final : public toc {
         x.comment({src_loc_tk, indent_}, "const {} = {}", name, constant.value);
     }
 
-    // placed and commented where it is stored; a variable in a register or
-    // at one has no storage
+    // placed where it is stored, which its comment tells; a variable in a
+    // register or at one has no storage
     auto add_var(const var_info& var, const var_kind kind) -> void final {
         const bool is_in_storage{
             std::holds_alternative<in_storage>(var.placement),

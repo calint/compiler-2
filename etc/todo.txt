@@ -552,15 +552,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     2. messages name the default type 'i64' on x86_64 and 'int' on
        rv32i, so a test of a message that names it needs two expected
        files (the round 419 item covers only the label of 'f<int>')
-[ ] easy: (round 433, a walk of 'src/toc.hpp') names left:
-    1. 'scope': the factory 'loop(...)' and the private accessor
-       'loop()' share a name, the function side has 'function(...)' and
-       'func_part()'
-    2. 'function_part::ret_label' and 'func_ret_label()' against the
-       factory parameter 'return_label'
-    3. 'param_binding::from' is the parameter name; no comment says so
-    4. "commented where it is stored" ('compile_toc' header, 'add_var')
-       means the comment tells where the variable is stored
 [ ] easy: (round 432, a walk of 'src/stmt_call.hpp') names and texts
     left:
     1. three names for one 'places.at(i)': 'arg_place', 'written' and

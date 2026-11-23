@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 433, a walk of 'src/toc.hpp') names left:
+    1. 'scope': the factory 'loop(...)' and the private accessor
+       'loop()' share a name, the function side has 'function(...)' and
+       'func_part()'
+    2. 'function_part::ret_label' and 'func_ret_label()' against the
+       factory parameter 'return_label'
+    3. 'param_binding::from' is the parameter name; no comment says so
+    4. "commented where it is stored" ('compile_toc' header, 'add_var')
+       means the comment tells where the variable is stored
+    => done (2026-11-23): 1: the accessor is 'this_loop()' ('loop_part'
+       names the type); 2 and 3 found done ('ret_label' gone,
+       'param_binding::from' commented); 4: 'add_var' says the comment
+       tells where the variable is stored
 [x] easy: (round 433, design of the lexical layer) the 'str' parameter
     of 'constant_parser::parse_character', 'parse_constant' and
     'literal_value' equals the text of the token beside it at every
