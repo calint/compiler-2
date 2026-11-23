@@ -14,6 +14,7 @@
 # 'UPDATE=1' writes the output of each case as the expected file it would be
 # compared with ('.out', '.diff' or the kind of a listing); for a new
 # 'NNN.TARGET.out' create the file first, else 'NNN.out' is written
+# 'ONLY=NNNN' runs only the case 'SRC=NNNN', e.g. 'ONLY=0042'
 # 'VERSIONS=first', 'last' or 'nested' compiles with that '--versions' and runs
 # only the cases that run the program, except the '--nopt' diffs, see
 # 'test-versions.sh'
@@ -513,7 +514,16 @@ trap '[[ $? -eq 0 ]] || echo "FAILED. case $SRC on target $MACHINE"' EXIT
 
 CASE_COUNT=0
 SKIPPED_COUNT=0
-source "$SCRIPT_DIR/cases.sh"
+if [[ -n ${ONLY:-} ]]; then
+    # the lines of one case, also under a guard of the target
+    source <(grep -E "SRC=$ONLY( |$)" "$SCRIPT_DIR/cases.sh")
+    if [[ $CASE_COUNT -eq 0 ]]; then
+        echo "FAILED. no case 'SRC=$ONLY' in 'cases.sh' for $MACHINE"
+        exit 1
+    fi
+else
+    source "$SCRIPT_DIR/cases.sh"
+fi
 
 rm -f gen gen.o gen.s gen-nopt.s gen-rv32i.bin diff.baz out err sdcard.img
 rm -f gen-image.elf gen-image.bin

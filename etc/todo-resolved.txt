@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 364) 'test-coverage.sh' has no way to run one case (about
+    30 s on x86_64 for all); e.g. 'ONLY=NNNN'
+    => done (2026-11-23): 'ONLY=NNNN' runs the lines of that case of
+       'cases.sh', also under a guard of the target, and fails when none
+       is for the target
 [x] easy: (round 406, the test infrastructure) 'fix-source.py' would add
     'const' to 'data' of 'lut::put' and 'structured' in 'assembler.hpp',
     which are passed to 'std::move' (review before '--apply'), and prints

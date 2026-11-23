@@ -850,8 +850,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     qemu-riscv32 and python3 in 'qa/test.sh'; its sources
     (gen.py, harness.cpp, run.sh) were kept in '/tmp' and are gone
     (2026-11-13), so the test is written again when approved
-[ ] easy: (round 364) 'test-coverage.sh' has no way to run one case (about
-    30 s on x86_64 for all); e.g. 'ONLY=NNNN'
 [ ] easy: rv32i writes a zero 'dat' at full size into its image: 'dat
     values = i8[2147483648]' makes a 2 GiB '.bin' (round 347
     'fuzz-mutate.py' hit the 1 GiB file limit of 'fuzzlib'; it now writes
