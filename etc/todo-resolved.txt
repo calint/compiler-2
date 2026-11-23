@@ -1,6 +1,16 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 415, a walk of the registers of an expression) two words
+    for one step and one word for two: the listing says "free", the code
+    'free_held_registers', 'held_registers::release',
+    'release_backend_register' and 'pop_allocation' ("held" is now only
+    allocated, allocated or protected is "unavailable", round 515); "frame" is
+    a call level of the register trace and the storage of a noinline call
+    => done (2026-11-23): one word, 'free': 'held_registers::free',
+       'free_backend_register' and their comments ('free_held_registers'
+       no longer exists, 'pop_allocation' is the pool's step); "frame"
+       keeps its two senses, each read in its own class
 [x] easy: (round 415, a hunt of control flow) docs 1.5.1 does not say
     that a generic constant folds at the parse of each instance, so a
     method is rejected for one instance only: 'if N == 2 return' followed

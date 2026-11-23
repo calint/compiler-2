@@ -498,7 +498,7 @@ class stmt_identifier final : public statement {
 
         // the copy protects the address registers until it reads them, then
         // may load the value into one of them
-        held.release();
+        held.free();
 
         x.copy_value({tok(), tc.indent()}, dst.operand(), op);
 

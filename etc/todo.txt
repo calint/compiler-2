@@ -758,12 +758,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     x86_64 (docs 7.11); the read-only constants of rv32i are told apart by
     their laid-out bytes, so equal strings may keep two labels;
     the begin of a source line is found in two ways
-[ ] easy: (round 415, a walk of the registers of an expression) two words
-    for one step and one word for two: the listing says "free", the code
-    'free_held_registers', 'held_registers::release',
-    'release_backend_register' and 'pop_allocation' ("held" is now only
-    allocated, allocated or protected is "unavailable", round 515); "frame" is
-    a call level of the register trace and the storage of a noinline call
 [ ] easy: (round 413, the tutorial and the images) 'etc/tutorial.baz'
     uses "instance" at line 293 before line 504 explains it and does not
     list a 'dat' among what is defined above its first use; on rv32i-fpga

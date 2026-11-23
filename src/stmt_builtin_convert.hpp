@@ -235,7 +235,7 @@ class stmt_builtin_convert final : public statement {
             x.copy_value({tok(), tc.indent()}, target.operand(), wide);
 
             // the ops apply to the copy with the register free
-            held.release();
+            held.free();
 
             uops.compile(x, {tok(), tc.indent()}, target.operand(), uops_check);
 

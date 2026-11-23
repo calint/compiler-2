@@ -1423,7 +1423,7 @@ class noinline_call final {
             populate_frame(tc, dst, arguments, frame_address, array_lengths),
         };
 
-        held.release();
+        held.free();
 
         machine& x{tc.machine()};
 

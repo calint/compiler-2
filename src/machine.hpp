@@ -473,11 +473,11 @@ class machine {
                 return;
             }
 
-            release();
+            free();
         }
 
         // a register that the calling convention fixes, held until the scope
-        // ends or 'release'
+        // ends or 'free'
         [[nodiscard]] auto
         alloc_named_register(const emit_site site,
                              const std::string_view register_name,
@@ -492,7 +492,7 @@ class machine {
             return reg;
         }
 
-        // a scratch register held until the scope ends or 'release'
+        // a scratch register held until the scope ends or 'free'
         [[nodiscard]] auto alloc_scratch_register(const emit_site site,
                                                   const type& type_ref)
             -> operand {
@@ -506,21 +506,17 @@ class machine {
             return reg;
         }
 
-        [[nodiscard]] auto registers() const -> std::span<const operand> {
-            return registers_;
-        }
-
         // frees the registers in reverse, they are the top of the pool; also
         // before the scope ends, e.g. before a call that would save them as
         // live
-        auto release() -> void {
+        auto free() -> void {
             for (const operand& reg : registers_ | std::views::reverse) {
                 // the comment of the free is at the site of the allocation
                 const register_pool::allocation entry{
                     machine_.state_.registers.top(),
                 };
 
-                // note: the backend releases its own registers by name, the
+                // note: the backend frees its own registers by name, the
                 //       registers are the top of the pool
 
                 assert(entry.holder != register_pool::holder_kind::backend);
@@ -531,6 +527,10 @@ class machine {
             }
 
             registers_.clear();
+        }
+
+        [[nodiscard]] auto registers() const -> std::span<const operand> {
+            return registers_;
         }
     };
 
@@ -1462,11 +1462,11 @@ class machine {
         output.zero_data(size_bytes);
     }
 
-    // releases the frame base and ends the body
+    // frees the frame base and ends the body
     auto end_noinline_body() -> void {
         assert(state_.registers.scratch_count() == 0);
 
-        release_backend_register(frame_base_register());
+        free_backend_register(frame_base_register());
 
         assembler& output{output_.get()};
 
@@ -1490,11 +1490,11 @@ class machine {
         return target_.target_calls.arguments.front();
     }
 
-    // releases the variables base and asserts that the registers are
+    // frees the variables base and asserts that the registers are
     // balanced, runs the passes of 'assembler::optimize' over the output,
     // then the target's last steps; called once at the end of the compile pass
     auto finish() -> void {
-        release_backend_register(variables_base_register());
+        free_backend_register(variables_base_register());
 
         // every operation freed what it allocated
         assert(state_.registers.is_empty());
@@ -2491,6 +2491,14 @@ class machine {
                            printable(locations_.relative_name(file_ix)));
     }
 
+    // frees a register of 'reserve_backend_register'
+    auto free_backend_register(const std::string_view register_name) -> void {
+        assert(state_.registers.top().holder ==
+               register_pool::holder_kind::backend);
+
+        pop_allocation({token{}, 0}, pool_index(register_name));
+    }
+
     // the register 'name' is allocated or protected, it may hold a live value
     [[nodiscard]] auto
     is_register_unavailable(const std::string_view name) const -> bool {
@@ -2630,7 +2638,7 @@ class machine {
         return *index;
     }
 
-    // registers are released in reverse order of allocation, the comment
+    // registers are freed in reverse order of allocation, the comment
     // names the register as the report does
     auto pop_allocation(const emit_site site, const size_t index) -> void {
         comment(site, "free {} register {}",
@@ -2752,16 +2760,6 @@ class machine {
         }
 
         return saved;
-    }
-
-    // frees a register of 'reserve_backend_register'
-    auto release_backend_register(const std::string_view register_name)
-        -> void {
-
-        assert(state_.registers.top().holder ==
-               register_pool::holder_kind::backend);
-
-        pop_allocation({token{}, 0}, pool_index(register_name));
     }
 
     // with '--checks=line', the failure of 'handler' reports its line, e.g.
