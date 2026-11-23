@@ -1,6 +1,12 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 530, globals) 'dat g = g' says "'g' not found" where
+    'var g = g' says "'g' is read in its own initializer"; both are
+    rejected, one message would name the cause for both
+    => done (2026-11-23): a 'dat' declares its name in its initializer
+       like a 'var' ('name_in_initializer::hidden_if_type'), hidden only
+       when it names a type as in 'dat point = point{1, 2}'; test 8163
 [x] easy: (round 546, consistency) the whitespace set " \t\r\n" is
     spelled in five places: 'tokenizer::delimiters_',
     'tokenizer::next_whitespace', 'one_line_source::is_ascii_space',

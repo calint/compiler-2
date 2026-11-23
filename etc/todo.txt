@@ -205,9 +205,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     immediates is taken from 'x.default_type()' in some places and from
     'tc.builtins().default_type()' in others; one source across all
     sources
-[ ] easy: (round 530, globals) 'dat g = g' says "'g' not found" where
-    'var g = g' says "'g' is read in its own initializer"; both are
-    rejected, one message would name the cause for both
 [ ] easy: (round 527, the output side) three small differences in the
     listing text: on x86_64 a comment without a location starts one column
     later than one with a location ('comment_start' at indent above 0 would

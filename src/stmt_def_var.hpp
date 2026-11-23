@@ -37,10 +37,10 @@
 //                            statement
 //
 
-// whether the name of a definition is visible in its initializer: a 'var' that
-// reads itself is rejected as read in its own initializer, a 'dat' may be
-// named like its type, e.g. 'dat point = point{1, 2}'
-enum class name_in_initializer : uint8_t { visible, hidden };
+// whether the name of a definition is visible in its initializer, where a read
+// of it is rejected as read in its own initializer; a 'dat' may be named like
+// its type, e.g. 'dat point = point{1, 2}', then the name is hidden
+enum class name_in_initializer : uint8_t { visible, hidden_if_type };
 
 // the name of a definition, its '=' and the type and the array size that its
 // initializer gives, e.g. 'var a = i8[]{1, 2}' or 'dat p = point{1, 2}', and
@@ -278,7 +278,15 @@ class initializer_declaration final {
     auto with_placeholder(parse_toc& tc,
                           const std::function_ref<void()> parse) const -> void {
 
-        if (name_visibility_ == name_in_initializer::hidden) {
+        const std::string_view name{name_tk_.text()};
+
+        const bool is_type_name{
+            tc.types().has(name) or tc.generics().has_type(name),
+        };
+
+        if (name_visibility_ == name_in_initializer::hidden_if_type and
+            is_type_name) {
+
             parse();
             return;
         }

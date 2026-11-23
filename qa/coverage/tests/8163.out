@@ -1,0 +1,4 @@
+
+8163.baz:3:9: 'g' is read in its own initializer
+dat g = g
+        ^

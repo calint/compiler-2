@@ -79,7 +79,7 @@ class stmt_def_dat final : public statement {
   public:
     stmt_def_dat(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
         : statement{src_loc_tk},
-          declaration_{tc, tz, "dat", name_in_initializer::hidden},
+          declaration_{tc, tz, "dat", name_in_initializer::hidden_if_type},
           initializer_{declaration_.parse_value(tc, tz)},
           root_elem_{fold_data(tc, declaration_.type_ref(), initializer_)} {
 

@@ -1,0 +1,7 @@
+# a 'dat' that reads itself is rejected as a 'var' is, its name is hidden only
+# when it names a type
+dat g = g
+
+func main() {
+    exit(0)
+}
