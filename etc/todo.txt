@@ -190,6 +190,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'exit([1)' says "expected type 'i64', got 'i64[]'"; 'func mut t'
     says "expected '(' after function name"; 'a = a < < 1' and 'a <> 1'
     say "a comparison makes a condition"
+    => 2026-11-23: a missing '(' after a function or method name is at
+       the next token ('func_head::assert_open_paren(tz)'), after a
+       built-in it names it ("expected '(' after 'exit'"), 14 expected
+       files; the generic skip of 'type t<N> {' is the one of round 491;
+       the rest is open
 [ ] easy: (round 462, bug hunt of the command line) messages:
     '--target=rv32i --sdcard=./p-rv32i.bin p.baz' says "invalid --bin:
     'p-rv32i.bin' is the sd card image" without a '--bin' given, and a

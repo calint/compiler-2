@@ -1,4 +1,4 @@
 
-0679.baz:4:5: expected '(' after function name
-    exit
-    ^~~~
+0679.baz:5:1: expected '(' after 'exit'
+}
+^

@@ -1,4 +1,4 @@
 
-2076.baz:6:20: expected '(' after function name
+2076.baz:6:32: expected '(' after 'array_length'
 func main() { show(array_length) }
-                   ^~~~~~~~~~~~
+                               ^

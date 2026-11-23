@@ -1,4 +1,4 @@
 
-1678.baz:6:13: expected '(' after function name
-    var x = array_copy
-            ^~~~~~~~~~
+1678.baz:7:5: expected '(' after 'array_copy'
+    exit(a[0] + x)
+    ^

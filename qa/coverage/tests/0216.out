@@ -1,4 +1,4 @@
 
-0216.baz:3:6: expected '(' after function name
+0216.baz:3:8: expected '(' after function name
 func f {}
-     ^
+       ^

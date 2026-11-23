@@ -1,4 +1,4 @@
 
-1433.baz:4:11: expected '(' after method name
-func text.print
-          ^~~~~
+1433.baz:5:1: expected '(' after method name
+func main() {
+^

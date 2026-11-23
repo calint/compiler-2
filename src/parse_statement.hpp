@@ -146,10 +146,10 @@ inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
     }
 
     // checked before where it may stand, e.g. a lone 'exit' or the
-    // 'array_length a' of a value; at the name, the next token can be on a
-    // later line
+    // 'array_length a' of a value
     if (tz.peek_char_after_whitespace() != '(') {
-        throw compile_error{tk, "expected '(' after function name"};
+        throw compile_error{
+            tz, std::format("expected '(' after {}", in_quotes(tk.text()))};
     }
 
     assert_builtin_place(tk, *fn, at);

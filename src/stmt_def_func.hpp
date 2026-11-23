@@ -117,19 +117,18 @@ struct func_head {
         }
     }
 
-    // e.g. 'func f<T type> {' has no '(' after its name; reported at the
-    // name, the next token can be on a later line
-    auto assert_open_paren() const -> void {
+    // e.g. 'func f<T type> {' has no '(' after its name; 'tz' is after the
+    // head, where the '(' is missing
+    auto assert_open_paren(const tokenizer& tz) const -> void {
         if (open_paren_tk) {
             return;
         }
 
         if (method) {
-            throw compile_error{method->name_tk,
-                                "expected '(' after method name"};
+            throw compile_error{tz, "expected '(' after method name"};
         }
 
-        throw compile_error{name_tk, "expected '(' after function name"};
+        throw compile_error{tz, "expected '(' after function name"};
     }
 
     // the rules of the signature 'params' and 'result' after this head that
@@ -1782,7 +1781,7 @@ inline auto make_stmt_def_func(parse_toc& tc, const token& src_loc_tk,
     const func_head head{func_head::read(tc, tz)};
 
     head.assert_main_head();
-    head.assert_open_paren();
+    head.assert_open_paren(tz);
 
     // e.g. 'func text.print()' or 'func tokenizer.to<T type>()'
     if (head.is_generic()) {
