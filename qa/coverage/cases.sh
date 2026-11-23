@@ -8568,3 +8568,7 @@ SRC=8163 && COMPERR
 # a type alone as an index is the zero value of a type the index already
 # gives, the message names no destination
 SRC=8164 && COMPERR
+
+# without the overflow check a literal whose unary ops negate the 64-bit
+# minimum is rejected as with it, no type holds the result
+if [[ $MACHINE == x86_64 ]]; then SRC=8165 && OPTS="--checks=noub,-overflow" COMPERR; fi

@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 502, shifts and unary operators) without the overflow
+    check a literal with unary ops is checked by its value wrapped at 64
+    bits: with '--checks=noub,-overflow' on x86_64 'r = v + -~9223372036854775807'
+    of 'i64' is accepted and gives the minimum ('unary_ops::evaluate_constant'
+    in 'stmt_identifier::assert_constant_fits' turns '-(INT64_MIN)' back into
+    it), while the 'i32' spelling with 2147483647 is rejected as not
+    fitting; with 'noub' both are rejected; no undefined behavior, the
+    64-bit edge of "a literal is checked by its value"; a fix would check
+    the negation of the 64-bit minimum as not fitting
+    => done (2026-11-23): 'unary_ops::evaluate_constant' rejects the
+       negation of the 64-bit minimum under any '--checks' ("constant
+       expression overflows the type", as with 'overflow'); a literal
+       reaches the minimum only through '~'; test 8165 (x86_64)
 [x] easy: (round 491, malformed programs) three messages differ from their
     neighbors: 'dat a = a' says "'a' not found" where 'let a = a' and
     'var a = a' say it is read in its own initializer; 'var func = 1' in a

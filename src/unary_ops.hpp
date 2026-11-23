@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <ostream>
 #include <ranges>
@@ -63,10 +64,11 @@ class unary_ops final {
         return constant_arith::wrap_to_width(result, width_type);
     }
 
-    // the ops applied to 'value' at 64 bits, wrapping, without the overflow
-    // check of 'evaluate_at'
+    // the ops applied to the value of a literal at 64 bits; a negation of the
+    // 64-bit minimum is an error under any '--checks', no type holds its
+    // result
     [[nodiscard]] auto evaluate_constant(const int64_t value) const -> int64_t {
-        return evaluate(value, std::nullopt);
+        return evaluate(value, std::numeric_limits<int64_t>::min());
     }
 
     [[nodiscard]] auto is_empty() const -> bool { return ops_.empty(); }

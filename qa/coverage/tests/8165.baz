@@ -1,0 +1,8 @@
+# without the overflow check a literal whose unary ops negate the 64-bit
+# minimum is rejected as with it, no type holds the result
+func main() {
+    var v = 1
+    var r = 0
+    r = v + -~9223372036854775807
+    exit(r)
+}

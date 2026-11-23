@@ -1,0 +1,4 @@
+
+8165.baz:6:13: constant expression overflows the type
+    r = v + -~9223372036854775807
+            ^
