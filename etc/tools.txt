@@ -8,6 +8,7 @@
            llvm-cov: 23.1.1
             llvm-mc: 23.1.1
        llvm-objcopy: 23.1.1
+       llvm-objdump: 23.1.5
       llvm-profdata: 23.1.1
     llvm-symbolizer: 23.1.1
                nasm: 3.02

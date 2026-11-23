@@ -85,7 +85,9 @@ the binary image itself.
   * a statement that is never reached, e.g. one after `break`
 * keywords: `func`, `noinline`, `mut`, `type`, `dat`, `var`, `let`, `foo`,
   `loop`, `if`, `else`, `continue`, `break`, `return`, `self`, `and`, `or`,
-  `not`, `true`, `false`, `include`
+  `not`, `true`, `false`, `include`; the built-in names `i8`, `i16`, `i32`,
+  `i64`, `int`, `bool` and `void` name no variable, function or type of the
+  program
 * `include "lib.baz"` at the top of a file adds the definitions of another file
   where it is, relative to the directory of the including file as the file
   system resolves it (a `..` after a link to a directory is the parent of its

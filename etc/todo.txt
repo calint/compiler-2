@@ -560,9 +560,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        name, one width per type, which the other fuzzers iterate; 'int'
        needs a width per target, a change of the model's interface across
        the fuzzers; not done (the defect has its test)
-[ ] easy: (round 431, design of the built-in statements) the choice of
-    a run-time range is written twice, in 'bulk_operands::range_of' and
-    in 'stmt_builtin_io'; one helper would need a shared operand shape
 [p] easy: (round 431, bug hunt of the rules of reads and writes) need
     approval: new files under 'qa/fuzz'; the generators of the hunt (a
     left to right model of reads and writes, the inlined against the
@@ -704,6 +701,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
        check is off are accepted on x86_64 (the 64-bit fold wraps 2^63)
        and rejected on rv32i ("does not fit 'int'"), as 2^31 is held;
        under 'noub' both reject
+    => 2026-11-23: the README lists the built-in names with 'void';
+       U+070F, U+FFF9 to U+FFFB, U+13430 to U+1343F, U+16FE4 and U+1D159
+       are escaped; 'etc/tools.txt' has 'llvm-objdump'; since clean-up
+       round 18 '-kmin' is rejected on x86_64 too and both 'p(...)' are
+       accepted; open: the fit of a call argument at the parse against a
+       'var' at the compile, the paths in the messages of
+       'test-coverage.sh' and its '$SCRIPT_DIR'
 
 [ ] easy: (round 425, a hunt of the input and output built-ins and a
     walk of the parser's dispatch) the -9 of a descriptor that is not

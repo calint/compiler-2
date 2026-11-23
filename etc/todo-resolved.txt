@@ -1,6 +1,11 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 431, design of the built-in statements) the choice of
+    a run-time range is written twice, in 'bulk_operands::range_of' and
+    in 'stmt_builtin_io'; one helper would need a shared operand shape
+    => done (2026-11-23, found done): both choose through
+       'machine::bounds_range::of_range'
 [x] easy: (round 431, a walk of the accessor path) names and texts
     left:
     1. 'path_step' of 'access_path.hpp' sits beside 'prefix_step' and

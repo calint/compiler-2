@@ -206,12 +206,13 @@ class compile_error final : public std::exception {
     -> bool {
 
     // first and last code point of each range
-    constexpr std::array<std::pair<uint32_t, uint32_t>, 21> escaped{
+    constexpr std::array<std::pair<uint32_t, uint32_t>, 25> escaped{
         {
             {0x80, 0xa0},       // C1 controls, no-break space
             {0xad, 0xad},       // soft hyphen
             {0x34f, 0x34f},     // combining grapheme joiner
             {0x61c, 0x61c},     // arabic letter mark
+            {0x70f, 0x70f},     // syriac abbreviation mark
             {0x115f, 0x1160},   // hangul fillers
             {0x1680, 0x1680},   // ogham space mark
             {0x17b4, 0x17b5},   // khmer inherent vowels
@@ -225,8 +226,11 @@ class compile_error final : public std::exception {
             {0xfe00, 0xfe0f},   // variation selectors
             {0xfeff, 0xfeff},   // zero width no-break space
             {0xffa0, 0xffa0},   // halfwidth hangul filler
-            {0xfff0, 0xfff8},   // unassigned, ignorable
+            {0xfff0, 0xfffb},   // unassigned, ignorable, annotation marks
+            {0x13430, 0x1343f}, // egyptian hieroglyph format controls
+            {0x16fe4, 0x16fe4}, // khitan filler
             {0x1bca0, 0x1bca3}, // shorthand format controls
+            {0x1d159, 0x1d159}, // musical null notehead
             {0x1d173, 0x1d17a}, // musical format controls
             {0xe0000, 0xe0fff}, // tags, variation selectors
         },
