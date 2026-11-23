@@ -126,9 +126,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     checks their fit before the left side compiles ('if v8 + vk ==
     (10 / kz)' names the divisor, not the narrowed 'vk'); with variables
     the first part panics first
-[ ] easy: (round 559, rv32i) in a noinline 'x = x * y' with a 'mut'
-    parameter 'x' the listing stores 'x' to itself before the multiply
-    ('lh t1, 0(t1)' then 'sh t1, 0(t0)'), e.g. 'func.mulby'
 [ ] easy: (round 559, fuzz) after 'fuzzlib.build' and 'build_failure':
     fuzz-programs (two), fuzz-options and fuzz-reject still test sanitizer
     text for their own categories (a shared 'compiler_crashed' would remove

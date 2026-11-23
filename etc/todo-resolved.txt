@@ -1,6 +1,17 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 559, rv32i) in a noinline 'x = x * y' with a 'mut'
+    parameter 'x' the listing stores 'x' to itself before the multiply
+    ('lh t1, 0(t1)' then 'sh t1, 0(t0)'), e.g. 'func.mulby'
+    => done (2026-11-23): 'stmt_identifier::compile' skips the copy of a
+       name that is its destination ('is_destination_itself': the same
+       storage path, no run-time index), only its unary ops apply; 44
+       cases per target change, default options rv32i-fpga -20 and
+       x86_64 -43 instructions, with 'noub' rv32i-fpga -13 (1713 +1 by
+       the other version) and x86_64 0; test-cli: the backend-held
+       register case is 0426 (0402 now peaks lower), 'box.total' of 0753
+       holds 5
 [x] easy: (round 561, messages) a type used as an index ('x[U] = 2' with
     'U' a type parameter) or passed as a call argument is rejected with
     "the destination gives the type 'i64', write '{}'", which names a

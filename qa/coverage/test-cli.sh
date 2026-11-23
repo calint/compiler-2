@@ -476,7 +476,7 @@ CLI_REGISTER_REPORT() {
     grep -Fq "global initializers" out && fail
     # the total leaves out the registers the backend holds itself, 13 of the
     # 14 scratch registers on x86_64 and 29 of 30 on rv32i here
-    "$BIN" --report=registers 0402.baz >out 2>err
+    "$BIN" --report=registers 0426.baz >out 2>err
     grep -Fq "register use at the peak: 3 of 13 registers live" out
     baz_at rv32i --report=registers 0001.baz >out 2>err
     grep -Fq "register use at the peak: 4 of 29 registers live" out
@@ -1219,7 +1219,7 @@ CLI_REGISTER_REPORT_COUNTS() {
     # 0753.baz: the callees and the saved registers in descending order, equal
     # counts by name
     "$BIN" --report=registers 0753.baz >out 2>err
-    grep -A1 -Fx ";   own  calls  callee" out | grep -Fxq ";     6      1  box.total (noinline body)"
+    grep -A1 -Fx ";   own  calls  callee" out | grep -Fxq ";     5      1  box.total (noinline body)"
     grep -A2 -Fx ";   saved  calls  callee, most saved at" out | tail -1 |
         grep -Fxq ";       0      2  box.take 63:12"
     echo ok

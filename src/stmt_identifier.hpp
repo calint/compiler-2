@@ -477,6 +477,16 @@ class stmt_identifier final : public statement {
 
         machine& x{tc.machine()};
 
+        // e.g. the first 'x' of 'x = x * y' with 'x' a 'mut' parameter: the
+        // value is in place, a copy would load the address again to store it
+        // to itself
+        if (is_destination_itself(tc, dst)) {
+            get_unary_ops().compile(x, {tok(), tc.indent()}, dst.operand(),
+                                    tc.overflow_check(dst));
+
+            return;
+        }
+
         machine::held_registers held{x, {tok(), tc.indent()}};
 
         // note: a list copies a constant itself
@@ -1060,6 +1070,22 @@ class stmt_identifier final : public statement {
                 .is_last{i == elems_.size() - 1},
             });
         }
+    }
+
+    // names the same bytes as 'dst', which no run-time index leaves unknown
+    [[nodiscard]] auto is_destination_itself(const toc& tc,
+                                             const destination& dst) const
+        -> bool {
+
+        const std::optional<storage_path> written{dst.storage()};
+        const std::optional<storage_path> read{storage(tc)};
+
+        if (not written or not read or not is_exact_access()) {
+            return false;
+        }
+
+        return not written->path.has_run_time_index() and
+               read->is_same(*written);
     }
 
     // false when a run-time index leaves the element unknown
