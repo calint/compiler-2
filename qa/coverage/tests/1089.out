@@ -1,4 +1,4 @@
 
-1089.baz:7:18: the destination gives the type 'point', write '{}'
+1089.baz:7:18: the type 'point' is known here, write '{}'
     var l = line{point, {3, 4}}
                  ^~~~~

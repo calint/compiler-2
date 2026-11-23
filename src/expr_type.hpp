@@ -59,16 +59,17 @@ enum class literal_typing : uint8_t { written, from_destination };
 // a value that is no number, named in the messages of 'assert_value_ends'
 enum class value_kind : uint8_t { instance, array };
 
-// a type written where the destination gives it, 'value' is how to write the
-// value without it, e.g. '{...}' or the zero value '{}'
+// a type written where the destination, the index or the parameter gives it,
+// 'value' is how to write the value without it, e.g. '{...}' or the zero value
+// '{}'
 [[noreturn]] inline auto throw_known_type(const token& type_tk,
                                           const std::string_view type_name,
                                           const std::string_view value)
     -> void {
 
-    throw compile_error{
-        type_tk, std::format("the destination gives the type {}, write {}",
-                             in_quotes(type_name), in_quotes(value))};
+    throw compile_error{type_tk,
+                        std::format("the type {} is known here, write {}",
+                                    in_quotes(type_name), in_quotes(value))};
 }
 
 // the type named at 'type_tk' is 'tp', the type of the destination

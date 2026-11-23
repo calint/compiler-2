@@ -1,4 +1,4 @@
 
-3364.baz:13:7: the destination gives the type 'point', write '{...}'
+3364.baz:13:7: the type 'point' is known here, write '{...}'
     g(point{1, 2})
       ^~~~~

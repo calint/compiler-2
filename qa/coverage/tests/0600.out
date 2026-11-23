@@ -1,4 +1,4 @@
 
-0600.baz:5:9: the destination gives the type 'i8[2]', write '{...}'
+0600.baz:5:9: the type 'i8[2]' is known here, write '{...}'
     a = i8[2]{1, 2}
         ^~

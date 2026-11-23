@@ -1,4 +1,4 @@
 
-2910.baz:5:9: the destination gives the type 'i8[]', write '{...}'
+2910.baz:5:9: the type 'i8[]' is known here, write '{...}'
     a = i8[]{1, 2}
         ^~

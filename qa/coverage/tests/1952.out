@@ -1,5 +1,5 @@
 
-1952.baz:6:17: the destination gives the type 'i8', write '{}'
+1952.baz:6:17: the type 'i8' is known here, write '{}'
     var s = seg{T}
                 ^
 1952.baz:10:5: instantiated by 'f<i8>'

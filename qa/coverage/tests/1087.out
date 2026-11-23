@@ -1,4 +1,4 @@
 
-1087.baz:8:14: the destination gives the type 'point', write '{...}'
+1087.baz:8:14: the type 'point' is known here, write '{...}'
     exit(sum(point{1, 2}))
              ^~~~~

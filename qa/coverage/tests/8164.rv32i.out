@@ -1,0 +1,4 @@
+
+8164.baz:5:7: the type 'int' is known here, write '{}'
+    x[int] = 2
+      ^~~

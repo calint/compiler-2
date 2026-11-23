@@ -1,0 +1,6 @@
+# a type alone as an index is the zero value of a type the index already
+# gives, the message names no destination
+func main() {
+    var x = i8[4]
+    x[int] = 2
+}

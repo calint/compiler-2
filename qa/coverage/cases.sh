@@ -8564,3 +8564,7 @@ SRC=8162 && COMPERR
 # a 'dat' that reads itself is rejected as a 'var' is, its name is hidden only
 # when it names a type
 SRC=8163 && COMPERR
+
+# a type alone as an index is the zero value of a type the index already
+# gives, the message names no destination
+SRC=8164 && COMPERR

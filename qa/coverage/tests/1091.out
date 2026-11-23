@@ -1,4 +1,4 @@
 
-1091.baz:5:9: the destination gives the type 'bool', write '{}'
+1091.baz:5:9: the type 'bool' is known here, write '{}'
     f = bool
         ^~~~

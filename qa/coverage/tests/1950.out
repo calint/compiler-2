@@ -1,5 +1,5 @@
 
-1950.baz:7:17: the destination gives the type 'point', write '{}'
+1950.baz:7:17: the type 'point' is known here, write '{}'
     var s = seg{T}
                 ^
 1950.baz:11:5: instantiated by 'f<point>'
