@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 449, bug hunt of several source files) docs do not
+    say that a column counts bytes ('é' is 2) while the caret is placed
+    by characters, so a double-width character puts the caret off by
+    its extra cell; the default image name 'm-rv32i.bin' that collides
+    with an included file says "invalid --bin" though no '--bin' was
+    given
+    => done (2026-11-23): docs 1.9 say that a column counts bytes and
+       the caret is placed by characters; the image message names the
+       role of the file since clean-up round 23
 [x] easy: (round 396) a noinline function without array parameters that a
     dry run asks for is checked twice ('check_function_bodies' and
     'check_noinline_bodies'); only compile time; in a dry run

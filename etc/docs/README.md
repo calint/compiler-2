@@ -743,7 +743,10 @@ The front end holds registers, the backend names and picks them
 ### 1.9 Errors
 
 An error is a 'compile_error' ('compile_error.hpp') at the token that caused it,
-or where the next token starts when a token is missing. The first error ends the
+or where the next token starts when a token is missing. Its location is
+'file:line:column', the column counts bytes, e.g. 'é' counts 2; the caret under
+the source line is placed by characters, so a double-width character before it
+moves it one cell left. The first error ends the
 compile (7.8), 'main.cpp' prints it with its frames, then the includes that
 loaded its file ("included from", 'print_include_chain') and then its 'detail',
 e.g. the register use at the failure that 'machine::register_error' adds.
