@@ -448,8 +448,7 @@ def fuzz_one(args):
             found.append(("compiler-hang", "timeout", ""))
             return source, found, stats
         if c.returncode:
-            sanitizer = any(t in c.stderr for t in fl.SANITIZER_TEXT)
-            if c.returncode in fl.SANITIZER_EXIT or c.returncode < 0 or sanitizer:
+            if fl.compiler_crashed(c):
                 found.append(("compiler-crash", fl.signature(c.stderr),
                               c.stderr[-3000:]))
             elif fl.out_of_registers(c.stderr):
@@ -529,8 +528,8 @@ def compare_rv32i(compiler, path, options, work, target, x86, found):
     # outcome 'x86' of x86_64
     c, rv, problem = fl.run_target(compiler, path, options, work, target)
     if c.returncode:
-        sanitizer = any(t in c.stderr for t in fl.SANITIZER_TEXT)
-        kindname = "compiler-crash" if sanitizer or c.returncode in fl.SANITIZER_EXIT else "gen-reject"
+        sanitizer = fl.sanitizer_reported(c)
+        kindname = "compiler-crash" if fl.compiler_crashed(c) else "gen-reject"
         if kindname == "gen-reject" and fl.out_of_registers(c.stderr):
             return
         found.append((kindname, f"{target} " + (fl.signature(c.stderr) if sanitizer else c.stderr.strip().split("\n")[0][-60:]),

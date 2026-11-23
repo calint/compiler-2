@@ -532,8 +532,7 @@ def fuzz_one(args):
             if r.timed_out:
                 found.append(("reject-crash", f"{case.name} hang", ""))
                 continue
-            if r.signal or any(
-                    t in r.stderr for t in fl.SANITIZER_TEXT):
+            if r.signal or fl.sanitizer_reported(r):
                 found.append(("reject-crash", f"{case.name} {target}",
                               r.stderr[:400]))
                 continue

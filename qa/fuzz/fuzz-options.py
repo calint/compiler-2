@@ -152,11 +152,10 @@ def fuzz_one(args):
         result = fl.run(command, fl.COMPILE_TIMEOUT, cwd=work, file_size=1 << 30)
         if file_arguments and not result.timed_out:
             fl.note_if_slow(begin, fl.COMPILER_ASAN, file_arguments[0], options)
-        sanitizer = any(t in result.stderr for t in fl.SANITIZER_TEXT)
+        sanitizer = fl.sanitizer_reported(result)
         if result.timed_out:
             found.append(("option-hang", description[:100], result.stderr[-500:]))
-        elif result.returncode in fl.SANITIZER_EXIT or result.returncode < 0 \
-                or sanitizer or result.returncode not in (0, 1):
+        elif fl.compiler_crashed(result) or result.returncode not in (0, 1):
             found.append(("option-crash", fl.signature(result.stderr) if sanitizer
                           else f"exit {result.returncode}", description
                           + "\n" + result.stderr[-2500:]))

@@ -460,6 +460,19 @@ SANITIZER_TEXT = ("AddressSanitizer", "runtime error:", "LeakSanitizer",
                   "SUMMARY:", "libc++abi", "std::bad_alloc")
 
 
+def sanitizer_reported(result):
+    # a report of the sanitizers; a rejection, exit code 1, echoes its source
+    # line, which may hold the words of a report, e.g. in a comment
+    return result.returncode != 1 and \
+        any(t in result.stderr for t in SANITIZER_TEXT)
+
+
+def compiler_crashed(result):
+    # the compiler ended by a sanitizer, an abort or a signal
+    return result.returncode in SANITIZER_EXIT or result.returncode < 0 or \
+        sanitizer_reported(result)
+
+
 # the rejections that have no place in the source: the whole program, e.g.
 # 'function 'main' not found', and the errors of the files and of the memory
 # of the target, which start with 'error: '
@@ -471,11 +484,8 @@ def classify_compile(c):
     if c.timed_out:
         return ("compiler-hang", "timeout")
     text = c.stderr
-    # note: a rejection, exit code 1, echoes its source line, which may hold
-    #       the words of a report, e.g. in a comment
-    sanitizer = c.returncode != 1 and any(t in text for t in SANITIZER_TEXT)
-    if c.returncode in SANITIZER_EXIT or c.returncode < 0 or sanitizer:
-        return ("compiler-crash", signature(text) if sanitizer
+    if compiler_crashed(c):
+        return ("compiler-crash", signature(text) if sanitizer_reported(c)
                 else f"exit {c.returncode} {text[:80]}")
     # note: a defect of the compiler that it caught, it exits with 1
     if re.search(r"^internal error: ", text, re.M):
