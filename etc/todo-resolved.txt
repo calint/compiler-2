@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 444, bug hunt of the generics rules) the docs are
+    silent on
+    1. 'var c = k + make(2)' says "cannot deduce" while
+       'c = k + make(2)' deduces; 2.10.2 item 2 only names
+       'var m = make(2)'
+    2. 'if make() {...}', 'b = not make()' and 'b = (make())' say
+       "cannot deduce"; only a call that is the whole assigned value
+       takes a 'bool' destination; a 'bool' parameter, field or
+       element does
+    3. in a method of 'buf<n>' the 'n' of a 'foo' hides the constant
+       parameter silently, 'var n' at body level is rejected
+    => done (2026-11-23): docs 2.10.2 item 2 name 'var c = k + make(2)'
+       and the parts of a condition, 2.3 the 'n' of a 'foo' that hides
+       a constant parameter
 [x] easy: (round 448, design of the test harness) 'test-cli.sh' still
     has 'grep -Fq x file && fail', which passes when the file is
     missing (grep exits 2), and 'message=$(...) && fail' in

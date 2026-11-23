@@ -414,6 +414,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
 [ ] easy: (round 447, design of storage addresses) 'main.cpp' asks
     '--vars' to be a multiple of 16 ('vars_alignment'); no code or
     docs say why: tie it to the rule that needs it or relax it
+    => 2026-11-23: no rule found: the bare-metal stack starts from the end
+       of memory, not after the variables, and frames align to the
+       address size; with 'vars_alignment' 1 and '--vars=0x3ffff' the
+       suite stops at test 2069, whose expected error depends on the
+       storage size; relaxing it needs a run that tells such cases from
+       a fault, and widens the accepted options
 [ ] easy: (round 446, a walk of 'expr_bool.hpp') a comparison whose
     jump the optimizer removes leaves its compare: in 'if a == 2 or
     1 == 1' the list is known true, the jump of 'a == 2' goes to the
@@ -429,17 +435,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     differ per target, x86_64 62062 -> 62062 instructions with one
     scratch register fewer ('lea r15, [r15]' stays), rv32i-fpga 93096
     -> 93086; an optimization, not a simplification
-[ ] easy: (round 444, bug hunt of the generics rules) the docs are
-    silent on
-    1. 'var c = k + make(2)' says "cannot deduce" while
-       'c = k + make(2)' deduces; 2.10.2 item 2 only names
-       'var m = make(2)'
-    2. 'if make() {...}', 'b = not make()' and 'b = (make())' say
-       "cannot deduce"; only a call that is the whole assigned value
-       takes a 'bool' destination; a 'bool' parameter, field or
-       element does
-    3. in a method of 'buf<n>' the 'n' of a 'foo' hides the constant
-       parameter silently, 'var n' at body level is rejected
 [ ] easy: (round 444, design of generics) the message for 'f(3, 2)'
     with a 'bool' parameter says "'3' of type 'i64'" on x86_64 and
     "of type 'int'" on rv32i (see the round 433 item on messages that

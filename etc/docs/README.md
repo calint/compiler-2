@@ -831,7 +831,9 @@ type list<T type, capacity> {
 'T type' is a type parameter, 'capacity' is a constant parameter. A parameter
 may not be a keyword, a built-in name, the name of the generic type, of its
 base (2.4) or of another parameter; it hides a global of its name (1.3), so
-that inside the recipe a name has one meaning.
+that inside the recipe a name has one meaning. In a method of the type a 'var
+n' at body level is rejected as hiding the parameter 'n', but the 'n' a 'foo'
+declares, the length of its array, hides it inside the 'foo' body.
 
 The braced block is skipped without reading the fields. An error in the fields
 is therefore found only when an alias reads them: until then there are no
@@ -1084,12 +1086,15 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    ```
 
    'var m = make(2)' has no destination type: 'm' takes its type from the
-   call, so there is nothing to take it from.
+   call, so there is nothing to take it from; nor has 'var c = k + make(2)',
+   whose type is that of its list, known only after the list is parsed.
 
    A 'bool' destination is a condition, whose operands have no destination;
    a call of a generic function or method that is the whole value is looked
    for ahead and takes the destination, e.g. 'b = make(2)' and 'b = t.to()'
-   (3360), not 'b = t.to() or c'. A result of another type, which an
+   (3360), not 'b = t.to() or c' and not a part of a condition, e.g. 'if
+   make() {', 'b = not make()' and 'b = (make())'; a 'bool' parameter, field
+   or element is a destination like any other. A result of another type, which an
    argument told, is rejected as a condition is: "'same(x)' of type 'i8' is
    not a 'bool'" (3370, 3371); the call is parsed as the condition it is, so
    what follows it is reported as after any other, e.g. "expected '=='" for
