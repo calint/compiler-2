@@ -568,7 +568,8 @@ baz_NAME       a failure handler, and a routine of the x86_64 runtime,
 .Lbaz_NAME     a routine of the rv32i runtime; numbered, a jump target
                inside one operation, e.g. '.Lbaz_equal.0' on x86_64 ('1:'
                named by '1b' on rv32i), and on rv32i '.Lbaz_jump.0' the
-               skip of a grown branch
+               skip of a grown branch and '.Lbaz_landing.NAME' the landing
+               before 'NAME' where a far jump that borrowed 't0' restores it
 .convert_loop  the digit loop of the x86_64 routine that writes a line
                number
 ```

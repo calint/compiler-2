@@ -764,9 +764,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'x / -v' reports the line of 'v', 'x / (-v)' and 'a[-b[i]]' the line of
     '-', 'a[-j]' the line of 'j'; the same on every target; making it one
     rule moves the column of some compile errors
-[ ] easy: (round 411, the lines of the listing) docs 1.6.1 and the label
-    table at 'compile_toc::call_path_at' do not list '.Lbaz_landing.NAME',
-    the rv32i landing of a far jump that borrows 't0'
 [ ] easy: (round 410, the same hunt) a recursion entered from skipped code
     of an inlined function is accepted where the same function with
     'noinline' is rejected ("recursion of inlined function 'rec' runs out
