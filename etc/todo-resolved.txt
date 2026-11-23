@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 413, the tutorial and the images) 'etc/tutorial.baz'
+    uses "instance" at line 293 before line 504 explains it and does not
+    list a 'dat' among what is defined above its first use; on rv32i-fpga
+    a sector past the card of the emulator ends with "CPU error: 1305" of
+    the emulator, docs chapter 8 describes the end of the card for x86_64
+    only; 'machine_rv32i::emit_stack_capacity_check' computes 'sp -
+    call_bytes' without a note on why it cannot wrap (the stack limit is
+    above the code that pushes); round 462 measured the smallest
+    'noinline' image at 191 bytes against a call of 64 bytes
+    => done (2026-11-23): the tutorial says 'a value of a user type' at
+       line 292 and lists a 'dat' among the names defined above their
+       use; 'emit_stack_capacity_check' notes why 'sp - call_bytes' does
+       not wrap; docs chapter 8 item 5 already give the emulator's end of
+       the card; the image size is a measurement
 [x] easy: (round 415, a walk of the registers of an expression) two words
     for one step and one word for two: the listing says "free", the code
     'free_held_registers', 'held_registers::release',

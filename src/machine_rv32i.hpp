@@ -1266,6 +1266,10 @@ class machine_rv32i : public machine {
 
         comment(site, "lowest stack pointer the call reaches");
 
+        // note: 'sp' is at or above the stack limit, which lies above the
+        //       code and the variables, so subtracting a call's bytes does
+        //       not wrap below 0
+
         assembler_.addi(site.indent, lowest.register_name(), "sp",
                         -static_cast<int64_t>(call_bytes));
 
