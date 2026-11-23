@@ -621,7 +621,7 @@ class expr_bool_op final : public statement {
         throw compile_error{
             constant.node->tok(),
             std::format("constant {} does not fit {} of type {}",
-                        in_quotes(std::format("{}", value)),
+                        in_quotes(trimmed_source(*constant.node)),
                         in_quotes(trimmed_source(typed)),
                         in_quotes(typed_type.name()))};
     }
