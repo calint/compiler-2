@@ -932,10 +932,13 @@ class machine {
     virtual auto address_of(const emit_site site, const operand& dst,
                             const operand& address) -> void = 0;
 
+    // 'dst' becomes 'dst' and, or, xor 'src', neither a 'bool'; 'src' may be
+    // an immediate or wider, from the argument of a conversion
     virtual auto bitwise(const emit_site site,
                          const arithmetic_operator operation,
                          const operand& dst, const operand& src) -> void = 0;
 
+    // an unconditional jump to the label 'target'
     virtual auto branch(const size_t indent, const std::string_view target)
         -> void = 0;
 
@@ -992,6 +995,9 @@ class machine {
     // after it leaves none; a backend without an image has nothing to remove
     virtual auto remove_image() const -> void {}
 
+    // the return of a noinline body to its caller, at a 'return' or the end
+    // of the body; the caller restores the registers it saved, a backend that
+    // saved the return address restores it here
     virtual auto return_function(const size_t indent) -> void = 0;
 
     // an enabled check makes a count below zero or not below the width of the
@@ -1011,6 +1017,8 @@ class machine {
         const std::function_ref<std::string(std::string_view)> add_constant)
         -> void = 0;
 
+    // negates or complements 'dst' in place; 'check' tests a negation of the
+    // minimum of the width
     virtual auto unary(const emit_site site,
                        const arithmetic_operator operation, const operand& dst,
                        const runtime_check& check) -> void = 0;

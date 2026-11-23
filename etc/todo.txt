@@ -730,6 +730,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     does not fit", "'T' is a type, not a function", "generic type 'box'
     is not a type"); 'label_lines()' is built twice and 'layout_image()'
     three times after the jumps are resolved
+    => 2026-11-23: 'bitwise', 'branch', 'return_function' and 'unary' have
+       their comment ('address_of' had one); the label of 'f<int>' is the
+       round 444 note on the name of the default type; open: the scope of
+       'check_bounds', 'array_copy' of a constant 0, the instance messages
+       and the repeated layouts
 [p] easy: need approval (round 418, the options) 'check_default_stack_fits'
     in 'src/main.cpp' (12 lines) is a special case for '--memory' below
     the default stack; a neutral message in
