@@ -504,17 +504,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        dead comparison still jumps to the label of the next branch;
        the fix needs the comparison after a call that never returns
        not to be emitted (the limit of docs 8.3) or the label kept
-[ ] easy: (round 435, a walk of docs chapters 4, 5, 8 and 9)
-    1. 5.2 holds dated measurements: "10 of the 7086 of roome on
-       rv32i-fpga" (today 7104 by default, 7089 with
-       '--versions=nested', 15 apart), "test 1698 takes about 12 s"
-       (10.1 s today, also in the header of '1698.baz')
-    2. 4.1 "an error in the body carries that call as a frame": a
-       constant index past a local array in a noinline body without
-       array parameters is reported without the frame; cause not traced
-    3. 'qa/fuzz/fuzz-compiler.py' and 'qa/fuzz/fuzz-options.py' hold
-       the stack and frame codes (250, 254) as literals instead of
-       reading 'fuzzlib.PANIC_CODE'
 [ ] easy: (round 435, bug hunt of the rv32i backend) 'x == 2048' as a
     stored 'bool' is 'li; xor; sltiu' where 'addi -2048; sltiu' does;
     only this constant gains

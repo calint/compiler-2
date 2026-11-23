@@ -1484,7 +1484,9 @@ address    | result address         |    the callee's frame base
 The body is compiled for the first call that needs it. An error in the body
 carries that call as a frame ('noinline_body::call_tk', added by
 'stmt_def_func::with_call_frame_on_error'), so it points both at the call
-and at the line in the body. A body with array parameters is also
+and at the line in the body; an error the parse finds, e.g. a constant index
+past a local array, is reported before any call and has no frame. A body with
+array parameters is also
 checked without its calls; one without them was checked as it was emitted
 (1.5).
 
@@ -1562,7 +1564,7 @@ cost 0.17% of the rv32i code of the tests (175164 to 175460 instructions, with
 their options and with '--checks=noub'), 1 instruction less on x86_64, and 10
 of the 7086 of roome on rv32i-fpga (decided 2026-11-07). '--versions=nested'
 measures every choice, also those inside a version, for the smaller code at
-that compile time: test 1698 takes about 12 s with it, and 2036 (14 nested
+that compile time: test 1698 takes seconds with it, and 2036 (14 nested
 calls) under 1 s, doubling per level; '--versions=last' compiles every choice
 too, to run each second version (5.4).
 

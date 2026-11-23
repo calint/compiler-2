@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 435, a walk of docs chapters 4, 5, 8 and 9)
+    1. 5.2 holds dated measurements: "10 of the 7086 of roome on
+       rv32i-fpga" (today 7104 by default, 7089 with
+       '--versions=nested', 15 apart), "test 1698 takes about 12 s"
+       (10.1 s today, also in the header of '1698.baz')
+    2. 4.1 "an error in the body carries that call as a frame": a
+       constant index past a local array in a noinline body without
+       array parameters is reported without the frame; cause not traced
+    3. 'qa/fuzz/fuzz-compiler.py' and 'qa/fuzz/fuzz-options.py' hold
+       the stack and frame codes (250, 254) as literals instead of
+       reading 'fuzzlib.PANIC_CODE'
+    => done (2026-11-23): 1: docs 5.2 and test 1698 say "seconds"
+       (the roome count is the record of the 2026-11-07 decision); 2:
+       the cause is the parse, which rejects a constant index before any
+       call, docs 4.1 say so; 3: both fuzzers read 'fl.PANIC_CODE'
 [x] easy: (round 436, a walk of 'stmt_def_func.hpp' and 'generics.hpp')
     1. the listing comment of a generic instance prints 'T' without
        the '<T type>' that declares it

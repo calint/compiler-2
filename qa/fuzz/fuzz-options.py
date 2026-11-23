@@ -230,7 +230,9 @@ def judge(outcome, expected, name, options, description, found):
         return
     if outcome.kind == "exit" and outcome.code == expected:
         return
-    if outcome.kind == "panic" and outcome.code in (250, 254) and \
+    overflows = (fl.PANIC_CODE["stack overflow"],
+                 fl.PANIC_CODE["frame overflow"])
+    if outcome.kind == "panic" and outcome.code in overflows and \
             small_memory(options):
         return
     # with the frame or stack check turned off a small memory may overflow

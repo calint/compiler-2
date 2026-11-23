@@ -491,7 +491,7 @@ def is_default_width_output(x86_stdout, rv_stdout):
 
 def stack_difference(x86, rv):
     # recursion that is too deep ends differently on the targets
-    stack = (250, 254)
+    stack = (fl.PANIC_CODE["stack overflow"], fl.PANIC_CODE["frame overflow"])
     return (x86.kind == "signal" or rv.kind == "signal" or rv.code in stack
             or x86.code in stack)
 
