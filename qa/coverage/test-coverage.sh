@@ -205,7 +205,10 @@ assemble_and_link() {
 # the uart has no end of input, so ctrl-d ends it like at a terminal and a
 # second one ends a last line without newline
 run_uart() {
-    { cat; printf '\x04\x04'; } | "$@"
+    {
+        cat
+        printf '\x04\x04'
+    } | "$@"
 }
 
 # a program that runs longer is stopped and exits with 124; '--foreground'
@@ -445,6 +448,12 @@ DIFFNOPT() {
 # argument, compiled for the target of the compiler with its defaults (no
 # checks), compared with 'NNN.TARGET.KIND'; the 'OPTS' of the case are ignored
 LISTING() {
+    # the listing is compiled without options, an 'OPTS' prefix would be
+    # ignored; read before 'begin_case' clears it
+    if [[ -n ${OPTS+set} ]]; then
+        echo "FAILED. case $SRC: 'LISTING' takes no 'OPTS'"
+        exit 1
+    fi
     begin_case
     local expected="$SRC.$COMPILER_MACHINE.$1"
     if skipped_with_versions; then

@@ -42,11 +42,13 @@ expect_exit_1() {
     [[ $exit_code -eq 1 ]] || return 1
 }
 
-# fails the case where a command must not succeed, naming the line of the
-# caller as the trap does, e.g. 'grep -Fq text out && fail'
-fail() {
-    echo "FAILED. line ${BASH_LINENO[0]}" >&2
-    exit 1
+# the last argument names a file that exists and in which 'grep' with the
+# other arguments finds nothing, e.g. 'lacks -F "global initializers" out';
+# 'grep -q ... && fail' would pass a missing file, where grep exits 2
+lacks() {
+    local file=${!#}
+    [[ -f $file ]] || return 1
+    ! grep -q "$@"
 }
 
 # runs the compiler with the argument '$1' and those after '$2', the expected
@@ -121,7 +123,7 @@ CLI_BINARY_NAME() {
     "$BIN" --target=rv32i-qemu 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ -s 0418-rv32i-qemu.bin ]]
-    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin 0418.baz >out 2>err
+    baz_at rv32i-qemu 0418.baz >out 2>err
     [[ ! -s err ]]
     cmp -s 0418-rv32i-qemu.bin gen-rv32i.bin
     cmp -s gen.s out
@@ -175,9 +177,9 @@ CLI_RELOADS() {
     echo -n "cli rv32i reload after a jump to the next line: "
     # the 'j' to the end of a folded 'if' falls through, removed by the jump
     # optimizations, so its label no longer keeps the load after the store
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin --nopt 1639.baz >gen.s 2>err
+    baz_at rv32i --nopt 1639.baz >gen.s 2>err
     [[ ! -s err ]]
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin 1639.baz >out 2>err
+    baz_at rv32i 1639.baz >out 2>err
     [[ ! -s err ]]
     grep -Fq '# removed reloads after stores: 0' gen.s
     grep -Fq '# removed reloads after stores: 1' out
@@ -205,7 +207,7 @@ CLI_RETESTS() {
 
 CLI_SHARED_BASE_COPY() {
     echo -n "cli rv32i copy between far variables through one base: "
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x40000 3135.baz >gen.s 2>err
+    baz_at rv32i --vars=0x40000 3135.baz >gen.s 2>err
     [[ ! -s err ]]
     local listing
     listing=$(sed 's/^[[:space:]]*//' gen.s)
@@ -221,7 +223,7 @@ CLI_ROUTINE_INDENT() {
     echo -n "cli rv32i routines indented like main: "
     local target
     for target in rv32i rv32i-qemu rv32i-fpga; do
-        "$BIN" --target="$target" --bin=gen-rv32i.bin --checks=noub,line 3136.baz >gen.s 2>err
+        baz_at "$target" --checks=noub,line 3136.baz >gen.s 2>err
         [[ ! -s err ]]
         grep -q '^\.Lbaz_multiply_checked:$' gen.s
         awk '/^main:$/ { in_main = 1; next }
@@ -374,11 +376,13 @@ CLI_FILE_ERRORS() {
     # and the message is read from a pipe, which has no limit
     rm -f gen-full.bin
     local message
+    local exit_code=0
     message=$(
         trap '' XFSZ
         ulimit -f 0
         "$BIN" --target=rv32i --bin=gen-full.bin 0015.baz 2>&1 >/dev/null
-    ) && fail
+    ) || exit_code=$?
+    [[ $exit_code -eq 1 ]]
     [[ $message == *"error: cannot write file 'gen-full.bin'"* ]]
     [[ ! -e gen-full.bin ]]
     # an image that cannot be opened is not the compiler's to remove
@@ -453,7 +457,7 @@ CLI_REGISTER_REPORT() {
     cmp -s -n "$(stat -c %s gen.s)" gen.s out
     grep -Fq "register use at the peak" out
     grep -Fq "per callee, the most registers one call holds itself" out
-    grep -Fq "register use at the peak" gen.s && fail
+    lacks -F "register use at the peak" gen.s
     # a later '--report' replaces the earlier ones, an empty one turns them off
     "$BIN" --report=registers --report= 0825.baz >out 2>err
     cmp -s gen.s out
@@ -473,7 +477,7 @@ CLI_REGISTER_REPORT() {
     "$BIN" --report=registers 0136.baz >out 2>err
     grep -Fq "register use at the peak: 0 of" out
     grep -Eq '^; +0  main$' out
-    grep -Fq "global initializers" out && fail
+    lacks -F "global initializers" out
     # the total leaves out the registers the backend holds itself, 13 of the
     # 14 scratch registers on x86_64 and 29 of 30 on rv32i here
     "$BIN" --report=registers 0426.baz >out 2>err
@@ -496,8 +500,8 @@ CLI_SOURCE_LINE_ENDS() {
     sed 's/$/\r/' 0830.baz >gen-crlf.baz
     expect_exit_1 "$BIN" gen-crlf.baz >gen.s 2>err
     grep -Fq "is not a number" err
-    grep -q $'\r' err && fail
-    grep -Fq '\x0d' err && fail
+    lacks $'\r' err
+    lacks -F '\x0d' err
     # a tab stays a tab in front of the mark
     sed 's/^    /\t/' 0830.baz >gen-tab.baz
     expect_exit_1 "$BIN" gen-tab.baz >gen.s 2>err
@@ -650,7 +654,7 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     ./gen >out 2>&1 || exit_code=$?
     [[ $exit_code -eq 255 ]]
     grep -Fq 'panic: bounds at gen\x0aname.baz:4' out
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin --checks=upper,line "$name" >gen.s 2>err
+    baz_at rv32i --checks=upper,line "$name" >gen.s 2>err
     llvm-mc -triple=riscv32 -mattr=-m,-a,-f,-d,-c -filetype=obj gen.s -o gen.o
     # the locations of the register report name the file, also escaped
     printf 'func g(x i64) res i64 {\n    res = x * 2 + 1\n}\n' >gen-lib.baz
@@ -658,7 +662,7 @@ CLI_CONTROL_BYTE_FILE_NAME() {
     printf '    exit(g(a) + g(a + 1) * (a + 2))\n}\n' >>"$name"
     "$BIN" --report=registers "$name" >gen.s 2>err
     grep -Fq 'gen\x0aname.baz:' gen.s
-    grep -q '^; name.baz' gen.s && fail
+    lacks '^; name.baz' gen.s
     rm -f "$name" gen-lib.baz gen.o gen
     echo ok
 }
@@ -815,20 +819,20 @@ CLI_LONG_ARRAY_LOWER_BOUND() {
     echo -n "cli rv32i lower bound of an array past 2^31 elements: "
     printf 'func main() {\n    var big = i8[2200000000]\n    var i = 2\n' >gen-long.baz
     printf '    big[i] = 1\n    exit(big[i])\n}\n' >>gen-long.baz
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
+    baz_at rv32i --vars=0x90000000 \
         --checks=upper,lower gen-long.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Eq '^ +blt t0, zero, baz_bounds_panic$' gen.s
     # the bound is exact: every negative index fails the unsigned compare of
     # an array of 2^31 - 1 elements, the index -2^31 passes that of 2^31 + 1
     sed -i 's/2200000000/2147483647/' gen-long.baz
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
+    baz_at rv32i --vars=0x90000000 \
         --checks=upper,lower gen-long.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fq 't0 lower bound covered by the unsigned upper bound' gen.s
-    grep -Eq '^ +blt t0, zero, baz_bounds_panic$' gen.s && fail
+    lacks -E '^ +blt t0, zero, baz_bounds_panic$' gen.s
     sed -i 's/2147483647/2147483649/' gen-long.baz
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin --vars=0x90000000 \
+    baz_at rv32i --vars=0x90000000 \
         --checks=upper,lower gen-long.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Eq '^ +blt t0, zero, baz_bounds_panic$' gen.s
@@ -846,7 +850,7 @@ CLI_LONG_ARRAY_UPPER_BOUND() {
     "$BIN" "${fpga[@]}" 2202.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -c 'upper bound: a 32-bit index is below the count$' gen.s) -eq 4 ]]
-    grep -Eq '^ +li t[0-9], 2147483664$' gen.s && fail
+    lacks -E '^ +li t[0-9], 2147483664$' gen.s
     "$BIN" "${fpga[@]}" 2203.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -Ec '^ +blt t[0-9], zero, 2f$' gen.s) -eq 3 ]]
@@ -864,7 +868,7 @@ CLI_NO_EXIT_ROUTINE() {
     for target in x86_64 rv32i; do
         baz_at "$target" gen-loop.baz >gen.s 2>err
         [[ ! -s err ]]
-        grep -Fq baz_exit gen.s && fail
+        lacks -F baz_exit gen.s
     done
     rm -f gen-loop.baz
     echo ok
@@ -873,24 +877,24 @@ CLI_NO_EXIT_ROUTINE() {
 CLI_FPGA_MEMORY() {
     echo -n "cli rv32i-fpga memory size: "
     local memory_size=$((0x800000)) stack_size=$((0x10000))
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 0418.baz >gen.s 2>err
+    baz_at rv32i-fpga 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     # the variables follow the image at the next 16 byte boundary
     local image_size vars_fit
     image_size=$(stat -c %s gen-rv32i.bin)
     vars_fit=$((memory_size - stack_size - (image_size + 15) / 16 * 16))
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=$vars_fit 0418.baz >gen.s 2>err
+    baz_at rv32i-fpga --vars=$vars_fit 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     rm -f gen-rv32i.bin
-    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=$((vars_fit + 16)) 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-fpga --vars=$((vars_fit + 16)) 0418.baz >gen.s 2>err
     [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
     grep -Fq "exceeds the $memory_size B of device memory" err
-    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=$((memory_size + 16)) 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-fpga --stack=$((memory_size + 16)) 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
     grep -Fq "use --help for usage information" err
     # a memory smaller than the default stack names '--memory', the stack was
     # not given
-    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0x1000 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-fpga --memory=0x1000 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4096 B is smaller than the default stack of 65536 B, give a smaller --stack" err
     # it is an option error, reported before the source is read
     expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x1000 missing.baz >gen.s 2>err
@@ -898,25 +902,25 @@ CLI_FPGA_MEMORY() {
     # an option the backend rejects also comes before reading the source
     expect_exit_1 "$BIN" --target=rv32i-fpga --stack=16 missing.baz >gen.s 2>err
     grep -Fq "invalid --stack" err
-    grep -Fq "cannot" err && fail
+    lacks -F "cannot" err
     # a stack larger than the memory is rejected before a stack check of a
     # 'noinline' call is generated with it
-    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack --stack=$((memory_size + 16)) 0981.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-fpga --checks=stack --stack=$((memory_size + 16)) 0981.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: $((memory_size + 16)) B exceeds the $memory_size B of device memory" err
     # the options are checked before the source, so an error in the source
     # does not hide a stack below what 'main' may use
-    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=16 0212.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-fpga --stack=16 0212.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 16 B is smaller than the 48 B" err
-    grep -Fq "'nope' not found" err && fail
+    lacks -F "'nope' not found" err
     # a size beyond the range of a number is out of range, not a non-number
     expect_exit_1 "$BIN" --target=rv32i-fpga --stack=99999999999999999999999 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: '99999999999999999999999' is out of range" err
     # a smaller memory moves the end of the stack and the limit of the vars
     local small_size=$((0x40000))
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size 0418.baz >gen.s 2>err
+    baz_at rv32i-fpga --memory=$small_size 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fq "load stack pointer to 0x4:0000" gen.s
-    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=$small_size --vars=$((small_size)) 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-fpga --memory=$small_size --vars=$((small_size)) 0418.baz >gen.s 2>err
     grep -Fq "exceeds the $small_size B of device memory" err
     local bad
     for bad in 0 100 0x100000000 0xfffff800 abc; do
@@ -930,12 +934,12 @@ CLI_FPGA_MEMORY() {
     expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x100000000 --stack=0x100001000 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --memory: 4294967296 B exceeds the 4294963200 B below the device addresses" err
     # the largest memory below the devices is accepted
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 0418.baz >gen.s 2>err
+    baz_at rv32i-fpga --memory=0xfffff000 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     # the stack and frame checks compare addresses unsigned, a stack limit at
     # 2 GiB or more is not negative; the emulator has too little memory to
     # run it
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0xfffff000 --stack=0x80000000 --checks=stack,frame 0974.baz >gen.s 2>err
+    baz_at rv32i-fpga --memory=0xfffff000 --stack=0x80000000 --checks=stack,frame 0974.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Eq "^ +bltu [a-z0-9]+, [a-z0-9]+, baz_stack_overflow$" gen.s
     grep -Eq "^ +bltu [a-z0-9]+, [a-z0-9]+, baz_frame_overflow$" gen.s
@@ -970,9 +974,9 @@ CLI_STACK_HANDLER() {
     for target in x86_64 rv32i; do
         baz_at "$target" --checks=stack 0981.baz >gen.s 2>err
         [[ ! -s err ]]
-        grep -Fq "stack overflow handler" gen.s && fail
+        lacks -F "stack overflow handler" gen.s
     done
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --checks=stack 0981.baz >gen.s 2>err
+    baz_at rv32i-fpga --checks=stack 0981.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fq "stack overflow handler (--checks=stack)" gen.s
     rm -f gen-rv32i.bin
@@ -991,23 +995,23 @@ CLI_VARS_RANGE() {
     # like the options the backend checks, before the source is read
     expect_exit_1 "$BIN" --vars=0x100000000 --target=rv32i missing.baz >gen.s 2>err
     grep -Fq "invalid --vars" err
-    grep -Fq "cannot" err && fail
+    lacks -F "cannot" err
     echo ok
 }
 
 CLI_QEMU_STACK() {
     echo -n "cli rv32i-qemu stack size: "
-    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000010 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-qemu --stack=0x100000010 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 4294967312 B exceeds the 132120576 B of device memory" err
     grep -Fq "use --help for usage information" err
     # the address space, one more than the largest 32-bit immediate
-    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x100000000 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-qemu --stack=0x100000000 0418.baz >gen.s 2>err
     grep -Fq "error: invalid --stack: 4294967296 B exceeds the 132120576 B of device memory" err
     grep -Fq "use --help for usage information" err
     # the 'virt' machine has 128 MiB, 126 MiB of it for the image
-    "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7d00000 0418.baz >gen.s 2>err
+    baz_at rv32i-qemu --stack=0x7d00000 0418.baz >gen.s 2>err
     [[ ! -s err ]]
-    expect_exit_1 "$BIN" --target=rv32i-qemu --bin=gen-rv32i.bin --stack=0x7e00000 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-qemu --stack=0x7e00000 0418.baz >gen.s 2>err
     grep -Fq "the stack 132120576 B, which exceeds the 132120576 B of device memory" err
     rm -f gen-rv32i.bin
     echo ok
@@ -1032,9 +1036,9 @@ CLI_SMALL_STACK() {
 # the version that holds fewer by default and the other one with 'last'
 CLI_VERSIONS() {
     echo -n "cli --versions: "
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 1213.baz >gen.s 2>err
+    baz_at rv32i-fpga 1213.baz >gen.s 2>err
     grep -Fxq "# max scratch registers in use: 15" gen.s
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=last 1213.baz >gen.s 2>err
+    baz_at rv32i-fpga --versions=last 1213.baz >gen.s 2>err
     grep -Fxq "# max scratch registers in use: 29" gen.s
     # 1661.baz: a call in a value stored to memory compiles in place without a
     # temporary, the version through a scratch register holds one across the
@@ -1048,11 +1052,11 @@ CLI_VERSIONS() {
     "$BIN" --vars=16 1661.baz >gen.s 2>err
     [[ ! -s err ]]
     # 0106.baz: choices nested in a version take the first unless 'nested'
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 0106.baz >gen.s 2>err
+    baz_at rv32i-fpga 0106.baz >gen.s 2>err
     grep -Fq "kept the first of two versions, inside a version" gen.s
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --versions=nested 0106.baz >gen.s 2>err
+    baz_at rv32i-fpga --versions=nested 0106.baz >gen.s 2>err
     [[ ! -s err ]]
-    grep -Fq "inside a version" gen.s && fail
+    lacks -F "inside a version" gen.s
     echo ok
 }
 
@@ -1078,7 +1082,7 @@ CLI_PADDING_ZERO_BY_TARGET() {
     [[ ! -s err ]]
     [[ $(grep -c "zero instance for its padding: 48 B" gen.s) -eq 1 ]]
     [[ $(grep -c "zero padding" gen.s) -eq 0 ]]
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 1275.baz >gen.s 2>err
+    baz_at rv32i-fpga 1275.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -c "zero instance for its padding" gen.s) -eq 0 ]]
     [[ $(grep -c "zero padding: 3 B" gen.s) -eq 6 ]]
@@ -1091,7 +1095,7 @@ CLI_SHARED_STRING_CONSTANT() {
     "$BIN" --target=x86_64 1636.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -c '^str\.' gen.s) -eq 1 ]]
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin 1636.baz >gen.s 2>err
+    baz_at rv32i-fpga 1636.baz >gen.s 2>err
     [[ ! -s err ]]
     [[ $(grep -c '^str\.' gen.s) -eq 1 ]]
     echo ok
@@ -1143,7 +1147,7 @@ CLI_REPEATED_OPTIONS() {
     [[ -s gen-rv32i.bin && ! -e gen-other.bin ]]
     "$BIN" --sdcard=other.img --sdcard=last.img 1048.baz >gen.s 2>err
     grep -Fq "last.img" gen.s
-    grep -Fq "other.img" gen.s && fail
+    lacks -F "other.img" gen.s
     rm -f gen-rv32i.bin
     echo ok
 }
@@ -1174,10 +1178,10 @@ CLI_TARGET_OPTIONS() {
     # the targets that read them accept them, 1048 calls the sector functions
     "$BIN" --sdcard=other.img 1048.baz >gen.s 2>err
     grep -Fq "other.img" gen.s
-    "$BIN" --target=rv32i --bin=gen-rv32i.bin --sdcard=other.img 1048.baz >gen.s 2>err
+    baz_at rv32i --sdcard=other.img 1048.baz >gen.s 2>err
     grep -Fq "other.img" gen.s
     "$BIN" --stack=0x10000 --target=rv32i-qemu --bin=gen-rv32i.bin 0418.baz >gen.s 2>err
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --stack=0x10000 --memory=0x100000 0418.baz >gen.s 2>err
+    baz_at rv32i-fpga --stack=0x10000 --memory=0x100000 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     echo ok
 }
@@ -1215,7 +1219,7 @@ CLI_REGISTER_REPORT_COUNTS() {
     # 2475.baz: the peak of 0 registers is in 'main' alone
     "$BIN" --report=registers 2475.baz >out 2>err
     grep -Eq '^; +0  main$' out
-    grep -Fq "h called at" out && fail
+    lacks -F "h called at" out
     # 0753.baz: the callees and the saved registers in descending order, equal
     # counts by name
     "$BIN" --report=registers 0753.baz >out 2>err
@@ -1229,9 +1233,9 @@ CLI_REGISTER_REPORT_COUNTS() {
 # memory with a smaller stack given is accepted
 CLI_MEMORY_DEFAULT_STACK() {
     echo -n "cli rv32i-fpga memory and the default stack: "
-    expect_exit_1 "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --memory=0x10000 0418.baz >gen.s 2>err
+    expect_exit_1 baz_at rv32i-fpga --memory=0x10000 0418.baz >gen.s 2>err
     grep -Fq "and the stack 65536 B, which exceeds the 65536 B of device memory" err
-    "$BIN" --target=rv32i-fpga --bin=gen-rv32i.bin --vars=0x1000 --memory=0x8000 --stack=0x1000 0418.baz >gen.s 2>err
+    baz_at rv32i-fpga --vars=0x1000 --memory=0x8000 --stack=0x1000 0418.baz >gen.s 2>err
     [[ ! -s err ]]
     rm -f gen-rv32i.bin
     echo ok

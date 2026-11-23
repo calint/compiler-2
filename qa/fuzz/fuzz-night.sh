@@ -14,14 +14,14 @@ stop=$(($(date +%s) + hours * 3600))
 mkdir -p findings
 log=findings/night.log
 stamp=findings/.night-start
-: > "$stamp"
+: >"$stamp"
 
 echo "night run: $hours hours from $(date), first seed $seed" | tee -a "$log"
 round=0
 while [ "$(date +%s)" -lt "$stop" ]; do
     scale=$((1 + round % 3))
     echo "=== round $round scale $scale seed $((seed + round)) $(date)" | tee -a "$log"
-    ./fuzz-all.sh "$scale" $((seed + round)) >> "$log" 2>&1 || true
+    ./fuzz-all.sh "$scale" $((seed + round)) >>"$log" 2>&1 || true
     round=$((round + 1))
 done
 

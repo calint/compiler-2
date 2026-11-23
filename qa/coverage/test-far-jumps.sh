@@ -235,7 +235,6 @@ fi
 reach=$((1 << 20))
 wanted=($((reach - 8)) $((reach - 4)) $((reach - 4)) $reach)
 
-
 echo -n "far jumps conditional at the reach of jal rv32i: "
 generate_at_spans
 mapfile -t jumps < <(cut -d ' ' -f 3 far.labels)

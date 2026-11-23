@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 448, design of the test harness) 'test-cli.sh' still
+    has 'grep -Fq x file && fail', which passes when the file is
+    missing (grep exits 2), and 'message=$(...) && fail' in
+    'CLI_FILE_ERRORS', which accepts any non-zero exit; 'LISTING'
+    ignores an 'OPTS' prefix silently (no case uses one); about 40
+    hand-written '--target=rv32i* --bin=gen-rv32i.bin' where 'baz_at'
+    would do; 'check-all.sh' has no shell check ('shfmt -i 4 -d')
+    => done (2026-11-23): 'lacks' fails on a missing file or a match (15
+       'grep -q ... && fail' and 'fail' itself gone); the full-disk
+       message requires exit code 1; 'LISTING' rejects an 'OPTS' prefix;
+       39 compiles use 'baz_at'; 'check-all.sh' runs 'shfmt -i 4 -d'
+       over the tracked shell scripts but the tree-sitter grammar (four
+       scripts formatted), and says so when 'shfmt' is missing
 [x] easy: (round 448, a walk of 'machine_rv32i.hpp') a run-time count
     walk ('walk_runtime_count') whose access width is no wider than
     the alignment of the element type has a byte count that is a

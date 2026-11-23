@@ -358,13 +358,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'compare-listings.sh', the list of 'test-all.sh') and the rule
     that rv32i targets take '--bin' ('IMAGE_OPTS', 'baz_at',
     'base_image')
-[ ] easy: (round 448, design of the test harness) 'test-cli.sh' still
-    has 'grep -Fq x file && fail', which passes when the file is
-    missing (grep exits 2), and 'message=$(...) && fail' in
-    'CLI_FILE_ERRORS', which accepts any non-zero exit; 'LISTING'
-    ignores an 'OPTS' prefix silently (no case uses one); about 40
-    hand-written '--target=rv32i* --bin=gen-rv32i.bin' where 'baz_at'
-    would do; 'check-all.sh' has no shell check ('shfmt -i 4 -d')
 [p] easy: (round 447, bug hunt of aliasing) need approval: a new
     fuzzer 'qa/fuzz/fuzz-alias.py', a byte model of the layout with
     value semantics and the overlap panic (copies, partial writes,
