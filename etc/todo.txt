@@ -681,6 +681,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     "'or' inverted shorthand" for a list of one element; docs 1.2 item 3
     says "also with '--nopt'" only at 'remove_reloads', 'remove_copies'
     and 'remove_retests' run too
+    => 2026-11-23: docs 1.2 say that three passes run with '--nopt'; the
+       rest is open
 [ ] easy: (round 421, a hunt of calls and a walk of the layout) the
     later-argument rule also rejects names whose value is taken at their
     place: 'f(la[l & 3], wm(l))', 'two(g0 + 0, wg())', 'ps[l &

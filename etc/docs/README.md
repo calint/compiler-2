@@ -234,11 +234,11 @@ Invariants the code relies on:
    read-only constants, the data and the variables.
 
 3. output ('machine::finish', then 'report_renderer', then 'write_assembly'):
-   the buffered lines get their jumps optimized (not with '--nopt'); then,
-   also with '--nopt', a load right after a store of its register to the
-   same address is removed ('assembler::remove_reloads'), on rv32i a
-   register copy is removed when its reads up to the next write of the
-   register in straight code can take the source
+   the buffered lines get their jumps optimized (not with '--nopt'); then
+   three passes run also with '--nopt': a load right after a store of its
+   register to the same address is removed ('assembler::remove_reloads'), on
+   rv32i a register copy is removed when its reads up to the next write of
+   the register in straight code can take the source
    ('assembler::remove_copies'), on x86_64 the test of what a 'setcc' just
    stored is removed, the branch after it takes the condition
    ('assembler::remove_retests'), and on rv32i the jumps that
