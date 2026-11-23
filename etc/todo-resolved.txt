@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 428, a hunt of the read-only constants and a walk of
+    docs chapters 2, 3 and 6) 'array_copy(a, b, f())' and
+    'arrays_equal(a, b, f())' with an inlined 'f' that zeroes a local
+    array of 55 bytes or more is rejected on x86_64 ("register rdi is
+    always used by the operation") and accepted on rv32i (the class of
+    the round 417 item); the least '--vars' of a program with a noinline
+    call differs between the targets for 'i8' variables; 'p = {1,
+    gety(p)}' says "'p' is read but has been overwritten" where 'gety'
+    reads one field, 3.9 and 8.3 state the whole-argument read only for
+    a parameter or a global passed on
+    => done (2026-11-23): docs 8.3 name the destination of a list passed
+       to a call in it ('p = {1, gety(p)}'); the 'rdi' of x86_64 and the
+       least '--vars' per target are the classes of chapter 8 items 3
+       and 4
 [x] easy: (round 427, a hunt of the versions mechanism and a walk from
     'main.cpp' to the files) 'data_table::add_constant' searches all
     constants by bytes, compile time is quadratic in distinct read-only

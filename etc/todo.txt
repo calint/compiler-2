@@ -654,16 +654,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        lines fewer; 'roome/src/main.baz' then compiles in 0.075 s
        instead of 0.060 s on rv32i-fpga (best of 7); docs 1.4 describes
        the skip as intended
-[ ] easy: (round 428, a hunt of the read-only constants and a walk of
-    docs chapters 2, 3 and 6) 'array_copy(a, b, f())' and
-    'arrays_equal(a, b, f())' with an inlined 'f' that zeroes a local
-    array of 55 bytes or more is rejected on x86_64 ("register rdi is
-    always used by the operation") and accepted on rv32i (the class of
-    the round 417 item); the least '--vars' of a program with a noinline
-    call differs between the targets for 'i8' variables; 'p = {1,
-    gety(p)}' says "'p' is read but has been overwritten" where 'gety'
-    reads one field, 3.9 and 8.3 state the whole-argument read only for
-    a parameter or a global passed on
 [ ] easy: (round 426, a hunt of the lexical layer and a walk of the
     scripts) 'void' is a reserved built-in type name ("'void' is a
     built-in type") that the docs do not list among the reserved names;

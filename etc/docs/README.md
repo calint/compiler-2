@@ -2324,7 +2324,10 @@ message, x86_64 stops with a signal.
   method of it, reads it whole in its record (3.9), whatever the callee
   reaches of it: 'f(p mut point, q mut point)' that calls 'gety(p)' or
   'sety(p)' and writes 'q.x' is rejected at 'f(a, a)', as is 'f(g)' of an
-  'f(p mut point)' that calls 'sety(p)' and writes 'g.x'. The parse records
+  'f(p mut point)' that calls 'sety(p)' and writes 'g.x'; so is the
+  destination of a list passed to a call in it: 'p = {1, gety(p)}' says "'p'
+  is read but has been overwritten in the same statement" though 'gety'
+  reads only 'p.y'. The parse records
   a read of each path it parses; deferring it until the call knows the path
   is passed in place complicates the parse.
 - Definite assignment does not count the writes of a call, e.g.
