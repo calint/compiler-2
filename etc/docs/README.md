@@ -533,7 +533,10 @@ max body vars size             the most bytes of variables in use while one
                                body is compiled: the globals with 'main' or
                                with one noinline body, inlined calls included;
                                the frames of noinline calls stack at run time,
-                               '--checks=frame' checks that they fit
+                               '--checks=frame' checks that they fit; not the
+                               least '--vars': the check of a function has a
+                               frame like a noinline body, not counted here
+                               (1.5 item 3)
 instructions                   the machine instructions of the code
 ```
 

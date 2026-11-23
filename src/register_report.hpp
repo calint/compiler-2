@@ -88,7 +88,8 @@ struct register_use_report final {
             "",
             std::format("these frames are not noinline, making one noinline "
                         "starts its body with all {} registers free and "
-                        "saves the registers held above it around the call:",
+                        "saves the registers held above it around the call, "
+                        "as estimated from the inlined code:",
                         noinline_register_total),
             "",
             std::format("  {}  {}  candidate frame", inside_heading,
@@ -393,7 +394,7 @@ class register_reporter final {
         std::vector<std::string> lines{
             "",
             "calls of functions with a body of their own save the registers "
-            "held at the call",
+            "held at the call, in a noinline body also its frame base",
             "",
             "  saved  calls  callee, most saved at",
         };

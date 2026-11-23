@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: (round 440, design of the rv32i backend) the handling of a
+    register operated with itself ('emit_checked_add_subtract' "the
+    value's own register", 'load_helper_arguments', 'load_operand'
+    with a register source) has 0 hits in the three rv32i suites, the
+    front end copies the left operand first; no rule of the interface
+    states it, so it stays
+    => discarded (2026-11-23): the item's own verdict, the backend keeps
+       the case since no rule of the interface excludes it
+[x] easy: (round 440, bug hunt of calls) a mutant where
+    'call_site::has_result_temporary' is false for an inlined call
+    passed 550 generated programs; a hand program catches it: an
+    inlined 'f' passes 'res' to a noinline 'g(x mut i32)' that writes
+    it, called as 'a[f(l0) & 3]' (register destination); whether a
+    test of the suite covers this is not measured
+    => done (2026-11-23): measured, the suite covers it: the mutant
+       (false for every inlined call) fails case 1682 on x86_64 and
+       rv32i-fpga (exit 1 instead of 11)
 [x] easy: (round 441, a walk of 'ident_info.hpp') the names
     'var_address::by_call' and 'is_address_by_call' are not exact for
     a destination address that an assignment computed; "computed"

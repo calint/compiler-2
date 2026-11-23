@@ -15,7 +15,8 @@ register use at the failure: 2 of 14 registers live, 2 named by instructions
           rax 4:13 (named)
 
 these frames are not noinline, making one noinline starts its body with all 13
-registers free and saves the registers held above it around the call:
+registers free and saves the registers held above it around the call, as
+estimated from the inlined code:
 
   held inside  saved at the call  candidate frame
             1                  1  g

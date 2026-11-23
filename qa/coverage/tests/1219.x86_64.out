@@ -26,7 +26,8 @@ register use at the failure: 13 of 13 registers live
      0  sum called at 10:11
 
 these frames are not noinline, making one noinline starts its body with all 13
-registers free and saves the registers held above it around the call:
+registers free and saves the registers held above it around the call, as
+estimated from the inlined code:
 
   held inside  saved at the call  candidate frame
             0                 13  sum

@@ -17,7 +17,8 @@ register use at the peak: 10 of 14 registers live
           rdx 11:25
 
 these frames are not noinline, making one noinline starts its body with all 13
-registers free and saves the registers held above it around the call:
+registers free and saves the registers held above it around the call, as
+estimated from the inlined code:
 
   held inside  saved at the call  candidate frame
             6                  4  k
@@ -32,7 +33,7 @@ per callee, the most registers one call holds itself
     3      2  k
 
 calls of functions with a body of their own save the registers held at the
-call
+call, in a noinline body also its frame base
 
   saved  calls  callee, most saved at
       9      2  g 11:25

@@ -461,18 +461,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        as the plain call does: 'o.put(x, 1)' with an 'int' 'x' for an
        'i8' parameter says "cannot deduce" (the class of the round
        190 GJ item)
-[ ] easy: (round 440, bug hunt of calls) a mutant where
-    'call_site::has_result_temporary' is false for an inlined call
-    passed 550 generated programs; a hand program catches it: an
-    inlined 'f' passes 'res' to a noinline 'g(x mut i32)' that writes
-    it, called as 'a[f(l0) & 3]' (register destination); whether a
-    test of the suite covers this is not measured
-[ ] easy: (round 440, design of the rv32i backend) the handling of a
-    register operated with itself ('emit_checked_add_subtract' "the
-    value's own register", 'load_helper_arguments', 'load_operand'
-    with a register source) has 0 hits in the three rv32i suites, the
-    front end copies the left operand first; no rule of the interface
-    states it, so it stays
 [ ] easy: (round 439, bug hunt of the reported numbers)
     1. "max body vars size" is not the least '--vars': 24 of 490
        programs are rejected with '--vars' at the footer rounded up to
@@ -492,6 +480,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
        unchanged by skipped or unused code; two mutants pass the suite
        (own peak of the last call instead of the most; scope count
        not restored after a dry run or a dropped version)
+    => 2026-11-23: 1 to 3 done: docs 1.6 say the footer is not the least
+       '--vars' (1.5 item 3); the saved table says "in a noinline body
+       also its frame base"; the candidate table says "as estimated from
+       the inlined code"; 4, tests for the two mutants, is open
 [ ] easy: (round 439, design of the driver) both change text a user
     sees
     1. '--bin' with x86_64 says "target 'x86_64' does not read it",
