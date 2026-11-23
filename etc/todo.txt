@@ -329,20 +329,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     check the backend tests a zero divisor that is the constant -1 ('a %
     -1' on rv32i: 'beq a1, zero' after 'li a1, -1', 'machine::divide'
     or its 'runtime_check'); optimizations, not measured
-[ ] easy: (round 452, a walk of the bulk and io built-ins) with
-    '--checks=lower' alone 'array_copy(a, b, n)' tests the sign of 'n'
-    twice, once per array: 'count_lower_checked' applies only to a range
-    with a count (a run-time start), 'up_to(count)' of a constant start
-    has no field for it, against the note of 'check_ranges'; a sector
-    function over an 'i32' buffer emits 'li a2, 128' and 'slli a2, a2,
-    2' where 'li a2, 512' does
-    => round 560 prototype of the second: a constant count is copied as
-       its byte count into the count register and its range checked with
-       the immediate count (+4 lines): x86_64 77778 to 77760
-       instructions over the tests with 'upper,lower,line', rv32i-fpga
-       101091 to 101070, 386 compiles differ mostly in comments; patch
-       'scratchpad/r560-proposal-byte-count.patch' (made before the round
-       560 rename of 'check_range_from_start', to be redone)
 [ ] easy: (round 452, design of generic deduction) the checks of an
     argument that need the callee ('check_arguments': a 'mut' argument
     is a variable, a constant fits, a named type matches) run after the

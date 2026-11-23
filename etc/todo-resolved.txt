@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 452, a walk of the bulk and io built-ins) with
+    '--checks=lower' alone 'array_copy(a, b, n)' tests the sign of 'n'
+    twice, once per array: 'count_lower_checked' applies only to a range
+    with a count (a run-time start), 'up_to(count)' of a constant start
+    has no field for it, against the note of 'check_ranges'; a sector
+    function over an 'i32' buffer emits 'li a2, 128' and 'slli a2, a2,
+    2' where 'li a2, 512' does
+    => round 560 prototype of the second: a constant count is copied as
+       its byte count into the count register and its range checked with
+       the immediate count (+4 lines): x86_64 77778 to 77760
+       instructions over the tests with 'upper,lower,line', rv32i-fpga
+       101091 to 101070, 386 compiles differ mostly in comments; patch
+       'scratchpad/r560-proposal-byte-count.patch' (made before the round
+       560 rename of 'check_range_from_start', to be redone)
+    => done (2026-11-23): the sign of 'n' is tested once since clean-up
+       round 12; a known count of an io or sector call is loaded as its
+       byte count and its range checked with the count (the round 560
+       prototype redone on 'move_to_start'): 'li a2, 512' for a sector of
+       'i32'; with 'upper,lower,line' rv32i-fpga 7 cases -21
+       instructions, x86_64 unchanged
 [x] easy: (round 393) a reviewer stumbles on: '.gitignore' does not cover
     the outputs of the README's first program ('hello', 'hello.s',
     'hello-without-comments.s'); 'scripts/perf.sh'

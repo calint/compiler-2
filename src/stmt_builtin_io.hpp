@@ -351,30 +351,39 @@ class stmt_builtin_io final : public statement {
         // count, which the range check needs
         buffer.ident->load_address(tc, tok(), buffer_reg);
 
-        const std::optional<int64_t> known_count{
-            constant_count(tc, buffer_info),
-        };
+        const size_t element_size_bytes{buffer_info.type_ref().size_bytes()};
+        const type& default_type{tc.builtins().default_type()};
 
-        compile_count(tc, count, known_count);
+        // a known count is loaded as its byte count, its range checked with
+        // the count itself
+        if (const std::optional<int64_t> known_count{
+                constant_count(tc, buffer_info),
+            }) {
 
-        const operand checked_count{
-            known_count
-                ? operand::imm(*known_count, tc.builtins().default_type())
-                : count,
-        };
+            const int64_t known_size_bytes{
+                *known_count * static_cast<int64_t>(element_size_bytes),
+            };
 
-        move_to_start(tc, buffer_reg, checked_count, buffer_info);
+            x.copy_value({tok(), tc.indent()}, count,
+                         operand::imm(known_size_bytes, default_type));
+
+            move_to_start(tc, buffer_reg,
+                          operand::imm(*known_count, default_type),
+                          buffer_info);
+
+            return;
+        }
+
+        compile_count(tc, count);
+
+        move_to_start(tc, buffer_reg, count, buffer_info);
 
         // the count becomes the byte count
-        x.scale_index({tok(), tc.indent()}, count,
-                      buffer_info.type_ref().size_bytes());
+        x.scale_index({tok(), tc.indent()}, count, element_size_bytes);
     }
 
-    // without a count the whole array is transferred, a sector function
-    // transfers the elements of one sector, see 'constant_count'
-    auto compile_count(compile_toc& tc, const operand& count,
-                       const std::optional<int64_t> known_count) const -> void {
-
+    // a run-time count argument; without one the array length is not known
+    auto compile_count(compile_toc& tc, const operand& count) const -> void {
         if (const expr_any* const count_arg{count_argument()}) {
             count_arg->compile(tc, destination::of_register(count));
             return;
@@ -385,10 +394,9 @@ class stmt_builtin_io final : public statement {
         // note: an unknown length is the check of a function without its
         //       calls or a body it checks, the code is discarded
 
-        const int64_t count_value{known_count.value_or(discarded_array_len)};
-
-        x.copy_value({tok(), tc.indent()}, count,
-                     operand::imm(count_value, tc.builtins().default_type()));
+        x.copy_value(
+            {tok(), tc.indent()}, count,
+            operand::imm(discarded_array_len, tc.builtins().default_type()));
     }
 
     // the count argument, else the elements of the array or of one sector,
