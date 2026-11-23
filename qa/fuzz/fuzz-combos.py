@@ -1678,7 +1678,7 @@ def calls_of(expr):
             stack.append(x.inner)
         elif isinstance(x, Index) and x.x is not None:
             stack.append(x.x)
-        elif isinstance(x, Get):
+        elif isinstance(x, (Get, ArrArg)):
             stack.append(x.place)
         elif isinstance(x, Elem):
             stack += [x.arr, x.index]

@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 464, the fuzzers) 'fuzz-combos.py' passes a global to a
+    'noinline' function that writes it ('work(loc, g)', 'work' calls
+    'bump()', which writes 'g'); every target rejects it ("may share
+    storage with the global 'g' that 'work' uses"), as the language
+    says, and the fuzzer reports 'combos-reject'; 'args_for' filters
+    on 'fn.uses | fn.writes', so the effects of 'work' lack 'g' when
+    its call is made; seed 464001 index 16, seed 409001 index 48, seed
+    474001
+    => done (2026-11-23): 'calls_of' descends into an 'ArrArg' like a
+       'Get', so the 'bump()' of 'depth(a[bump() & 1], 0)' in 'work'
+       counts; seeds 464001 index 16 and 409001 index 48 compile, 243
+       programs of three seeds have no rejection, 300 of seed 474001 run
+       with 0 mismatches
 [x] easy: (round 466, a walk of 'machine_rv32i.hpp') a negative constant
     factor is built as its positive and then negated: 'x * -3' is
     'slli', 'sub', 'sub zero' where 'slli t1, t0, 2' and 'sub t0, t0,
