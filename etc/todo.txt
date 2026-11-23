@@ -654,33 +654,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        lines fewer; 'roome/src/main.baz' then compiles in 0.075 s
        instead of 0.060 s on rv32i-fpga (best of 7); docs 1.4 describes
        the skip as intended
-[ ] easy: (round 426, a hunt of the lexical layer and a walk of the
-    scripts) 'void' is a reserved built-in type name ("'void' is a
-    built-in type") that the docs do not list among the reserved names;
-    U+FFF9 to U+FFFB, U+070F, U+13430 to U+1343F, U+16FE4 and U+1D159 are
-    shown raw in a message, outside the rule of 'is_escaped_code_point';
-    the unary operators of a constant apply at 64 bits, so 'p(- ~
-    -2147483649)' into an 'i32' is accepted and 'p(- - ~2147483647)'
-    rejected, both -2147483648; the fit of a call argument is reported
-    at the parse and that of a 'var' initializer at the compile, so a
-    later lexical error comes first; the failure messages of
-    'test-coverage.sh' name paths relative to 'qa/coverage'
-    ("tests/out"), which do not resolve from the root; 'test-coverage.sh',
-    'test-cli.sh' and the two far jump scripts reach files through an
-    absolute '$SCRIPT_DIR'; 'etc/tools.txt' has no 'llvm-objdump' line
-    (with the round 393 item)
-    => round 563: 'let kmin = -MAX - 1' and '-kmin' where the overflow
-       check is off are accepted on x86_64 (the 64-bit fold wraps 2^63)
-       and rejected on rv32i ("does not fit 'int'"), as 2^31 is held;
-       under 'noub' both reject
-    => 2026-11-23: the README lists the built-in names with 'void';
-       U+070F, U+FFF9 to U+FFFB, U+13430 to U+1343F, U+16FE4 and U+1D159
-       are escaped; 'etc/tools.txt' has 'llvm-objdump'; since clean-up
-       round 18 '-kmin' is rejected on x86_64 too and both 'p(...)' are
-       accepted; open: the fit of a call argument at the parse against a
-       'var' at the compile, the paths in the messages of
-       'test-coverage.sh' and its '$SCRIPT_DIR'
-
 [ ] easy: (round 425, a hunt of the input and output built-ins and a
     walk of the parser's dispatch) the -9 of a descriptor that is not
     served equals '-EBADF' of linux, so a 'read' that also served 1 or a

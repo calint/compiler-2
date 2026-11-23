@@ -180,7 +180,7 @@ verify_rv32i_image() {
     ld.lld -m elf32lriscv -T "$SCRIPT_DIR/rv32i-image.ld" -e _start -o gen-image.elf gen.o
     llvm-objcopy -O binary gen-image.elf gen-image.bin
     if ! cmp gen-image.bin gen-rv32i.bin; then
-        echo "FAILED. image differs from assembled 'tests/gen.s'. see: llvm-objdump -d tests/gen-image.elf"
+        echo "FAILED. image differs from assembled 'qa/coverage/tests/gen.s'. see: llvm-objdump -d qa/coverage/tests/gen-image.elf"
         exit 1
     fi
 }
@@ -256,7 +256,7 @@ compile_case() {
     local target=$2
     shift 2
     if ! "${COMPILE_TIMEOUT[@]}" "$BIN" "$SRC.baz" --target="$target" "${IMAGE_OPTS[@]}" "$@" 2>err >"$listing"; then
-        echo "compiler failed. see 'tests/err' and 'tests/$listing'" >&2
+        echo "compiler failed. see 'qa/coverage/tests/err' and 'qa/coverage/tests/$listing'" >&2
         exit 1
     fi
 }
@@ -289,7 +289,7 @@ check_output() {
     elif cmp -s out "$expected"; then
         echo ok
     else
-        echo "FAILED. output differs. see: diff tests/out tests/$expected"
+        echo "FAILED. output differs. see: diff qa/coverage/tests/out qa/coverage/tests/$expected"
         exit 1
     fi
 }
@@ -461,12 +461,12 @@ LISTING() {
     fi
     # 'UPDATE=1' writes the first one
     if [[ ! -e "$expected" && -z "${UPDATE:-}" ]]; then
-        echo "FAILED. no expected listing 'tests/$expected'"
+        echo "FAILED. no expected listing 'qa/coverage/tests/$expected'"
         exit 1
     fi
     compile_case gen.s "$COMPILER_MACHINE"
     if ! "$SCRIPT_DIR/listing.py" "$1" "$SRC.baz" "$COMPILER_MACHINE" <gen.s >out; then
-        echo "FAILED. see: tests/out"
+        echo "FAILED. see: qa/coverage/tests/out"
         exit 1
     fi
     check_output "$expected"
