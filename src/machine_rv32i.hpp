@@ -1627,7 +1627,8 @@ class machine_rv32i : public machine {
         load_helper_arguments(site, dst, src);
 
         if (check.enabled and routine == helper_routine::divide) {
-            check_divisor(site, dst.type_ref().size_bytes());
+            check_divisor(site, dst.type_ref().size_bytes(),
+                          immediate_value(src));
         }
 
         assembler_.call(site.indent, spec.label);
@@ -1706,10 +1707,25 @@ class machine_rv32i : public machine {
     }
 
     // jumps to the failure handler when the divisor in 'a1' is zero or the
-    // dividend in 'a0' is the minimum of its width and the divisor is -1;
+    // dividend in 'a0' is the minimum of its width and the divisor is -1; a
+    // constant divisor other than -1 passes, -1 tests the dividend only;
     // changes 'a2', which the helper changes too, so the call saved it
-    auto check_divisor(const emit_site site, const size_t dividend_size_bytes)
-        -> void {
+    auto check_divisor(const emit_site site, const size_t dividend_size_bytes,
+                       const std::optional<int32_t> constant_divisor) -> void {
+
+        const bool is_constant{constant_divisor.has_value()};
+
+        // note: a constant zero divisor is rejected at compile time
+        //       ('expr_arith::assert_constant_operand')
+
+        assert(not is_constant or *constant_divisor != 0);
+
+        if (is_constant and *constant_divisor != -1) {
+            comment(site, "constant divisor {} passes the division check",
+                    *constant_divisor);
+
+            return;
+        }
 
         const int64_t minimum{
             constant_arith::signed_minimum(dividend_size_bytes * bits_per_byte),
@@ -1717,17 +1733,21 @@ class machine_rv32i : public machine {
 
         comment(site, "division check begin");
 
-        comment(site, "zero divisor");
-
-        failure_tests tests{division_failure_, 3};
+        failure_tests tests{division_failure_, is_constant ? 1U : 3U};
         // note: 3 for the two 'fail_if' and the 'pass_if' below
 
-        fail_if(site, tests, op::beq, "a1", "zero");
+        if (not is_constant) {
+            comment(site, "zero divisor");
+            fail_if(site, tests, op::beq, "a1", "zero");
+        }
 
         comment(site, "minimum divided by -1 overflows");
 
-        assembler_.li(site.indent, "a2", -1);
-        pass_if(site.indent, tests, op::bne, "a1", "a2");
+        if (not is_constant) {
+            assembler_.li(site.indent, "a2", -1);
+            pass_if(site.indent, tests, op::bne, "a1", "a2");
+        }
+
         assembler_.li(site.indent, "a2", minimum);
 
         fail_if(site, tests, op::beq, "a0", "a2");

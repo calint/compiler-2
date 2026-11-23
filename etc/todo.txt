@@ -325,6 +325,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     check the backend tests a zero divisor that is the constant -1 ('a %
     -1' on rv32i: 'beq a1, zero' after 'li a1, -1', 'machine::divide'
     or its 'runtime_check'); optimizations, not measured
+    => 2026-11-23: the second is done: 'check_divisor' of both backends
+       lets a constant divisor other than -1 pass and tests only the
+       dividend for -1; with 'noub' rv32i-fpga 5 cases -32 instructions;
+       the merge of divisors under the overflow check is open
 [ ] easy: (round 452, design of generic deduction) the checks of an
     argument that need the callee ('check_arguments': a 'mut' argument
     is a variable, a constant fits, a named type matches) run after the

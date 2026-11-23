@@ -1200,9 +1200,25 @@ class machine_x86_64 final : public machine {
     }
 
     // a zero divisor and the minimum of the dividend width divided by -1 jump
-    // to the failure handler, the dividend is in 'rax'
+    // to the failure handler, the dividend is in 'rax'; a constant divisor
+    // other than -1 passes, -1 tests the dividend only
     auto check_divisor(const emit_site site, const operand& divisor,
-                       const size_t dividend_size_bytes) -> void {
+                       const size_t dividend_size_bytes,
+                       const std::optional<int64_t> constant_divisor) -> void {
+
+        const bool is_constant{constant_divisor.has_value()};
+
+        // note: a constant zero divisor is rejected at compile time
+        //       ('expr_arith::assert_constant_operand')
+
+        assert(not is_constant or *constant_divisor != 0);
+
+        if (is_constant and *constant_divisor != -1) {
+            comment(site, "constant divisor {} passes the division check",
+                    *constant_divisor);
+
+            return;
+        }
 
         const std::string not_minus_one{
             std::format(".Lbaz_division.{}", next_local_label_number()),
@@ -1210,15 +1226,19 @@ class machine_x86_64 final : public machine {
 
         comment(site, "division check begin");
 
-        comment(site, "zero divisor");
+        if (not is_constant) {
+            comment(site, "zero divisor");
 
-        cmp(site, divisor, immediate(0));
-        branch_to_failure(site, condition::e, division_failure_);
+            cmp(site, divisor, immediate(0));
+            branch_to_failure(site, condition::e, division_failure_);
+        }
 
         comment(site, "minimum divided by -1 overflows");
 
-        cmp(site, divisor, immediate(-1));
-        assembler_.jcc(site.indent, condition::ne, not_minus_one);
+        if (not is_constant) {
+            cmp(site, divisor, immediate(-1));
+            assembler_.jcc(site.indent, condition::ne, not_minus_one);
+        }
 
         // note: a compare with 1 overflows only for the minimum of the width,
         //       so the minimum needs no immediate, which takes a register for
@@ -1227,7 +1247,10 @@ class machine_x86_64 final : public machine {
         cmp(site, sized_register("rax", dividend_size_bytes), immediate(1));
 
         branch_to_failure(site, condition::o, division_failure_);
-        assembler_.label(site.indent, not_minus_one);
+
+        if (not is_constant) {
+            assembler_.label(site.indent, not_minus_one);
+        }
 
         comment(site, "division check end");
     }
@@ -1480,6 +1503,12 @@ class machine_x86_64 final : public machine {
 
         const operation_scope scope{*this};
 
+        // note: read before an immediate is moved to a register
+        const std::optional<int64_t> constant_divisor{
+            divisor.is_immediate() ? std::optional{divisor.immediate()}
+                                   : std::nullopt,
+        };
+
         operand qword_divisor{divisor};
 
         if (divisor.is_immediate() or
@@ -1491,7 +1520,8 @@ class machine_x86_64 final : public machine {
         }
 
         if (check.enabled) {
-            check_divisor(site, qword_divisor, dividend_size_bytes);
+            check_divisor(site, qword_divisor, dividend_size_bytes,
+                          constant_divisor);
         }
 
         assembler_.instruction(site.indent, op::cqo);
