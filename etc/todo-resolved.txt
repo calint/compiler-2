@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 466, a walk of 'machine_rv32i.hpp') a negative constant
+    factor is built as its positive and then negated: 'x * -3' is
+    'slli', 'sub', 'sub zero' where 'slli t1, t0, 2' and 'sub t0, t0,
+    t1' take 2; 'make_digit_sequence' always negates a negative
+    multiplier instead of a leading -1 digit; an optimization, not
+    measured
+    => done (2026-11-23): a negated sequence that ends in a subtraction
+       swaps its operands instead of a final 'sub zero'
+       ('is_negated_by_last_sub' in 'emit_shift_add_sequence'), e.g.
+       'x * -3' is 'slli t1, t0, 2' and 'sub t0, t0, t1'; 2 test cases
+       -3 instructions; factors -1100 to 1100 and six large negative
+       ones checked on rv32i against a model
 [x] easy: (round 502, shifts and unary operators) without the overflow
     check a literal with unary ops is checked by its value wrapped at 64
     bits: with '--checks=noub,-overflow' on x86_64 'r = v + -~9223372036854775807'

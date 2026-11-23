@@ -2618,7 +2618,16 @@ class machine_rv32i : public machine {
         // note: the top digit is 1 ('make_digit_sequence'), its term is the
         //       value itself
 
-        std::string_view shifted{loaded.value.register_name()};
+        // a negated sequence that ends in a subtraction swaps its operands
+        // instead, e.g. 'x * -3' is 'x - (x << 2)'; the shift of the zero
+        // bits below keeps the sign
+        const bool is_negated_by_last_sub{
+            sequence.negate and sequence.lowest != sequence.top and
+                sequence.digits.at(sequence.lowest) < 0,
+        };
+
+        const std::string_view value{loaded.value.register_name()};
+        std::string_view shifted{value};
         int pending_shift{};
 
         for (size_t bit{sequence.top}; bit != sequence.lowest;) {
@@ -2632,14 +2641,21 @@ class machine_rv32i : public machine {
             assembler_.slli(site.indent, partial.register_name(), shifted,
                             pending_shift);
 
+            const bool is_last{bit == sequence.lowest};
+
             const std::string_view sum{
-                bit == sequence.lowest ? loaded.value.register_name()
-                                       : partial.register_name(),
+                is_last ? value : partial.register_name(),
             };
 
-            assembler_.register_op(
-                site.indent, sequence.digits.at(bit) < 0 ? op::sub : op::add,
-                sum, partial.register_name(), loaded.value.register_name());
+            if (is_last and is_negated_by_last_sub) {
+                assembler_.sub(site.indent, sum, value,
+                               partial.register_name());
+            } else {
+                assembler_.register_op(site.indent,
+                                       sequence.digits.at(bit) < 0 ? op::sub
+                                                                   : op::add,
+                                       sum, partial.register_name(), value);
+            }
 
             shifted = partial.register_name();
             pending_shift = 0;
@@ -2647,13 +2663,11 @@ class machine_rv32i : public machine {
 
         // the zero bits below the lowest digit
         if (sequence.lowest != 0) {
-            assembler_.slli(site.indent, loaded.value.register_name(),
-                            loaded.value.register_name(), sequence.lowest);
+            assembler_.slli(site.indent, value, value, sequence.lowest);
         }
 
-        if (sequence.negate) {
-            assembler_.sub(site.indent, loaded.value.register_name(), "zero",
-                           loaded.value.register_name());
+        if (sequence.negate and not is_negated_by_last_sub) {
+            assembler_.sub(site.indent, value, "zero", value);
         }
     }
 
