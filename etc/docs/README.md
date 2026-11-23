@@ -2169,7 +2169,10 @@ What depends on the target is listed here, nothing else does:
    'a[i] << (1 + ...)' on x86_64 or the 'frame' check of a noinline call
    with many indexed arguments; also the registers an instruction fixes:
    'exit(int(arrays_equal(a[s], b, c)))' is rejected on x86_64, where
-   'arrays_equal' needs the 'rdi' that 'exit' holds; and where an inlined
+   'arrays_equal' needs the 'rdi' that 'exit' holds, and a check may hold
+   such a register too: 'array_copy(a[i], a[i << k], 2)' is accepted by
+   default and rejected with 'overlap', whose check holds the 'rcx' the
+   copy needs; and where an inlined
    recursion that nests as deep at every call ends in the check of a body
    without a call (1.5 item 2): x86_64 runs out of registers at a level
    rv32i reaches, so an error at that level is accepted on x86_64 where

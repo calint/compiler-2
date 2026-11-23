@@ -504,9 +504,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        dead comparison still jumps to the label of the next branch;
        the fix needs the comparison after a call that never returns
        not to be emitted (the limit of docs 8.3) or the label kept
-[ ] easy: (round 435, bug hunt of the rv32i backend) 'x == 2048' as a
-    stored 'bool' is 'li; xor; sltiu' where 'addi -2048; sltiu' does;
-    only this constant gains
 [p] easy: (round 434, design of the two widths of a type) need
     approval: a new file 'qa/lint/check-widths.py' that rejects a
     comparison of two 'size_bytes()' calls outside 'machine*.hpp' and
@@ -514,13 +511,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     exception; the front end has exactly that one today, so the lint
     starts clean and would have caught the four defects of rounds 432
     and 433
-[ ] easy: (round 434, bug hunt of the verdict against the options)
-    'array_copy(a[i], a[i << k], 2)' on x86_64 is accepted by default
-    and rejected with '--checks=overlap' or 'noub': "register rcx is
-    always used by the operation ... and is needed here too", an error
-    of kind 'source', not a limit; the class of test 1115 and of docs
-    chapter 8 item 3, whose example is about targets, not checks; the
-    docs could name the checks there
 [ ] easy: (round 434, a walk of the x86_64 backend)
     1. with 'noub', 'array_copy(a, b, n)' and 'arrays_equal(a, b, n)'
        of two arrays of one length emit 'cmp rcx, 8' and

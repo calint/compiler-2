@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 434, bug hunt of the verdict against the options)
+    'array_copy(a[i], a[i << k], 2)' on x86_64 is accepted by default
+    and rejected with '--checks=overlap' or 'noub': "register rcx is
+    always used by the operation ... and is needed here too", an error
+    of kind 'source', not a limit; the class of test 1115 and of docs
+    chapter 8 item 3, whose example is about targets, not checks; the
+    docs could name the checks there
+    => done (2026-11-23): docs chapter 8 item 3 names a check that holds
+       a register an instruction fixes, with this example; the rounds 435
+       rv32i item is discarded (one constant)
+[-] easy: (round 435, bug hunt of the rv32i backend) 'x == 2048' as a
+    stored 'bool' is 'li; xor; sltiu' where 'addi -2048; sltiu' does;
+    only this constant gains
+    => discarded (2026-11-23): 'comparison_immediate' would accept a
+       constant whose negation fits for equalities only and
+       'equality_tested_register' add an 'addi' path, two cases for the
+       one constant 2048
 [x] easy: (round 435, a walk of docs chapters 4, 5, 8 and 9)
     1. 5.2 holds dated measurements: "10 of the 7086 of roome on
        rv32i-fpga" (today 7104 by default, 7089 with
