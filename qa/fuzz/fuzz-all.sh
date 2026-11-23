@@ -20,7 +20,10 @@ for tool in nasm ld llvm-mc ld.lld llvm-objcopy qemu-riscv32 \
         exit 1
     }
 done
-[ -x ../../baz ] || ../../make.sh build
+# rebuilt when missing or older than a source, as the emulator below
+if [ ! -x ../../baz ] || [ -n "$(find ../../src -newer ../../baz -print -quit)" ]; then
+    ../../make.sh build
+fi
 # rebuilt when missing or older than a source
 if [ ! -x ../../fpga-emulator/osqa ] || [ -n "$(find ../../fpga-emulator/src -newer ../../fpga-emulator/osqa -print -quit)" ]; then
     ../../fpga-emulator/make.sh

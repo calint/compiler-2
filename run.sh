@@ -33,6 +33,12 @@ x86_64 | rv32i | rv32i-qemu | rv32i-fpga) ;;
     ;;
 esac
 
+# a missing source would leave an empty listing behind
+if [ ! -f "$SRC" ]; then
+    printf 'source not found: %s\n' "$SRC" >&2
+    exit 1
+fi
+
 # rv32i-qemu and rv32i-fpga emit rv32i assembly
 RV32I=
 case "$TARGET" in

@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 406, the test infrastructure) 'fix-source.py' would add
+    'const' to 'data' of 'lut::put' and 'structured' in 'assembler.hpp',
+    which are passed to 'std::move' (review before '--apply'), and prints
+    "added" on a dry run; a failed case leaves 'qa/coverage/tests/gen'
+    not ignored, 'run.sh' on a missing source leaves an empty 'NAME.s';
+    'fuzz-all.sh' rebuilds the asan compiler but not a stale './baz',
+    which stops 'fuzz-exprs.py' and shows as exit 1 at the end;
+    'test-far-jumps.sh' takes any argument but 'short' as the full run;
+    'README.md' and the docs say 'test-all.sh' "runs every test on every
+    target", its header names the far-jump runs it leaves out
+    => done (2026-11-23): 'fix-source.py' says "to add" on a dry run;
+       'run.sh' stops on a missing source; 'test-far-jumps.sh' rejects an
+       argument other than 'short'; 'fuzz-all.sh' rebuilds a stale
+       './baz'; found done: 'tests/gen*' is ignored, the README no longer
+       says 'test-all.sh' runs every test; the 'const' of moved values is
+       for the review before '--apply'
 [x] easy: (round 362) an error in an inlined method of a generic type that
     calls another method of the same receiver shows "instantiated by" its
     alias once per level ('stmt_def_func::add_call_frame' adds the receiver

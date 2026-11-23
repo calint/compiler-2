@@ -494,7 +494,8 @@ def main():
     for a in sorted(additions, key=lambda a: (a.file, a.line, a.column)):
         print(f"{a.file}:{a.line}: {a.text.strip()} {a.name}")
 
-    print(f"{len(nodiscards)} '[[nodiscard]]' and {len(consts)} 'const' added")
+    verb = "added" if apply else "to add"
+    print(f"{len(nodiscards)} '[[nodiscard]]' and {len(consts)} 'const' {verb}")
     if not apply:
         return
 

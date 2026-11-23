@@ -13,6 +13,12 @@
 #   short   only the 8.4 KiB bodies and the reach of a branch, which compile
 #           in seconds
 set -eE
+
+# the full run takes no argument, a mistyped 'short' would start it
+if [[ $# -gt 1 || ($# -eq 1 && $1 != short) ]]; then
+    echo "usage: $0 [short]" >&2
+    exit 2
+fi
 # names the failed command; one in a command substitution, where '-e' is off,
 # may fail on purpose, e.g. a 'grep -c' that counts 0
 trap '[[ $- != *e* ]] || echo "FAILED. line $LINENO: $BASH_COMMAND" >&2' ERR

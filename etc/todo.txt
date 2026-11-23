@@ -804,16 +804,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     "bytes: role-prefixed" of AGENTS.md covers them; the messages say
     "array size" where the built-in is 'array_length' (changing them
     changes test output)
-[ ] easy: (round 406, the test infrastructure) 'fix-source.py' would add
-    'const' to 'data' of 'lut::put' and 'structured' in 'assembler.hpp',
-    which are passed to 'std::move' (review before '--apply'), and prints
-    "added" on a dry run; a failed case leaves 'qa/coverage/tests/gen'
-    not ignored, 'run.sh' on a missing source leaves an empty 'NAME.s';
-    'fuzz-all.sh' rebuilds the asan compiler but not a stale './baz',
-    which stops 'fuzz-exprs.py' and shows as exit 1 at the end;
-    'test-far-jumps.sh' takes any argument but 'short' as the full run;
-    'README.md' and the docs say 'test-all.sh' "runs every test on every
-    target", its header names the far-jump runs it leaves out
 [ ] easy: user decision (round 406, the driver): a compile rejected before
     the image is opened leaves the image of an earlier compile in place
     (removing it deletes a file the compile did not touch); a default
