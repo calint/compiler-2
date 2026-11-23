@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 438, bug hunt of arithmetic and comparisons)
+    1. 'w = i8(b - 131)' with 'b' an 'i8' says "constant '131' does not
+       fit 'i8' (-128 to 127), 'i8(...)' wraps it": the hint names the
+       conversion the constant is already in; message only
+    2. the docs do not say that a constant prefix of a list is checked
+       like a constant expression: 'c = 100 + 100 + b' ('i8') is
+       rejected under the overflow check also in code that never runs,
+       'c = b + 100 + 100' is accepted
+    => done (2026-11-23): 2: docs 1.7 say that the constant elements
+       leading a list fold like a constant expression; 1 is left: the fit
+       check ('stmt_identifier::assert_constant_fits') gets only the
+       width, not whether a conversion wraps the list
 [x] easy: (round 439, design of the driver) both change text a user
     sees
     1. '--bin' with x86_64 says "target 'x86_64' does not read it",

@@ -488,14 +488,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        not restored ('restore_compile_state', 9 scopes instead of 3); the
        own-peak mutant is open, a second call of one callee with a
        smaller nonzero own peak was not found in ordinary code
-[ ] easy: (round 438, bug hunt of arithmetic and comparisons)
-    1. 'w = i8(b - 131)' with 'b' an 'i8' says "constant '131' does not
-       fit 'i8' (-128 to 127), 'i8(...)' wraps it": the hint names the
-       conversion the constant is already in; message only
-    2. the docs do not say that a constant prefix of a list is checked
-       like a constant expression: 'c = 100 + 100 + b' ('i8') is
-       rejected under the overflow check also in code that never runs,
-       'c = b + 100 + 100' is accepted
 [ ] easy: (round 437, a walk of 'stmt_if.hpp') 'stmt_if::compile'
     emits the conditions of the branches after a condition that never
     returns, e.g. 'if stop() == 1 { } else if a == 1 { } else { }' with

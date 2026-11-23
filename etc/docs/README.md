@@ -690,7 +690,11 @@ whether the value is known, then it checks the narrowing and folds at the
 use, so a value that does not fit is narrowed under every '--checks', not
 an overflow under 'overflow', and the error is the one the compile of
 variables reports, e.g. the '-p' of '-p << p' with 'p' an 'i8' of -128
-overflows before its count is outside the width (tests 7660 to 7663). A
+overflows before its count is outside the width (tests 7660 to 7663). The
+constant elements that lead a list are folded like a constant expression, so
+under the overflow check 'c = 100 + 100 + b' of an 'i8' 'c' is rejected at
+compile time, also in code that never runs, where 'c = b + 100 + 100' is
+checked at run time. A
 constant reaches a destination only through the list that holds it
 ('expr_arith', the immediate by 'constant_operand'); the nodes in a list
 never emit one.
