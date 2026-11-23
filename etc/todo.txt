@@ -65,10 +65,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     counter clear before its dry-run body (2 dead instructions per such
     loop, e.g. 'lea r15, [rbp]' and 'xor r14d, r14d'); dropping them means
     declaring the names without those steps, which complicates 'compile'
-[ ] easy: (round 572, tests) no test sees the zeroing of globals: every
-    target the suite runs starts the variable storage at zero, so dropping
-    the zeroing code of globals and their padding would pass; e.g. the
-    fpga emulator could fill the variable storage with a pattern first
 [p] easy: need approval (round 543, names) rename 'stmt_assign_var' to
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a

@@ -1,6 +1,15 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: (round 572, tests) no test sees the zeroing of globals: every
+    target the suite runs starts the variable storage at zero, so dropping
+    the zeroing code of globals and their padding would pass; e.g. the
+    fpga emulator could fill the variable storage with a pattern first
+    => discarded (2026-11-23): the fpga emulator starts its RAM at 0xff
+       ('fpga-emulator/src/main.cpp') and the variable storage lies past
+       the image, so rv32i-fpga runs see the zeroing: a compiler that
+       skips the zero fills of global initializers fails case 1216
+       (exit 255 instead of 7)
 [x] easy: (round 573, listings) 'held_registers' could write its "free
     ... register" comment at the place the register was allocated, as
     'operation_scope' does, and its 22 constructions would drop their
