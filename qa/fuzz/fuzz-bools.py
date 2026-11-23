@@ -11,7 +11,8 @@
 #
 #   bools-mismatch  a build ends differently from the model
 #   bools-reject    a generated program is rejected
-#   compiler-hang, invalid-asm, link-failure  see fuzz-compiler.py
+#   compiler-hang, compiler-crash, bad-diagnostic, invalid-asm, link-failure
+#                   see fuzz-compiler.py
 #
 # usage: fuzz-bools.py [count] [seed] [jobs]
 import random

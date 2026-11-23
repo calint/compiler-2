@@ -16,7 +16,8 @@
 #   data-mismatch   a build ends differently from the model
 #   data-reject     a generated program is rejected (the generator or the
 #                   compiler is wrong)
-#   compiler-hang, invalid-asm, link-failure  see fuzz-compiler.py
+#   compiler-hang, compiler-crash, bad-diagnostic, invalid-asm, link-failure
+#                   see fuzz-compiler.py
 #
 # usage: fuzz-data.py [count] [seed] [jobs]
 import random
