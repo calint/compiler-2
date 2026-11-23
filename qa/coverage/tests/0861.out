@@ -1,4 +1,4 @@
 
-0861.baz:5:1: unexpected '}'
+0861.baz:5:1: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got '}'
 }
 ^

@@ -1,6 +1,25 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 491, malformed programs) three messages differ from their
+    neighbors: 'dat a = a' says "'a' not found" where 'let a = a' and
+    'var a = a' say it is read in its own initializer; 'var func = 1' in a
+    generic body says "'func' can only be in global scope" instead of "'func'
+    is a keyword"; '{' at the top level says "unexpected '{'" where other
+    tokens say "expected a definition"; the locations are right
+    => done (2026-11-23): 'dat a = a' by clean-up round 6; a delimiter
+       at the top level says "expected a definition (...), got '{'" like
+       a word ('throw_expected_definition', 'tokenizer::delimiter_next'),
+       test 0861 with '}'; 'var func' in a skipped generic body is left:
+       the skip ends an unclosed body at a definition keyword
+       ('throw_unclosed_block') and cannot tell a name from a definition
+[x] easy: (round 462, design of conditions) the default type is reached
+    as 'x.default_type()' (a 'machine') and as
+    'tc.builtins().default_type()' in about 17 files; they return the
+    same type; one form across the sources is a consistency topic
+    => done (2026-11-23, clean-up round 8): the front end reads it from
+       'tc.builtins()' in every file; 'x.default_type()' is left to the
+       backends and 'builtin_roles' itself
 [x] easy: (round 527, the output side) three small differences in the
     listing text: on x86_64 a comment without a location starts one column
     later than one with a location ('comment_start' at indent above 0 would

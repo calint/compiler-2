@@ -556,6 +556,18 @@ inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
     return parse_name_statement(tc, tz, tk, tm);
 }
 
+// 'got' at 'src_loc_tk' where a definition must start, e.g. a word or the
+// '{' of a block at the top level
+[[noreturn]] inline auto throw_expected_definition(const token& src_loc_tk,
+                                                   const std::string_view got)
+    -> void {
+
+    throw compile_error{src_loc_tk,
+                        std::format("expected a definition ('func', 'type', "
+                                    "'var', 'let' or 'dat'), got {}",
+                                    got)};
+}
+
 // a definition of the top level, 'tk' is its first token; only definitions
 // are allowed there
 [[nodiscard]] inline auto parse_definition(parse_toc& tc, tokenizer& tz,
@@ -592,8 +604,5 @@ inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
     // e.g. the ';' after 'type point {x, y}'
     throw_if_ends_with_semicolon(tk);
 
-    throw compile_error{
-        tk, std::format("expected a definition ('func', 'type', 'var', "
-                        "'let' or 'dat'), got {}",
-                        described_token(tk))};
+    throw_expected_definition(tk, described_token(tk));
 }

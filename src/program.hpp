@@ -429,8 +429,14 @@ class program final {
         }
 
         // a delimiter is not a token, only the end of the source ends the
-        // definitions
-        file.tz.assert_not_at_delimiter();
+        // definitions, e.g. a '{' is no definition
+        if (const std::optional<std::string_view> delimiter{
+                file.tz.delimiter_next(),
+            }) {
+
+            throw_expected_definition(file.tz.peek_token_position(),
+                                      in_quotes(*delimiter));
+        }
 
         file.parsed.end_tk = tk;
     }

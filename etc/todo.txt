@@ -188,12 +188,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     fitting; with 'noub' both are rejected; no undefined behavior, the
     64-bit edge of "a literal is checked by its value"; a fix would check
     the negation of the 64-bit minimum as not fitting
-[ ] easy: (round 491, malformed programs) three messages differ from their
-    neighbors: 'dat a = a' says "'a' not found" where 'let a = a' and
-    'var a = a' say it is read in its own initializer; 'var func = 1' in a
-    generic body says "'func' can only be in global scope" instead of "'func'
-    is a keyword"; '{' at the top level says "unexpected '{'" where other
-    tokens say "expected a definition"; the locations are right
 [ ] easy: (round 466, a walk of 'machine_rv32i.hpp') a negative constant
     factor is built as its positive and then negated: 'x * -3' is
     'slli', 'sub', 'sub zero' where 'slli t1, t0, 2' and 'sub t0, t0,
@@ -230,10 +224,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     accepts '--vars=0x7ffffffffff0' (below 2^47) and the program ends
     with a segmentation fault at start (exit 139), the kernel cannot map
     it; '--vars=0x100000000' runs; rv32i accepts '--vars=0x80000000'
-[ ] easy: (round 462, design of conditions) the default type is reached
-    as 'x.default_type()' (a 'machine') and as
-    'tc.builtins().default_type()' in about 17 files; they return the
-    same type; one form across the sources is a consistency topic
 [ ] easy: (round 457, bug hunt of conversions) rv32i sign-extends a narrow
     register again after a unary op just before a byte store, which drops
     the bits anyway (the second 'slli'/'srai' pair at 's = -i8(b)' of

@@ -139,26 +139,31 @@ class tokenizer final {
     // definition starts with a delimiter; looks past the whitespace since a
     // skip stops before the closer that ends it, e.g. the ')' of '{ f() ) }'
     auto assert_not_at_delimiter() const -> void {
-        const tokenizer probe{past_whitespace()};
-
-        if (probe.is_eos()) {
-            return;
+        if (const std::optional<std::string_view> delimiter{delimiter_next()}) {
+            throw compile_error{
+                *this, std::format("unexpected {}", in_quotes(*delimiter))};
         }
-
-        // e.g. the '==' of 'exit(0) == 1', an operator is quoted whole
-        const std::string_view op{probe.operator_at_cursor()};
-
-        const std::string_view delimiter{
-            op.empty() ? src_.substr(probe.char_ix_, 1) : op,
-        };
-
-        throw compile_error{*this,
-                            std::format("unexpected {}", in_quotes(delimiter))};
     }
 
     // a marker at the cursor, without text or whitespace
     [[nodiscard]] auto cur_position_token() const -> token {
         return token::position(file_ix_, char_ix_, at_line_);
+    }
+
+    // the delimiter after the whitespace, none at the end of the source;
+    // an operator is whole, e.g. the '==' of 'exit(0) == 1'
+    [[nodiscard]] auto delimiter_next() const
+        -> std::optional<std::string_view> {
+
+        const tokenizer probe{past_whitespace()};
+
+        if (probe.is_eos()) {
+            return std::nullopt;
+        }
+
+        const std::string_view op{probe.operator_at_cursor()};
+
+        return op.empty() ? src_.substr(probe.char_ix_, 1) : op;
     }
 
     // the token of the character 'ch' when it is next, otherwise an error
