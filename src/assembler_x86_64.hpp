@@ -226,12 +226,13 @@ class assembler_x86_64 final : public assembler {
     auto comment(const size_t indent, const std::string_view text)
         -> void override {
 
+        // the marker is at the start of the line at any indent
         if (text.empty()) {
-            add_text(comment_start(indent));
+            add_text(std::string{comment_marker_});
             return;
         }
 
-        add_text(std::format("{} {}", comment_start(indent), text));
+        add_text(std::format("{}{}", comment_start(indent), text));
     }
 
     auto comment(const size_t indent, const std::string_view location,
@@ -623,12 +624,19 @@ class assembler_x86_64 final : public assembler {
         return text.substr(leading_whitespace(text).size());
     }
 
-    // the marker replaces the first spaces of the indentation, if any
+    // the marker replaces the first spaces of the indentation, or is
+    // followed by a space without one, so a text starts where a location does
     [[nodiscard]] static auto comment_start(const size_t indent)
         -> std::string {
 
         std::string text{indentation(indent)};
-        text.replace(0, comment_marker_.size(), comment_marker_);
+
+        if (text.size() <= comment_marker_.size()) {
+            text = std::format("{} ", comment_marker_);
+        } else {
+            text.replace(0, comment_marker_.size(), comment_marker_);
+        }
+
         return text;
     }
 

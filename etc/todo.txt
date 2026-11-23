@@ -139,6 +139,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     noinline, while 'array_length(b)' is accepted and
     'stmt_builtin_array_length::visit_operands' says the array is not
     read; the body summary would not record a read of the array there
+    => 2026-11-23: every parsed path records a read
+       ('stmt_identifier_impl.hpp', 'tc.record_use'); skipping it needs a
+       length-only kind of array argument through 'builtin_arguments' and
+       'stmt_identifier' (a third 'path_reach' with no storage) for one
+       rare false rejection; not done
 [ ] easy: (round 541, folding) a 'let' and a statement report different
     errors for one constant list with two faults: 'let k = i8(1) + 300 / 0'
     says "divisor must not be zero", 'x = i8(1) + 300 / 0' says "constant
@@ -156,20 +161,17 @@ is the test 'qa/coverage/tests/NNNN.baz'
     its result 'res'"; 'sector_read' fills the whole range or panics,
     unlike 'read', so 'ub_assigned' could count a constant range as set;
     a special case of the built-in in the walk
+    => 2026-11-23: it needs a 'trace_assignment' of 'stmt_builtin_io' that
+       reads the constant start argument, the element size and the sector
+       size into a byte range, and an entry of 'stmt_identifier' that
+       assigns a range other than 'accessed_bytes_' (the buffer is the
+       whole array, the fill one sector from the start); not done
 [ ] easy: (round 533, booleans) a stored list that ends in a computed
     'bool' ('var b = c and f(y)') computes it in a scratch register and
     copies it to a destination in memory; computing it there would pass the
     resolved 'destination' through six functions of 'expr_bool' down to
     'truth_test_operand' for one 'mov' and one scratch register per such
     list; not measured, a listing change
-[ ] easy: (round 527, the output side) three small differences in the
-    listing text: on x86_64 a comment without a location starts one column
-    later than one with a location ('comment_start' at indent above 0 would
-    align them, 2 lines of 'prog.s'); padding between dats is 'padding {}
-    B' and inside an instance 'zero padding: {} B'; the variables base the
-    backend holds is commented "allocate named register rbp" ('s0' on
-    rv32i) where 'register_pool::holder_kind' calls it a backend register;
-    each a report change of a few lines
 [p] easy: (round 513, the checks matrix) need approval: an 'array_copy'
     with constant starts and count whose destination starts inside its
     source can only panic with '--checks=overlap' (e.g. test 0971), like a

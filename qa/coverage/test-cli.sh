@@ -557,8 +557,8 @@ CLI_TYPE_LAYOUT_COMMENT() {
     # 2482.baz: 'b i32[3]' at offset 4 is an array of length 3
     "$BIN" 2482.baz >gen.s 2>err
     [[ ! -s err ]]
-    grep -Eq '^;\[2482.baz:4:1\] +a : +0 : +1 : +no : +$' gen.s
-    grep -Eq '^;\[2482.baz:4:1\] +b : +4 : +12 : +yes : +3$' gen.s
+    grep -Eq '^; \[2482.baz:4:1\] +a : +0 : +1 : +no : +$' gen.s
+    grep -Eq '^; \[2482.baz:4:1\] +b : +4 : +12 : +yes : +3$' gen.s
     echo ok
 }
 

@@ -2625,12 +2625,8 @@ class machine {
     // registers are released in reverse order of allocation, the comment
     // names the register as the report does
     auto pop_allocation(const emit_site site, const size_t index) -> void {
-        const bool is_scratch{
-            state_.registers.top().holder ==
-                register_pool::holder_kind::scratch,
-        };
-
-        comment(site, "free {} register {}", is_scratch ? "scratch" : "named",
+        comment(site, "free {} register {}",
+                holder_text(state_.registers.top().holder),
                 register_display_name(index));
 
         state_.registers.pop(index);
@@ -2645,7 +2641,8 @@ class machine {
         if (holder == register_pool::holder_kind::scratch) {
             comment(site, "allocate scratch register -> {}", register_name);
         } else {
-            comment(site, "allocate named register {}", register_name);
+            comment(site, "allocate {} register {}", holder_text(holder),
+                    register_name);
         }
 
         state_.registers.push({
@@ -2834,6 +2831,24 @@ class machine {
                         const size_t file_ix) -> std::string {
 
         return std::format("{}_file_{}", handler_label, file_ix);
+    }
+
+    // the word of the allocate and free comments, e.g. 'backend' for the
+    // variables base
+    [[nodiscard]] static auto
+    holder_text(const register_pool::holder_kind holder) -> std::string_view {
+
+        if (holder == register_pool::holder_kind::scratch) {
+            return "scratch";
+        }
+
+        if (holder == register_pool::holder_kind::named) {
+            return "named";
+        }
+
+        assert(holder == register_pool::holder_kind::backend);
+
+        return "backend";
     }
 
     // a location in the main file has no file index, so the label stays the

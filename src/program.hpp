@@ -376,7 +376,7 @@ class program final {
         // the zero padding places each dat at the offset the data table gave it
         for (const placed_dat& dat : tc.data().dats()) {
             if (dat.padding_bytes != 0) {
-                x.comment({token{}, 0}, "padding {} B", dat.padding_bytes);
+                x.comment({token{}, 0}, "padding: {} B", dat.padding_bytes);
                 x.emit_zero_data(dat.padding_bytes);
             }
 

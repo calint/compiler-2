@@ -1,6 +1,20 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 527, the output side) three small differences in the
+    listing text: on x86_64 a comment without a location starts one column
+    later than one with a location ('comment_start' at indent above 0 would
+    align them, 2 lines of 'prog.s'); padding between dats is 'padding {}
+    B' and inside an instance 'zero padding: {} B'; the variables base the
+    backend holds is commented "allocate named register rbp" ('s0' on
+    rv32i) where 'register_pool::holder_kind' calls it a backend register;
+    each a report change of a few lines
+    => done (2026-11-23): x86_64 'comment_start' ends in a space at any
+       indent, so a text starts where a location does (indent 0 is now
+       '; [loc]' like rv32i '# [loc]'), an empty comment is ';'; the
+       padding between dats is 'padding: {} B'; the variables base and
+       the frame base are "allocate backend register" ('holder_text');
+       test-cli 2482 reads '; ['; README.md written again
 [-] easy: (round 572, tests) no test sees the zeroing of globals: every
     target the suite runs starts the variable storage at zero, so dropping
     the zeroing code of globals and their padding would pass; e.g. the
