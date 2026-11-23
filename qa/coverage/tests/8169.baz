@@ -1,0 +1,18 @@
+# a method that calls another method of its receiver shows the alias that
+# made the type once
+type buf<n> {a i8[n]}
+
+func buf.k(x) res {
+    res = self.a[x]
+}
+
+func buf.m(x) res {
+    res = self.k(x)
+}
+
+type b = buf<200>
+
+func main() {
+    var q = b
+    exit(q.m(300))
+}

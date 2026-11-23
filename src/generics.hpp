@@ -365,6 +365,23 @@ class generic_trace final {
                                             "instantiated by"),
           } {}
 
+    // the frames that 'e' does not have yet
+    auto add_new_to(compile_error& e) const -> void {
+        for (const compile_error::call_frame& frame : frames_) {
+            const bool is_known{
+                std::ranges::any_of(
+                    e.call_frames,
+                    [&frame](const compile_error::call_frame& known) -> bool {
+                        return compile_error::call_frame::is_same(known, frame);
+                    }),
+            };
+
+            if (not is_known) {
+                e.call_frames.push_back(frame);
+            }
+        }
+    }
+
     auto add_to(compile_error& e) const -> void {
         e.call_frames.append_range(frames_);
     }
@@ -558,10 +575,11 @@ struct func_instance {
     // method made with its type instance, one without type parameters
     std::optional<generic_trace> call_trace;
 
-    // what made the type of the receiver
+    // what made the type of the receiver, once: a method that calls another
+    // of the same receiver, e.g. 'self.k(x)' in 'b.m', has the same trace
     auto add_receiver_trace_to(compile_error& e) const -> void {
         if (receiver) {
-            receiver->trace.add_to(e);
+            receiver->trace.add_new_to(e);
         }
     }
 

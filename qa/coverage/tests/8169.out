@@ -1,0 +1,13 @@
+
+8169.baz:6:18: index 300 is out of bounds for array 'self.a' of size 200
+    res = self.a[x]
+                 ^
+8169.baz:13:6: instantiated by
+type b = buf<200>
+     ^
+8169.baz:10:11: 'b.k' called from 'self.k(x)'
+    res = self.k(x)
+          ^~~~
+8169.baz:17:10: 'b.m' called from 'q.m(300)'
+    exit(q.m(300))
+         ^

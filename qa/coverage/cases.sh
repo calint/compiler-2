@@ -8580,3 +8580,7 @@ SRC=8167 && EXP=0 && RUN
 # an error in the count of a bulk operation while the start register is held
 # unwinds without freeing what the operation already freed
 SRC=8168 && OPTS="--checks=upper" COMPERR
+
+# a method that calls another method of its receiver shows the alias that
+# made the type once
+SRC=8169 && COMPERR
