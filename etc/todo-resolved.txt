@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 533, consistency) the default type of the '0' and '1'
+    immediates is taken from 'x.default_type()' in some places and from
+    'tc.builtins().default_type()' in others; one source across all
+    sources
+    => done (2026-11-23): the front end takes it from 'tc.builtins()'
+       everywhere ('expr_bool' was the one 'x.default_type()'); the
+       backend and the storage layout of 'toc' keep the machine's own,
+       the word of an address; listings equal
 [x] easy: (round 530, globals) 'dat g = g' says "'g' not found" where
     'var g = g' says "'g' is read in its own initializer"; both are
     rejected, one message would name the cause for both

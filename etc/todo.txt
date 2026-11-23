@@ -207,10 +207,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     resolved 'destination' through six functions of 'expr_bool' down to
     'truth_test_operand' for one 'mov' and one scratch register per such
     list; not measured, a listing change
-[ ] easy: (round 533, consistency) the default type of the '0' and '1'
-    immediates is taken from 'x.default_type()' in some places and from
-    'tc.builtins().default_type()' in others; one source across all
-    sources
 [ ] easy: (round 527, the output side) three small differences in the
     listing text: on x86_64 a comment without a location starts one column
     later than one with a location ('comment_start' at indent above 0 would
