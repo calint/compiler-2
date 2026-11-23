@@ -1,6 +1,14 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 410, the same hunt) a recursion entered from skipped code
+    of an inlined function is accepted where the same function with
+    'noinline' is rejected ("recursion of inlined function 'rec' runs out
+    of registers"): the check of the body leaves the deeper levels to a
+    call and a call checks no skipped code; next to the array length gap
+    of docs 1.5.1
+    => done (2026-11-23): docs 8.3 state it beside the swapped arrays of
+       a noinline recursion
 [x] easy: (round 364) 'test-coverage.sh' has no way to run one case (about
     30 s on x86_64 for all); e.g. 'ONLY=NNNN'
     => done (2026-11-23): 'ONLY=NNNN' runs the lines of that case of

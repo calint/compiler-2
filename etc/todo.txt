@@ -781,12 +781,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'x / -v' reports the line of 'v', 'x / (-v)' and 'a[-b[i]]' the line of
     '-', 'a[-j]' the line of 'j'; the same on every target; making it one
     rule moves the column of some compile errors
-[ ] easy: (round 410, the same hunt) a recursion entered from skipped code
-    of an inlined function is accepted where the same function with
-    'noinline' is rejected ("recursion of inlined function 'rec' runs out
-    of registers"): the check of the body leaves the deeper levels to a
-    call and a call checks no skipped code; next to the array length gap
-    of docs 1.5.1
 [ ] medium: user decision (round 402 bug hunt of the no-UB rules): safe
     programs a user would write that the aliasing and assignment rules
     reject: 'x = inc(x)', 'x = max(x, y)', 'total = add(total, e)',

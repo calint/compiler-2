@@ -2322,7 +2322,11 @@ message, x86_64 stops with a signal.
   swaps its arrays, 'r(t, s, k - 1)' entered as 'r(ps, b, 1)' with 'b' an
   'i8[4]' in a 'g(ps i8[])' that nothing calls, rejects the 's[4]' of the
   swapped level where the inlined one accepts it; a call of 'g' rejects
-  both.
+  both. Likewise a recursion entered only from code an inlined function
+  skips is accepted where the same function made 'noinline' is rejected
+  ("recursion of inlined function 'rec' runs out of registers"): the check
+  of the body leaves the deeper levels to a call, and a call checks no
+  skipped code.
 - A body that passes a parameter or a global on to a call, or calls a
   method of it, reads it whole in its record (3.9), whatever the callee
   reaches of it: 'f(p mut point, q mut point)' that calls 'gety(p)' or
