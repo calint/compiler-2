@@ -1213,6 +1213,9 @@ CLI_REGISTER_REPORT_COUNTS() {
     grep -Fxq ";     1      2  f" out
     # the first of the calls that save one register
     grep -Fxq ";       1      3  g 17:17" out
+    # 8167.baz: skipped code and a function nothing calls add no scope
+    "$BIN" 8167.baz >out 2>err
+    grep -Fq "max scopes in use: 3" out
     # 2476.baz: the footer has the most scratch registers, not the last count
     "$BIN" 2476.baz >out 2>err
     grep -Fxq "; max scratch registers in use: 2" out

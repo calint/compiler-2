@@ -1,0 +1,13 @@
+# code skipped by a known condition and a function that nothing calls add
+# no scope to 'max scopes in use'
+func unused() {
+    if true { if true { if true { if true { if true { exit(2) } } } } }
+}
+
+func main() {
+    let k = 0
+    if k == 1 {
+        if true { if true { if true { if true { if true { exit(3) } } } } }
+    }
+    exit(0)
+}

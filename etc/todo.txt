@@ -483,7 +483,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => 2026-11-23: 1 to 3 done: docs 1.6 say the footer is not the least
        '--vars' (1.5 item 3); the saved table says "in a noinline body
        also its frame base"; the candidate table says "as estimated from
-       the inlined code"; 4, tests for the two mutants, is open
+       the inlined code"; 4: test 8167 (read by 'test-cli.sh') has
+       skipped code and an uncalled function and catches the scope count
+       not restored ('restore_compile_state', 9 scopes instead of 3); the
+       own-peak mutant is open, a second call of one callee with a
+       smaller nonzero own peak was not found in ordinary code
 [ ] easy: (round 439, design of the driver) both change text a user
     sees
     1. '--bin' with x86_64 says "target 'x86_64' does not read it",

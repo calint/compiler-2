@@ -8572,3 +8572,7 @@ SRC=8164 && COMPERR
 # without the overflow check a literal whose unary ops negate the 64-bit
 # minimum is rejected as with it, no type holds the result
 if [[ $MACHINE == x86_64 ]]; then SRC=8165 && OPTS="--checks=noub,-overflow" COMPERR; fi
+
+# code skipped by a known condition and a function that nothing calls add
+# no scope to 'max scopes in use' ('test-cli.sh' reads it)
+SRC=8167 && EXP=0 && RUN
