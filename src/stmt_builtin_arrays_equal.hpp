@@ -55,7 +55,7 @@ class stmt_builtin_arrays_equal final : public statement {
             operands_.constant_size_bytes(tc, element_type),
         };
 
-        bulk_operands::argument_emitters emit{operands_, tc, tok()};
+        bulk_operands::argument_emitters emit{operands_, tc};
 
         machine& x{tc.machine()};
 

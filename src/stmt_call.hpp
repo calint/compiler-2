@@ -1005,7 +1005,7 @@ class inline_call final {
             tc, destination{}, [&](const destination& /*result*/) -> void {
                 machine& x{tc.machine()};
 
-                machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
+                machine::held_registers held{x};
 
                 std::ignore = bind_arguments(tc, held);
             });
@@ -1056,7 +1056,7 @@ class inline_call final {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
+        machine::held_registers held{x};
 
         for (param_binding& binding : bindings.arguments) {
             if (not is_indexed_reference(binding)) {
@@ -1100,7 +1100,7 @@ class inline_call final {
         machine& x{tc.machine()};
 
         // scratch registers stay allocated until the inlined body is compiled
-        machine::held_registers held{x, {call_.tk, tc.indent() + 1}};
+        machine::held_registers held{x};
 
         const call_bindings bindings{make_bindings(tc, dst, held)};
 
@@ -1381,7 +1381,7 @@ class noinline_call final {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {call_.tk, tc.indent()}};
+        machine::held_registers held{x};
 
         const std::vector<ident_info> arguments{
             compile_arguments(tc, held),

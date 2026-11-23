@@ -69,7 +69,7 @@ class stmt_builtin_foo final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand reg_iter{
             held.alloc_scratch_register({ident_.tok(), tc.indent()},

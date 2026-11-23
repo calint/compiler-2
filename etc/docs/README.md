@@ -723,7 +723,8 @@ The front end holds registers, the backend names and picks them
    operands and a register it needs by name (the exit code, the receiver of a
    noinline body), which frees them when the step ends; a backend operation
    holds its own in 'machine::operation_scope', which also keeps the
-   registers of its operands from being picked while it is lowered.
+   registers of its operands from being picked while it is lowered. Both
+   comment a free at the place and indent of its allocation.
 3. No free scratch register is the error kind 'out_of_registers'
    ('machine::out_of_registers_error'), and so is a named register that a
    scratch value holds, since which register a scratch value takes depends on

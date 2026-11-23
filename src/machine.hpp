@@ -455,13 +455,12 @@ class machine {
     //       compile
     class held_registers final {
         machine& machine_;
-        emit_site site_;
         int uncaught_at_start_{};
         std::vector<operand> registers_;
 
       public:
-        held_registers(machine& backend, const emit_site site)
-            : machine_{backend}, site_{site},
+        explicit held_registers(machine& backend)
+            : machine_{backend},
               uncaught_at_start_{std::uncaught_exceptions()} {}
 
         held_registers(const held_registers&) = delete;
@@ -516,13 +515,19 @@ class machine {
         // live
         auto release() -> void {
             for (const operand& reg : registers_ | std::views::reverse) {
-                // note: the backend releases its own registers by name
-                assert(machine_.state_.registers.top().holder !=
-                       register_pool::holder_kind::backend);
+                // the comment of the free is at the site of the allocation
+                const register_pool::allocation entry{
+                    machine_.state_.registers.top(),
+                };
 
-                const size_t index{machine_.pool_index(reg.register_name())};
+                // note: the backend releases its own registers by name, the
+                //       registers are the top of the pool
 
-                machine_.pop_allocation(site_, index);
+                assert(entry.holder != register_pool::holder_kind::backend);
+                assert(entry.index == machine_.pool_index(reg.register_name()));
+
+                machine_.pop_allocation({entry.src_loc_tk, entry.indent},
+                                        entry.index);
             }
 
             registers_.clear();

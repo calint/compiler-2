@@ -947,7 +947,7 @@ class stmt_def_func final : public statement {
         machine& x{tc.machine()};
 
         // holds the receiver register of a method while the body runs
-        machine::held_registers held{x, {tok(), 1}};
+        machine::held_registers held{x};
 
         std::optional<operand> receiver_register;
 

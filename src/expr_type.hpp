@@ -463,7 +463,7 @@ class expr_path final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand src_op{path_.operand_of(tc, held)};
 

@@ -479,7 +479,7 @@ class stmt_builtin_io final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand start{
             held.alloc_scratch_register({start_arg->tok(), tc.indent()},

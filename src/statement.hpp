@@ -450,7 +450,7 @@ class statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {src_loc_tk, tc.indent()}};
+        machine::held_registers held{x};
 
         const operand reg{
             held.alloc_scratch_register({src_loc_tk, tc.indent()},

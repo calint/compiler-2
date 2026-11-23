@@ -487,7 +487,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand result{
             is_stored ? action.destination
@@ -526,7 +526,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const comparison_side condition{side_of(tc, lhs_)};
 
@@ -553,7 +553,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand left{non_immediate_operand(tc, lhs, held)};
         const operand right{right_operand(tc, rhs, held)};
@@ -783,7 +783,7 @@ class expr_bool_op final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {src_loc_tk, tc.indent()}};
+        machine::held_registers held{x};
 
         lhs.comment_source(tc);
         const operand lhs_address{lhs.operand_of(tc, held)};

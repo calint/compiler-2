@@ -1220,7 +1220,7 @@ class expr_arith final : public statement {
 
         x.comment({src.tok(), tc.indent()}, "src: expression");
 
-        machine::held_registers held{x, {src.tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand reg{
             held.alloc_scratch_register({src.tok(), tc.indent()},
@@ -1268,7 +1268,7 @@ class expr_arith final : public statement {
             {src.tok(), tc.indent()}, "{}",
             stored_operand_comment(s.is_negation_absorbed, has_unary_ops));
 
-        machine::held_registers held{x, {src.tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         if (s.is_negation_absorbed) {
             const arithmetic_operator flipped{

@@ -487,7 +487,7 @@ class stmt_identifier final : public statement {
             return;
         }
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         // note: a list copies a constant itself
         const operand op{operand_of(tc, held)};
@@ -751,7 +751,7 @@ class stmt_identifier final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {src_loc_tk, tc.indent()}};
+        machine::held_registers held{x};
 
         const operand address{operand_of(tc, held)};
 

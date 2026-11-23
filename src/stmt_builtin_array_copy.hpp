@@ -64,7 +64,7 @@ class stmt_builtin_array_copy final : public statement {
             tc.checks().overlap and may_start_inside_source(tc),
         };
 
-        bulk_operands::argument_emitters emit{operands_, tc, tok()};
+        bulk_operands::argument_emitters emit{operands_, tc};
 
         machine& x{tc.machine()};
 

@@ -75,7 +75,6 @@ class bulk_operands final {
 
         const bulk_operands& operands_;
         compile_toc& tc_;
-        const token& src_loc_tk_;
         // none for a run-time count
         std::optional<int64_t> constant_count_;
         // the start of the first and of the second array
@@ -83,9 +82,8 @@ class bulk_operands final {
         bool are_ranges_checked_{};
 
       public:
-        argument_emitters(const bulk_operands& operands, compile_toc& tc,
-                          const token& src_loc_tk)
-            : operands_{operands}, tc_{tc}, src_loc_tk_{src_loc_tk},
+        argument_emitters(const bulk_operands& operands, compile_toc& tc)
+            : operands_{operands}, tc_{tc},
               constant_count_{operands.constant_count(tc)} {}
 
         argument_emitters(const argument_emitters&) = delete;
@@ -159,8 +157,7 @@ class bulk_operands final {
 
                     machine& x{tc_.machine()};
 
-                    held.holder.emplace(x,
-                                        emit_site{src_loc_tk_, tc_.indent()});
+                    held.holder.emplace(x);
 
                     // 'held.start' reads the register back from the holder
                     std::ignore = held.holder->alloc_scratch_register(
@@ -325,7 +322,7 @@ class bulk_operands final {
 
             machine& x{tc_.machine()};
 
-            machine::held_registers walk{x, {src_loc_tk_, tc_.indent()}};
+            machine::held_registers walk{x};
 
             // note: the walk checks a start up to the length, its range is
             //       checked after the later arguments

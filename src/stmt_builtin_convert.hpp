@@ -184,7 +184,7 @@ class stmt_builtin_convert final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand converted{
             dst.is_register()
@@ -221,7 +221,7 @@ class stmt_builtin_convert final : public statement {
 
         machine& x{tc.machine()};
 
-        machine::held_registers held{x, {tok(), tc.indent()}};
+        machine::held_registers held{x};
 
         const operand wide{
             held.alloc_scratch_register({tok(), tc.indent()}, scratch_type),
