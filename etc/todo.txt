@@ -276,10 +276,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     generic types; they are kept in '/tmp' and the session scratchpad
     ('bulk', 'mixgen.py', 'iofuzz', 'bh', 'tyhunt') and are lost with them;
     each has the path of a removed worktree to replace
-[ ] easy: (round 396) a noinline function without array parameters that a
-    dry run asks for is checked twice ('check_function_bodies' and
-    'check_noinline_bodies'); only compile time; in a dry run
-    'add_noinline_body' could add only bodies with array lengths
 [p] easy: need approval (round 400): the rv32i assembler has 28 one-line
     emitters by mnemonic ('add', 'addi', 'beq', 'lw' ..., about 170 lines,
     about 190 call sites) over the five forms that take an op, while

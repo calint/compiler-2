@@ -3306,6 +3306,12 @@ class compile_toc final : public toc {
                                    [](const std::optional<size_t>& length)
                                        -> bool { return length.has_value(); }));
 
+        // a body without array lengths is the check of the function itself
+        // ('program::check_function_bodies'), it needs no second check
+        if (is_dry_run() and array_lengths.empty()) {
+            return;
+        }
+
         noinline_body body{
             .func{&func},
             .array_lengths{std::move(array_lengths)},
