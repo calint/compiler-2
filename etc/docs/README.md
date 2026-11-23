@@ -1828,7 +1828,7 @@ stmt_identifier::compile_lea          the walk of 6.2, a field or a constant
 path_address::indexed_element         a run-time index, its register and the
                                       scale (_impl)
 path_address::fold_indexed_address    the second index
-path_address::compile_checked_index   the bounds check and the '+ c' of 6.4
+path_address::compile_index           the bounds check and the '+ c' of 6.4
                                       (_impl)
 stmt_identifier::operand_of           a path without an index or an address
                                       in a slot is not walked
@@ -2255,7 +2255,7 @@ constants out of range, and the code the run-time checks.
 | narrowing | 'b = w' with 'b' an 'i8' and 'w' an 'i16' | rejected ('statement::assert_not_narrowed' through 'compile_checked' and 'fold_checked'); a conversion such as 'i8(w)' wraps on purpose (1.7) | always | 0715, 0845, 0854, 1005, 1006, 1008, 1010, 1011 |
 | a constant out of range | 'a[9]' of 'a = i8[4]', 'x / 0', 'x << 70' | rejected ('is_constant_index_in_bounds' for an index, 'assert_constant_range' for the range of a bulk or io built-in, 'expr_arith::assert_constant_operand' for a divisor or a shift count, at a fold and at a constant step, 1.7) | always | 0298, 0299, 0740-0742, 1107, 1108, 2197, 2199-2201 |
 | a constant expression that overflows | '0x7fffffffffffffff + 1' | rejected ('fold'), else it wraps | 'overflow' | 0984, 0991, 0999 |
-| array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_checked_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0295, 0296, 0300-0302, 0617, 0618, 1342 |
+| array index out of bounds | 'a[i]' | run time ('machine::check_bounds' from 'stmt_identifier::compile_index', the range of a bulk operation or an io built-in ('bulk_operands', 'stmt_builtin_io') and the count of a 'foo') | 'upper', 'lower' | 0295, 0296, 0300-0302, 0617, 0618, 1342 |
 | division by zero and 'MIN / -1', also of '%' | 'a / b' | run time ('machine::divide' from 'expr_arith::emit_operation', not for a constant divisor other than -1); a constant 'MIN / -1' is rejected ('fold'), the 64-bit one also without the check, it has no value | 'division' | 0954-0957, 1757-1759 |
 | shift count below zero or not below the width | 'a << n' | run time ('machine::shift' with 'check_options::shift', from 'expr_arith::emit_operation') | 'shift' | 0964-0966 |
 | signed overflow | 'a + b' | run time ('machine::add_subtract', 'multiply' and 'unary' with 'toc::overflow_check') | 'overflow' | 0977, 0978, 0983 |

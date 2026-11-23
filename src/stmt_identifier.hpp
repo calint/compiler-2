@@ -314,10 +314,10 @@ class stmt_identifier final : public statement {
         // displacement, e.g. 'ix + 1' compiles 'ix' and returns 1; otherwise
         // the whole index is compiled, checked when bounds checks are on, and
         // 0 returned
-        [[nodiscard]] auto compile_checked_index(const expr_any& index_expr,
-                                                 const operand& index_register,
-                                                 const array_shape& shape,
-                                                 bool is_range) -> int64_t;
+        [[nodiscard]] auto compile_index(const expr_any& index_expr,
+                                         const operand& index_register,
+                                         const array_shape& shape,
+                                         bool is_range) -> int64_t;
 
         // computes 'address' into a register so another index can be added
         [[nodiscard]] auto fold_indexed_address(const operand& address)
@@ -1338,14 +1338,15 @@ class stmt_identifier final : public statement {
 
 // storage that a node names and that is read or passed in place, e.g. the
 // buffer 'b' of 'read(0, b)'; 'ident' is the bare path of the node, 'info'
-// resolves it to a variable
+// resolves it to a variable, without its indexes ('make_ident_info')
 struct place {
     const stmt_identifier* ident{};
     ident_info info;
 };
 
 // what the path names, e.g. the element of 'ps[1]', where 'resolve_path'
-// gives the array 'ps'
+// gives the array 'ps'; the indexes do not count, 'ps[i]' and 'ps[1]' give
+// the same info, an address is computed only at the compile
 [[nodiscard]] inline auto make_ident_info(const toc& tc,
                                           const stmt_identifier& ident)
     -> ident_info {

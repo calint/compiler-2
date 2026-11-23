@@ -18,7 +18,7 @@
 // ranges do; an index always follows a field or the root variable; a longer
 // range is e.g. the elements a literal zeroes or those from the start of a
 // bulk operand on
-struct path_step {
+struct access_step {
     bool is_field{};
 
     // the offset of a field in its parent, which identifies the field, or the
@@ -28,7 +28,7 @@ struct path_step {
     // after the offset of a field or the last index of a range
     size_t end{};
 
-    [[nodiscard]] auto is_same(const path_step& other) const -> bool {
+    [[nodiscard]] auto is_same(const access_step& other) const -> bool {
         return is_field == other.is_field and first == other.first and
                end == other.end;
     }
@@ -38,7 +38,7 @@ struct path_step {
 // variable. two accesses cannot be the same bytes when their paths select
 // different fields or different constant elements of the same object
 class access_path final {
-    std::vector<path_step> steps_;
+    std::vector<access_step> steps_;
     // some step is a run-time index; kept as steps are added, asking after
     // each step of a long path would walk it again
     bool has_run_time_index_{};
@@ -96,7 +96,7 @@ class access_path final {
     [[nodiscard]] auto is_same(const access_path& other) const -> bool {
         return std::ranges::equal(
             steps_, other.steps_,
-            [](const path_step& lhs, const path_step& rhs) -> bool {
+            [](const access_step& lhs, const access_step& rhs) -> bool {
                 return lhs.is_same(rhs);
             });
     }
@@ -112,8 +112,8 @@ class access_path final {
         };
 
         for (size_t i{}; i < common_count; ++i) {
-            const path_step& lhs_step{steps_.at(i)};
-            const path_step& rhs_step{other.steps_.at(i)};
+            const access_step& lhs_step{steps_.at(i)};
+            const access_step& rhs_step{other.steps_.at(i)};
 
             // note: the roots are the same and the steps before overlap, so
             //       both steps select in the same type

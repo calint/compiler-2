@@ -1,6 +1,19 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 431, a walk of the accessor path) names and texts
+    left:
+    1. 'path_step' of 'access_path.hpp' sits beside 'prefix_step' and
+       the 'path_*' names of the written path in 'stmt_identifier.hpp';
+       'access_step' would tell them apart
+    2. the info of a path ignores its indexes; only an example says so,
+       neither 'place::info' nor 'make_ident_info' states it
+    3. 'compile_checked_index' also compiles an index that needs no
+       check
+    => done (2026-11-23): 'path_step' is 'access_step'; 'make_ident_info'
+       and 'place' say that the info ignores the indexes;
+       'compile_checked_index' is 'compile_index', its comment says when
+       it checks
 [x] easy: (round 432, a walk of 'src/stmt_call.hpp') names and texts
     left:
     1. three names for one 'places.at(i)': 'arg_place', 'written' and

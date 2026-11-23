@@ -556,15 +556,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'qa/fuzz/fuzz-exprs.py' has no 'int' type and no call inside a
     nested conversion, so it does not reach two types of one size on
     rv32i (the defect of round 432)
-[ ] easy: (round 431, a walk of the accessor path) names and texts
-    left:
-    1. 'path_step' of 'access_path.hpp' sits beside 'prefix_step' and
-       the 'path_*' names of the written path in 'stmt_identifier.hpp';
-       'access_step' would tell them apart
-    2. the info of a path ignores its indexes; only an example says so,
-       neither 'place::info' nor 'make_ident_info' states it
-    3. 'compile_checked_index' also compiles an index that needs no
-       check
+    => 2026-11-23: the model takes a type's width from 'fuzzlib.BITS' by
+       name, one width per type, which the other fuzzers iterate; 'int'
+       needs a width per target, a change of the model's interface across
+       the fuzzers; not done (the defect has its test)
 [ ] easy: (round 431, design of the built-in statements) the choice of
     a run-time range is written twice, in 'bulk_operands::range_of' and
     in 'stmt_builtin_io'; one helper would need a shared operand shape

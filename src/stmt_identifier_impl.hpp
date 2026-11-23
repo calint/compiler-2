@@ -372,8 +372,8 @@ inline auto stmt_identifier::path_address::indexed_element(
     const operand& index_register{*index_register_};
 
     const int64_t addend_elements{
-        compile_checked_index(cur_elem.index_expr(), index_register,
-                              cur_info.shape(), is_range),
+        compile_index(cur_elem.index_expr(), index_register, cur_info.shape(),
+                      is_range),
     };
 
     machine& x{tc.machine()};
@@ -417,7 +417,7 @@ inline auto stmt_identifier::path_address::indexed_element(
                         displacement, cur_info.type_ref());
 }
 
-inline auto stmt_identifier::path_address::compile_checked_index(
+inline auto stmt_identifier::path_address::compile_index(
     const expr_any& index_expr, const operand& index_register,
     const array_shape& shape, const bool is_range) -> int64_t {
 
