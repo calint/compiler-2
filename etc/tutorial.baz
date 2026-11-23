@@ -50,7 +50,7 @@ func literals() {
     var hex = 0xff
     var bin = 0b11111111
     assert(dec == hex and hex == bin)
-    # hex values start with '0x' and binary values with '0b'
+    # hex values start with '0x' or '0X' and binary values with '0b' or '0B'
 
     var letter = 'a'
     assert(letter == 97)
