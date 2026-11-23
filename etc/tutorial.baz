@@ -739,8 +739,8 @@ type buffer<capacity> {
     items i8[capacity],
     count,
 }
-# a generic type has compile-time parameters in '<...>', 'capacity' is a
-# constant of the default type
+# a generic type has compile-time parameters in '<...>', 'capacity' is an
+# untyped constant, checked where it is used like a literal
 
 type small = buffer<4>
 type large = buffer<16>

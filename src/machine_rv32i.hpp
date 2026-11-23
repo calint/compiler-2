@@ -1412,7 +1412,7 @@ class machine_rv32i : public machine {
     [[nodiscard]] static constexpr auto rv32i_target() -> target_description {
         return {
             .address_size_bytes{word_size_bytes_},
-            .max_storage_bytes{assembler_rv32i::address_space_bytes},
+            .address_space_bytes{assembler_rv32i::address_space_bytes},
             .has_indexed_addressing{false},
 
             // note: the lowering of an address shifts by any power of two, a

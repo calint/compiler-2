@@ -2000,7 +2000,7 @@ class machine_x86_64 final : public machine {
     [[nodiscard]] static constexpr auto x86_64_target() -> target_description {
         return {
             .address_size_bytes{size_qword_},
-            .max_storage_bytes{user_address_space_bytes_},
+            .address_space_bytes{user_address_space_bytes_},
             .has_indexed_addressing{true},
             .max_index_scale_bytes{size_qword_},
             .max_padding_gaps_zeroed_one_by_one{

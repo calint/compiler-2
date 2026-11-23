@@ -187,7 +187,7 @@ inline auto stmt_identifier::checked_constant_index(
     const machine& x{tc.machine()};
 
     if (is_constant_index_in_bounds(array_info, *value, allow_end,
-                                    x.max_storage_bytes())) {
+                                    x.address_space_bytes())) {
 
         return value;
     }
@@ -224,7 +224,7 @@ inline auto stmt_identifier::assert_count_in_bounds(const toc& tc,
                               .count_text{std::format("count {}", count)},
                               .array_name{array_text(elems_.size() - 1)},
                           },
-                          x.max_storage_bytes());
+                          x.address_space_bytes());
 }
 
 inline auto stmt_identifier::constant_start_index(const toc& tc) const

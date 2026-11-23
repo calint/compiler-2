@@ -1141,14 +1141,14 @@ auto check_listing_written(const machine& backend) -> void {
 auto check_vars_fit_target(const machine& backend, const size_t vars_size_bytes)
     -> void {
 
-    if (vars_size_bytes < backend.max_storage_bytes()) {
+    if (vars_size_bytes < backend.address_space_bytes()) {
         return;
     }
 
     throw option_error{
         std::format("invalid --vars: {} B reaches the {} B that the target "
                     "addresses",
-                    vars_size_bytes, backend.max_storage_bytes())};
+                    vars_size_bytes, backend.address_space_bytes())};
 }
 
 // the source file compiled for the target, the listing written to stdout;

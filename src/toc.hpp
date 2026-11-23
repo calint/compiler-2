@@ -1406,7 +1406,7 @@ class storage_layout final {
         //       addresses ('check_vars_fit_target' in 'main.cpp'); the dats
         //       with it stay below it too ('assert_dats_and_vars_fit_target')
 
-        assert(vars_capacity_bytes < backend.max_storage_bytes());
+        assert(vars_capacity_bytes < backend.address_space_bytes());
     }
 
     // places 'var' after the storage in use of the nearest scope with a
@@ -1440,8 +1440,9 @@ class storage_layout final {
         //       the constructor when there is none), so does a variable
         //       within the capacity
 
-        assert(sum_storage_size(dats_and_vars_size_bytes(),
-                                allocated_size_bytes) < x.max_storage_bytes());
+        assert(
+            sum_storage_size(dats_and_vars_size_bytes(), allocated_size_bytes) <
+            x.address_space_bytes());
 
         const size_t offset_bytes{next_offset_bytes + padding_bytes};
 
@@ -1539,7 +1540,7 @@ class storage_layout final {
 
         // note: 'parse_toc::add_dat' checked the dats against the target
         assert(dat.offset_bytes + var_storage_size_bytes(src_loc_tk, var) <
-               x.max_storage_bytes());
+               x.address_space_bytes());
 
         // note: the dats end 'vars_start_bytes' before the label 'vars'
         const int64_t offset{
@@ -1625,7 +1626,7 @@ class storage_layout final {
 
         const ::machine& x{machine_.get()};
 
-        const size_t max_bytes{x.max_storage_bytes()};
+        const size_t max_bytes{x.address_space_bytes()};
 
         // note: strictly below because the code needs room too and a type
         //       stays below the end of the address space
@@ -2967,7 +2968,7 @@ class parse_toc final : public toc {
 
         const ::machine& x{machine()};
 
-        const size_t max_bytes{x.max_storage_bytes()};
+        const size_t max_bytes{x.address_space_bytes()};
 
         if (tp.size_bytes() < max_bytes) {
             return;

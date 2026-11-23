@@ -694,6 +694,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     tutorial says a generic constant parameter "is a constant of the
     default type", it is untyped (docs 1.7); the generator of the calls
     hunt is not in 'qa/fuzz' (a new file needs approval)
+    => 2026-11-23: 'max_storage_bytes' is 'address_space_bytes'; the
+       listing says "zero remaining fields and padding"; the tutorial
+       says the parameter is an untyped constant; open: the later-argument
+       rule (the class of the round 402 user decision)
 [ ] easy: (round 420, a hunt of the scans ahead and a walk of the
     built-ins) a scan reads quoted tokens, so a bad character literal or
     an unterminated string in the scanned region is reported before an

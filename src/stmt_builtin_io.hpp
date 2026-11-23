@@ -291,7 +291,7 @@ class stmt_builtin_io final : public statement {
                 },
                 .array_name{buffer.ident->path_text()},
             },
-            x.max_storage_bytes());
+            x.address_space_bytes());
     }
 
     // a sector is a whole number of elements; an array shorter than a sector

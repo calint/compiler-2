@@ -53,9 +53,9 @@
 
 // the most elements an array of 'array_info' holds: its length, or for an
 // unsized array parameter the most that fit below the storage the target
-// addresses, 'max_storage_bytes', which no array reaches
+// addresses, 'address_space_bytes', which no array reaches
 [[nodiscard]] inline auto longest_array_len(const ident_info& array_info,
-                                            const size_t max_storage_bytes)
+                                            const size_t address_space_bytes)
     -> size_t {
 
     const std::optional<size_t> array_len{array_info.array_len()};
@@ -64,7 +64,7 @@
         return *array_len;
     }
 
-    return (max_storage_bytes - 1) / array_info.type_ref().size_bytes();
+    return (address_space_bytes - 1) / array_info.type_ref().size_bytes();
 }
 
 // a constant index out of bounds is always a bug; an unsized array parameter
@@ -73,9 +73,11 @@
 [[nodiscard]] inline auto
 is_constant_index_in_bounds(const ident_info& array_info, const int64_t index,
                             const bool allow_end,
-                            const size_t max_storage_bytes) -> bool {
+                            const size_t address_space_bytes) -> bool {
 
-    const size_t longest_len{longest_array_len(array_info, max_storage_bytes)};
+    const size_t longest_len{
+        longest_array_len(array_info, address_space_bytes),
+    };
 
     const bool is_past_end{
         allow_end ? std::cmp_greater(index, longest_len)
@@ -130,10 +132,10 @@ struct constant_range {
 
 // a constant range is not negative and does not pass the end of the array,
 // unlike the 5 of 'array_copy(a, b, 5)' of 'a = i8[4]'; a run-time one is
-// left to the bounds check at run time; 'max_storage_bytes' is the target's
+// left to the bounds check at run time; 'address_space_bytes' is the target's
 inline auto assert_constant_range(const ident_info& array_info,
                                   const constant_range& range,
-                                  const size_t max_storage_bytes) -> void {
+                                  const size_t address_space_bytes) -> void {
 
     if (range.count < 0) {
         throw compile_error{range.count_tk,
@@ -145,13 +147,15 @@ inline auto assert_constant_range(const ident_info& array_info,
     // a start at the end is the empty range of a zero count
     if (has_constant_start and
         not is_constant_index_in_bounds(array_info, *range.start, true,
-                                        max_storage_bytes)) {
+                                        address_space_bytes)) {
 
         throw_constant_index_out_of_bounds(array_info, *range.start_tk,
                                            range.array_name, *range.start);
     }
 
-    const size_t longest_len{longest_array_len(array_info, max_storage_bytes)};
+    const size_t longest_len{
+        longest_array_len(array_info, address_space_bytes),
+    };
 
     // note: a start computed at run time that passes its bounds check is not
     //       negative, so at most the whole array remains

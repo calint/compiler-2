@@ -208,8 +208,9 @@ class stmt_def_dat final : public statement {
         }
 
         const std::string_view what{
-            instance.values.size() == flds.size() ? "padding"
-                                                  : "remaining fields",
+            instance.values.size() == flds.size()
+                ? "padding"
+                : "remaining fields and padding",
         };
 
         x.comment({instance.src_loc_tk, 0}, "zero {}: {} B", what,

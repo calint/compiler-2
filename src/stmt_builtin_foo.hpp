@@ -226,7 +226,7 @@ class stmt_builtin_foo final : public statement {
         machine& x{tc.machine()};
 
         // note: element sizes are limited by the variables that hold the arrays
-        assert(element_size_bytes <= x.max_storage_bytes());
+        assert(element_size_bytes <= x.address_space_bytes());
 
         const type& default_type{tc.builtins().default_type()};
 

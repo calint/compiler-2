@@ -102,7 +102,7 @@ struct target_description {
     size_t address_size_bytes{};
     // the size of the address space; the data and variables, a type and
     // '--vars' stay below it
-    size_t max_storage_bytes{};
+    size_t address_space_bytes{};
     // whether an access can add an index register to a base register, else
     // an indexed address is computed into a register by separate instructions
     bool has_indexed_addressing{};
@@ -173,7 +173,7 @@ struct target_description {
 //   comments       'comment'
 //   target         'default_type', 'address_size_bytes',
 //                  'has_indexed_addressing', 'can_lower_index_scale',
-//                  'max_storage_bytes', 'sector_size_bytes',
+//                  'address_space_bytes', 'sector_size_bytes',
 //                  'foo_counter_in_memory', 'frame_base_register',
 //                  'variables_base_register', 'variables_base_past_vars_bytes',
 //                  'exit_code_register'
@@ -1032,6 +1032,10 @@ class machine {
         return target_.address_size_bytes;
     }
 
+    [[nodiscard]] auto address_space_bytes() const -> size_t {
+        return target_.address_space_bytes;
+    }
+
     // starts the data section, after the code and every routine it uses
     auto begin_data() -> void {
         assembler& output{output_.get()};
@@ -1324,7 +1328,7 @@ class machine {
     auto define_constant(const std::string_view name, const size_t value)
         -> void {
 
-        assert(value <= target_.max_storage_bytes);
+        assert(value <= target_.address_space_bytes);
 
         assembler& output{output_.get()};
 
@@ -1521,10 +1525,6 @@ class machine {
         output.label(indent, name);
     }
 
-    [[nodiscard]] auto max_storage_bytes() const -> size_t {
-        return target_.max_storage_bytes;
-    }
-
     // a constant factor is resolved at the width of 'product': one needs no
     // code, minus one negates and an unchecked power of two is a shift, the
     // other factors go to 'emit_multiply'
@@ -1605,7 +1605,7 @@ class machine {
         //       arrays
 
         assert(index.type_ref().size_bytes() == address_size_bytes());
-        assert(element_size_bytes <= max_storage_bytes());
+        assert(element_size_bytes <= address_space_bytes());
 
         multiply(site, index, operand::imm(element_size_bytes, default_type()),
                  factor_use::read_only, {});

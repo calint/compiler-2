@@ -573,8 +573,8 @@ CLI_ZERO_COMMENTS() {
     "$BIN" 2484.baz >gen.s 2>err
     [[ ! -s err ]]
     grep -Fq '[2484.baz:11:12] zero padding: 3 B' gen.s
-    grep -Fq '[2484.baz:13:12] zero remaining fields: 11 B' gen.s
-    grep -Fq '[2484.baz:16:13] zero remaining fields: 11 B' gen.s
+    grep -Fq '[2484.baz:13:12] zero remaining fields and padding: 11 B' gen.s
+    grep -Fq '[2484.baz:16:13] zero remaining fields and padding: 11 B' gen.s
     echo ok
 }
 

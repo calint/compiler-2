@@ -260,9 +260,10 @@ inline auto expr_type::plan_writes(const toc& tc, const part_location& at,
     }
 
     // zero out the remaining fields and the padding after the written ones
-    plan_unwritten(at, unlisted.empty() ? "padding" : "remaining fields",
-                   written_bytes, get_type().size_bytes() - written_bytes,
-                   std::move(unlisted), plan);
+    plan_unwritten(
+        at, unlisted.empty() ? "padding" : "remaining fields and padding",
+        written_bytes, get_type().size_bytes() - written_bytes,
+        std::move(unlisted), plan);
 }
 
 inline auto expr_type::visit_operands(const operand_visitor visitor) const
