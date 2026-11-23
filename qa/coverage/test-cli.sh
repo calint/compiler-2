@@ -134,39 +134,39 @@ CLI_BINARY_NAME() {
     # the image does not replace the source, also named another way
     cp 0418.baz gen-source.baz
     expect_exit_1 "$BIN" --target=rv32i --bin=./gen-source.baz gen-source.baz >gen.s 2>err
-    grep -Fq "invalid --bin: './gen-source.baz' is a source file" err
+    grep -Fq "the binary image './gen-source.baz' is a source file" err
     cmp -s 0418.baz gen-source.baz
     rm -f gen-source.baz
     # nor an included file
     printf 'func three() res {\n    res = 3\n}\n' >gen-include.baz
     printf 'include "gen-include.baz"\n\nfunc main() {\n    exit(three())\n}\n' >gen-main.baz
     expect_exit_1 "$BIN" --target=rv32i --bin=gen-include.baz gen-main.baz >gen.s 2>err
-    grep -Fq "invalid --bin: 'gen-include.baz' is a source file" err
+    grep -Fq "the binary image 'gen-include.baz' is a source file" err
     grep -Fq "res = 3" gen-include.baz
     rm -f gen-include.baz gen-main.baz
     # the sd card that the program writes is no source file either
     cp 0418.baz gen-source.baz
     expect_exit_1 "$BIN" --target=x86_64 --sdcard=./gen-source.baz gen-source.baz >gen.s 2>err
-    grep -Fq "invalid --sdcard: './gen-source.baz' is a source file" err
+    grep -Fq "the sd card image './gen-source.baz' is a source file" err
     printf 'func three() res {\n    res = 3\n}\n' >gen-include.baz
     printf 'include "gen-include.baz"\n\nfunc main() {\n    exit(three())\n}\n' >gen-main.baz
     expect_exit_1 "$BIN" --target=rv32i --sdcard=gen-include.baz gen-main.baz >gen.s 2>err
-    grep -Fq "invalid --sdcard: 'gen-include.baz' is a source file" err
+    grep -Fq "the sd card image 'gen-include.baz' is a source file" err
     rm -f gen-source.baz gen-include.baz gen-main.baz
     # nor the sd card that the program reads
     head -c 4096 /dev/zero >gen-sdcard.img
     expect_exit_1 "$BIN" --target=rv32i --bin=./gen-sdcard.img --sdcard=gen-sdcard.img 0418.baz >gen.s 2>err
-    grep -Fq "invalid --bin: './gen-sdcard.img' is the sd card image" err
+    grep -Fq "the binary image './gen-sdcard.img' is the sd card image" err
     [[ $(stat -c %s gen-sdcard.img) -eq 4096 ]]
     # also through a hard link, which has a path of its own
     ln -f gen-sdcard.img gen-sdcard-link.img
     expect_exit_1 "$BIN" --target=rv32i --bin=gen-sdcard-link.img --sdcard=gen-sdcard.img 0418.baz >gen.s 2>err
-    grep -Fq "invalid --bin: 'gen-sdcard-link.img' is the sd card image" err
+    grep -Fq "the binary image 'gen-sdcard-link.img' is the sd card image" err
     [[ $(stat -c %s gen-sdcard.img) -eq 4096 ]]
     rm -f gen-sdcard.img gen-sdcard-link.img
     # also when the card does not exist yet
     expect_exit_1 "$BIN" --target=rv32i --bin=gen-sdcard.img --sdcard=./gen-sdcard.img 0418.baz >gen.s 2>err
-    grep -Fq "invalid --bin: 'gen-sdcard.img' is the sd card image" err
+    grep -Fq "the binary image 'gen-sdcard.img' is the sd card image" err
     [[ ! -e gen-sdcard.img ]]
     echo ok
 }
@@ -393,10 +393,10 @@ CLI_FILE_ERRORS() {
     grep -Fq "cannot write file '/dev/full'" err
     # the image is not the file of the listing, also named through stdout
     expect_exit_1 "$BIN" --target=rv32i --bin=./gen.s 0015.baz >gen.s 2>err
-    grep -Fq "invalid --bin: './gen.s' is stdout" err
+    grep -Fq "the binary image './gen.s' is stdout" err
     [[ ! -s gen.s ]]
     expect_exit_1 "$BIN" --target=rv32i-qemu --bin=/dev/stdout 0015.baz >gen.s 2>err
-    grep -Fq "invalid --bin: '/dev/stdout' is stdout" err
+    grep -Fq "the binary image '/dev/stdout' is stdout" err
     # a reader that stops early cuts the listing short like a full disk, the
     # image is removed; 0064.baz has a listing larger than the pipe buffer, so
     # the compiler writes after the reader is gone

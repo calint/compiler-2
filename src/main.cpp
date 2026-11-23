@@ -1099,7 +1099,7 @@ auto check_output_files(const target_name& target, const source_files& files,
     const std::string& sd_card{resolved.sd_card_file_name};
 
     if (target.writes_image and files.contains(binary)) {
-        throw option_error{std::format("invalid --bin: {} is a source file",
+        throw option_error{std::format("the binary image {} is a source file",
                                        in_quotes(binary))};
     }
 
@@ -1108,18 +1108,18 @@ auto check_output_files(const target_name& target, const source_files& files,
 
     if (target.writes_image and names_same_file(binary, "/dev/stdout")) {
         throw option_error{
-            std::format("invalid --bin: {} is stdout", in_quotes(binary))};
+            std::format("the binary image {} is stdout", in_quotes(binary))};
     }
 
     if (target.writes_image and target.reads_sd_card and
         names_same_file(binary, sd_card)) {
 
-        throw option_error{std::format("invalid --bin: {} is the sd card image",
-                                       in_quotes(binary))};
+        throw option_error{std::format(
+            "the binary image {} is the sd card image", in_quotes(binary))};
     }
 
     if (target.reads_sd_card and files.contains(sd_card)) {
-        throw option_error{std::format("invalid --sdcard: {} is a source file",
+        throw option_error{std::format("the sd card image {} is a source file",
                                        in_quotes(sd_card))};
     }
 }

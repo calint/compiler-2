@@ -179,13 +179,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     it too would remove behavior: such programs run without the check and
     give the target's block copy (docs 8.2); proposed: reject it at compile
     time as "the destination starts inside the source"
-[ ] easy: (round 462, bug hunt of the command line) messages:
-    '--target=rv32i --sdcard=./p-rv32i.bin p.baz' says "invalid --bin:
-    'p-rv32i.bin' is the sd card image" without a '--bin' given, and a
-    source named 'sdcard.img' gets "invalid --sdcard: ... is a source
-    file" without '--sdcard'; naming the option that was given needs the
-    given options in 'check_output_files' ('main.cpp'), branches for a
-    rare case
 [ ] easy: (round 462, bug hunt of the command line) extreme input: x86_64
     accepts '--vars=0x7ffffffffff0' (below 2^47) and the program ends
     with a segmentation fault at start (exit 139), the kernel cannot map
