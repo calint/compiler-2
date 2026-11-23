@@ -123,13 +123,10 @@ class machine_rv32i : public machine {
     //       gaps the whole instance was larger in 1 of 533, at 7 and 8 gaps in
     //       10 of 146
 
-    // what an i/o or sector routine may change besides 'a0' and the 'a7' it
-    // returns through, free at the call, see 'call_io_routine'
-    static constexpr std::array<std::string_view, 4> io_routine_clobbered_{
-        "a3",
-        "a4",
-        "a5",
-        "a6",
+    // what an i/o or sector routine may change besides 'a0', 'a7' by the
+    // return address; free at the call, see 'call_io_routine'
+    static constexpr std::array<std::string_view, 5> io_routine_clobbered_{
+        "a3", "a4", "a5", "a6", "a7",
     };
     // shifting a word right by this moves its sign bit to bit 0, an
     // arithmetic shift spreads it over all bits
@@ -1282,12 +1279,8 @@ class machine_rv32i : public machine {
     auto emit_target_call(const emit_site site, const target_call function)
         -> void override {
 
-        const operation_scope scope{*this};
-
         // the arguments are in the registers of 'target_calls', allocated by
-        // 'call_target'; 'a7' receives the return address
-        reserve_named_register(site, "a7");
-
+        // 'call_target'
         call_io_routine(site.indent, routine_label(function));
     }
 
@@ -1401,10 +1394,9 @@ class machine_rv32i : public machine {
     auto call_io_routine(const size_t indent, const std::string_view label)
         -> void {
 
-        // note: the clobbered registers and 'a7' follow 'a1' and 'a2', which
-        //       the call needs, in the allocation order, so they are free
-        //       whenever the call is made; 'ra' comes before them and can hold
-        //       a value
+        // note: the clobbered registers follow 'a1' and 'a2', which the call
+        //       needs, in the allocation order, so they are free whenever the
+        //       call is made; 'ra' comes before them and can hold a value
 
         assert(not is_any_unavailable(io_routine_clobbered_));
 

@@ -1,14 +1,14 @@
-84d83
+82d81
 <     j baz_bounds_panic_file_0
-91d89
+89d87
 <     j .Lbaz_report_line
-127d124
+125d122
 <     j .Lbaz_exit
-180c177
+178c175
 < #   removed jumps to next code: 0
 ---
 > #   removed jumps to next code: 3
-192c189
+190c187
 < #                 instructions: 89
 ---
 > #                 instructions: 86

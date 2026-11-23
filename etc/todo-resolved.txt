@@ -1,6 +1,23 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 535, registers) rv32i 'emit_target_call' reserves 'a7'
+    by name around 'call_io_routine', which already asserts 'a3' to 'a6'
+    free, and 'a7' comes after them in the allocation order; the
+    bare-metal 'emit_stderr_write' and x86_64 'syscall' reserve nothing;
+    dropping the reservation and extending the assert to 'a7': 96 listings
+    of rv32i-fpga lose 544 comment lines (allocate and free of 'a7'), no
+    instruction changes, the register report no longer shows 'a7' named
+    during the call although the routine changes it; a report change
+    => round 536: without the reservation 3600 generated programs keep
+       their results: 'a1', an argument of the io call, comes before 'a7'
+       in the scratch order, so a call that would find 'a7' held is
+       rejected on 'a1' first
+    => done (2026-11-23): 'a7' is in 'io_routine_clobbered_', which
+       'call_io_routine' asserts free, and 'emit_target_call' reserves
+       nothing; instructions and errors equal on rv32i and rv32i-fpga;
+       the listings lose the allocate and free comments of 'a7'
+       (tests 2960 to 2962 shift their diff lines)
 [x] easy: (round 584, listings) with '--checks=lower' without 'upper', a
     bulk built-in whose second array has a constant start and whose count
     is run-time tests the sign of the count twice, e.g. 'array_copy(a[1],

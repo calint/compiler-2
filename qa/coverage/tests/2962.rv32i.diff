@@ -1,12 +1,12 @@
-51d50
+49d48
 <     j if.7.5.code
-62d60
+60d58
 <     j .Lbaz_exit
-88c86
+86c84
 < #   removed jumps to next code: 0
 ---
 > #   removed jumps to next code: 2
-100c98
+98c96
 < #                 instructions: 26
 ---
 > #                 instructions: 24

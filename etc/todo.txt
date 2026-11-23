@@ -76,18 +76,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     target the suite runs starts the variable storage at zero, so dropping
     the zeroing code of globals and their padding would pass; e.g. the
     fpga emulator could fill the variable storage with a pattern first
-[ ] easy: (round 535, registers) rv32i 'emit_target_call' reserves 'a7'
-    by name around 'call_io_routine', which already asserts 'a3' to 'a6'
-    free, and 'a7' comes after them in the allocation order; the
-    bare-metal 'emit_stderr_write' and x86_64 'syscall' reserve nothing;
-    dropping the reservation and extending the assert to 'a7': 96 listings
-    of rv32i-fpga lose 544 comment lines (allocate and free of 'a7'), no
-    instruction changes, the register report no longer shows 'a7' named
-    during the call although the routine changes it; a report change
-    => round 536: without the reservation 3600 generated programs keep
-       their results: 'a1', an argument of the io call, comes before 'a7'
-       in the scratch order, so a call that would find 'a7' held is
-       rejected on 'a1' first
 [p] easy: need approval (round 543, names) rename 'stmt_assign_var' to
     'stmt_assign' and 'src/stmt_assign_var.hpp' to 'src/stmt_assign.hpp':
     it assigns to any path ('p.x', 'a[i]') and writes the initializer of a
