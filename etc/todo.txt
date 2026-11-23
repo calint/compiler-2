@@ -552,13 +552,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     2. messages name the default type 'i64' on x86_64 and 'int' on
        rv32i, so a test of a message that names it needs two expected
        files (the round 419 item covers only the label of 'f<int>')
-[ ] easy: (round 433, design of the lexical layer) the 'str' parameter
-    of 'constant_parser::parse_character', 'parse_constant' and
-    'literal_value' equals the text of the token beside it at every
-    call of the tests; dropping it (3 signatures, 4 call sites) needs
-    the proof that the two callers of 'toc::resolve_declared' with
-    another name ('stmt_builtin_foo.hpp', 'stmt_call.hpp') never reach
-    'ident_resolver::resolve_literal'
 [ ] easy: (round 433, a walk of 'src/toc.hpp') names left:
     1. 'scope': the factory 'loop(...)' and the private accessor
        'loop()' share a name, the function side has 'function(...)' and

@@ -1963,9 +1963,15 @@ class ident_resolver final {
                                        const std::string_view ident) const
         -> ident_info {
 
+        // note: only a name the source wrote reaches here, the two callers
+        //       of 'resolve_declared' with another name declared it just
+        //       before ('stmt_builtin_foo', 'stmt_call')
+
+        assert(ident == src_loc_tk.text());
+
         // e.g. '0x10' or 'true'
         const std::optional<constant_parser::literal> literal{
-            constant_parser::literal_value(src_loc_tk, ident),
+            constant_parser::literal_value(src_loc_tk),
         };
 
         if (literal) {
@@ -2764,7 +2770,7 @@ class parse_toc final : public toc {
         -> std::optional<folded_value> {
 
         if (const std::optional<int64_t> value{
-                constant_parser::parse_constant(tk, tk.text()),
+                constant_parser::parse_constant(tk),
             }) {
 
             return folded_value::untyped(*value);

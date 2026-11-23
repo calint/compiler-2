@@ -1,6 +1,18 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 433, design of the lexical layer) the 'str' parameter
+    of 'constant_parser::parse_character', 'parse_constant' and
+    'literal_value' equals the text of the token beside it at every
+    call of the tests; dropping it (3 signatures, 4 call sites) needs
+    the proof that the two callers of 'toc::resolve_declared' with
+    another name ('stmt_builtin_foo.hpp', 'stmt_call.hpp') never reach
+    'ident_resolver::resolve_literal'
+    => done (2026-11-23): 'literal_value' and 'parse_constant' take the
+       token alone ('parse_character' already did); the two callers of
+       'resolve_declared' with another name declare it just before, so
+       the lookup finds the variable; 'resolve_literal' asserts that the
+       name is the token's; listings equal
 [x] easy: (round 434, bug hunt of the verdict against the options)
     'array_copy(a[i], a[i << k], 2)' on x86_64 is accepted by default
     and rejected with '--checks=overlap' or 'noub': "register rcx is

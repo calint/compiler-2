@@ -45,9 +45,10 @@ class constant_parser final {
 
     // e.g. '0x10', ''a'' or 'true'; empty for a malformed number or a text
     // that is no literal
-    [[nodiscard]] static auto literal_value(const token& src_loc_tk,
-                                            const std::string_view str)
+    [[nodiscard]] static auto literal_value(const token& literal_tk)
         -> std::optional<literal> {
+
+        const std::string_view str{literal_tk.text()};
 
         if (is_bool_literal(str)) {
             return literal{
@@ -56,7 +57,7 @@ class constant_parser final {
             };
         }
 
-        const std::optional<int64_t> value{parse_constant(src_loc_tk, str)};
+        const std::optional<int64_t> value{parse_constant(literal_tk)};
 
         if (not value) {
             return std::nullopt;
@@ -86,15 +87,13 @@ class constant_parser final {
 
     // e.g. '12', '0x1f', '0b101' and ''a'' have a value, 'x' has none; a
     // number out of range or a character of more than one byte is an error
-    [[nodiscard]] static auto parse_constant(const token& src_loc_tk,
-                                             const std::string_view str)
+    [[nodiscard]] static auto parse_constant(const token& literal_tk)
         -> std::optional<int64_t> {
 
-        if (is_character_literal(str)) {
-            // note: a character literal is a token of its own, 'tokenizer'
-            assert(str == src_loc_tk.text());
+        const std::string_view str{literal_tk.text()};
 
-            return parse_character(src_loc_tk);
+        if (is_character_literal(str)) {
+            return parse_character(literal_tk);
         }
 
         const int base{base_of(str)};
@@ -116,7 +115,7 @@ class constant_parser final {
 
         if (result.ec == std::errc::result_out_of_range) {
             throw compile_error{
-                src_loc_tk,
+                literal_tk,
                 std::format("constant {} is out of range", in_quotes(str))};
         }
 
