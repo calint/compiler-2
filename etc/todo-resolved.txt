@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 463, bug hunt of malformed programs) messages, from
+    1.86 million mutated compiles without a crash: 'func f<T type> {}'
+    says "expected '(' after function name" at 'f', the '(' is missing
+    after '>' (docs 1.9 place a missing token where the next one
+    starts); 'type t<N> { x i8[N]' then 'var g = 1' and 'func main'
+    reports "'func' can only be in global scope" on the 'func' line, the
+    skip of a generic body passes 'var'; 'var s = i8{1}' says "expected
+    a statement" at '1'; 'func f(x mut i8[' says "write 'i8[]'";
+    'exit([1)' says "expected type 'i64', got 'i64[]'"; 'func mut t'
+    says "expected '(' after function name"; 'a = a < < 1' and 'a <> 1'
+    say "a comparison makes a condition"
+    => 2026-11-23: a missing '(' after a function or method name is at
+       the next token ('func_head::assert_open_paren(tz)'), after a
+       built-in it names it ("expected '(' after 'exit'"), 14 expected
+       files; the generic skip of 'type t<N> {' is the one of round 491;
+       left as they are: 'i8{1}', a '{' after a bare built-in type may
+       start a block ('if a == i8 {'); 'func f(x mut i8[' names the
+       '[]' an array parameter needs; 'exit([1)' and 'a < < 1' name the
+       kind of value found; 'a <> 1' asks for an operand where the '>'
+       stands
 [x] easy: (round 464, the fuzzers) 'fuzz-combos.py' passes a global to a
     'noinline' function that writes it ('work(loc, g)', 'work' calls
     'bump()', which writes 'g'); every target rejects it ("may share
