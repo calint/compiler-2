@@ -1,6 +1,21 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[-] easy: (round 425, a hunt of the input and output built-ins and a
+    walk of the parser's dispatch) the -9 of a descriptor that is not
+    served equals '-EBADF' of linux, so a 'read' that also served 1 or a
+    'write' that also served 3 is not told apart when the descriptors are
+    pipes or one-way files as in 'test-coverage.sh' (the generator caught
+    both mutants only with 0 to 2 opened read-write);
+    'assert_return_without_value' keeps its own classification of the
+    next term beside 'classify_term', folding it changes which programs
+    get "'return' takes no value"; 'term_kind::string' and 'unknown' are
+    tested by no caller
+    => discarded (2026-11-23): 'term_kind::string' is tested now
+       ('parse_statement', 'stmt_def_var'), 'unknown' is the fallback of
+       'classify_term'; folding 'assert_return_without_value' into it
+       changes which programs get the message, as the item says; -9 being
+       '-EBADF' concerns only a generator that opens descriptors one way
 [x] easy: (round 426, a hunt of the lexical layer and a walk of the
     scripts) 'void' is a reserved built-in type name ("'void' is a
     built-in type") that the docs do not list among the reserved names;
