@@ -11,6 +11,9 @@
 #   construct-reject     a valid program is rejected
 #   construct-accepted   a program with an error is accepted
 #   construct-position   the error is reported on another line
+#   compiler-crash       the compiler ended by a sanitizer, abort or signal
+#   compiler-hang        no result in time
+#   bad-diagnostic       a rejection without a place in the source
 #
 # usage: fuzz-constructs.py [rounds] [seed] [jobs]
 # a round builds every program once, rounds only repeat the run
@@ -46,8 +49,9 @@ def check_valid(work, construct, found):
             key = f"{construct.name} {target} {' '.join(options)}"
             c, o, problem = fl.run_target(fl.COMPILER_ASAN, main, options,
                                           work, target, stdin=construct.stdin)
-            if c.timed_out:
-                found.append(("compiler-hang", key, "timeout"))
+            failure = fl.classify_compile(c)
+            if failure:
+                found.append((failure[0], key, c.stderr[:300]))
             elif c.returncode:
                 found.append(("construct-reject", key, c.stderr[:300]))
             elif problem:
@@ -69,6 +73,11 @@ def check_rejected(work, construct, found):
             fl.COMPILER_ASAN, main,
             ["--target=" + target, "--checks=noub"] + list(construct.options),
             os.devnull)
+        # a crash or hang of the compiler is no rejection
+        failure = fl.classify_compile(c)
+        if failure:
+            found.append((failure[0], key, c.stderr[:300]))
+            continue
         if c.returncode == 0:
             found.append(("construct-accepted", key, source))
             continue
@@ -92,7 +101,10 @@ def check_tutorial(work, found):
             key = f"tutorial {target} {' '.join(options)}"
             c, o, problem = fl.run_target(fl.COMPILER_ASAN, TUTORIAL,
                                           list(options), work, target)
-            if c.returncode or c.timed_out:
+            failure = fl.classify_compile(c)
+            if failure:
+                found.append((failure[0], key, c.stderr[:300]))
+            elif c.returncode:
                 found.append(("construct-reject", key, c.stderr[:300]))
             elif problem:
                 found.append((problem[0], key, problem[1][:300]))
