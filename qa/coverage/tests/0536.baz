@@ -1,5 +1,5 @@
-# strings initialize and assign 'i8' arrays: the bytes are copied from
-# read-only data and the rest of the array is zeroed
+# strings initialize and assign 'i8' arrays: the bytes are stored or copied
+# from read-only data and the rest of the array is zeroed
 
 func assert(err, ok bool) { if not ok exit(err) }
 
@@ -63,7 +63,7 @@ func main() {
     assert(10, escaped[0] == 'A' and escaped[1] == '\\' and escaped[2] == '"')
     write(1, escaped, array_length(escaped))
 
-    # identical strings share one constant
+    # the same string again, both are short and stored with immediates
     var again = "hello\n"
     write(1, again, array_length(again))
 

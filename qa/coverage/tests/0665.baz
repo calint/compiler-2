@@ -1,5 +1,5 @@
-# dat items and variables are addressed from one base: on rv32i the base is the
-# start of the variables so dat items have negative offsets
+# dat items and variables are addressed from one base: on rv32i the base is
+# 2032 B past the start of the variables, the dat items lie before them
 
 dat small = i32(7)
 

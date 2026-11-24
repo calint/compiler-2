@@ -1,0 +1,11 @@
+# an assignment after a 'return' on its line is the next statement, not a value
+# of the 'return'
+func id(x) res {
+    res = x
+}
+
+func main() {
+    var x = id(1)
+    if x == 2 return x = 2
+    exit(x)
+}

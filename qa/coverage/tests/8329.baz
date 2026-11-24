@@ -1,0 +1,7 @@
+# the path of an included file that does not exist is named as written, its
+# '..' is not resolved
+include "include/../nothere.baz"
+
+func main() {
+    exit(0)
+}

@@ -1,0 +1,8 @@
+# with the overflow check a double negation of a variable stays, the first
+# negation of the minimum panics
+func main() {
+    var a = i8(-128)
+    var b = i8
+    b = - -a
+    exit(b + 100)
+}

@@ -1,0 +1,10 @@
+# an array of wider elements for an array parameter gets no conversion hint,
+# an array is not converted
+func sum(a i8[]) res {
+    res = a[0] + a[1]
+}
+
+func main() {
+    var w = i16[2]
+    exit(sum(w))
+}

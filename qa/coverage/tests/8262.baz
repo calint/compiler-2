@@ -1,0 +1,16 @@
+# a call of the function it is in writes its result destination whole: the
+# argument 'm' that it reads shares storage with the destination 'm'
+
+func noinline count(n) res {
+    res = 0
+    if n > 0 {
+        var m = n - 1
+        m = count(m)
+        res = m + 1
+    }
+}
+
+func main() {
+    var three = 3
+    exit(count(three))
+}

@@ -1,0 +1,4 @@
+
+8325.baz:7:5: 'point' is a value, not a function
+    point(3)
+    ^~~~~

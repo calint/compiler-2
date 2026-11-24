@@ -1,11 +1,12 @@
 # a noinline call's narrower result assigned alone widens like an inlined
 # one
 func noinline g() res i8 {
-    res = 1
+    res = -3
 }
 
 func main() {
     var x = i32(0)
     x = g()
-    exit(x)
+    if x != -3 exit(2)
+    exit(1)
 }

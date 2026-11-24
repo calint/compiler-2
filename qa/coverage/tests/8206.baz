@@ -1,0 +1,7 @@
+# a list for an array of a known size ends when it is full: the element after
+# it is reported as too many before it is parsed
+func main() {
+    var a = i8[2]
+    a = {1, 2, nosuch}
+    exit(a[1])
+}

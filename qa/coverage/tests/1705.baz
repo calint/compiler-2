@@ -12,5 +12,7 @@ func mk() res i8 {
 func main() {
     let mk = 5
     var r = id(mk())
-    exit(r + mk)
+    var c = i8
+    c = r
+    exit(c + mk)
 }

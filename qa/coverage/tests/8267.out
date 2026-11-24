@@ -1,0 +1,4 @@
+
+8267.baz:20:14: 'g' may be written by the call of 'bump' in a later argument, use a temporary variable
+    exit(add(g, id(bump())))
+             ^

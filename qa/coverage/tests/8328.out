@@ -1,0 +1,4 @@
+
+8328.baz:5:11: generic type 'box' is not a value, name an instance first, e.g. 'type my_box = box<...>'
+dat box = box
+          ^~~

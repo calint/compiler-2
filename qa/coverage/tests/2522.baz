@@ -1,4 +1,5 @@
-# a boolean of 'x > 2047' and 'x <= 2047' compares with the threshold 2048
+# a boolean of 'x > 2047' and 'x <= 2047': rv32i compares with 2047 in a
+# register, the threshold 2048 of an 'slti' fits no immediate
 
 func noinline above(x) res bool {
     res = x > 2047

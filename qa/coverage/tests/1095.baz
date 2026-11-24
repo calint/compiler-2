@@ -17,6 +17,6 @@ func main() {
     a = { {}, 9 }
     if b or q.b or r.n != 0 or q.a[1] != 0 or a[0] != 0 or a[2] != 0 exit(1)
     var p = zero<point>()
+    if zero<bool>() exit(2)
     exit(int(zero<i8>()) + p.x + int(twice({})) + int(n) + int(a[1]))
-    # zero<bool>() is checked below
 }

@@ -1,5 +1,5 @@
-# a result discarded inside a function with a result is not written to the
-# caller's destination
+# a call whose result is discarded is rejected, also inside a function with
+# a result
 
 func two() res {
     res = 2

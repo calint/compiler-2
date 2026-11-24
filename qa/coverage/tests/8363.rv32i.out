@@ -1,0 +1,4 @@
+
+8363.baz:6:9: 'd' of type 'int' is narrowed to 'i8', use 'i8(...)'
+    b = d
+        ^

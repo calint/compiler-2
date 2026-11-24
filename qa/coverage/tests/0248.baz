@@ -5,6 +5,9 @@ func f(x, y) res {
     res = x << (y + 1)
 }
 func main() {
-    var z = f(2,3)
+    # variables, so that the shift is not folded
+    var a = 2
+    var b = 3
+    var z = f(a,b)
     assert(z == 32)
 }

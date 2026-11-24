@@ -2,8 +2,8 @@
 # into the destination
 func narrow(v i32) res i8 { res = i8(v) }
 func main() {
-    var big = i32(0x1234)
+    var big = i32(0x12f4)
     var x = i32(0)
     x = narrow(big)
-    exit(x)
+    if x != -12 exit(1)
 }

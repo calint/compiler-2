@@ -2,6 +2,7 @@
 func f(p mut i32) res i32 {
     var acc = i32(5)
     p = acc
+    acc = 7
     res = acc
 }
 func main() {

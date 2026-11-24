@@ -1,0 +1,8 @@
+# a value after the last field without a ',' before it is a list that is not
+# closed, not a field too many
+type pt { x, y }
+
+func main() {
+    var p = pt{1, 2 3}
+    exit(p.x)
+}

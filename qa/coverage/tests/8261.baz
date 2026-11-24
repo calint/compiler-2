@@ -1,0 +1,20 @@
+# the path of a 'break' does not reach the statement after its 'if': the
+# 'return' there has the result that the other path set
+
+func pick(a) res {
+    loop {
+        if a == 0 {
+            break
+        } else {
+            res = 1
+        }
+        return
+    }
+    res = 2
+}
+
+func main() {
+    var zero = 0
+    var one = 1
+    exit(pick(zero) * 10 + pick(one))
+}

@@ -1,0 +1,12 @@
+# a constant added or subtracted at the edges of what two 12-bit immediates
+# reach on rv32i: 4094 and -4096 are two steps, 4095 and -4097 are not
+func main() {
+    var x = 1
+    var y = x + 4094
+    var z = x + 4095
+    var u = x - 4096
+    var v = x - 4097
+    x = x + 4095
+    if y != 4095 or z != 4096 or u != -4095 or v != -4096 exit(1)
+    if x != 4096 exit(2)
+}

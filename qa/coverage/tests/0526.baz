@@ -18,10 +18,11 @@ func main() {
     var m = 13
     var n = 14
     var o = 15
+    var p = 16
 
     # the last resort registers rdx, rax, rsi, rdi and rcx
-    var sum = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n + o)))))))))))))
-    assert(1, sum == 120)
+    var sum = a + (b + (c + (d + (e + (f + (g + (h + (i + (j + (k + (l + (m + (n + (o + p))))))))))))))
+    assert(1, sum == 136)
 
     # division reserves rax and rdx below the live scratch values, they are
     # the first last resort registers

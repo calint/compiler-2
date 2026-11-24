@@ -1,0 +1,13 @@
+# an element at a run-time index of the first variable, whose address has no
+# displacement, is passed to a noinline call by the address of the element
+func noinline f(x i8) res i8 {
+    res = x
+}
+
+func main() {
+    var a = i8[8]
+    var i = 3
+    a[3] = 7
+    var r = f(a[i])
+    exit(int(r))
+}

@@ -1,0 +1,11 @@
+# a 'foo' without a count over 2^31 elements is accepted on rv32i: the last
+# 'i' is 2^31 - 1, which fits 'int'
+func main() {
+    var a = i8[0x80000000]
+    var r = 0
+    foo a {
+        if i == 3 break
+        r = r + 1
+    }
+    exit(r)
+}

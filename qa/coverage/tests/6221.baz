@@ -1,5 +1,6 @@
 # --checks=frame: a recursion whose last frame ends exactly at the end of
-# '--vars' passes, 16 B less panics
+# '--vars' passes (rv32i: 4 B are left, 8236 has the exact fit), 16 B less
+# panics
 
 func noinline depth(n) res {
     var a = i8[12]

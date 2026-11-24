@@ -1,0 +1,4 @@
+
+8354.baz:5:7: result 'res' is read before it is set
+    a[res] = 1
+      ^~~

@@ -1,0 +1,16 @@
+# --checks=frame: a recursion whose last frame ends exactly at the end of
+# '--vars' passes, on rv32i with 288 B and on x86_64 with 496 B
+func noinline depth(n) res {
+    var a = i8[12]
+    a[0] = i8(n)
+    if n == 0 {
+        res = 0
+        return
+    }
+    var t = depth(n - 1)
+    res = t + i32(a[0])
+}
+
+func main() {
+    exit(depth(9) - 45)
+}

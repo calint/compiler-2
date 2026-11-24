@@ -1,5 +1,5 @@
-# a guard on a parameter is not folded without the call: a division by it is
-# checked at run time, a constant argument folds the branch away
+# a guard on a parameter is not folded without the call, a constant argument
+# folds the branch away with its division by zero; 8307 has the run-time guard
 
 func ratio(a, b) res {
     res = 0

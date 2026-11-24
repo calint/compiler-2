@@ -11,5 +11,5 @@ func g(v) res {
 }
 
 func main() {
-    exit(3)
+    exit(g(3) - 33)
 }

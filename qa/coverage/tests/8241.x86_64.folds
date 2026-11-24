@@ -1,0 +1,39 @@
+=== 52:     var r4 = make_four() # folds
+    mov word [rbp + 1], 0
+    mov byte [rbp + 3], 0
+    mov word [rbp + 9], 0
+    mov byte [rbp + 11], 0
+    mov word [rbp + 17], 0
+    mov byte [rbp + 19], 0
+    mov word [rbp + 25], 0
+    mov byte [rbp + 27], 0
+    mov qword [rbp + 32], rbp
+    lea rbx, [rbp + 32]
+    call func.make_four
+=== 53:     var r5 = make_five() # folds
+    xor al, al
+    lea rdi, [rbp + 32]
+    mov rcx, 40
+    rep stosb
+    lea r15, [rbp + 32]
+    mov qword [rbp + 72], r15
+    lea rbx, [rbp + 72]
+    call func.make_five
+=== 54:     var r8 = make_eight() # folds
+    xor al, al
+    lea rdi, [rbp + 72]
+    mov rcx, 64
+    rep stosb
+    lea r15, [rbp + 72]
+    mov qword [rbp + 136], r15
+    lea rbx, [rbp + 136]
+    call func.make_eight
+=== 55:     var r9 = make_nine() # folds
+    xor al, al
+    lea rdi, [rbp + 136]
+    mov rcx, 72
+    rep stosb
+    lea r15, [rbp + 136]
+    mov qword [rbp + 208], r15
+    lea rbx, [rbp + 208]
+    call func.make_nine

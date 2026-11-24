@@ -1,0 +1,19 @@
+# the data is a record, the argument and the read are the same element
+# rejected noinline, see 0916
+
+type world {
+    items[4],
+    count,
+}
+
+dat w = world
+
+func noinline put(x mut) {
+    x = 7 + (100 - w.items[2])
+}
+
+func main() {
+    w.items[2] = 3
+    put(w.items[2])
+    exit(w.items[2] - 104)
+}

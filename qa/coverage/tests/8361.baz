@@ -1,0 +1,13 @@
+# 'array_length' reads only the length of its array, not its value: an unset
+# result is no read
+type box {items i8[5], count}
+
+func make() res box {
+    res.count = array_length(res.items)
+    res.items = {1, 2, 3, 4, 5}
+}
+
+func main() {
+    var b = make()
+    exit(b.count + b.items[4])
+}

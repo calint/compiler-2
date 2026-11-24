@@ -1,0 +1,11 @@
+# a 'continue' ends its path: the statement after it is not reached
+func main() {
+    var k = 0
+    loop {
+        k = k + 1
+        if k == 3 break
+        continue
+        k = 9
+    }
+    exit(k)
+}

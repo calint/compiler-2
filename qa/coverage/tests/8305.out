@@ -1,0 +1,4 @@
+
+8305.baz:13:14: argument 1 'p' may share storage with the result destination 'p' (both name 'p'), use a temporary variable for one of them
+    p = swap(p)
+             ^

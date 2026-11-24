@@ -180,6 +180,14 @@ func main() {
     assert(eq1)
     
     # TEST 5: Partial array_copy on nested mesh indices
+    # the source differs from the destination before the copy
+    var fill = i32
+    loop {
+        w[0].scenes[1].meshes[1].indices[fill] = fill * 3
+        fill = fill + 1
+        if fill == 24 break
+    }
+
     array_copy(
         w[0].scenes[1].meshes[1].indices,
         w[0].scenes[2].meshes[0].indices,
@@ -188,10 +196,12 @@ func main() {
     
     var idx = 0
     loop {
-        assert(idx * 2 == w[0].scenes[2].meshes[0].indices[idx])
+        assert(idx * 3 == w[0].scenes[2].meshes[0].indices[idx])
         idx = idx + 1
         if idx == 12 break
     }
+    # the element after the copied range is unchanged
+    assert(w[0].scenes[2].meshes[0].indices[12] == 24)
     
     # TEST 6: Multiple levels of array indexing with arithmetic
     var mesh_idx = 1
@@ -248,6 +258,14 @@ func main() {
     verify_mesh(w[1].scenes[2].meshes[3], 1003)
     
     # TEST 10: Cross-scene mesh swapping via temporary
+    # the two sides differ before the swap
+    fill = {}
+    loop {
+        w[0].scenes[1].meshes[2].indices[fill] = fill * 5
+        fill = fill + 1
+        if fill == 24 break
+    }
+
     var temp_mesh_indices = i32[24]
     array_copy(
         w[0].scenes[0].meshes[1].indices,
@@ -268,9 +286,11 @@ func main() {
     )
     
     # Verify swap: meshes[1] of scene[0] should now have scene[1]'s indices
+    # and meshes[2] of scene[1] those of scene[0]
     var verify_swap = 0
     loop {
-        assert(verify_swap * 2 == w[0].scenes[0].meshes[1].indices[verify_swap])
+        assert(verify_swap * 5 == w[0].scenes[0].meshes[1].indices[verify_swap])
+        assert(verify_swap * 2 == w[0].scenes[1].meshes[2].indices[verify_swap])
         verify_swap = verify_swap + 1
         if verify_swap == 24 break
     }

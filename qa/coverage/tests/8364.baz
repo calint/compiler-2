@@ -1,0 +1,10 @@
+# a field of a list that reads the field it is written into is computed in a
+# scratch register first, also a field after the first
+type point {x, y, z}
+
+func main() {
+    var k = 3
+    var p = point{1, 2, 5}
+    p = {3, 4, k * 2 + p.z}
+    exit(p.x + p.y + p.z)
+}

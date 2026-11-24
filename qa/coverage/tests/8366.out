@@ -1,0 +1,4 @@
+
+8366.baz:9:14: expected type 'i8' for parameter 'a', got 'i16'
+    exit(sum(w))
+             ^

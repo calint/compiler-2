@@ -5,5 +5,6 @@ func main() {
     var a = i16(0x1234)
     var b = i16(0x1111)
     var r = i8(a ^ b)
+    if r != 37 exit(1)
     exit(int(r))
 }

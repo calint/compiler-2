@@ -1,4 +1,4 @@
-# a constant count is range checked by the lower check alone
+# a constant count in range is accepted with the lower check alone
 
 func main() {
     var a = [4]{1, 2, 3, 4}

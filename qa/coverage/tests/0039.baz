@@ -1,4 +1,4 @@
-# complement with register-bound function arguments
+# complement in products and differences of constants and variables
 
 func main(){
     var a=-2

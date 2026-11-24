@@ -1,0 +1,14 @@
+# a callee that reads 'a[1]' and then writes the range from 'a[1]' on writes
+# 'a[3]' too: the result destination 't[3]' shares storage with the argument
+
+func fill(a mut[], v) res {
+    res = a[1]
+    var s = []{v, v, v}
+    array_copy(s, a[1], 3)
+}
+
+func main() {
+    var t = [4]
+    t[3] = fill(t, 7)
+    exit(t[3])
+}

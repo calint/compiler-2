@@ -1,0 +1,9 @@
+# a '(' after a 'return' on its line is a value, which a 'return' does not take
+func f(x) res {
+    res = x
+    if x == 2 return (x)
+}
+
+func main() {
+    exit(f(1))
+}

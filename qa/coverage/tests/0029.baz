@@ -1,4 +1,4 @@
-# unary argument with a register-bound parameter
+# negation of a grouped constant sum
 
 func main(){
     var a=-(1+2)

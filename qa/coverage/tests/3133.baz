@@ -14,6 +14,6 @@ func f(p mut i8[], i) {
 func main() {
     var a = i8[4]
     a[1] = 7
-    f(a, 1)
+    f(a, 2)
     exit(a[1])
 }

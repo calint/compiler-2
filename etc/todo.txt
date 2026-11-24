@@ -10,6 +10,98 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
+[ ] easy: (round 596, mutation tests of the assemblers and the driver)
+    candidates, none proven
+    1. 'assembler::remove_copies': the 'code_size == 0' skip ('fold_copy'
+       rejects every line that is not a live 'mv')
+    2. 'assembler::remove_retests': 'test = set' and its note
+    3. 'assembler::is_enterable': 'l.which != section::text'
+    4. 'assembler_rv32i': 'shift != 0' in the shifted 'li' form is implied
+    5. 'assembler_x86_64::inverse': no code emits a branch on 'be', 'ns' or
+       'no'
+    6. 'call_frame::is_same': comparing only the file and the start gives
+       the same output on every test
+    7. soundness guards no program reaches: the store/load tests of
+       x86_64 'is_reload' and 'qword_load', 'replace_source' for the base
+       of a load or store, 'rs1 != zero' in rv32i 'is_reload', a label
+       named only by calls as an entry
+    8. the 'CLI' helper of 'test-cli.sh' has no timeout, a compiler that
+       loops hangs the script
+[ ] easy: (round 596, mutation tests of the parse) candidates, none proven
+    1. 'tokenizer::next_trailing_whitespace': the 'is_eos() or' case
+    2. 'token::decode_escape': 'after.size() != 1' (no case matches a lead
+       byte)
+    3. 'builtin_value_type': the 'void' check (the argument parse gives the
+       same message)
+    4. 'is_literal_value': the 'not skip_literal(...) or' half
+    5. 'statement::assert_not_narrowed': 'not get_type().is_builtin()' (a
+       user type has check width 0)
+    6. 'type::padding_gaps': the 'is_full' early return
+    7. 'program::check_function_bodies', 'check_noinline_bodies': the skip
+       of emitted bodies only saves a second dry compile, not measured
+[ ] easy: (round 596, mutation tests of the statements) candidates, none
+    proven
+    1. 'stmt_if::compile': 'is_start_reachable{tc.is_reachable()}' is
+       always true (an assert in its place never fired on the suite)
+    2. 'stmt_if::else_code': 'or else_->code.is_empty()' changes only a
+       label and a count of removed jumps in one probe
+    3. 'expr_zero::fold': '{}' typed like a bare type changes no listing or
+       error of the 4626 test sources
+    4. 'foo a, {} {' says "expected a count before '{'": '{}' cannot be
+       written as a count
+[ ] easy: (round 596, mutation tests of the calls and rules) conditions
+    whose removal changes no test and no probe; candidates to remove or to
+    turn into an assert, none proven
+    1. 'stmt_identifier::is_destination_itself': 'not is_exact_access()' is
+       implied by the test of the written path; without that test 'e = -e'
+       in a 'foo' is negated in place (the listing changes)
+    2. 'bulk_operands::tests_alike': the 'allow_end' comparison ('of_range'
+       always sets it) and the two 'not ...count' tests (6776 generated
+       bulk programs equal); 'has_range_check': 'constant_count_ != 0'
+       only saves code
+    3. 'toc::inlined_nesting': the 'has_frame()' break (frame scopes are
+       pushed only at the root); 'var_storage_alignment': the
+       'holds_address' branch (address slots are placed first)
+    4. 'generic_call::argument_type': 'or is_reached_into(tz)' for made
+       values (13 probes)
+    5. code emitted under checks only is pinned by no case kind: 'LISTING'
+       compiles without checks
+[ ] easy: (round 596, mutation tests of the expressions) conditions whose
+    removal changes no test and no probe; each a candidate to remove or to
+    turn into an assert, none proven
+    1. 'expr_arith::assert_arithmetic_operands': 'and
+       get_unary_ops().is_empty()' (a list with unary ops and no operator
+       is an enclosed list of one element, checked elsewhere)
+    2. 'expr_arith::compile': 'not dst.is_register() and' before the
+       in-place single element; listings may get shorter, to be measured
+       with 'compare-listings.sh'
+    3. 'expr_bool::release_lone_operand': 'or has_not()'
+    4. 'stmt_builtin_convert::wider': the tie rule (argument type wins);
+       a tie is only 'bool' against 'i8'
+    5. 'constant_arith': the wrap of a remainder (it fits where its left
+       side does) and the early return of 'wrap_to_width' at 64 bits (the
+       mask is all ones there); kept for symmetry and clarity
+    6. the 'bool' scratch case of 'stmt_builtin_convert::compile_in_scratch'
+       is exercised on rv32i only (test 7100)
+[ ] easy: (round 596, diagnostics audit) messages that mislead, the
+    program is rejected either way
+    1. 'return 0' in 'main' or in a function without a result says "a
+       result is assigned, e.g. 'res = a'" ('parse_statement.hpp'); in
+       'main' the fix is 'exit(0)'; the parse of the statement does not
+       know its function
+    2. a definition keyword met inside an open list, e.g. 'type p { x,'
+       then 'func main() {}', says "'func' is a keyword" where an unclosed
+       block says "'func' can only be in global scope"; neither names the
+       missing '}' or ')'
+    3. 'func f(x zz<3>) {}' with no 'zz' says "'zz' is not a generic type,
+       it takes no type arguments" where 'x zz' says "type 'zz' not
+       found"; test 1840 pins the first on purpose
+[ ] easy: (round 596, source audit) 'lut' keeps its values in a vector, so a
+    reference from 'get_const_ref' dangles after a 'put'; the holders of
+    long-lived references ('generic_call::generic_', 'func_instantiator',
+    'type_instantiator') are safe because the generic tables grow only at
+    top-level definitions, which only comments state; a deque would
+    enforce it; no defect reached
 [ ] easy: (round 585, fuzzers) 'fuzz-compiler.py' waives every target
     difference of a program whose text has '<<' (56 of 2648 tests), since
     '1 << 31' is negative on rv32i only; a narrower rule would waive only
@@ -1325,6 +1417,38 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------
+[ ] easy: (round 596, mutation tests of the assemblers) rv32i: reloads are
+    removed before copies are folded, which is 28 instructions shorter over
+    7 tests than the reverse order; test 0022 is 1 instruction shorter with
+    the reverse, so a second 'remove_reloads' after 'remove_copies' would
+    gain there
+[ ] easy: (round 596, mutation tests of the parse) rv32i:
+    'comparison_operand' converts a register of a narrower integer type
+    with a 'mv' into a scratch register before the branch, e.g. 'if b == a'
+    with 'a' an inlined 'i8' (test 2140); without the size comparison of
+    'type::has_same_representation' the 'mv' and the register are gone and
+    every test passes; open whether every such register is sign-extended
+[ ] easy: (round 596, mutation tests of the backends) x86_64: the padding
+    of 'el[4]' with 'el {a i8, b i32}' (4 gaps, 32 B) is zeroed gap by gap
+    with 8 stores where the whole instance takes 4 (test 8241); the
+    threshold of 4 gaps was measured on the average
+[ ] easy: (round 596, mutation tests of the backends) two comparisons no
+    test and no probe reaches: the sizes in 'machine_x86_64::same_operand'
+    and 'has_same_representation' in the self-copy test of
+    'machine_rv32i::copy_value' (a move between one address at two widths
+    is never emitted, an expression that reads its destination goes
+    through a scratch register); candidates for an assert, not proven;
+    alike the index clause of 'operand::uses_register' (needs 28 registers
+    held)
+[ ] easy: (round 596, test audit) 'b = not arrays_equal(left, right, 2)'
+    (tests 0430, 0431) negates the stored result: x86_64 'sete r15b',
+    'test r15b, r15b', 'sete byte [b]' where one 'setne' would do, rv32i
+    'li' of 1 or 0 then 'sltiu' where the two constants could be swapped;
+    two instructions more on x86_64, one on rv32i; the comments of the
+    tests once described the short form
+[ ] easy: (round 596, optimizer hunt) rv32i: a branch to a label whose only
+    code is a jump is not threaded, e.g. 'beq t0, t1, if.29.13.code' with
+    'if.29.13.code: j loop.26.9'; not measured
 [ ] medium: (round 402, a walk of the backends against listings)
     sequences longer than needed that the front end asks for, 2145.baz:
     'exit(f(a, 1, 1, 1))' saves the argument register of 'exit' around the

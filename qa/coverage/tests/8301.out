@@ -1,0 +1,4 @@
+
+8301.baz:5:5: cannot assign to read-only 's[0]', 's' is declared with 'let'
+    s[0] = 1
+    ^

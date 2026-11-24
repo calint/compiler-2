@@ -1,0 +1,8 @@
+# an element of a list that reads the element it is written into is computed
+# in a scratch register first, also an element after the first
+func main() {
+    var k = 3
+    var a = []{1, 2, 5}
+    a = {3, 4, k * 2 + a[2]}
+    exit(a[0] + a[1] + a[2])
+}

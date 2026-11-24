@@ -2294,12 +2294,11 @@ class machine {
         try {
             return compile_version(emit);
         } catch (const compile_error& e) {
-            // note: every kind but 'source' depends on the code compiled, the
-            //       first version did not reach it
+            // note: an error of the source is raised by code the versions
+            //       share, so the first version, compiled before, raised it;
+            //       a limit depends on the code compiled
 
-            if (not e.is_limit()) {
-                throw;
-            }
+            assert(e.is_limit());
 
             return std::unexpected{exhausted_resource(e.kind)};
         }

@@ -64,5 +64,5 @@ func main() {
 
     msg1.subject = arr1
     assert(msg1.subject[0] == 3)
-#    assert(msg1.subject[1] == 4)
+    assert(msg1.subject[1] == 4)
 }

@@ -1,6 +1,60 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 596 (2026-11-24, quality: the documents against the
+    compiler, an audit of every test, mutation tests of every source file,
+    audits of the sources and of the diagnostics, a hunt in the emitted-line
+    passes and the assemblers)
+    => no defect of the compiler in any part
+    => documents: about 1170 claims tested with a program each; five false,
+       all in the documents (docs 6.3 'sal' for a power of two above 8,
+       6.4, 6.6 the 'addi' step past 4080 B, 7.6 method counts, the
+       fuzzers' README); six comments of the tutorial and of 'fuzz-io.py'
+       corrected; 'fuzz-constructs.py' runs the tutorial on rv32i-qemu too
+    => test audit: all 2660 tests read against their comment; 37 findings
+       of tests that passed with the feature they name broken (a result
+       equal either way, a statement folded away or never called) are
+       strengthened, 45 of wrong comments reworded; a second reader of the
+       change found 8 more, fixed; new tests 8300 to 8311 without 8303,
+       'test-cli.sh': no overlap check for a copy of no elements, no sector
+       read routine without a read
+    => mutation tests: 779 small bugs planted by hand in every source file,
+       one at a time, the suite run for each; 637 caught, 142 survived; the
+       survivors that an ordinary program tells apart are pinned by 67 new
+       tests (8200 to 8208 expressions, 8230 to 8243 backends, 8260 to 8267
+       calls and rules, 8320 to 8331 parse and types, 8350 to 8366
+       statements and built-ins, 8380 to 8386 assemblers) and by checks in
+       'test-cli.sh'; among them the unsound direction: shared storage
+       through a range write (8260), the result of a self-call (8262), a
+       call nested in a later argument (8267), a bulk count against the
+       shorter array (8265, 8266), a type parameter calling a generic
+       function of its name (8324), the negated minimum of a typed 32-bit
+       constant on rv32i (8330), the edges of the run-time overlap check
+       (8231); the survivors that change nothing are in 'etc/todo.txt' as
+       candidates to remove or assert
+    => sources read line by line for undefined behavior of the compiler an
+       input can reach (46000 lines, about 3000 probes on the sanitizer
+       build): none confirmed
+    => diagnostics: 402 sites; every compile error has a test; three of the
+       command line had none ("is not a number", "is zero", the help text),
+       now in 'test-cli.sh'; two branches no input reaches are asserts
+       ('machine::compile_available_version' on an error that is no limit,
+       the size operand of 'add_storage_size'); "expected a definition"
+       names 'include' too
+    => passes and assemblers: '--nopt' and '--versions' against the default
+       on about 11000 generated programs, the image against llvm's at the
+       edges of branches, 'jal', 'li', frames and calls: equal
+    => found and not done, in 'etc/todo.txt': 'not arrays_equal' stored
+       through a second test; a branch to a jump not threaded on rv32i;
+       three messages that mislead; 'lut' references that only comments
+       keep valid
+    => the round ran twice: the first run fanned out to about 30 agents and
+       filled '/tmp' (a tmpfs), the machine ran out of memory; the second
+       ran at most six agents without sub-agents, one build at a time each,
+       scratch directories capped and removed
+    => checks: the suite on the four targets, 'test-cli.sh', the linters,
+       far jumps, versions, roome, the fpga emulator, the asan build and
+       the fuzzers (seed 596001): passed
 [x] easy: round 595 (2026-11-24, bug hunts: integer arithmetic and
     conversions; calls and frames; text, data and io)
     => arithmetic: no defect; about 180000 one-expression programs

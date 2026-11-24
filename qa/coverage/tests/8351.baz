@@ -1,0 +1,11 @@
+# a 'continue' does not reach the end of its loop: a statement after a loop
+# without 'break' is not reached
+func main() {
+    var k = 0
+    loop {
+        k = k + 1
+        if k < 3 continue
+        exit(k)
+    }
+    k = 9
+}

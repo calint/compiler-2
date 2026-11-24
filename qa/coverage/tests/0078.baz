@@ -151,7 +151,7 @@ func main() {
     var x = i32(2)
     var y = i32(3)
     # x - 2 = 0, y - 2 = 1, x - 1 = 1, y + x - 4 = 1
-    m2[0].layers[1].clusters[1].objs[1].pos.x = 888
+    m2[x - 2].layers[y - 2].clusters[x - 1].objs[y + x - 4].pos.x = 888
     assert(m2[0].layers[1].clusters[1].objs[1].pos.x == 888)
     
     # Test 19: Back-to-back array access on same base

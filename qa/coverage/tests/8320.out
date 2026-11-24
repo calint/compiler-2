@@ -1,0 +1,4 @@
+
+8320.baz:4:13: cannot parse constant '9x'
+    var x = 9x
+            ^~

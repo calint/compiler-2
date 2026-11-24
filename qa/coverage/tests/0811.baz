@@ -20,10 +20,10 @@ func main() {
     z.a = {}
     assert(2, z.a.x == 0)
     var n = 7
-    n = 0
+    n = {}
     assert(3, n == 0)
     var f = true
-    f = false
+    f = {}
     assert(4, not f)
     var arr = i8[4]
     arr[1] = 9

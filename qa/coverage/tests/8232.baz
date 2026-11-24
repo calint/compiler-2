@@ -1,0 +1,22 @@
+# x86_64: a copy of 4 parts and a zero of 8 parts inside the count of an
+# 'array_copy', which holds the registers of the rep forms, are unrolled
+type quad {a, b, c, d}
+
+func last(q quad) res {
+    var t = q
+    res = t.d
+}
+
+func none() res {
+    var z = int[8]
+    res = z[7]
+}
+
+func main() {
+    var q = quad{1, 2, 3, 4}
+    var x = i8[]{1, 2, 3, 4, 5, 6, 7, 8}
+    var y = i8[8]
+    array_copy(x, y, last(q))
+    array_copy(x[4], y[4], last(q) + none())
+    if y[3] != 4 or y[7] != 8 exit(1)
+}

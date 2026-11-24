@@ -1,0 +1,6 @@
+# a 'let' of a string is not a constant operand, see 0689
+
+func main() {
+    let s = "abc"
+    exit(s + 3)
+}

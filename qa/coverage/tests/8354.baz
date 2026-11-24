@@ -1,0 +1,11 @@
+# the index of the destination of an assignment is read before the value is
+# written, an unset result in it is rejected
+func f() res {
+    var a = i8[4]
+    a[res] = 1
+    res = a[0]
+}
+
+func main() {
+    exit(f())
+}

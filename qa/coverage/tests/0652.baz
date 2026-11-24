@@ -1,5 +1,5 @@
-# 'array_copy' writes its destination, so passing a read-only array on to the
-# function that copies into it is rejected at the call
+# a read-only array is not passed on to the 'mut' parameter of the function
+# that copies into it, rejected at the call
 
 func copy_to(src i8[], dst mut i8[]) {
     array_copy(src, dst, 2)

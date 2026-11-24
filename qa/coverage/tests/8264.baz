@@ -1,0 +1,21 @@
+# a limit that another function reaches at the bottom of an inlined recursion
+# is not located in the recursive call: every level is a frame of the error
+
+func spin(k) {
+    if k == 0 {
+        return
+    }
+    spin(k + 1)
+}
+
+func walk(n) {
+    if n > 0 {
+        walk(n - 1)
+    } else {
+        spin(2)
+    }
+}
+
+func main() {
+    walk(3)
+}

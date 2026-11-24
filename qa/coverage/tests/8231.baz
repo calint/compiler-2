@@ -1,0 +1,18 @@
+# --checks=overlap: a copy of a run-time count that ends exactly where the
+# destination starts passes, and so does one onto its own range
+func assert(ok bool) { if not ok exit(1) }
+
+func main() {
+    var a = i32[8]
+    var n = 4
+    a[0] = 1
+    a[3] = 4
+    array_copy(a, a[n], n)
+    assert(a[4] == 1)
+    assert(a[7] == 4)
+    var i = 2
+    var j = 2
+    a[2] = 9
+    array_copy(a[i], a[j], n)
+    assert(a[2] == 9)
+}

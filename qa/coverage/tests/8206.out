@@ -1,0 +1,4 @@
+
+8206.baz:5:16: too many elements for array of size 2
+    a = {1, 2, nosuch}
+               ^

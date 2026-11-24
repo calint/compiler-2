@@ -1,4 +1,4 @@
-# x86: division needs 'rdx' while it holds a last resort scratch value
+# x86: division needs 'rax' while it holds a last resort scratch value
 
 func main() {
     var a = 1

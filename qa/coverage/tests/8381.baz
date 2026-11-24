@@ -1,0 +1,14 @@
+# two levels of an inlined recursion print the frame of the recursive call
+# once with their count, the smallest count that is printed
+func f(n) {
+    var a = i8[4]
+    if n == 0 {
+        a[n + 5] = 1
+    } else {
+        f(n - 1)
+    }
+}
+
+func main() {
+    f(2)
+}

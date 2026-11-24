@@ -1,0 +1,4 @@
+
+8302.baz:5:10: array 's' must be indexed
+    exit(s + 3)
+         ^

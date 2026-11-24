@@ -1,4 +1,4 @@
-# type declarations require fields
+# a type declaration without '{' is rejected
 
 type x
 func main() {}

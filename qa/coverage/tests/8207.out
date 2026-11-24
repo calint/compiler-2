@@ -1,0 +1,4 @@
+
+8207.baz:9:9: cannot deduce 'T' of generic function 'make', write 'make<...>'
+    b = make() == false
+        ^~~~

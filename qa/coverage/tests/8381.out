@@ -1,0 +1,10 @@
+
+8381.baz:6:11: index 5 is out of bounds for array 'a' of size 4
+        a[n + 5] = 1
+          ^
+8381.baz:8:9: called from, 2 times
+        f(n - 1)
+        ^
+8381.baz:13:5: called from
+    f(2)
+    ^

@@ -1,0 +1,21 @@
+# the dividend is an inlined result that an early 'return' also sets, so the
+# load before the end label keeps its register (x86_64: the copy to 'rax')
+
+var g = 40
+
+func pick(v) res {
+    if v > 5 {
+        res = 20
+        return
+    }
+    res = g
+}
+
+func main() {
+    var v = 9
+    var d = 2
+    var a = pick(v) / d
+    v = 1
+    var b = pick(v) / d
+    exit(a + b)
+}

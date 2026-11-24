@@ -1,6 +1,8 @@
 # a statement after 'return' on its line follows the 'if', as does 'else'
 
-func g() { }
+var calls = 0
+
+func g() { calls = calls + 1 }
 
 func f(a) res {
     res = 1
@@ -10,5 +12,5 @@ func f(a) res {
 
 func main() {
     var y = f(3)
-    exit(y)
+    exit(y + calls)
 }

@@ -1,0 +1,13 @@
+# a read at a run-time index of the data that the argument names rejected
+# noinline, see 0915
+
+dat g = i32[4]{ 1, 2, 3, 4 }
+
+func noinline put(x mut i32, j i32) {
+    x = 100 - g[j]
+}
+
+func main() {
+    put(g[3], 3)
+    exit(g[3] - 96)
+}

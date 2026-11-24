@@ -1,0 +1,4 @@
+
+8323.baz:5:22: too many fields for type 'pt'
+    var p = pt{1, 2, self.x}
+                     ^

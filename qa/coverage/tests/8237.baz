@@ -1,0 +1,15 @@
+# --checks=upper: a run-time range whose end is negative passes the bounds
+# check, its negative count is left to the lower check; nothing is written
+
+# a value the compiler does not know
+func noinline id(x) res {
+    res = x
+}
+
+func main() {
+    var x = i8[4]
+    var start = id(0)
+    var count = id(-1)
+    # the descriptor is not served
+    if write(7, x, count, start) != -9 exit(1)
+}

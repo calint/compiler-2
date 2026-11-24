@@ -4,7 +4,7 @@
 func main() {
     var a = i16(0x1234)
     var c = i16(0x0101)
-    var n = i16(3)
+    var n = i16(9)
     var r = i8(a + c)
     var s = i8(i16(a << n) - c)
     exit(int(r) + int(s) + i8(a ^ c))

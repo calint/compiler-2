@@ -1,4 +1,4 @@
 
-0708.baz:3:1: expected a definition ('func', 'type', 'var', 'let' or 'dat'), got 'exit'
+0708.baz:3:1: expected a definition ('func', 'type', 'var', 'let', 'dat' or 'include'), got 'exit'
 exit(0)
 ^~~~

@@ -1,0 +1,9 @@
+# a variable that hides a type of its name is a value when called, where no
+# function has the name
+type point { x, y }
+
+func main() {
+    var point = 1
+    point(3)
+    exit(0)
+}

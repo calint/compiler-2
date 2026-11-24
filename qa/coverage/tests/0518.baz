@@ -1,4 +1,4 @@
-# an inline parameter resolves to the global it aliases
+# a global passed as 'mut' to an inlined function that also names it
 
 var total = 3
 

@@ -28,7 +28,8 @@ func constants_and_variables() {
 
     var count = 1
     # a variable always has an initial value and gets its type from it
-    # here the default type is 'int': 'i64' on x86_64 and 'i32' on rv32i
+    # here the default type is 'int': 'i64' on x86_64, on rv32i a 32 bit type
+    # of its own that does not mix with 'i32'
     # an expression gives its first element's type, see 'sized types'
 
     count = count + answer
@@ -66,7 +67,8 @@ func literals() {
     # the minus is applied after the literal is read as an 'i64', so the most
     # negative 'i64' has no literal: '9223372036854775808' is out of range
     # even in '-9223372036854775808', write it as
-    # '-9223372036854775807 - 1'
+    # '-9223372036854775807 - 1' (x86_64, the default type of rv32i has 32
+    # bits)
 }
 
 #
@@ -127,7 +129,7 @@ func sized_types() {
     var part = i8(pair - small)
     assert(part == 100)
     # the argument is computed at the wider of the type and the type of its
-    # first element, 'i16' here, where a narrower element widens
+    # first element, 'i16' here, where a narrower later element widens
 
     var low = i8(-128)
     var negated = i16(0)
@@ -386,7 +388,7 @@ func sectors() {
     # the sector is an unsigned 32 bit number; a value of 32 bits or less is
     # taken modulo 2^32, so on rv32i, where 'int' is 32 bits, the sectors from
     # 2^31 (1 TB) are written as negative numbers, e.g. -1 is the sector
-    # 2^32 - 1; on x86_64 write them positive or as 'i32(-1)'
+    # 2^32 - 1, also on x86_64
     # 'main' does not call this function because it needs the card
 }
 
@@ -871,8 +873,8 @@ func checks() {
     # a constant index
 
     # 'overflow': signed overflow of '+', '-', '*' and unary '-' at the width
-    # of the destination, a constant expression that overflows is a compile
-    # error and 'i8(a + b)' still wraps
+    # of the destination, with it a constant expression that overflows is a
+    # compile error, and 'i8(a + b)' still wraps
 
     # 'division': division or remainder by zero and of 'MIN' by -1; a constant
     # zero divisor is a compile error also without it

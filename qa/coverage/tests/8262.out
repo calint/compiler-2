@@ -1,0 +1,7 @@
+
+8262.baz:8:19: argument 1 'm' may share storage with the result destination 'm' (both name 'm'), use a temporary variable for one of them
+        m = count(m)
+                  ^
+8262.baz:15:10: called from 'count(three)'
+    exit(count(three))
+         ^~~~~

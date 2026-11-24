@@ -1,0 +1,8 @@
+# a 'let' of one operand that is a typed constant of the default type is
+# folded at that type, the negated minimum of a 32-bit 'int' overflows
+func main() {
+    let a = int(-0x80000000)
+    let b = -a
+    var c = b
+    exit(c - a)
+}

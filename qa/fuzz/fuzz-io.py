@@ -5,7 +5,7 @@
 # builds programs that write a whole array, a count of elements and a count
 # from a start index of strings, 'dat', variables and array fields, and that
 # read lines of the input into an array at a start index with a count. a read
-# returns the number of elements it read and 0 at the end of the input. python
+# returns the number of bytes it read and 0 at the end of the input. python
 # runs the same operations: the program must write the bytes of the model and
 # end with the checksum of the numbers the reads returned. the input is one
 # line because the uart of rv32i-fpga gives one line to a read while a file

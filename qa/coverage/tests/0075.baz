@@ -50,4 +50,18 @@ func main() {
 
     objs[ix + ix].color = ~3
     assert(objs[6].color == ~3)
+
+    foozi(objs[2].pos)
+    assert(objs[2].pos.x == 2)
+    assert(objs[2].pos.y == 11)
+
+    var zero = 0
+    bar(zero)
+    assert(zero == 0)
+
+    var one = 1
+    bar(one)
+    assert(one == 0xff)
+
+    assert(baz(ix) == 6)
 }

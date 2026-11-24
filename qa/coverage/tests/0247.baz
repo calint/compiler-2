@@ -1,4 +1,4 @@
-# array literals cannot be passed as function arguments
+# '{}' is not an array argument
 
 func f(x i8[]) {}
 func main() { f({}) }

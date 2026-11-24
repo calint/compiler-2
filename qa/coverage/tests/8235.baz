@@ -1,0 +1,12 @@
+# rv32i: bytes at the offsets 4094 and 4095 from the variables base, the last
+# that two 12-bit steps reach and the first past them, and at -4096 and -4097
+func main() {
+    var a = i8[6200]
+    a[6126] = 5
+    a[6127] = 6
+    var k = 5000
+    a[k - 2064] = 7
+    a[k - 2065] = 8
+    if a[6126] + a[6127] != 11 exit(1)
+    if a[2936] != 7 or a[2935] != 8 exit(2)
+}

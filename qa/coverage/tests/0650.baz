@@ -1,5 +1,5 @@
-# the element 'e' of 'foo' writes the array, so passing a read-only array on to
-# the function that walks it is rejected at the call
+# a read-only array is not passed on to the 'mut' parameter of the function
+# that writes it through the element 'e' of 'foo', rejected at the call
 
 func fill(d mut i8[]) {
     foo d {

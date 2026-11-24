@@ -1,5 +1,5 @@
-# a non-inline result can be an operand in an expression, it is read from a
-# temporary
+# a non-inline result can be an operand in an expression, as the first
+# element it is made in the destination
 
 func noinline one() res { res = 1 }
 func main() { var x = one() + 1 exit(x) }

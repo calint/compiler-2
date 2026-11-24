@@ -1,0 +1,4 @@
+
+8326.baz:5:18: '+=' is not supported, assign the result, e.g. a['#' - '#'] = a['#' - '#'] + 1
+    a['#' - '#'] += 1 # c
+                 ^

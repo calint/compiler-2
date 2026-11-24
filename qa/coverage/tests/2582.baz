@@ -1,5 +1,6 @@
 # a load of what the instruction before it stored, into the same register, is
-# removed, a dword load is kept since it clears the upper half on x86_64
+# removed, a dword load on x86_64 too: no reader of a dword value takes the
+# upper half that the load would clear
 #
 # 'listing.py folds' checks the instructions of lines marked '# folds'
 

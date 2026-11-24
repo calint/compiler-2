@@ -1,6 +1,6 @@
 # a generic parameter hides a generic function of its name
 func first<T type>(x T) res T {
-    res = x
+    res = x + 1
 }
 
 type pair<first type> {

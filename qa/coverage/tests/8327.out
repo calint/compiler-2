@@ -1,0 +1,4 @@
+
+8327.baz:6:21: expected '}' to close the value of type 'pt'
+    var p = pt{1, 2 3}
+                    ^

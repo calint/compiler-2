@@ -1,0 +1,7 @@
+# a '#' in a character literal starts no comment in the source that a message
+# quotes, the comment after it is dropped
+func main() {
+    var a = i8[2]
+    a['#' - '#'] += 1 # c
+    exit(0)
+}

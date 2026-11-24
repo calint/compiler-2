@@ -1,0 +1,15 @@
+# a guard on an argument known at run time is kept: the division behind it
+# is checked and not reached for a zero divisor, see 1659
+
+func ratio(a, b) res {
+    res = {}
+    if b != 0 {
+        res = a / b
+    }
+}
+
+func main() {
+    var zero = 0
+    var three = 3
+    exit(ratio(7, zero) + ratio(9, three))
+}

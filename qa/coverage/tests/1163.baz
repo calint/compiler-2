@@ -1,5 +1,5 @@
-# a lone utf-8 continuation byte before the token is one column of the
-# padding of the caret
+# a lone utf-8 continuation byte before the token is shown as its escape
+# '\xa9', four columns of the padding of the caret
 
 dat s = "©" x
 

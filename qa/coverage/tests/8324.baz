@@ -1,0 +1,16 @@
+# a type parameter bound to a user type hides the generic function of its
+# name, 'T(5)' is a type called, not a call of that function
+type pt { x, y }
+
+func T<U type>(x U) res U {
+    res = x
+}
+
+func f<T type>(x T) res {
+    res = T(5)
+}
+
+func main() {
+    var p = pt
+    exit(f<pt>(p))
+}

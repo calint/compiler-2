@@ -1,7 +1,6 @@
-# rv32i: a remainder into the temporary of a noinline call argument needs a
-# register for its result while the helper keeps 'a0' and 'a1': out of
-# scratch registers with one free but kept by the operation, which the report
-# counts
+# rv32i: a remainder into the temporary of a noinline call argument takes a
+# register for its result while the helper keeps only its first argument;
+# with a second register kept the scratch registers would run out, see 7120
 
 func noinline f(p i32) res i32 {
     res = p + 1

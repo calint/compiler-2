@@ -1,5 +1,5 @@
-# a branch whose condition is a constant false does not set the result on a
-# path, an 'else' after a constant true branch never runs
+# an 'if' without a final 'else' does not set the result on every path, also
+# when a branch before it has a constant false condition
 func f(x) res {
     if 1 == 2 {
         res = 1

@@ -1732,7 +1732,8 @@ is lowered at the store:
 An element size the backend can lower stays the scale of the operand: 1, 2, 4
 and 8 on x86_64, any power of two on rv32i (a shift at the access). Any other
 size multiplies the index register first ('scale_index') and the operand gets
-scale 1: 'imul' on x86_64, shifts and adds on rv32i (the non-adjacent form of
+scale 1: 'imul' on x86_64, or a shift ('sal') for a power of two above 8,
+shifts and adds on rv32i (the non-adjacent form of
 the factor, 'multiply_by_shifts_and_adds').
 
 ### 6.4 A constant added to an index
@@ -1744,8 +1745,9 @@ displacement ('compile_without_trailing_addend'):
     mov qword [r15 + r14 + 24], 7     8 for 'x' and 16 for the '+ 1'
 ```
 
-Only without bounds checks: a check compares the whole index with the array
-size, so with '--checks=upper' the index is 'j + 1' in the register:
+Only without the 'upper', 'lower' and 'overflow' checks: a check compares the
+whole index with the array size, so with '--checks=upper' the index is 'j + 1'
+in the register:
 
 ```text
     mov r14, qword [rbp + 584]
@@ -1798,7 +1800,8 @@ negative offsets from 'vars', and 'baz.ld' asserts the order. x86_64
 addresses variables from 'rbp', which points at 'vars' and is loaded as an
 absolute address: 'vars' may be beyond the 2 GiB of a 'rip' relative 'lea'. rv32i addresses them
 from 's0', which points 2032 B past 'vars', so the 12-bit offsets, -2048 to
-2047, reach the first 4080 B of variables directly, further ones need a 'lui'.
+2047, reach the first 4080 B of variables directly, the next 2048 B through an
+'addi' of 2047, further ones need a 'lui'.
 A noinline body addresses its locals from its frame base, 'rbx' or 's1'.
 
 ### 6.7 Registers
@@ -1979,8 +1982,8 @@ Rejected: passing the tables one by one, every signature would carry the
 ones its callees need; one context with a run-time phase, each method of one
 phase asserted it at run time and a declaration branched on it.
 
-Cost: 'toc.hpp' holds about 4k lines; 'toc' has 15 public methods,
-'parse_toc' 27 and 'compile_toc' 29, grouped by the maps above the classes;
+Cost: 'toc.hpp' holds about 4k lines; 'toc' has 12 public methods,
+'parse_toc' 28 and 'compile_toc' 29, grouped by the maps above the classes;
 a node can reach every table its phase reads through its context. A function
 that both phases run takes the base, so it cannot ask for what only one phase
 has, e.g. the listing indent.

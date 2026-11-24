@@ -1,0 +1,8 @@
+# the whole copy of an array into a longer array is rejected like one into a
+# shorter array
+func main() {
+    var a = i8[2]{1, 2}
+    var b = i8[4]
+    b = a
+    exit(b[1])
+}

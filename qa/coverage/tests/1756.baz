@@ -1,4 +1,4 @@
-# an array is not a condition, an element is
+# an array is not a condition
 func main() {
     var a = i8[2]
     if a {

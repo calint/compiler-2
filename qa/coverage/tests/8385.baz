@@ -1,0 +1,14 @@
+# rv32i: the last constants that 'li' loads as a small value shifted left, 31
+# and -31 times a power of two, and the first past them, 33 and -33 times one
+
+func main() {
+    var s = 0
+    s = s ^ 3968
+    s = s ^ (-3968)
+    s = s ^ 4224
+    s = s ^ (-4224)
+    s = s ^ 63488
+    s = s ^ (-67584)
+    s = s ^ 77
+    exit(s & 127)
+}

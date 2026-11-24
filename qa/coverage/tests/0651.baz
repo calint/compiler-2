@@ -1,5 +1,5 @@
-# 'read' writes its buffer, so passing a read-only array on to the function
-# that reads into it is rejected at the call
+# a read-only array is not passed on to the 'mut' parameter of the function
+# that reads into it, rejected at the call
 
 func fill(buf mut i8[]) {
     read(0, buf)

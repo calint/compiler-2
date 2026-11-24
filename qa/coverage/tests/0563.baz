@@ -1,5 +1,6 @@
-# constant multiplication by shifts and adds, e.g. the element size of an
-# array index, keeps the original value until the last add or sub
+# rv32i: constant multiplication by shifts and adds, e.g. the element size of
+# an array index, keeps the original value until the last add or sub; x86_64
+# multiplies with 'imul'
 
 func assert(err, ok bool) { if not ok exit(err) }
 
@@ -10,7 +11,7 @@ type bytes3 {a i8, b i8, c i8}
 type five {a i32, b i32, c i32, d i32, e i32}
 
 func main() {
-    # a negative power of two into memory is only a shift and a negation,
+    # rv32i: a negative power of two into memory is only a shift and a negation,
     # 'other' leaves another value in the scratch register
     var a = i32(3)
     var other = i32(7)

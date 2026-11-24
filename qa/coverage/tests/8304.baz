@@ -1,0 +1,14 @@
+# a result of a noinline call that may share storage with an argument is
+# rejected, see 0860
+
+func noinline add_one_noinline(a) res {
+    res = 1
+    res = res + a
+}
+
+func main() {
+    var x = 5
+    x = add_one_noinline(x)
+
+    exit(0)
+}

@@ -1,0 +1,7 @@
+# a constant zero divisor after a constant divisor is not merged with it, the
+# error is at the zero
+func main() {
+    var a = 7
+    a = a / 2 / 0
+    exit(a)
+}

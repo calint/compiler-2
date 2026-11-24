@@ -1,0 +1,13 @@
+# rv32i: a zero of 64 B is 16 stores and one of 68 B a loop, a copy of 12 B
+# is unrolled and one of 16 B a loop; the instructions are compared
+func main() {
+    var z = i32[16] # folds
+    var y = i32[17] # folds
+    var a = i32[3]
+    var b = i32[4]
+    a[2] = 5
+    b[3] = 6
+    var c = a # folds
+    var d = b # folds
+    exit(z[15] + y[16] + c[2] + d[3])
+}

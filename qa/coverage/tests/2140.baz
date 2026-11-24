@@ -1,7 +1,7 @@
 # an inlined 'i8' parameter compared at the width of the left side
 func g(a i8) res i32 {
-    res = {}
-    var b = 3
+    res = 5
+    var b = 259
     if b == a {
         res = 2
     }

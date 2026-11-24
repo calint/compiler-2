@@ -1,6 +1,7 @@
 # two strings with the same bytes share one read-only constant, however their
 # escapes spell them; above 16 B a string is copied from read-only data, each
 # starts a word as rv32i lays a constant out from where in a word it is stored
+# (listing in 'test-cli.sh')
 
 func main() {
     var a = "hello baz world!!!!\n"

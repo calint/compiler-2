@@ -3,6 +3,7 @@
 func f(x) res {
     res = 1
     if x > 0 {
+        res = 2
         return
     } else {
         return

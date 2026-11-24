@@ -1,0 +1,7 @@
+# a '!=' where an operand is expected is no operand, the hint of 'not' is for
+# a '!' alone
+func main() {
+    var x = 1
+    x = != 1
+    exit(x)
+}

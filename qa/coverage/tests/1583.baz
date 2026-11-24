@@ -1,4 +1,4 @@
-# the array of a built-in is not a function
+# the array of 'foo' is not a function
 func f() {}
 
 func main() {

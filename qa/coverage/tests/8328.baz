@@ -1,0 +1,9 @@
+# a 'dat' named like a generic type is hidden in its initializer, the name
+# there is the generic type
+type box<T type> { x T }
+
+dat box = box
+
+func main() {
+    exit(0)
+}

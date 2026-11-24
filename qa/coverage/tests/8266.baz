@@ -1,0 +1,11 @@
+# a run-time count of 'arrays_equal' is tested against the length of each
+# array: 3 fits the first of 4 elements, not the second of 2
+
+func main() {
+    var a = []{1, 2, 3, 4}
+    var b = []{1, 2}
+    var guard = 3
+    var n = 3
+    if arrays_equal(a, b, n) exit(1)
+    exit(guard)
+}

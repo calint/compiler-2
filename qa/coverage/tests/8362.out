@@ -1,0 +1,4 @@
+
+8362.baz:4:10: result 'res' is read before it is set
+    exit(res)
+         ^~~

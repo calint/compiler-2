@@ -44,9 +44,10 @@ inline constexpr size_t max_storage_size_bytes{
                                            const size_t base,
                                            const size_t size_bytes) -> size_t {
 
-    if (size_bytes > max_storage_size_bytes or
-        base > max_storage_size_bytes - size_bytes) {
+    // note: a type or 'multiply_storage_size' bounded the size
+    assert(size_bytes <= max_storage_size_bytes);
 
+    if (base > max_storage_size_bytes - size_bytes) {
         throw compile_error{src_loc_tk,
                             "storage size exceeds signed 64-bit range"};
     }

@@ -1,6 +1,5 @@
 # a parameter of a method of a generic type named like a type parameter of
-# the type is rejected at the definition, also without an instance and when
-# the parameter is bound to a user type
+# the type is rejected at the definition, also without an instance
 
 type box<T type> {x T}
 func box.f(T) {}

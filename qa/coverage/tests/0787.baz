@@ -1,6 +1,6 @@
-# generics: a type parameter in a type literal, generics calling generics, a
-# generic method calling a method, recursion, noinline instances, braces in
-# comments and strings of a generic definition
+# generics: a result of a type parameter set to '{}', generics calling
+# generics, a generic method calling a method, recursion, noinline instances,
+# braces in comments and strings of a generic definition
 
 func assert(err, ok bool) { if not ok exit(err) }
 

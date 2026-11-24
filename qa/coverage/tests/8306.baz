@@ -1,0 +1,16 @@
+# an element result that may share storage with an argument is rejected,
+# see 0860
+
+type point {x, y}
+
+func swap(p point) res point {
+    res.x = p.y
+    res.y = p.x
+}
+
+func main() {
+    var ps = point[2]
+    ps[1] = swap(ps[1])
+
+    exit(0)
+}

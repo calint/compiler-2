@@ -1,0 +1,12 @@
+# a branch followed by a jump to the same target is removed: both outcomes of
+# 'x == 1' continue at the 'else'; the listing is compared with --nopt
+func main() {
+    var x = 1
+    var taken = 0
+    if x == 1 and false {
+        taken = 1
+    } else {
+        taken = 2
+    }
+    exit(taken)
+}

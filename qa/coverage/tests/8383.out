@@ -1,0 +1,4 @@
+
+8383.baz:5:9: 'v¡\xc2\xad®\xe2\x80\x8f‐‧\xe2\x80\xa8\xf3\xa0\xbf\xbf󡀀x' is not a valid name, a name starts with a letter or '_' and has only letters, digits and '_'
+    var v¡\xc2\xad®\xe2\x80\x8f‐‧\xe2\x80\xa8\xf3\xa0\xbf\xbf󡀀x = 1
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

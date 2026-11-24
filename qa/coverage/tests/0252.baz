@@ -7,6 +7,14 @@ func print(str i8[], len) {
 dat escapes = "\t\r\v\f`"
 dat output = "token escapes\n"
 
+func assert(x bool) { if not x exit(1) }
+
 func main() {
+    assert(array_length(escapes) == 5)
+    assert(escapes[0] == 9)
+    assert(escapes[1] == 13)
+    assert(escapes[2] == 11)
+    assert(escapes[3] == 12)
+    assert(escapes[4] == 96)
     print(output, array_length(output))
 }

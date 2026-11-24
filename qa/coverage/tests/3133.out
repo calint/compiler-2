@@ -3,5 +3,5 @@
     swap(p[i], p[1])
                ^
 3133.baz:17:5: called from
-    f(a, 1)
+    f(a, 2)
     ^

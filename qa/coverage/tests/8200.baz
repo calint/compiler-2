@@ -1,0 +1,7 @@
+# a constant division of the minimum of the width is rejected only for the
+# divisor -1, another negative divisor folds
+func main() {
+    var a = i8
+    a = -128 / -2
+    exit(a)
+}

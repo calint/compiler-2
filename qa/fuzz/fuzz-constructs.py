@@ -4,8 +4,7 @@
 # every program ends with exit code 0 and the bytes of the model on every
 # target, with and without checks and with '--nopt'. a program of
 # the rejected list must be rejected on the line that ends with '# error'.
-# the tutorial itself must run to the end (but on rv32i-qemu, which has no sd
-# card)
+# the tutorial itself must run to the end
 #
 #   construct-mismatch   a build ends differently from the model
 #   construct-reject     a valid program is rejected
@@ -95,8 +94,7 @@ def check_rejected(work, construct, found):
 def check_tutorial(work, found):
     expected = fl.Outcome("exit", 0, TUTORIAL_STDOUT)
     source = open(TUTORIAL).read()
-    # note: the tutorial reads a sector, rv32i-qemu has no sd card
-    for target in [t for t in cs.EVERY_TARGET if t != "rv32i-qemu"]:
+    for target in cs.EVERY_TARGET:
         for options in OPTION_LISTS:
             key = f"tutorial {target} {' '.join(options)}"
             c, o, problem = fl.run_target(fl.COMPILER_ASAN, TUTORIAL,

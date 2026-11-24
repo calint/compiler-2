@@ -1,0 +1,10 @@
+# the body of a 'foo' whose count folds to 0 never runs and holds the compile
+# rules too, e.g. the element types of 'array_copy'
+func main() {
+    var a = i8[4]
+    var w = i16[4]
+    foo a, 0 {
+        array_copy(a, w, 4)
+    }
+    exit(0)
+}

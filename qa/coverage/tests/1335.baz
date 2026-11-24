@@ -1,5 +1,5 @@
-# --checks=overflow: the negation of a named 64-bit minimum as an element of a
-# narrower array does not fit it
+# the negation of a named 64-bit minimum as an element of a narrower array is
+# an overflow of the negation, with the check or not
 let m = -9223372036854775807 - 1
 
 func main() {

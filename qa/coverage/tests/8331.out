@@ -1,0 +1,4 @@
+
+8331.baz:4:22: 'return' takes no value, a result is assigned, e.g. 'res = a'
+    if x == 2 return (x)
+                     ^

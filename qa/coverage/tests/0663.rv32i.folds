@@ -1,0 +1,19 @@
+=== 18:     assert(1, a < b) # folds
+    lui t1, 1
+    add t1, t1, s0
+    lw t2, 1876(t1)
+    lw t1, 1872(t1)
+    slt t0, t1, t2
+=== 24:     assert(7, s == t) # folds
+    lui t1, 1
+    add t1, t1, s0
+    lb t2, 1885(t1)
+    lb t1, 1884(t1)
+    xor t0, t1, t2
+    sltiu t0, t0, 1
+=== 27:     assert(10, g < h) # folds
+    lui t1, 1
+    add t1, t1, s0
+    lh t2, 1880(t1)
+    lh t1, 1882(t1)
+    slt t0, t1, t2

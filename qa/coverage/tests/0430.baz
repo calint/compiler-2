@@ -1,10 +1,11 @@
 # canonical boolean results passed directly to a register argument
 # inspect from the project root: ./baz qa/coverage/tests/0430.baz --target=x86_64 > gen.s
 # use --target=rv32i for the other backend; omit checks to isolate result emission
-# x86: first arrays_equal ends with sete, second with setne in the argument register
-# no extra result register, normalization, or xor should appear between it and assert
-# rv32i: equality writes 1/0 directly; negation swaps these values without xori
-# assert's own truth test is separate and still needed
+# x86: both arrays_equal end with sete in the argument register; the negation
+# then tests the register and sets it again with sete, no other register
+# rv32i: equality writes 1/0 directly; the negation inverts it with sltiu
+# rv32i: assert's own truth test ('bne t0, zero') is separate; x86 branches on
+# the flags of the compare
 
 func assert(ok bool) { if not ok exit(1) }
 

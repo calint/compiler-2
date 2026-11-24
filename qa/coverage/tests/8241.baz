@@ -1,0 +1,57 @@
+# the padding of a result written in parts is zeroed gap by gap up to 4 gaps
+# on x86_64 and 8 on rv32i, as the whole instance above; the stores are compared
+type el {a i8, b i32}
+
+type four {x el[4]}
+
+type five {x el[5]}
+
+type eight {x el[8]}
+
+type nine {x el[9]}
+
+func noinline make_four() res four {
+    res.x[0] = {1, 2}
+    res.x[1] = {1, 2}
+    res.x[2] = {1, 2}
+    res.x[3] = {1, 2}
+}
+
+func noinline make_five() res five {
+    res.x[0] = {1, 2}
+    res.x[1] = {1, 2}
+    res.x[2] = {1, 2}
+    res.x[3] = {1, 2}
+    res.x[4] = {1, 2}
+}
+
+func noinline make_eight() res eight {
+    res.x[0] = {1, 2}
+    res.x[1] = {1, 2}
+    res.x[2] = {1, 2}
+    res.x[3] = {1, 2}
+    res.x[4] = {1, 2}
+    res.x[5] = {1, 2}
+    res.x[6] = {1, 2}
+    res.x[7] = {1, 2}
+}
+
+func noinline make_nine() res nine {
+    res.x[0] = {1, 2}
+    res.x[1] = {1, 2}
+    res.x[2] = {1, 2}
+    res.x[3] = {1, 2}
+    res.x[4] = {1, 2}
+    res.x[5] = {1, 2}
+    res.x[6] = {1, 2}
+    res.x[7] = {1, 2}
+    res.x[8] = {1, 2}
+}
+
+func main() {
+    var r4 = make_four() # folds
+    var r5 = make_five() # folds
+    var r8 = make_eight() # folds
+    var r9 = make_nine() # folds
+    exit(int(r4.x[3].a + r5.x[4].a + r8.x[7].a + r9.x[8].a))
+}

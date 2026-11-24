@@ -4,9 +4,11 @@ func main() {
     var y = i16(5)
     var c = i8
     c = i8(x + y)
+    if c != 49 exit(1)
     var w = i16
     w = i16(y)
     var v = i16
     v = -i16(c)
+    if v != -49 exit(2)
     exit(c + w + v)
 }

@@ -1,5 +1,5 @@
-# a copy of no elements whose source starts at a run-time element of the
-# destination copies nothing and needs no overlap check
+# a copy of no elements whose destination starts at a run-time element of
+# the source copies nothing and needs no overlap check
 func main() {
     var a = i8[4]
     a[0] = 1
@@ -7,7 +7,10 @@ func main() {
     array_copy(a, a[k], 0)
     var b = i8[4]
     if not arrays_equal(a, b[k], 0) {
-        exit(1)
+        exit(2)
+    }
+    if a[1] != 0 {
+        exit(3)
     }
     exit(a[0])
 }

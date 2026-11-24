@@ -564,7 +564,8 @@ inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
 
     throw compile_error{src_loc_tk,
                         std::format("expected a definition ('func', 'type', "
-                                    "'var', 'let' or 'dat'), got {}",
+                                    "'var', 'let', 'dat' or 'include'), got "
+                                    "{}",
                                     got)};
 }
 

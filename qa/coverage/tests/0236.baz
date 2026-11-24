@@ -2,9 +2,9 @@
 
 func assert(x bool) { if not x exit(1) }
 func main() {
-    var a = i16[2]
-    var b = i16[2]
-    a[0] = 3
-    b[0] = 3
+    # the elements at 1 differ above their low byte only
+    var a = i16[2]{3, 0x101}
+    var b = i16[2]{3, 0x201}
     assert(a[0] == b[0])
+    assert(not (a[1] == b[1]))
 }

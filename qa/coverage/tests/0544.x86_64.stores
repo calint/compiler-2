@@ -1,28 +1,28 @@
-=== 11: dat expected_high = "\xff\x80\x7f\x01"
-=== 16:     zeros = "\0\0"
+=== 12: dat expected_high = "\xff\x80\x7f\x01"
+=== 17:     zeros = "\0\0"
     mov word [rbp], 0
     mov word [rbp + 2], 0
-=== 20:     var high = "\xff\x80\x7f\x01"
+=== 21:     var high = "\xff\x80\x7f\x01"
     mov dword [rbp + 4], 25133311
-=== 24:     var same = "aaaaaaaa\n"
+=== 25:     var same = "aaaaaaaa\n"
     mov dword [rbp + 8], 1633771873
     mov dword [rbp + 12], 1633771873
     mov byte [rbp + 16], 10
-=== 28:     var p = padded{1, "abcdef\n"}
+=== 29:     var p = padded{1, "abcdef\n"}
     mov byte [rbp + 17], 1
     mov dword [rbp + 18], 1684234849
     mov word [rbp + 22], 26213
     mov byte [rbp + 24], 10
-=== 31:     p.text = "xyz\n"
+=== 32:     p.text = "xyz\n"
     mov dword [rbp + 18], 175798648
     mov word [rbp + 22], 0
     mov byte [rbp + 24], 0
-=== 37:     ps[i].text = "hi\n"
+=== 38:     ps[i].text = "hi\n"
     mov r15, qword [rbp + 48]
     mov word [rbp + r15 * 8 + 26], 26984
     mov byte [rbp + r15 * 8 + 28], 10
     mov dword [rbp + r15 * 8 + 29], 0
-=== 42:     var line = "0123456789abcd\n"
+=== 43:     var line = "0123456789abcd\n"
     mov dword [rbp + 56], 858927408
     mov dword [rbp + 60], 926299444
     mov dword [rbp + 64], 1650538808

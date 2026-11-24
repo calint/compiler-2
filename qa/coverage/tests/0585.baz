@@ -94,8 +94,8 @@ func main() {
     q = p
     assert(55, p == q)
 
-    # 'test-==-compares.sh' checks the instructions of these lines against
-    # 'tests/0585.x86_64.compares'
+    # the 'LISTING compares' case checks the instructions of these lines
+    # against 'tests/0585.x86_64.compares'
     assert(60, a1 == b1) # compares
     assert(61, a2 == b2) # compares
     assert(62, a3 == b3) # compares

@@ -2,6 +2,9 @@
 # element is a value of the list's type like the same list of a variable
 func main() {
     var e = i8(1)
+    if 1 + i8(127) < e {
+        exit(2)
+    }
     if 1 + i16(300) > e {
         exit(1)
     }

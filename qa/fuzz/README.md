@@ -44,7 +44,7 @@ operation.
 | --- | --- |
 | `fuzz-constructs.py`, `constructs.py` | one small program with a known result per construct of the tutorial (and a program with an error per rejection rule, reported on the line of the mistake), the tutorial itself, on every target, with and without checks and with `--nopt` |
 | `fuzz-coverage.py` | runs the generators without the compiler and fails when a construct of `constructs.py` is never emitted by any of them |
-| `fuzz-night.sh [hours] [seed]` | `fuzz-all.sh` in rounds with new seeds and growing scale until the stop time, lists the new findings, log in `findings/night.log` |
+| `fuzz-night.sh [hours] [seed]` | `fuzz-all.sh` in rounds with new seeds and a scale that cycles 1, 2, 3 until the stop time, lists the new findings, log in `findings/night.log` |
 | `fuzz-ub.py` | python model of arithmetic, widths, shifts, arrays, indexes and counts of every width, arrays as parameters, one expression in many contexts (argument, index, count, divisor, shift count, comparison, result), a wider later element that must be rejected or exact, calls and recursion against the targets |
 | `fuzz-exprs.py` | python model of nested expressions (unary, conversions, comparisons, `and`/`or`/`not` with short circuit, constants, loops); with `FUZZ_SPELLING=1` each typed value is spelled as a constant and as a variable, both programs must end alike |
 | `fuzz-data.py` | python model of user types (records, nested arrays, `bool`), `dat` and `var` initializers (partial, strings, characters), `let` constants and read-only variables with shadowing, constant expressions, copies, `==` and `!=` of records and arrays, `foo`, `array_copy`, `arrays_equal`, `write` of a part of an array |
@@ -110,7 +110,7 @@ an included file (`split_include` in `fuzzlib.py`).
   transmission byte; a carriage return reads as a newline
 - a sector past the end of the card panics `sd card` on x86_64 and rv32i,
   rv32i-fpga does not detect it; rv32i-qemu has no sd card, a sector
-  transfer panics `sd card` there, the tutorial too
+  transfer panics `sd card` there
 - nasm 3.02 may stall ("unable to find valid values for all labels") on x86_64
   code with many jumps near the short jump limit, e.g. with
   `--checks=noub,line`; the code has no size that depends on a label, the

@@ -1,0 +1,7 @@
+# without the bounds checks an index that ends with a constant factor is
+# multiplied by it, only a trailing added constant becomes a displacement
+func main() {
+    var a = i8[8]{1, 2, 3, 4, 5, 6, 7, 8}
+    var i = 2
+    exit(a[i * 3])
+}

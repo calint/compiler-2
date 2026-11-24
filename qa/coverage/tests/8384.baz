@@ -1,0 +1,20 @@
+# a load of another width than the store before it at the same address is no
+# reload: a field byte after its instance word, and the word after the byte
+
+type quad { a i8, b i8, c i8, d i8 }
+
+func main() {
+    var x = quad{1, 2, 3, 4}
+    var y = quad
+    y = x
+    var k = int(y.a)
+    if k != 1 exit(1)
+
+    var v = int(k + 4)
+    y.a = i8(v)
+    x = y
+    if int(x.a) != 5 exit(2)
+    if int(x.b) != 2 exit(3)
+    if int(x.d) != 4 exit(4)
+    exit(0)
+}

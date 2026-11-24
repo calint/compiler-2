@@ -1,0 +1,15 @@
+# a 'continue' is no jump to the end of its loop: a result set before the
+# only 'break' is set after the loop
+func f() res {
+    var k = 0
+    loop {
+        k = k + 1
+        if k < 3 continue
+        res = k
+        break
+    }
+}
+
+func main() {
+    exit(f())
+}

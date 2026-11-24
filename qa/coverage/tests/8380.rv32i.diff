@@ -1,0 +1,18 @@
+41d40
+<     bne t0, t1, if.6.5.else
+47d45
+<     j if.6.5.else
+61d58
+<     j .Lbaz_exit
+79c76
+< #   removed jumps to next code: 0
+---
+> #   removed jumps to next code: 2
+81c78
+< # removed same target branches: 0
+---
+> # removed same target branches: 1
+91c88
+< #                 instructions: 16
+---
+> #                 instructions: 13

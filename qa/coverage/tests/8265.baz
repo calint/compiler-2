@@ -1,0 +1,11 @@
+# a run-time count of 'array_copy' is tested against the length of each
+# array: 3 fits the source of 4 elements, not the destination of 2
+
+func main() {
+    var a = []{1, 2, 3, 4}
+    var b = [2]
+    var guard = 7
+    var n = 3
+    array_copy(a, b, n)
+    exit(b[0] + guard)
+}

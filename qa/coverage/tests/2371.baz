@@ -1,7 +1,8 @@
 # a conditional branch over 4096 bytes, past its reach of 4094, grows to a
-# jump and one over 4092 bytes does not; on rv32i each 'q' line is 32
-# instructions, a 'p' line 2 and 'q = 0' 1, so the bodies with and without
-# 'q = 0' cover both multiples of 8 around the reach
+# jump and one over 4092 bytes does not; on rv32i the first 'q' line of a
+# body is 32 instructions and the others 31, the first 'p' line 3 and the
+# others 2, 'q = 0' 1, so the four bodies are 4088, 4092, 4096 and 4100 bytes
+# and their branches reach 4 bytes further
 func main() {
     var p = 0
     var q = 0

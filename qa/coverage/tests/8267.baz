@@ -1,0 +1,21 @@
+# a call in the argument of a call in a later argument writes the global
+# that the earlier argument 'g' names: 'bump' inside 'id(...)' is seen
+
+var g = 1
+
+func bump() res {
+    g = g + 1
+    res = g
+}
+
+func id(v) res {
+    res = v
+}
+
+func add(a, b) res {
+    res = a + b
+}
+
+func main() {
+    exit(add(g, id(bump())))
+}

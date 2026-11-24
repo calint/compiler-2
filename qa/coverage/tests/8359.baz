@@ -1,0 +1,12 @@
+# 'array_copy' between two arrays has no overlap check, which would hold the
+# register that the shift count of the destination start needs on x86_64
+func main() {
+    var a = i8[8]
+    var b = i8[8]
+    var i = 1
+    var k = 2
+    a[1] = 5
+    a[2] = 6
+    array_copy(a[i], b[i << k], 2)
+    exit(b[4] + b[5])
+}

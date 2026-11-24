@@ -1,0 +1,7 @@
+# an element of a 'let' of a string is not assigned, see 0689
+
+func main() {
+    let s = "abc"
+    s[0] = 1
+    exit(3)
+}

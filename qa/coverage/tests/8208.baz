@@ -1,0 +1,25 @@
+# a constant element that decides a condition ends it next to a run-time one:
+# the branch never taken emits no code, the lines marked '# folds' are pinned
+let on = true
+
+func main() {
+    var x = 0
+    var y = 0
+    if x > 0 or on {
+        y = 3
+    } else {
+        y = 5 # folds
+    }
+    if on or x > 0 {
+        y = y + 1
+    } else {
+        y = y + 2 # folds
+    }
+    if x == 0 and not on {
+        y = y + 10 # folds
+    }
+    if not on and x == 0 {
+        y = y + 20 # folds
+    }
+    exit(y)
+}

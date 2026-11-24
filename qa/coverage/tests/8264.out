@@ -1,0 +1,13 @@
+
+8264.baz:8:5: recursion of inlined function 'spin' is nested deeper than 64 calls, declare it 'noinline'
+    spin(k + 1)
+    ^~~~
+8264.baz:15:9: called from
+        spin(2)
+        ^~~~
+8264.baz:13:9: called from, 3 times
+        walk(n - 1)
+        ^~~~
+8264.baz:20:5: called from
+    walk(3)
+    ^~~~

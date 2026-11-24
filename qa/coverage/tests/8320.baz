@@ -1,0 +1,6 @@
+# a malformed number that starts with the digit 9 is a constant that cannot be
+# parsed, not a name
+func main() {
+    var x = 9x
+    exit(x)
+}

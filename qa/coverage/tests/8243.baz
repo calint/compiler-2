@@ -1,0 +1,16 @@
+# a copy and a compare of an odd run-time count of 'i16' between word aligned
+# arrays take the last element after the words (rv32i: the 2-byte tail)
+func main() {
+    var a = i16[]{1, 2, 3, 4}
+    var b = i16[4]
+    var c = i16[]{1, 2, 9, 4}
+    var n = 3
+    array_copy(a, b, n)
+    if b[2] != 3 or b[3] != 0 exit(1)
+    if arrays_equal(a, c, n) exit(2)
+    n = 1
+    if not arrays_equal(a, c, n) exit(3)
+    b[0] = 0
+    array_copy(a, b, n)
+    if b[0] != 1 exit(4)
+}

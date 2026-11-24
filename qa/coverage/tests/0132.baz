@@ -26,7 +26,6 @@ func main() {
     values[3] = faz(values[2], values[1])
     assert(values[3] == 2)
 
-    # note: temporary because the result may share storage with the argument
     var tmp1 = fez(values)
     values[0] = tmp1
     assert(values[0] == 2)

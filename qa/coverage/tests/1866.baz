@@ -1,4 +1,4 @@
-# a ')' after the last element with no value is a missing value, not an
+# a ')' after the ',' of a full list is where the '}' is expected, not an
 # element too many
 
 func main() {

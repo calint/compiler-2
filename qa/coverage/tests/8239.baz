@@ -1,0 +1,26 @@
+# rv32i: in 'main' the frame base register 's1' is a scratch register like
+# the others, a copy through an unaligned address in it takes bytes
+type rgb {r i8, g i8, b i8, a i8, x i8}
+
+func main() {
+    var pad = i8(1)
+    var px = rgb[2]
+    var p = int[1]
+    var q = int[1]
+    var s = int[1]
+    var sum = 0
+    px[1].x = 7
+    px[1].r = 2
+    var cnt = 1
+    foo p, cnt {
+        foo q {
+            foo s {
+                foo px {
+                    var t = e
+                    sum = sum + int(t.x) + int(t.r)
+                }
+            }
+        }
+    }
+    exit(sum + int(pad))
+}

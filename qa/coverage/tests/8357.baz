@@ -1,0 +1,13 @@
+# the count of a 'foo' is read before the body runs, an unset result in it is
+# rejected
+func f() res {
+    var a = i8[4]
+    foo a, res {
+        e = 1
+    }
+    res = a[0]
+}
+
+func main() {
+    exit(f())
+}

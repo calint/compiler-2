@@ -1,0 +1,18 @@
+34d33
+<     jne if.6.5.else
+38d36
+<     jmp if.6.5.else
+49d46
+<     jmp baz_exit
+67c64
+< ;   removed jumps to next code: 0
+---
+> ;   removed jumps to next code: 2
+69c66
+< ; removed same target branches: 0
+---
+> ; removed same target branches: 1
+79c76
+< ;                 instructions: 11
+---
+> ;                 instructions: 8

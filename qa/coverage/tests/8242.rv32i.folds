@@ -1,0 +1,31 @@
+=== 4:     var z = i32[16] # folds
+    sw zero, -2032(s0)
+    sw zero, -2028(s0)
+    sw zero, -2024(s0)
+    sw zero, -2020(s0)
+    sw zero, -2016(s0)
+    sw zero, -2012(s0)
+    sw zero, -2008(s0)
+    sw zero, -2004(s0)
+    sw zero, -2000(s0)
+    sw zero, -1996(s0)
+    sw zero, -1992(s0)
+    sw zero, -1988(s0)
+    sw zero, -1984(s0)
+    sw zero, -1980(s0)
+    sw zero, -1976(s0)
+    sw zero, -1972(s0)
+=== 5:     var y = i32[17] # folds
+    addi t0, s0, -1968
+    addi t1, t0, 68
+=== 10:     var c = a # folds
+    lw t0, -1900(s0)
+    sw t0, -1872(s0)
+    lw t0, -1896(s0)
+    sw t0, -1868(s0)
+    lw t0, -1892(s0)
+    sw t0, -1864(s0)
+=== 11:     var d = b # folds
+    addi t1, s0, -1888
+    addi t2, s0, -1860
+    addi t3, t1, 16

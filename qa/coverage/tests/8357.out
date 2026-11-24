@@ -1,0 +1,4 @@
+
+8357.baz:5:12: result 'res' is read before it is set
+    foo a, res {
+           ^~~

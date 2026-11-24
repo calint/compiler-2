@@ -1,0 +1,12 @@
+# a value that starts with 'self' after the last field is one field too many
+type pt { x, y }
+
+func pt.m() res {
+    var p = pt{1, 2, self.x}
+    res = p.x
+}
+
+func main() {
+    var p = pt
+    exit(p.m())
+}

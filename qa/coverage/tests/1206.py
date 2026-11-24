@@ -5,8 +5,8 @@ import subprocess
 import tempfile
 
 # compiles the source and the source without the functions after the marker,
-# each in a directory of its own under the same name, with every check and
-# the register report, and compares the outputs
+# each in a directory of its own under the same name, with the checks of
+# 'options' and the register report, and compares the outputs
 machine = os.environ.get('MACHINE')
 # x86_64 writes no image and takes no '--bin'
 image_options = [] if machine == 'x86_64' else ['--bin=1206.bin']

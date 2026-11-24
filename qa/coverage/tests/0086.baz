@@ -26,7 +26,8 @@ func print_num(num) {
     loop {
         i = i - 1
         var ascii = 48 - (n % 10)
-        # note: not buf[i] = 48 + ... because expression will be executed as byte sized and n overflows
+        # note: not buf[i] = 48 - ...: 'n' is not narrowed to 'i8' without a
+        #       conversion
         buf[i] = i8(ascii) 
         n = n / 10
         if n == 0 break

@@ -1,4 +1,5 @@
-# a program that only writes sectors has no read routine
+# a program that only writes sectors has no read routine (listing in
+# 'test-cli.sh')
 func main() {
     var bytes = i8[512]
     bytes[0] = 7

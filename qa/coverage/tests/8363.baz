@@ -1,0 +1,8 @@
+# a bare type as a value keeps its type like a typed constant: a 'let' of the
+# default type is not the untyped literal 0, a narrower destination rejects it
+func main() {
+    let d = int
+    var b = i8
+    b = d
+    exit(b)
+}

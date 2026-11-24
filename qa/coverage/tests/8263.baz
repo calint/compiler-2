@@ -1,0 +1,17 @@
+# an inlined body that passes a parameter, not its result, to a 'mut' parameter
+# needs no result temporary: the variables fill '--vars=16' on x86_64
+
+func inc(x mut) {
+    x = x + 1
+}
+
+func next(x mut) res {
+    inc(x)
+    res = x
+}
+
+func main() {
+    var v = 4
+    var pad = i8[8]
+    exit(next(v) + pad[0] + 1)
+}

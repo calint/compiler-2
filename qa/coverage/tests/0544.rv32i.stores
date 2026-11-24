@@ -1,17 +1,17 @@
-=== 11: dat expected_high = "\xff\x80\x7f\x01"
-=== 16:     zeros = "\0\0"
+=== 12: dat expected_high = "\xff\x80\x7f\x01"
+=== 17:     zeros = "\0\0"
     sh zero, -2032(s0)
     sh zero, -2030(s0)
-=== 20:     var high = "\xff\x80\x7f\x01"
+=== 21:     var high = "\xff\x80\x7f\x01"
     li t0, 25133311
     sw t0, -2028(s0)
-=== 24:     var same = "aaaaaaaa\n"
+=== 25:     var same = "aaaaaaaa\n"
     li t0, 1633771873
     sw t0, -2024(s0)
     sw t0, -2020(s0)
     li t0, 10
     sb t0, -2016(s0)
-=== 28:     var p = padded{1, "abcdef\n"}
+=== 29:     var p = padded{1, "abcdef\n"}
     li t0, 1
     sb t0, -2015(s0)
     li t0, 25185
@@ -20,14 +20,14 @@
     sw t0, -2012(s0)
     li t0, 10
     sb t0, -2008(s0)
-=== 31:     p.text = "xyz\n"
+=== 32:     p.text = "xyz\n"
     li t0, 31096
     sh t0, -2014(s0)
     li t0, 2682
     sh t0, -2012(s0)
     sh zero, -2010(s0)
     sb zero, -2008(s0)
-=== 37:     ps[i].text = "hi\n"
+=== 38:     ps[i].text = "hi\n"
     slli t1, t0, 3
     add t1, t1, s0
     li t2, 104
@@ -42,8 +42,8 @@
     sb zero, -2002(t1)
     sb zero, -2001(t1)
     sb zero, -2000(t1)
-=== 42:     var line = "0123456789abcd\n"
-    la t0, str.42.16
+=== 43:     var line = "0123456789abcd\n"
+    la t0, str.43.16
     mv t2, t0
     addi t3, s0, -1984
     addi t4, t2, 12
@@ -59,5 +59,5 @@
     sb t1, 2(t3)
 === read-only constants
 .balign 4
-str.42.16:
+str.43.16:
 .ascii "0123456789abcd\n"

@@ -134,7 +134,7 @@ SRC=0027 && EXP=0 && RUN
 # unary argument passed to a function result
 SRC=0028 && EXP=0 && RUN
 
-# unary argument with a register-bound parameter
+# negation of a grouped constant sum
 SRC=0029 && EXP=0 && RUN
 
 # grouped unary negation
@@ -164,7 +164,7 @@ SRC=0037 && EXP=0 && RUN
 # complement with arithmetic precedence
 SRC=0038 && EXP=0 && RUN
 
-# complement with register-bound function arguments
+# complement in products and differences of constants and variables
 SRC=0039 && EXP=0 && RUN
 
 # bitwise operators and their precedence
@@ -188,7 +188,7 @@ SRC=0045 && EXP=0 && RUN
 # short-circuit conjunction and disjunction
 SRC=0046 && EXP=0 && RUN
 
-# conjunction with explicit negation
+# disjunction of two grouped conjunctions, both false
 SRC=0047 && EXP=0 && RUN
 
 # integers compared with 0, negated and in a conjunction
@@ -631,7 +631,7 @@ SRC=0191 && COMPERR
 # boolean data requires a boolean initializer
 SRC=0192 && COMPERR
 
-# type declarations require fields
+# a type declaration without '{' is rejected
 SRC=0193 && COMPERR
 
 # type fields require delimiters
@@ -794,7 +794,7 @@ SRC=0245 && EXP=0 && RUN
 # fixed-size array assignment may use an empty initializer
 SRC=0246 && EXP=0 && RUN
 
-# array literals cannot be passed as function arguments
+# '{}' is not an array argument
 SRC=0247 && COMPERR
 
 # function shift by a parameter expression
@@ -876,7 +876,7 @@ SRC=0272 && COMPERR
 # a write to an unknown field is rejected
 SRC=0273 && COMPERR
 
-# nested expression deeper than the eight x86 scratch registers r8-r15
+# nested expression that takes all eight x86 scratch registers r8-r15
 SRC=0274 && EXP=0 && RUN
 
 # constant declaration requires a value
@@ -989,13 +989,13 @@ SRC=0309 && EXP=255 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 SRC=0310 && EXP=255 && OPTS="--vars=0x10000 --checks=upper" RUN_ERR
 
 # signed eight-bit index remains negative
-SRC=0311 && EXP=255 && RUN_ERR
+SRC=0311 && EXP=255 && OPTS="--vars=0x10000 --checks=lower,line" RUN_ERR
 
 # signed sixteen-bit index remains negative
-SRC=0312 && EXP=255 && RUN_ERR
+SRC=0312 && EXP=255 && OPTS="--vars=0x10000 --checks=lower,line" RUN_ERR
 
 # signed thirty-two-bit index remains negative
-SRC=0313 && EXP=255 && RUN_ERR
+SRC=0313 && EXP=255 && OPTS="--vars=0x10000 --checks=lower,line" RUN_ERR
 
 # signed default-type index remains negative
 SRC=0314 && EXP=255 && RUN_ERR
@@ -1040,7 +1040,7 @@ SRC=0326 && EXP=0 && RUN
 SRC=0327 && EXP=0 && RUN
 
 # minimum signed narrow index must remain negative
-SRC=0328 && EXP=255 && RUN_ERR
+SRC=0328 && EXP=255 && OPTS="--vars=0x10000 --checks=lower,line" RUN_ERR
 
 # bounds checking must resolve an index from a field
 SRC=0329 && EXP=255 && RUN_ERR
@@ -1302,8 +1302,7 @@ SRC=0409 && EXP=2 && RUN
 # a non-inline result is written to an element of an array literal
 SRC=0410 && EXP=0 && RUN
 
-# non-inline result wider than its destination is rejected, a narrower one
-# widens
+# non-inline result wider than its destination is rejected
 SRC=0411 && COMPERR
 
 # non-inline argument can be a computed expression
@@ -1408,8 +1407,8 @@ SRC=0441 && COMPERR
 # arrays follow names, with optional element types
 SRC=0442 && EXP=0 && RUN
 
-# the old type-after-brackets order is rejected, the initializer gives the
-# type
+# a type between the name of a 'dat' and its '=' is rejected, the initializer
+# gives the type
 SRC=0443 && COMPERR
 
 # a type after the variable name is rejected, the initializer gives the type
@@ -1500,7 +1499,9 @@ SRC=0471 && COMPERR
 # a return inside 'foo' skips the result assignment
 SRC=0472 && COMPERR
 
-# a result that aliases an argument is rejected when it is checked for
+# a result that may share storage with an argument is rejected: written
+# before the argument is read it would change the argument, also with
+# --checks=noub
 SRC=0473 && OPTS="--checks=noub" COMPERR
 
 # the destination is read by a later element of its own expression
@@ -1538,7 +1539,7 @@ SRC=0484 && COMPERR
 
 # an inlined narrower result is made in a register of its type and widens
 # into the destination
-SRC=0485 && EXP=52 && RUN
+SRC=0485 && EXP=0 && RUN
 
 # an instance literal assigns every element of an array-of-instances field
 SRC=0486 && EXP=0 && RUN
@@ -1644,7 +1645,7 @@ SRC=0516 && COMPERR
 # two by-reference arguments may share storage when one is 'mut'
 SRC=0517 && COMPERR
 
-# an inline parameter resolves to the global it aliases
+# a global passed as 'mut' to an inlined function that also names it
 SRC=0518 && COMPERR
 
 # a global passed to a non-inline function that also names it
@@ -1671,7 +1672,7 @@ SRC=0525 && EXP=0 && RUN
 # nested expressions deeper than the nine x86 scratch registers that no instruction needs
 SRC=0526 && EXP=0 && RUN
 
-# x86: division needs 'rdx' while it holds a last resort scratch value
+# x86: division needs 'rax' while it holds a last resort scratch value
 if [[ $MACHINE == x86_64 ]]; then SRC=0527 && COMPERR; fi
 
 # x86: a variable shift needs 'rcx' while it holds a last resort scratch value,
@@ -1700,8 +1701,8 @@ SRC=0534 && COMPERR
 # character literal without the closing quote
 SRC=0535 && COMPERR
 
-# strings initialize and assign 'i8' arrays: the bytes are copied from
-# read-only data and the rest of the array is zeroed
+# strings initialize and assign 'i8' arrays: the bytes are stored or copied
+# from read-only data and the rest of the array is zeroed
 SRC=0536 && DIFF
 
 # a string longer than the destination array
@@ -1728,7 +1729,8 @@ SRC=0542 && EXP=0 && RUN
 SRC=0543 && COMPERR
 
 # short strings are stored with immediates when that takes no more code than
-# copying from read-only data, the constants are word aligned
+# copying from read-only data, the constants are word aligned; x86_64 stores
+# all of these with immediates
 SRC=0544 && DIFF
 SRC=0544 && LISTING stores
 
@@ -1792,8 +1794,9 @@ SRC=0561 && COMPERR
 # 'var': 2147483648 is -2147483648 as an 'i32'
 SRC=0562 && EXP=0 && RUN
 
-# constant multiplication by shifts and adds, e.g. the element size of an
-# array index, keeps the original value until the last add or sub
+# rv32i: constant multiplication by shifts and adds, e.g. the element size of
+# an array index, keeps the original value until the last add or sub; x86_64
+# multiplies with 'imul'
 SRC=0563 && EXP=0 && RUN
 
 # an instance copied from an indexed array element copies one element and leaves
@@ -1979,8 +1982,8 @@ SRC=0613 && COMPERR
 # an assignment to the caller's destination
 SRC=0614 && EXP=13 && RUN
 
-# a result discarded inside a function with a result is not written to the
-# caller's destination
+# a call whose result is discarded is rejected, also inside a function with
+# a result
 SRC=0615 && COMPERR
 
 # foo with a count visits the first 'count' elements
@@ -2096,16 +2099,16 @@ SRC=0648 && COMPERR
 # call, also inside a function that is never called
 SRC=0649 && COMPERR
 
-# the element 'e' of 'foo' writes the array, so passing a read-only array on
-# to the function that walks it is rejected at the call
+# a read-only array is not passed on to the 'mut' parameter of the function
+# that writes it through the element 'e' of 'foo', rejected at the call
 SRC=0650 && COMPERR
 
-# 'read' writes its buffer, so passing a read-only array on to the function
-# that reads into it is rejected at the call
+# a read-only array is not passed on to the 'mut' parameter of the function
+# that reads into it, rejected at the call
 SRC=0651 && COMPERR
 
-# 'array_copy' writes its destination, so passing a read-only array on to the
-# function that copies into it is rejected at the call
+# a read-only array is not passed on to the 'mut' parameter of the function
+# that copies into it, rejected at the call
 SRC=0652 && COMPERR
 
 # 'array_copy' cannot copy into a read-only array parameter, also in a
@@ -2146,8 +2149,10 @@ SRC=0662 && EXP=0 && RUN
 SRC=0662 && LISTING folds
 
 # comparing two variables far from the start of the frame: on rv32i both
-# addresses share one 'lui' and 'add', for 8, 16 and 32-bit variables
+# addresses share one 'lui' and 'add', for 8, 16 and 32-bit variables; the
+# instructions of the lines marked '# folds' are pinned on rv32i
 SRC=0663 && EXP=0 && RUN
+if [[ $MACHINE != x86_64 ]]; then SRC=0663 && LISTING folds; fi
 
 # a constant added to or subtracted from a run-time index goes into the
 # displacement when bounds checks are off, with checks on the sum is computed
@@ -2156,7 +2161,7 @@ SRC=0664 && EXP=0 && RUN
 SRC=0664 && EXP=0 && OPTS="" RUN
 
 # dat items and variables are addressed from one base: on rv32i the base is
-# the start of the variables so dat items have negative offsets
+# 2032 B past the start of the variables, the dat items lie before them
 SRC=0665 && EXP=0 && RUN
 
 # arguments that reach different bytes of one variable can be passed together
@@ -2178,7 +2183,7 @@ SRC=0670 && COMPERR
 SRC=0671 && COMPERR
 
 # a narrow destination computes a converted operand at the wide width
-SRC=0672 && EXP=45 && RUN
+SRC=0672 && EXP=1 && RUN
 
 # == requires arrays of the same element type
 SRC=0673 && COMPERR
@@ -2242,7 +2247,8 @@ SRC=0691 && COMPERR
 # a negative count is rejected by the lower check alone
 SRC=0692 && EXP=255 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 
-# a constant count is range checked by the lower check alone
+# a constant count in range is accepted with the lower check alone; 2331 has
+# the count past the end
 SRC=0693 && EXP=0 && OPTS="--vars=0x10000 --checks=lower" RUN_ERR
 
 # a constant count past the end is rejected by the lower check alone
@@ -2537,7 +2543,8 @@ SRC=0785 && COMPERR
 # the type argument of a call is not a constant
 SRC=0786 && COMPERR
 
-# a generic definition with a type literal, nested generics and recursion
+# a generic definition with a result of its type parameter, nested generics
+# and recursion
 SRC=0787 && EXP=0 && RUN
 
 # a generic definition without its closing brace
@@ -2585,7 +2592,7 @@ SRC=0801 && COMPERR
 # an alias is defined once
 SRC=0802 && COMPERR
 
-# a method of a generic type is defined once, the instance reports it
+# a method of a generic type is defined once, reported at the definition
 SRC=0803 && COMPERR
 
 # a function that is not generic takes no type arguments
@@ -2764,7 +2771,8 @@ SRC=0858 && COMPERR
 # an inlined recursion that does not end at compile time is rejected
 SRC=0859 && COMPERR
 
-# a result that may share storage with an argument is rejected on every target
+# a result that may share storage with an argument is rejected on every
+# target; other calls are 8304 to 8306, 0518 and 0519
 SRC=0860 && COMPERR
 
 # a delimiter where a definition should start is rejected
@@ -3141,7 +3149,7 @@ SRC=0974 && EXP=0 && OPTS="--checks=stack" RUN
 if [[ $MACHINE == rv32i-fpga ]]; then SRC=0974 && EXP=0 && OPTS="--memory=0x20000 --stack=0x1000 --checks=stack" RUN; fi
 
 # --checks=stack: the operating system stops an overflow, no check is emitted
-# (listing in 'test-cli.sh'), the recursion runs
+# (listing of 0981 in 'test-cli.sh'), the recursion runs
 if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=0975 && EXP=0 && OPTS="--checks=stack" RUN; fi
 
 # --checks=stack: recursion deeper than the stack panics
@@ -3190,7 +3198,7 @@ SRC=0991 && OPTS="--checks=overflow" COMPERR
 SRC=0992 && EXP=3 && OPTS="--checks=overflow" RUN
 
 # a local of a callee with the name of a variable the caller passes as 'mut' is another variable
-SRC=0993 && EXP=10 && RUN
+SRC=0993 && EXP=12 && RUN
 
 # an array of bool initialized with conditions gives each label of its own
 SRC=0994 && EXP=5 && RUN
@@ -3763,8 +3771,8 @@ SRC=1161 && COMPERR
 # rejected after the '='
 SRC=1162 && COMPERR
 
-# a lone utf-8 continuation byte before the token is one column of the
-# padding of the caret
+# a lone utf-8 continuation byte before the token is shown as its escape
+# '\xa9', four columns of the padding of the caret
 SRC=1163 && COMPERR
 
 # an array size reads its unary operators like an expression, whitespace
@@ -3967,7 +3975,7 @@ if [[ $MACHINE != x86_64 ]]; then SRC=1216 && EXP=7 && RUN; fi
 
 # a shift in the argument of a conversion to a narrower type is computed at
 # the width of the argument, in a register and in memory
-SRC=1217 && EXP=6 && RUN
+SRC=1217 && EXP=102 && RUN
 
 # a shift by a count not below 32 in the argument of a conversion to 'i32'
 # is computed at 64 bits, where the low bits of the result are zero
@@ -4036,8 +4044,9 @@ SRC=1233 && COMPERR
 # a bare type is not a value before a word operator: 'or'
 SRC=1234 && COMPERR
 
-# --checks=overflow: the negation of a named 64-bit minimum is an overflow
+# the negation of a named 64-bit minimum is an overflow, with the check or not
 if [[ $MACHINE == x86_64 ]]; then SRC=1235 && OPTS="--checks=overflow" COMPERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=1235 && COMPERR; fi
 
 # the braced elements of an array field are written one by one, so an element
 # is read before the writes of the elements after it, and an array field may
@@ -4401,17 +4410,18 @@ SRC=1331 && EXP=0 && OPTS="--checks=overflow" RUN_ERR
 # both kinds of call and ends
 SRC=1332 && EXP=12 && RUN
 
-# a chain of noinline calls as long as the limit with an inlined call in each
-# body is accepted: the script compiles a generated chain
+# a chain of 100 noinline calls with an inlined call in each body is
+# accepted: the script compiles a generated chain
 SRC=1333 && DIFFPY
 
 # rv32i: a product whose right operand is in 'a0', the last scratch register,
 # is out of scratch registers, the helper takes its arguments in 'a0' and 'a1'
 SRC=1334 && COMPERR
 
-# --checks=overflow: the negation of a named 64-bit minimum as an element of a
-# narrower array does not fit it
+# the negation of a named 64-bit minimum as an element of a narrower array is
+# an overflow of the negation, with the check or not
 if [[ $MACHINE == x86_64 ]]; then SRC=1335 && OPTS="--checks=overflow" COMPERR; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=1335 && COMPERR; fi
 
 # a folded conversion compared is a value of its type, its unary ops apply at
 # that type like those of a variable
@@ -4910,7 +4920,7 @@ SRC=1535 && EXP=4 && RUN
 
 # a constant addend of a run-time index whose bytes pass the 32-bit address
 # range goes into the displacement, addresses wrap at the width of the target
-SRC=1536 && EXP=7 && RUN
+SRC=1536 && EXP=7 && OPTS="" RUN
 
 # a generic type and its base see only the constants defined before them,
 # like a generic function
@@ -5203,17 +5213,17 @@ SRC=1627 && EXP=6 && RUN
 # every path
 SRC=1628 && EXP=2 && RUN
 
-# a branch whose condition is a constant false does not set the result on a
-# path, an 'else' after a constant true branch never runs
+# an 'if' without a final 'else' does not set the result on every path, also
+# when a branch before it has a constant false condition
 SRC=1629 && COMPERR
 
 # the condition of a parameter of an inlined function is not known where the
 # function is written, the result is not set on every path
 SRC=1630 && COMPERR
 
-# an 'if' whose every branch returns ends the path, the code after it is not
-# compiled; a constant false branch runs no code
-SRC=1631 && EXP=6 && RUN
+# an 'if' whose every branch returns ends the path; a constant false branch
+# runs no code
+SRC=1631 && EXP=7 && RUN
 
 # the arrays of 'array_copy' are computed before the count, which reads what
 # a call in an array argument wrote
@@ -5234,6 +5244,7 @@ SRC=1635 && EXP=8 && RUN
 # two strings with the same bytes share one read-only constant, however their
 # escapes spell them; above 16 B a string is copied from read-only data, each
 # starts a word as rv32i lays a constant out from where in a word it is stored
+# (listing in 'test-cli.sh')
 SRC=1636 && DIFF
 
 # a statement after an 'if' whose every branch returns is not reached
@@ -5259,6 +5270,7 @@ SRC=1642 && EXP=2 && RUN
 SRC=1643 && EXP=35 && RUN
 
 # 'array_copy' checks its arguments in the order 'arrays_equal' does: a
+# source that the count may write is reported before the element types
 SRC=1644 && COMPERR
 
 # a bare type is a zero value, an '=' after it is not an operator
@@ -5310,8 +5322,8 @@ SRC=1657 && COMPERR
 # an inlined call folds away
 SRC=1658 && COMPERR
 
-# a guard on a parameter is not folded without the call: a division by it is
-# checked at run time, a constant argument folds the branch away
+# a guard on a parameter is not folded without the call, a constant argument
+# folds the branch away with its division by zero; 8307 has the run-time guard
 SRC=1659 && EXP=3 && RUN
 
 # the indexes of a destination are computed before the value: the call in the
@@ -5505,8 +5517,8 @@ SRC=1716 && COMPERR
 # it in the reproduced source, as a number does
 SRC=1717 && EXP=3 && RUN
 
-# 'array_length' without '(' at the end of a line is reported at the name, not
-# at the next line
+# 'array_length' without '(' at the end of a line is reported at the next
+# token, on the next line
 SRC=1718 && COMPERR
 
 # a block that is not reached is reported at its '{', after the comments
@@ -5745,7 +5757,8 @@ SRC=1781 && EXP=0 && OPTS="--checks=overflow" RUN
 # a first element with unary ops that reads the destination computes in place
 SRC=1782 && EXP=0 && OPTS="--checks=noub" RUN
 
-# a name alone as a statement is reported at the name
+# a name alone as a statement is reported at the next token, also when it
+# is on a later line
 SRC=1783 && COMPERR
 
 # a value of a type with all its fields and no closing '}'
@@ -6029,7 +6042,7 @@ SRC=1871 && COMPERR
 SRC=1872 && COMPERR
 
 # a generic parameter hides a generic function of its name
-SRC=1873 && EXP=8 && RUN
+SRC=1873 && EXP=9 && RUN
 
 # a constant index past the 64-bit offset range of an unsized array
 if [[ $MACHINE == x86_64 ]]; then SRC=1874 && COMPERR; fi
@@ -6722,6 +6735,7 @@ SRC=2097 && EXP=4 && RUN
 
 # an instance literal that a comparison continues, or an array literal at the
 # default type, where a number is expected; a generic call where an array is
+# expected
 SRC=2098 && COMPERR
 SRC=2099 && COMPERR
 SRC=2100 && COMPERR
@@ -6778,7 +6792,8 @@ SRC=2115 && COMPERR
 # 'false' is not a type argument
 SRC=2116 && COMPERR
 
-# a program that only writes sectors has no read routine
+# a program that only writes sectors has no read routine (listing in
+# 'test-cli.sh')
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=2117 && EXP=7 && SDCARD=1M RUN; fi
 
 # a '$' of a source line that the listing quotes is part of a symbol for the
@@ -6836,7 +6851,7 @@ SRC=2138 && COMPERR
 SRC=2139 && OPTS="--checks=lower" DIFF
 
 # an inlined 'i8' parameter compared at the width of the left side
-SRC=2140 && EXP=2 && RUN
+SRC=2140 && EXP=5 && RUN
 
 # with the overflow check, logic constants wider than an immediate and the
 # subtraction of the immediate minimum
@@ -7062,8 +7077,8 @@ SRC=2209 && COMPERR
 # listing comment of the global holds
 SRC=2210 && EXP=2 && RUN
 
-# a variable without an initializer at the end of its line, reported at the
-# end of its name
+# a variable without an initializer at the end of its line is reported at
+# the next token, on the next line
 SRC=2211 && COMPERR
 
 # a statement that ends with a semicolon
@@ -7106,7 +7121,7 @@ SRC=2223 && COMPERR
 SRC=2224 && COMPERR
 
 # a statement after 'return' on its line and an 'else' after it are accepted
-SRC=2225 && EXP=2 && RUN
+SRC=2225 && EXP=3 && RUN
 
 # a 'foo' body that assigns a variable 'in'
 SRC=2226 && EXP=6 && RUN
@@ -7131,7 +7146,7 @@ SRC=2232 && COMPERR
 
 # --checks=shift: a narrowing conversion without a shift is computed in its
 # destination, the shift of an inner conversion is checked at its width
-SRC=2233 && EXP=9 && OPTS="--vars=0x40000 --checks=shift" RUN
+SRC=2233 && EXP=105 && OPTS="--vars=0x40000 --checks=shift" RUN
 
 # the sector -1 is the last sector 2^32 - 1 of a card of 2 TB, which a count
 # of the sectors in 32 bits would leave out
@@ -7676,7 +7691,8 @@ SRC=2520 && EXP=0 && RUN
 # without the overflow check the negation of the minimum i8 in a register wraps
 SRC=2521 && EXP=0 && RUN
 
-# a boolean of 'x > 2047' and 'x <= 2047' compares with the threshold 2048
+# a boolean of 'x > 2047' and 'x <= 2047': rv32i compares with 2047 in a
+# register, the threshold 2048 of an 'slti' fits no immediate
 SRC=2522 && EXP=0 && RUN
 
 # a quotient and remainder by the minimum i32 divide the magnitudes unsigned
@@ -7758,8 +7774,7 @@ SRC=2580 && EXP=22 && RUN
 SRC=2581 && EXP=3 && RUN
 
 # a load of what the instruction before it stored into the same register is
-# removed, a dword load on x86_64 is kept; the lines marked '# folds' are
-# pinned
+# removed, a dword load on x86_64 too; the lines marked '# folds' are pinned
 SRC=2582 && EXP=51 && RUN
 SRC=2582 && LISTING folds
 
@@ -8083,7 +8098,8 @@ if [[ $MACHINE != x86_64 ]]; then SRC=3500 && EXP=117 && OPTS="--vars=64 --check
 
 # a type lists the bytes its fields cover as its fields are added, so the
 # padding of a result is found without walking nested types and arrays: types
-# on both sides of the gap counts that are zeroed one by one
+# on both sides of the gap counts that are zeroed one by one (8241 compares
+# the stores)
 SRC=3510 && EXP=0 && RUN
 
 # a generic noinline function with an array parameter gets a body for each
@@ -8303,7 +8319,8 @@ if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=
 if [[ $MACHINE == rv32i-qemu || $MACHINE == rv32i-fpga ]]; then SRC=6220 && EXP=250 && OPTS="--stack=704 --checks=stack" RUN_ERR; fi
 
 # --checks=frame: a recursion whose last frame ends exactly at the end of
-# '--vars' passes, 16 B less panics; x86_64 has other frame sizes
+# '--vars' passes (rv32i: 4 B are left, 8236 has the exact fit), 16 B less
+# panics; x86_64 has other frame sizes
 if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=0 && OPTS="--vars=320 --checks=frame" RUN; fi
 if [[ $MACHINE != x86_64 ]]; then SRC=6221 && EXP=254 && OPTS="--vars=304 --checks=frame" RUN_ERR; fi
 if [[ $MACHINE == x86_64 ]]; then SRC=6221 && EXP=0 && OPTS="--vars=544 --checks=frame" RUN; fi
@@ -8482,8 +8499,9 @@ if [[ $MACHINE == x86_64 ]]; then SRC=7240 && EXP=0 && RUN; fi
 if [[ $MACHINE != rv32i-qemu ]]; then SRC=7340 && SDCARD=1M DIFF; fi
 
 # a copy and a comparison of no elements at a run-time start of the same
-# array copy nothing and compare equal, with no overlap check
-SRC=7420 && EXP=1 && RUN
+# array copy nothing and compare equal, with no overlap check (listing in
+# 'test-cli.sh')
+SRC=7420 && EXP=1 && OPTS="--checks=overlap" RUN
 
 # a string in an instance literal writes the bytes of its field before the
 # fields after it, so a later field that reads one of those bytes is rejected
@@ -8584,3 +8602,309 @@ SRC=8168 && OPTS="--checks=upper" COMPERR
 # a method that calls another method of its receiver shows the alias that
 # made the type once
 SRC=8169 && COMPERR
+
+# 'array_copy' with a run-time count between whole arrays that is beyond
+# them panics, see 0395
+SRC=8300 && EXP=255 && RUN_ERR
+
+# an element of a 'let' of a string is not assigned, see 0689
+SRC=8301 && COMPERR
+
+# a 'let' of a string is not a constant operand, see 0689
+SRC=8302 && COMPERR
+
+# a result of a noinline call that may share storage with an argument is
+# rejected, see 0860
+SRC=8304 && COMPERR
+
+# an instance result that may share storage with an argument is rejected,
+# see 0860
+SRC=8305 && COMPERR
+
+# an element result that may share storage with an argument is rejected,
+# see 0860
+SRC=8306 && COMPERR
+
+# a guard on an argument known at run time is kept: the division behind it
+# is checked and not reached for a zero divisor, see 1659
+SRC=8307 && EXP=3 && OPTS="--checks=noub" RUN
+
+# a read at a run-time index of the data that the argument names rejected
+# noinline, see 0915
+SRC=8308 && COMPERR
+
+# the data is a record, the argument and the read are the same element
+# rejected noinline, see 0916
+SRC=8309 && COMPERR
+
+# the read is in a function called by the one that writes the parameter
+# rejected noinline, see 0917
+SRC=8310 && COMPERR
+
+# the method writes a field of an element chosen at run time and reads the
+# same field of another element, which can be the same one
+# rejected noinline, see 0923
+SRC=8311 && COMPERR
+
+# an element at a run-time index of the first variable, whose address has no
+# displacement, is passed to a noinline call by the address of the element
+SRC=8230 && EXP=7 && RUN
+
+# --checks=overlap: a copy of a run-time count that ends exactly where the
+# destination starts passes, and so does one onto its own range
+SRC=8231 && EXP=0 && OPTS="--checks=overlap" RUN
+
+# x86_64: a copy of 4 parts and a zero of 8 parts inside the count of an
+# 'array_copy', which holds the registers of the rep forms, are unrolled
+SRC=8232 && EXP=0 && RUN
+
+# a noinline method called on a field of the receiver of a noinline method
+# gets the address of the field, not that of the receiver
+SRC=8233 && EXP=4 && RUN
+
+# a constant added or subtracted at the edges of what two 12-bit immediates
+# reach on rv32i: 4094 and -4096 are two steps, 4095 and -4097 are not
+SRC=8234 && EXP=0 && RUN
+
+# rv32i: bytes at the offsets 4094 and 4095 from the variables base, the last
+# that two 12-bit steps reach and the first past them, and at -4096 and -4097
+SRC=8235 && EXP=0 && RUN
+
+# --checks=frame: a recursion whose last frame ends exactly at the end of
+# '--vars' passes, on rv32i with 288 B and on x86_64 with 496 B
+if [[ $MACHINE != x86_64 ]]; then SRC=8236 && EXP=0 && OPTS="--vars=288 --checks=frame" RUN; fi
+if [[ $MACHINE == x86_64 ]]; then SRC=8236 && EXP=0 && OPTS="--vars=496 --checks=frame" RUN; fi
+
+# --checks=upper: a run-time range whose end is negative passes the bounds
+# check, its negative count is left to the lower check; nothing is written
+SRC=8237 && EXP=0 && OPTS="--checks=upper" RUN
+
+# fields past the reach of two 12-bit steps from the address of a parameter:
+# rv32i builds the address without overwriting the base it adds, also indexed
+SRC=8238 && EXP=4 && RUN
+
+# rv32i: in 'main' the frame base register 's1' is a scratch register like
+# the others, a copy through an unaligned address in it takes bytes
+SRC=8239 && EXP=10 && RUN
+
+# x86_64: a product in memory times a factor computed into a register that
+# the multiply may overwrite is an 'imul' into the factor and a store of it
+SRC=8240 && EXP=0 && RUN
+if [[ $MACHINE == x86_64 ]]; then SRC=8240 && LISTING folds; fi
+
+# the padding of a result written in parts is zeroed gap by gap up to 4 gaps
+# on x86_64 and 8 on rv32i, as the whole instance above; the stores are compared
+SRC=8241 && EXP=4 && RUN
+SRC=8241 && LISTING folds
+
+# rv32i: a zero of 64 B is 16 stores and one of 68 B a loop, a copy of 12 B
+# is unrolled and one of 16 B a loop; the instructions are compared
+SRC=8242 && EXP=11 && RUN
+if [[ $MACHINE != x86_64 ]]; then SRC=8242 && LISTING folds; fi
+
+# a copy and a compare of an odd run-time count of 'i16' between word aligned
+# arrays take the last element after the words (rv32i: the 2-byte tail)
+SRC=8243 && EXP=0 && RUN
+
+# a constant division of the minimum of the width is rejected only for the
+# divisor -1, another negative divisor folds
+SRC=8200 && EXP=64 && OPTS="--checks=noub" RUN
+
+# with the overflow check a double negation of a variable stays, the first
+# negation of the minimum panics
+SRC=8201 && EXP=249 && OPTS="--checks=overflow" RUN_ERR
+
+# a constant zero divisor after a constant divisor is not merged with it, the
+# error is at the zero
+SRC=8202 && COMPERR
+
+# without the bounds checks an index that ends with a constant factor is
+# multiplied by it, only a trailing added constant becomes a displacement
+SRC=8203 && EXP=7 && OPTS="" RUN
+
+# a parenthesized list as the whole argument of a conversion is a list, not a
+# single operand: a narrower one is computed at the width of the type
+SRC=8204 && EXP=50 && RUN
+
+# the whole copy of an array into a longer array is rejected like one into a
+# shorter array
+SRC=8205 && COMPERR
+
+# a list for an array of a known size ends when it is full: the element after
+# it is reported as too many before it is parsed
+SRC=8206 && COMPERR
+
+# a generic call that a comparison follows is not the whole value of a 'bool'
+# destination, it does not take 'bool' for its result
+SRC=8207 && COMPERR
+
+# a constant element that decides a condition ends it next to a run-time one:
+# the branch never taken emits no code, the lines marked '# folds' are pinned
+SRC=8208 && EXP=4 && RUN
+SRC=8208 && LISTING folds
+
+# a callee that reads 'a[1]' and then writes the range from 'a[1]' on writes
+# 'a[3]' too: the result destination 't[3]' shares storage with the argument
+SRC=8260 && COMPERR
+
+# the path of a 'break' does not reach the statement after its 'if': the
+# 'return' there has the result that the other path set
+SRC=8261 && EXP=21 && RUN
+
+# a call of the function it is in writes its result destination whole: the
+# argument 'm' that it reads shares storage with the destination 'm'
+SRC=8262 && COMPERR
+
+# an inlined body that passes a parameter, not its result, to a 'mut' parameter
+# needs no result temporary: the variables fill '--vars=16' on x86_64
+SRC=8263 && EXP=6 && OPTS="--vars=16 --checks=upper,lower,line" RUN
+
+# a limit that another function reaches at the bottom of an inlined recursion
+# is not located in the recursive call: every level is a frame of the error
+SRC=8264 && COMPERR
+
+# a run-time count of 'array_copy' is tested against the length of each
+# array: 3 fits the source of 4 elements, not the destination of 2
+SRC=8265 && EXP=255 && RUN_ERR
+
+# a run-time count of 'arrays_equal' is tested against the length of each
+# array: 3 fits the first of 4 elements, not the second of 2
+SRC=8266 && EXP=255 && RUN_ERR
+
+# a call in the argument of a call in a later argument writes the global
+# that the earlier argument 'g' names: 'bump' inside 'id(...)' is seen
+SRC=8267 && COMPERR
+
+# a 'continue' is no jump to the end of its loop: a result set before the
+# only 'break' is set after the loop
+SRC=8350 && EXP=3 && RUN
+
+# a statement after a loop that only a 'continue' could leave is not reached
+SRC=8351 && COMPERR
+
+# a 'continue' ends its path: the statement after it is not reached
+SRC=8352 && COMPERR
+
+# a branch that continues need not set the result for the 'break' after the
+# 'if'
+SRC=8353 && EXP=3 && RUN
+
+# an unset result in the index of the destination of an assignment is rejected
+SRC=8354 && COMPERR
+
+# the code after a 'foo' whose count folds to 0 is reached and runs
+SRC=8355 && EXP=3 && RUN
+
+# the body of a 'foo' whose count folds to 0 holds the compile rules too
+SRC=8356 && COMPERR
+
+# an unset result in the count of a 'foo' is rejected
+SRC=8357 && COMPERR
+
+# a 'foo' without a count over 2^31 elements is accepted on rv32i, its last
+# 'i' fits 'int'; rv32i-qemu and rv32i-fpga cannot hold the array
+if [[ $MACHINE == x86_64 || $MACHINE == rv32i ]]; then SRC=8358 && EXP=3 && OPTS="--vars=0x80000040 --checks=upper" RUN; fi
+
+# 'array_copy' between two arrays has no overlap check, which would hold the
+# register that the shift count of the destination start needs on x86_64
+SRC=8359 && EXP=11 && OPTS="--checks=noub" RUN
+
+# the same for 'array_copy' of 0 elements within one array
+SRC=8360 && EXP=7 && OPTS="--checks=noub" RUN
+
+# 'array_length' reads only the length of its array, an unset result is no
+# read
+SRC=8361 && EXP=10 && RUN
+
+# an unset result in the code of an 'exit' is rejected
+SRC=8362 && COMPERR
+
+# a bare type as a value keeps its type: a 'let' of the default type is not
+# the untyped literal 0
+SRC=8363 && COMPERR
+
+# a field of a list that reads the field it is written into is computed in a
+# scratch register first, also a field after the first; the first version is
+# the one computed in place
+SRC=8364 && EXP=18 && OPTS="--versions=first" RUN
+
+# the same for an element of an array list
+SRC=8365 && EXP=18 && OPTS="--versions=first" RUN
+
+# an array of wider elements for an array parameter gets no conversion hint
+SRC=8366 && COMPERR
+
+# a malformed number that starts with the digit 9 is a constant that cannot be
+# parsed, not a name
+SRC=8320 && COMPERR
+
+# an assignment after a 'return' on its line is the next statement, not a
+# value of the 'return'
+SRC=8321 && EXP=2 && RUN
+
+# a '!=' where an operand is expected is no operand, the hint of 'not' is for
+# a '!' alone
+SRC=8322 && COMPERR
+
+# a value that starts with 'self' after the last field is one field too many
+SRC=8323 && COMPERR
+
+# a type parameter bound to a user type hides the generic function of its
+# name, 'T(5)' is a type called, not a call of that function
+SRC=8324 && COMPERR
+
+# a variable that hides a type of its name is a value when called, where no
+# function has the name
+SRC=8325 && COMPERR
+
+# a '#' in a character literal starts no comment in the source that a message
+# quotes, the comment after it is dropped
+SRC=8326 && COMPERR
+
+# a value after the last field without a ',' before it is a list that is not
+# closed, not a field too many
+SRC=8327 && COMPERR
+
+# a 'dat' named like a generic type is hidden in its initializer, the name
+# there is the generic type
+SRC=8328 && COMPERR
+
+# the path of an included file that does not exist is named as written, its
+# '..' is not resolved
+SRC=8329 && COMPERR
+
+# a 'let' of one operand that is a typed constant of the default type is
+# folded at that type, the negated minimum of a 32-bit 'int' overflows
+if [[ $MACHINE != x86_64 ]]; then SRC=8330 && OPTS="--checks=noub" COMPERR; fi
+
+# a '(' after a 'return' on its line is a value, which a 'return' does not
+# take
+SRC=8331 && COMPERR
+
+# a branch followed by a jump to the same target is removed, the optimized
+# output is compared with --nopt in the '8380.TARGET.diff' of each target
+SRC=8380 && EXP=2 && DIFFNOPT
+
+# two levels of an inlined recursion print the frame of the recursive call
+# once with their count, the smallest count that is printed
+SRC=8381 && COMPERR
+
+# the dividend is an inlined result that an early 'return' also sets, so the
+# load before the end label keeps its register (x86_64: the copy to 'rax')
+SRC=8382 && EXP=30 && RUN
+
+# the ends of ranges of characters that a message escapes, and the characters
+# next to them, which are shown
+SRC=8383 && COMPERR
+
+# a load of another width than the store before it at the same address is no
+# reload: a field byte after its instance word, and the word after the byte
+SRC=8384 && EXP=0 && RUN
+
+# rv32i: the last constants that 'li' loads as a small value shifted left and
+# the first ones past them, the image is compared with what llvm assembles
+SRC=8385 && EXP=77 && RUN
+
+# rv32i: the reload of a stored quotient is removed before the copy of the
+# helper result is folded ('test-cli.sh' reads the counts)
+SRC=8386 && EXP=15 && RUN

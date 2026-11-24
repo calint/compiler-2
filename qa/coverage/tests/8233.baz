@@ -1,0 +1,23 @@
+# a noinline method called on a field of the receiver of a noinline method
+# gets the address of the field, not that of the receiver
+type inner {n i32}
+
+type outer {first inner, second inner}
+
+func noinline inner.get() res i32 {
+    res = self.n
+}
+
+func noinline outer.second_n() res i32 {
+    res = self.second.get()
+}
+
+func noinline outer.first_n() res i32 {
+    res = self.first.get()
+}
+
+func main() {
+    var o = outer{{3}, {4}}
+    if o.first_n() != 3 exit(1)
+    exit(int(o.second_n()))
+}

@@ -17,7 +17,7 @@ func main() {
     var y = i16
     y = f8()
     if y != -2 {
-        exit(1)
+        exit(6)
     }
     y = n8()
     if y != -3 {

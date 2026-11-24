@@ -4,8 +4,11 @@ func main() {
     var x = 3000
     x = x + -2048
     x = x - -2048
-    var y = x & 4096
+    var y = x & 6144
+    if y != 2048 exit(3)
     var z = x | 8192
-    var w = x ^ 8192
-    exit(z - w + y + x - 2998)
+    if z != 11192 exit(4)
+    var w = x ^ 10240
+    if w != 9144 exit(5)
+    exit(x - 2998)
 }

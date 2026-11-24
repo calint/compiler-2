@@ -24,7 +24,6 @@ func main() {
     values[1] = 4
     values[2] = 3
 
-    # note: temporary because the result may share storage with the argument
     var tmp1 = fez(values)
     values[0] = tmp1
     assert(values[0] == 768)

@@ -1,7 +1,7 @@
 # a noinline call's narrower result alone as the argument of an inlined
 # call widens into a temporary of the parameter, a name would be rejected
 func noinline g() res i8 {
-    res = 1
+    res = -3
 }
 
 func f(x) res {
@@ -9,5 +9,7 @@ func f(x) res {
 }
 
 func main() {
-    exit(f(g()))
+    var r = f(g())
+    if r != -3 exit(2)
+    exit(1)
 }

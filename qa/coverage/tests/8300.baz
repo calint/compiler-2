@@ -1,0 +1,14 @@
+# 'array_copy' with a run-time count between whole arrays that is beyond
+# them panics, see 0395
+
+func assert(err, expr bool) { if not expr exit(err) }
+
+func main() {
+    var src = [4]{1, 2, 3, 4}
+    var dst = [4]
+
+    var n = 5
+    array_copy(src, dst, n)
+
+    assert(1, dst[0] == 1)
+}

@@ -1,5 +1,4 @@
-# non-inline result wider than its destination is rejected, a narrower one
-# widens
+# non-inline result wider than its destination is rejected
 
 func noinline target() result i32 { result = 1 }
 func main() { var result = i16(0) result = target() }

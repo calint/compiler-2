@@ -1,6 +1,6 @@
 # the method writes a field of an element chosen at run time and reads the
 # same field of another element, which can be the same one
-# rejected inlined as well as noinline
+# rejected inlined as well as noinline, see 8311
 
 type entity {
     len i32,

@@ -1,0 +1,13 @@
+# x86_64: a product in memory times a factor computed into a register that
+# the multiply may overwrite is an 'imul' into the factor and a store of it
+func noinline id(x) res {
+    res = x
+}
+
+func main() {
+    var a = id(3)
+    var b = id(4)
+    var p = id(5)
+    p = p * -b * (a + b) # folds
+    exit(p + 140)
+}

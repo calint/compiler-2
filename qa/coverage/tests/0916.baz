@@ -1,5 +1,5 @@
 # the data is a record, the argument and the read are the same element
-# rejected inlined as well as noinline
+# rejected inlined as well as noinline, see 8309
 
 type world {
     items[4],

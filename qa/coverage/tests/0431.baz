@@ -2,9 +2,10 @@
 # inspect from the project root: ./baz qa/coverage/tests/0431.baz --target=x86_64 > gen.s
 # use --target=rv32i for the other backend; omit checks to isolate result emission
 # inspect the initialization and reassignment of b, separately from assert(b)
-# x86: sete byte [b] for equality, setne byte [b] for negated equality
-# rv32i: produce the final 0/1 value and sb it directly
-# neither assignment needs a second normalization or an xor for negation
+# x86: sete byte [b] for equality; negated equality is sete in a register,
+# a test of it and sete byte [b]
+# rv32i: equality writes 1/0 and sb stores it; the negation inverts it with
+# sltiu before the sb
 
 func assert(ok bool) { if not ok exit(1) }
 

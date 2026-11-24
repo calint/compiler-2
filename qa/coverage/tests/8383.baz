@@ -1,0 +1,6 @@
+# the ends of ranges that a message escapes: U+00AD, U+200F, U+2028, U+E0FFF;
+# their neighbors U+00A1, U+00AE, U+2010, U+2027 and U+E1000 are shown
+
+func main() {
+    var v¡­®‏‐‧ 󠿿󡀀x = 1
+}

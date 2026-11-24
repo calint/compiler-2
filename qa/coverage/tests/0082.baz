@@ -38,8 +38,8 @@ func pn(num) {
         i = i - 1
         var ascii = 48 + (n % 10)
         buf[i] = i8(ascii)
-        # note: not buf[i] = 48 + ... because operation is done in byte sized
-        #       with n overflows
+        # note: not buf[i] = 48 + ...: 'n' is not narrowed to 'i8' without a
+        #       conversion
         n = n / 10
         if n == 0 break
     }

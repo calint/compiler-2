@@ -5,12 +5,21 @@ type r { a i8[23] }
 type r7 { a i8[7] }
 
 func mk(x r) res r {
+    # every part of the zero is seen: the bytes at its ends are dirty before
+    res.a[7] = 1
+    res.a[8] = 2
+    res.a[15] = 3
+    res.a[16] = 5
+    res.a[19] = 6
+    res.a[20] = 7
+    res.a[21] = 8
+    res.a[22] = 9
     res = {}
     res.a[0] = x.a[0]
 }
 
 func sum(a0 i8, a1 i8, a2 i8, a3 i8, a4 i8, h r) res int {
-    res = a0 + a1 + a2 + a3 + a4 + h.a[0]
+    res = a0 + a1 + a2 + a3 + a4 + h.a[0] + h.a[7] + h.a[8] + h.a[15] + h.a[16] + h.a[19] + h.a[20] + h.a[21] + h.a[22]
 }
 
 func main() {

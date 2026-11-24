@@ -183,6 +183,16 @@ CLI_RELOADS() {
     [[ ! -s err ]]
     grep -Fq '# removed reloads after stores: 0' gen.s
     grep -Fq '# removed reloads after stores: 1' out
+    # 8386.baz: the reload is removed before the copies are folded, so the
+    # copy of the helper result folds into the add that read the reload
+    baz_at rv32i 8386.baz >out 2>err
+    [[ ! -s err ]]
+    grep -Fq '# removed reloads after stores: 1' out
+    grep -Fq '#      removed register copies: 1' out
+    # 7540.baz: a helper argument already in its register is not copied
+    baz_at rv32i 7540.baz >out 2>err
+    [[ ! -s err ]]
+    lacks -E '^ +mv ([a-z0-9]+), \1$' out
     rm -f gen-rv32i.bin
     echo ok
 }
@@ -419,6 +429,21 @@ CLI_FILE_ERRORS() {
     grep -Fq "cannot write the version to stdout" err
     # a help shorter than a block is still checked, e.g. a closed stdout
     expect_exit_1 "$BIN" --help 1>&- 2>err
+    grep -Fq "cannot write the help to stdout" err
+    # the help names the binary, every option, report and check; '-h' is the
+    # same
+    "$BIN" --help >gen.s 2>err
+    [[ ! -s err ]]
+    [[ $(head -1 gen.s) == "usage: $BIN [options] [file]" ]]
+    local word
+    for word in --target= --vars= --stack= --memory= --checks= --report= \
+        --bin= --sdcard= --nopt --versions= --reproduce-source --version \
+        "--help, -h" "reports:" "  registers " "checks:" "  upper " \
+        "  lower " "  line " "  frame " "  division " "  shift " "  overlap " \
+        "  stack " "  overflow " "  noub " "  -NAME " "examples:"; do
+        grep -Fq -- "$word" gen.s
+    done
+    "$BIN" -h | cmp -s - gen.s
     expect_exit_1 "$BIN" missing-source.baz >gen.s 2>/dev/full
     # a source is read up to its size limit
     expect_exit_1 "$BIN" /dev/zero >gen.s 2>err
@@ -478,6 +503,9 @@ CLI_REGISTER_REPORT() {
     grep -Fq "register use at the peak: 0 of" out
     grep -Eq '^; +0  main$' out
     lacks -F "global initializers" out
+    # no function has a body of its own, so the table of their calls is left
+    # out
+    lacks -F "calls of functions with a body of their own" out
     # the total leaves out the registers the backend holds itself, 13 of the
     # 14 scratch registers on x86_64 and 29 of 30 on rv32i here
     "$BIN" --report=registers 0426.baz >out 2>err
@@ -874,6 +902,37 @@ CLI_NO_EXIT_ROUTINE() {
     echo ok
 }
 
+# 2117 only writes sectors, 1048 also reads them: a routine is written for
+# the sector functions that are called
+CLI_NO_OVERLAP_CHECK() {
+    echo -n "cli no overlap check for a copy of no elements: "
+    # 7420.baz: the count is a constant 0 at a run-time start
+    local target
+    for target in x86_64 rv32i-fpga; do
+        baz_at "$target" --checks=overlap 7420.baz >gen.s 2>err
+        [[ ! -s err ]]
+        lacks -F "overlap" gen.s
+    done
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
+CLI_NO_SECTOR_READ_ROUTINE() {
+    echo -n "cli no sector read routine: "
+    local target
+    for target in x86_64 rv32i rv32i-fpga; do
+        baz_at "$target" 2117.baz >gen.s 2>err
+        [[ ! -s err ]]
+        grep -q "baz_sector_write:$" gen.s
+        lacks "baz_sector_read:$" gen.s
+        baz_at "$target" 1048.baz >gen.s 2>err
+        [[ ! -s err ]]
+        grep -q "baz_sector_read:$" gen.s
+    done
+    rm -f gen-rv32i.bin
+    echo ok
+}
+
 CLI_FPGA_MEMORY() {
     echo -n "cli rv32i-fpga memory size: "
     local memory_size=$((0x800000)) stack_size=$((0x10000))
@@ -960,6 +1019,15 @@ CLI_NOINLINE_REPORT() {
         # the report comes before the optimization counts
         [[ $(grep -n 'noinline functions:' gen.s | cut -d: -f1) -lt $(grep -n 'removed jumps to next code' gen.s | cut -d: -f1) ]]
     done
+    # the instructions of 'sum' are those of both its bodies; on x86_64 a
+    # line of code is one instruction
+    "$BIN" 0751.baz >gen.s 2>err
+    local counted reported
+    counted=$(awk '/^func\.sum\.\./ { in_body = 1; next }
+        /^size\.func\.sum\.\./ { in_body = 0 }
+        in_body && /^ +[a-z]/ && !/:$/' gen.s | wc -l)
+    reported=$(sed -nE 's/^; +sum: 2 bodies, 3 calls, ([0-9]+) instructions$/\1/p' gen.s)
+    [[ $counted -eq $reported ]]
     # 0753.baz: one call of 'box.total'
     "$BIN" 0753.baz >gen.s 2>err
     grep -Eq '^; +box.total: 1 body, 1 call, [0-9]+ instructions, no reuse$' gen.s
@@ -1120,8 +1188,33 @@ CLI_OPTION_MESSAGES() {
     grep -Fq "', supported values are: smaller, nested, first, last" err
     expect_exit_1 "$BIN" --vars=17 0015.baz >/dev/null 2>err
     grep -Fq "error: invalid --vars: '17' is not a multiple of 16" err
+    # a memory that is no multiple of what a 'lui' loads is rejected by name
+    expect_exit_1 "$BIN" --target=rv32i-fpga --memory=0x100800 0418.baz >/dev/null 2>err
+    grep -Fq "error: invalid --memory: '0x100800' is not a multiple of 4096" err
+    # the help names the alignment and the default of each size
+    "$BIN" --help >out 2>err
+    grep -Fq "nonzero multiple of 16 below the address space" out
+    grep -Fq "most the memory of the target (default: 65536)" out
+    grep -Fq "nonzero multiple of 4096 (default: 8388608)" out
+    # without a file the source is 'prog.baz' in the working directory
+    cp 0015.baz "$WORK/prog.baz"
+    (cd "$WORK" && "$BIN" >prog.s 2>prog.err)
+    [[ ! -s "$WORK/prog.err" ]]
+    grep -Fq "[prog.baz:" "$WORK/prog.s"
     expect_exit_1 "$BIN" --bin= 0015.baz >/dev/null 2>err
     grep -Fq "error: invalid --bin: empty file name" err
+    expect_exit_1 "$BIN" --sdcard= 0015.baz >/dev/null 2>err
+    grep -Fq "error: invalid --sdcard: empty file name" err
+    # a size that is no number says so, also an empty one and a lone '0x'
+    expect_exit_1 "$BIN" --stack=x 0015.baz >/dev/null 2>err
+    grep -Fq "error: invalid --stack: 'x' is not a number" err
+    expect_exit_1 "$BIN" --vars= 0015.baz >/dev/null 2>err
+    grep -Fq "error: invalid --vars: '' is not a number" err
+    expect_exit_1 "$BIN" --memory=0x 0015.baz >/dev/null 2>err
+    grep -Fq "error: invalid --memory: '0x' is not a number" err
+    # a size of zero is named as zero, not as a non-multiple
+    expect_exit_1 "$BIN" --vars=0 0015.baz >/dev/null 2>err
+    grep -Fq "error: invalid --vars: '0' is zero" err
     expect_exit_1 "$BIN" -x 0015.baz >/dev/null 2>err
     grep -Fq "error: unknown option: '-x'" err
     expect_exit_1 "$BIN" 0015.baz 0418.baz >/dev/null 2>err
@@ -1360,6 +1453,8 @@ CLI_FAR_INDEXED_ELEMENT
 CLI_LONG_ARRAY_LOWER_BOUND
 CLI_LONG_ARRAY_UPPER_BOUND
 CLI_NO_EXIT_ROUTINE
+CLI_NO_OVERLAP_CHECK
+CLI_NO_SECTOR_READ_ROUTINE
 CLI_SOURCE_LINE_ENDS
 CLI_ERROR_LINE_BYTES
 CLI_UNINSTANTIATED_GENERICS

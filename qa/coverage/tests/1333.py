@@ -4,7 +4,7 @@ import os
 import subprocess
 import tempfile
 
-# compiles a chain of noinline functions as long as the limit, each calling
+# compiles a chain of 100 noinline functions, each calling
 # an inlined function before the one before it, and prints the exit code
 # and the message
 machine = os.environ.get('MACHINE')

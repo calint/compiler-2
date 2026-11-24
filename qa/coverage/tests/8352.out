@@ -1,0 +1,4 @@
+
+8352.baz:8:9: statement is not reached, the path before it does not continue
+        k = 9
+        ^

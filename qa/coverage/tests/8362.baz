@@ -1,0 +1,10 @@
+# the code of an 'exit' is read before the program ends, an unset result in
+# it is rejected
+func f() res {
+    exit(res)
+}
+
+func main() {
+    var r = f()
+    exit(r)
+}

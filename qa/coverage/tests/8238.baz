@@ -1,0 +1,40 @@
+# fields past the reach of two 12-bit steps from the address of a parameter:
+# rv32i builds the address without overwriting the base it adds, also indexed
+type big {pad i8[6000], v i32, w i32, t i8[4]}
+
+func noinline get(b big) res i32 {
+    res = b.v
+}
+
+func noinline swap(b mut big) {
+    var t = b.v
+    b.v = b.w
+    b.w = t
+}
+
+func noinline move(b mut big, c big) {
+    b.v = c.w
+    b.w = c.v
+}
+
+func noinline at(b big, i) res i8 {
+    res = b.t[i]
+}
+
+func noinline shift(b mut big, i, j) {
+    b.t[i] = b.t[j]
+}
+
+func main() {
+    var x = big
+    var y = big
+    x.v = 3
+    x.w = 4
+    x.t[2] = 6
+    swap(x)
+    move(y, x)
+    if y.v != 3 or y.w != 4 exit(1)
+    shift(x, 1, 2)
+    if at(x, 1) != 6 exit(2)
+    exit(int(get(x)))
+}

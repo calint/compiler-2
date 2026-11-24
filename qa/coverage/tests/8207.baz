@@ -1,0 +1,14 @@
+# a generic call that a comparison follows is not the whole value of a 'bool'
+# destination, it does not take 'bool' for its result
+func make<T type>() res T {
+    res = {}
+}
+
+func main() {
+    var b = false
+    b = make() == false
+    if b {
+        exit(1)
+    }
+    exit(0)
+}

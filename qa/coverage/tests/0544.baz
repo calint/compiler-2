@@ -1,5 +1,6 @@
 # short strings are stored with immediates when that takes no more code than
-# copying from read-only data, the constants are word aligned
+# copying from read-only data, the constants are word aligned; x86_64 stores
+# all of these with immediates
 
 func assert(err, ok bool) { if not ok exit(err) }
 
@@ -20,7 +21,7 @@ func main() {
     var high = "\xff\x80\x7f\x01"
     assert(2, arrays_equal(high, expected_high, array_length(high)))
 
-    # a repeated value is stored again without reloading it
+    # rv32i: a repeated value is stored again without reloading it
     var same = "aaaaaaaa\n"
     write(1, same, array_length(same))
 
@@ -38,7 +39,7 @@ func main() {
     assert(4, ps[0].text[0] == 0)
     write(1, ps[1].text, 3)
 
-    # a word aligned destination copies words from read-only data
+    # rv32i: a word aligned destination copies words from read-only data
     var line = "0123456789abcd\n"
     write(1, line, array_length(line))
 }
