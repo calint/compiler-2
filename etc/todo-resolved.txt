@@ -1,6 +1,27 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 595 (2026-11-24, bug hunts: integer arithmetic and
+    conversions; calls and frames; text, data and io)
+    => arithmetic: no defect; about 180000 one-expression programs
+       against a model of the width rule on x86_64 and rv32i-fpga (8 %
+       on four targets), 14500 ill-typed programs all rejected, edge
+       pairs of every operator, about 1000 factors per type through the
+       rv32i multiply, immediates at the 12-bit and 'lui' edges
+    => calls: no defect; about 10900 generated programs built inlined,
+       'noinline' and mixed, 15 builds each, with impure calls nested in
+       expressions; 55 aliasing probes with the same verdict inlined and
+       'noinline'; noted: an uncalled chain of inlined functions that
+       each call the previous one twice is expanded in full by its body
+       check (docs 1.5 item 1), not an ordinary input
+    => text, data and io: no defect; strings into arrays against a model
+       (400 programs), 12660 programs of 'read' and 'write' ranges at
+       the edges, sector images equal by md5, the driver's output files
+    => asan build and fuzzers: no new finding; 'fuzz-mutate.py' timed
+       out once on a mutant of test 1698 under '--versions=nested', the
+       doubling per level that the test documents (the kept finding
+       'compiler-hang-e9a4e600bc')
+    => the loop ends: rounds 594 and 595 fixed no defect
 [x] easy: round 594 (2026-11-24, bug hunts: the changes of the 68 clean-up
     rounds; user types and their values; loops and control flow)
     => the clean-up rounds: no defect; the generated code of the rounds
