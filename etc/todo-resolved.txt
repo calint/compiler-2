@@ -1,6 +1,22 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 594 (2026-11-24, bug hunts: the changes of the 68 clean-up
+    rounds; user types and their values; loops and control flow)
+    => the clean-up rounds: no defect; the generated code of the rounds
+       compared with the build before them on about 2300 generated
+       programs, equal; reported and not a defect: without the overflow
+       check 'let k = -m' with 'm' the 64-bit minimum wraps while 'r = v
+       + -m' is rejected since round 502; the wrap of the 'let' is what
+       test 0497 pins (a folded negation wraps like the run-time one,
+       docs 8.1), a use in a destination is checked by its value; a fix
+       in 'stmt_identifier::fold' was tried and reverted for 0497
+    => user types: no defect; about 700 generated programs on 20
+       configurations, copies, zeroing and compares at every byte phase
+       and size, bounds and overlap against a model (15400 runs)
+    => loops and control flow: no defect; 16 configurations per program,
+       conditions against a model, 480 generated reach programs, 1462
+       tests inlined against 'noinline'
 [x] easy: (round 410, the same hunt) a recursion entered from skipped code
     of an inlined function is accepted where the same function with
     'noinline' is rejected ("recursion of inlined function 'rec' runs out
