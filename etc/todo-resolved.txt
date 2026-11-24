@@ -1,6 +1,87 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 596, mutation tests of the parse) candidates, none proven
+    1. 'tokenizer::next_trailing_whitespace': the 'is_eos() or' case
+    2. 'token::decode_escape': 'after.size() != 1' (no case matches a lead
+       byte)
+    3. 'builtin_value_type': the 'void' check (the argument parse gives the
+       same message)
+    4. 'is_literal_value': the 'not skip_literal(...) or' half
+    5. 'statement::assert_not_narrowed': 'not get_type().is_builtin()' (a
+       user type has check width 0)
+    6. 'type::padding_gaps': the 'is_full' early return
+    7. 'program::check_function_bodies', 'check_noinline_bodies': the skip
+       of emitted bodies only saves a second dry compile, not measured
+    => done (2026-11-24, clean-up round 72): each candidate read against
+       its code, all kept
+       1. kept: it keeps 'is_eos' true right after the last token
+       2. kept: implied by the cases, the explicit test is what the comment
+          says and guards 'after.at(0)'
+       3. kept: the function gives the type of a value, 'void' is none
+       4. kept: after a literal that does not end the probe is at no
+          defined place, the test keeps 'continues_condition' off it
+       5. kept: implied by the check width 0 of a user type, the explicit
+          test is the comment of the function
+       6. kept: without it a tail gap is added after ranges that are not
+          all, a gap that may not be padding
+       7. kept: a second dry compile of every emitted body is work for no
+          result
+[x] easy: (round 596, mutation tests of the calls and rules) conditions
+    whose removal changes no test and no probe; candidates to remove or to
+    turn into an assert, none proven
+    1. 'stmt_identifier::is_destination_itself': 'not is_exact_access()' is
+       implied by the test of the written path; without that test 'e = -e'
+       in a 'foo' is negated in place (the listing changes)
+    2. 'bulk_operands::tests_alike': the 'allow_end' comparison ('of_range'
+       always sets it) and the two 'not ...count' tests (6776 generated
+       bulk programs equal); 'has_range_check': 'constant_count_ != 0'
+       only saves code
+    3. 'toc::inlined_nesting': the 'has_frame()' break (frame scopes are
+       pushed only at the root); 'var_storage_alignment': the
+       'holds_address' branch (address slots are placed first)
+    4. 'generic_call::argument_type': 'or is_reached_into(tz)' for made
+       values (13 probes)
+    5. code emitted under checks only is pinned by no case kind: 'LISTING'
+       compiles without checks
+    => done (2026-11-24, clean-up round 72): each candidate read against
+       its code, all kept
+       1. kept: implied, the explicit test is the comment of the function
+       2. kept: 'tests_alike' compares every member of a range; the count
+          of 0 saves a check that cannot fail
+       3. kept: both hold by where scopes with a frame and address slots
+          are made today, the code does not rely on it
+       4. kept: no probe reached it, the rule is the one of the other
+          values
+       5. stays in 'etc/todo.txt' as an item of its own
+[x] easy: (round 596, mutation tests of the expressions) conditions whose
+    removal changes no test and no probe; each a candidate to remove or to
+    turn into an assert, none proven
+    1. 'expr_arith::assert_arithmetic_operands': 'and
+       get_unary_ops().is_empty()' (a list with unary ops and no operator
+       is an enclosed list of one element, checked elsewhere)
+    2. 'expr_arith::compile': 'not dst.is_register() and' before the
+       in-place single element; listings may get shorter, to be measured
+       with 'compare-listings.sh'
+    3. 'expr_bool::release_lone_operand': 'or has_not()'
+    4. 'stmt_builtin_convert::wider': the tie rule (argument type wins);
+       a tie is only 'bool' against 'i8'
+    5. 'constant_arith': the wrap of a remainder (it fits where its left
+       side does) and the early return of 'wrap_to_width' at 64 bits (the
+       mask is all ones there); kept for symmetry and clarity
+    6. the 'bool' scratch case of 'stmt_builtin_convert::compile_in_scratch'
+       is exercised on rv32i only (test 7100)
+    => done (2026-11-24, clean-up round 72): each candidate read against
+       its code, all kept
+       1. kept: the function states the whole rule, not the part another
+          check leaves
+       2. kept: a register destination goes through the clobber check,
+          the rule for the result register of an inlined function
+       3. kept: a negated list of one operand is no lone operand, the
+          test says so where the list is asked
+       4. kept: a tie needs some answer
+       5. kept: for symmetry, as the item says
+       6. kept: a property of the targets, not of the code
 [x] easy: (round 596, mutation tests of the statements) candidates, none
     proven
     1. 'stmt_if::compile': 'is_start_reachable{tc.is_reachable()}' is

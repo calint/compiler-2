@@ -10,52 +10,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] easy: (round 596, mutation tests of the parse) candidates, none proven
-    1. 'tokenizer::next_trailing_whitespace': the 'is_eos() or' case
-    2. 'token::decode_escape': 'after.size() != 1' (no case matches a lead
-       byte)
-    3. 'builtin_value_type': the 'void' check (the argument parse gives the
-       same message)
-    4. 'is_literal_value': the 'not skip_literal(...) or' half
-    5. 'statement::assert_not_narrowed': 'not get_type().is_builtin()' (a
-       user type has check width 0)
-    6. 'type::padding_gaps': the 'is_full' early return
-    7. 'program::check_function_bodies', 'check_noinline_bodies': the skip
-       of emitted bodies only saves a second dry compile, not measured
-[ ] easy: (round 596, mutation tests of the calls and rules) conditions
-    whose removal changes no test and no probe; candidates to remove or to
-    turn into an assert, none proven
-    1. 'stmt_identifier::is_destination_itself': 'not is_exact_access()' is
-       implied by the test of the written path; without that test 'e = -e'
-       in a 'foo' is negated in place (the listing changes)
-    2. 'bulk_operands::tests_alike': the 'allow_end' comparison ('of_range'
-       always sets it) and the two 'not ...count' tests (6776 generated
-       bulk programs equal); 'has_range_check': 'constant_count_ != 0'
-       only saves code
-    3. 'toc::inlined_nesting': the 'has_frame()' break (frame scopes are
-       pushed only at the root); 'var_storage_alignment': the
-       'holds_address' branch (address slots are placed first)
-    4. 'generic_call::argument_type': 'or is_reached_into(tz)' for made
-       values (13 probes)
-    5. code emitted under checks only is pinned by no case kind: 'LISTING'
-       compiles without checks
-[ ] easy: (round 596, mutation tests of the expressions) conditions whose
-    removal changes no test and no probe; each a candidate to remove or to
-    turn into an assert, none proven
-    1. 'expr_arith::assert_arithmetic_operands': 'and
-       get_unary_ops().is_empty()' (a list with unary ops and no operator
-       is an enclosed list of one element, checked elsewhere)
-    2. 'expr_arith::compile': 'not dst.is_register() and' before the
-       in-place single element; listings may get shorter, to be measured
-       with 'compare-listings.sh'
-    3. 'expr_bool::release_lone_operand': 'or has_not()'
-    4. 'stmt_builtin_convert::wider': the tie rule (argument type wins);
-       a tie is only 'bool' against 'i8'
-    5. 'constant_arith': the wrap of a remainder (it fits where its left
-       side does) and the early return of 'wrap_to_width' at 64 bits (the
-       mask is all ones there); kept for symmetry and clarity
-    6. the 'bool' scratch case of 'stmt_builtin_convert::compile_in_scratch'
-       is exercised on rv32i only (test 7100)
+[ ] easy: (round 596, mutation tests of the calls and rules) code emitted
+    under checks only is pinned by no case kind: 'LISTING' compiles
+    without checks, 'DIFF' cases with '--checks' compare only the results
 [ ] easy: (round 596, diagnostics audit) messages that mislead, the
     program is rejected either way
     1. 'return 0' in 'main' or in a function without a result says "a
@@ -75,6 +32,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'type_instantiator') are safe because the generic tables grow only at
     top-level definitions, which only comments state; a deque would
     enforce it; no defect reached
+    => not done (2026-11-24): 'values()' gives the vector, read as a span
+       ('type::next_field_offset' takes an index from an address); a deque
+       needs a second container or copies there
 [ ] easy: (round 585, fuzzers) 'fuzz-compiler.py' waives every target
     difference of a program whose text has '<<' (56 of 2648 tests), since
     '1 << 31' is negative on rv32i only; a narrower rule would waive only
