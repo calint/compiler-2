@@ -1,6 +1,41 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 596, mutation tests of the assemblers and the driver)
+    candidates, none proven
+    1. 'assembler::remove_copies': the 'code_size == 0' skip ('fold_copy'
+       rejects every line that is not a live 'mv')
+    2. 'assembler::remove_retests': 'test = set' and its note
+    3. 'assembler::is_enterable': 'l.which != section::text'
+    4. 'assembler_rv32i': 'shift != 0' in the shifted 'li' form is implied
+    5. 'assembler_x86_64::inverse': no code emits a branch on 'be', 'ns' or
+       'no'
+    6. 'call_frame::is_same': comparing only the file and the start gives
+       the same output on every test
+    7. soundness guards no program reaches: the store/load tests of
+       x86_64 'is_reload' and 'qword_load', 'replace_source' for the base
+       of a load or store, 'rs1 != zero' in rv32i 'is_reload', a label
+       named only by calls as an entry
+    8. the 'CLI' helper of 'test-cli.sh' has no timeout, a compiler that
+       loops hangs the script
+    => done (2026-11-24, clean-up round 70): each candidate read against
+       its code; one changed, the others stay as written
+       1. kept: a removed line keeps its record, the skip is what stops a
+          removed 'mv' from folding; 'fold_copy' does not test it
+       2. kept: without 'test = set' the pointer 'set' names the removed
+          test for one line; the result is equal, the statement keeps the
+          comment of the two pointers true
+       3. kept: data is emitted between code (the text of a failure
+          handler), a label of it is no entry; without the test the runs
+          split there
+       4. kept: implied (a value that fits no immediate fits no compressed
+          one), the explicit test is shorter than the note that replaces it
+       5. kept: the table pairs every condition of the enum, the lookup
+          reads both ways
+       6. kept: the comparison of every field is the equality of a frame
+       7. kept: the rules are sound for any line, not only for the lines
+          the backends emit today; an assert would tie them to the backends
+       8. done: the 'CLI' helper runs the compiler under 'timeout 60'
 [x] easy: round 596 (2026-11-24, quality: the documents against the
     compiler, an audit of every test, mutation tests of every source file,
     audits of the sources and of the diagnostics, a hunt in the emitted-line

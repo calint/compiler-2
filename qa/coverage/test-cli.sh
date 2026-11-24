@@ -57,7 +57,8 @@ CLI() {
     echo -n "cli $1: "
     local exit_code=0
     # note: '%p' since cases share their first argument, e.g. '--checks=noub'
-    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-$1-%p.profraw" "$BIN" "$1" "${@:3}" >/dev/null 2>err ||
+    # note: a compiler that loops on an option fails the case
+    LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-$1-%p.profraw" timeout --foreground 60 "$BIN" "$1" "${@:3}" >/dev/null 2>err ||
         exit_code=$?
     if [[ $exit_code -eq "$2" ]]; then
         echo ok

@@ -10,23 +10,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
 --------------------------------------------------------------------------------
 1. clean up
 --------------------------------------------------------------------------------
-[ ] easy: (round 596, mutation tests of the assemblers and the driver)
-    candidates, none proven
-    1. 'assembler::remove_copies': the 'code_size == 0' skip ('fold_copy'
-       rejects every line that is not a live 'mv')
-    2. 'assembler::remove_retests': 'test = set' and its note
-    3. 'assembler::is_enterable': 'l.which != section::text'
-    4. 'assembler_rv32i': 'shift != 0' in the shifted 'li' form is implied
-    5. 'assembler_x86_64::inverse': no code emits a branch on 'be', 'ns' or
-       'no'
-    6. 'call_frame::is_same': comparing only the file and the start gives
-       the same output on every test
-    7. soundness guards no program reaches: the store/load tests of
-       x86_64 'is_reload' and 'qword_load', 'replace_source' for the base
-       of a load or store, 'rs1 != zero' in rv32i 'is_reload', a label
-       named only by calls as an entry
-    8. the 'CLI' helper of 'test-cli.sh' has no timeout, a compiler that
-       loops hangs the script
 [ ] easy: (round 596, mutation tests of the parse) candidates, none proven
     1. 'tokenizer::next_trailing_whitespace': the 'is_eos() or' case
     2. 'token::decode_escape': 'after.size() != 1' (no case matches a lead
