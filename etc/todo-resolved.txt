@@ -1,6 +1,26 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: (round 596, mutation tests of the statements) candidates, none
+    proven
+    1. 'stmt_if::compile': 'is_start_reachable{tc.is_reachable()}' is
+       always true (an assert in its place never fired on the suite)
+    2. 'stmt_if::else_code': 'or else_->code.is_empty()' changes only a
+       label and a count of removed jumps in one probe
+    3. 'expr_zero::fold': '{}' typed like a bare type changes no listing or
+       error of the 4626 test sources
+    4. 'foo a, {} {' says "expected a count before '{'": '{}' cannot be
+       written as a count
+    => done (2026-11-24, clean-up round 71): each candidate read against
+       its code
+       1. done: 'stmt_if::compile' asserts that the 'if' is reached and
+          starts its first branch as reached; a block compiles only a
+          reached statement ('stmt_block::compile_from')
+       2. kept: an empty 'else' compiles as none, which the test states;
+          without it the listing gets a label nothing needs
+       3. kept: '{}' has no type of its own, a bare type name has; the
+          fold states it
+       4. kept: the message is true, '{}' is no count
 [x] easy: (round 596, mutation tests of the assemblers and the driver)
     candidates, none proven
     1. 'assembler::remove_copies': the 'code_size == 0' skip ('fold_copy'

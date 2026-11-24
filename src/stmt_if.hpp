@@ -145,9 +145,13 @@ class stmt_if final : public statement {
         const std::string if_label{tc.unique_label(tok(), "if")};
 
         compile_toc::path_merge paths{tc};
+
+        // note: a block compiles only a statement that is reached
+        assert(tc.is_reachable());
+
         // a branch starts where the condition before it is false, the first
-        // at the 'if'
-        bool is_start_reachable{tc.is_reachable()};
+        // at the 'if', which is reached
+        bool is_start_reachable{true};
         // the branches after one whose condition is true and the 'else' never
         // run; they hold the compile rules too, see
         // 'compile_toc::check_skipped'

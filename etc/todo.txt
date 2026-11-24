@@ -22,16 +22,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     6. 'type::padding_gaps': the 'is_full' early return
     7. 'program::check_function_bodies', 'check_noinline_bodies': the skip
        of emitted bodies only saves a second dry compile, not measured
-[ ] easy: (round 596, mutation tests of the statements) candidates, none
-    proven
-    1. 'stmt_if::compile': 'is_start_reachable{tc.is_reachable()}' is
-       always true (an assert in its place never fired on the suite)
-    2. 'stmt_if::else_code': 'or else_->code.is_empty()' changes only a
-       label and a count of removed jumps in one probe
-    3. 'expr_zero::fold': '{}' typed like a bare type changes no listing or
-       error of the 4626 test sources
-    4. 'foo a, {} {' says "expected a count before '{'": '{}' cannot be
-       written as a count
 [ ] easy: (round 596, mutation tests of the calls and rules) conditions
     whose removal changes no test and no probe; candidates to remove or to
     turn into an assert, none proven
