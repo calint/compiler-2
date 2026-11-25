@@ -1,0 +1,58 @@
+# division and remainder of 'i32' at the edges of the rv32i routine: a divisor
+# or a dividend of the minimum, a quotient of every size, a divisor above the
+# dividend; the operands are data, so nothing folds
+dat least = i32(-2147483648)
+dat most = i32(2147483647)
+dat one = i32(1)
+dat two = i32(2)
+dat three = i32(3)
+dat ten = i32(10)
+dat big = i32(1073741824)
+
+func assert(ok bool) {
+    if not ok exit(1)
+}
+
+func noinline div(a i32, b i32) res i32 {
+    res = a / b
+}
+
+func noinline rem(a i32, b i32) res i32 {
+    res = a % b
+}
+
+func main() {
+    assert(div(least, least) == 1 and rem(least, least) == 0)
+    assert(div(most, least) == 0 and rem(most, least) == most)
+    assert(div(least, most) == -1 and rem(least, most) == -1)
+    assert(div(least, one) == least and rem(least, one) == 0)
+    assert(div(least, two) == -1073741824 and rem(least, two) == 0)
+    assert(div(least, three) == -715827882 and rem(least, three) == -2)
+    assert(div(least, big) == -2 and rem(least, big) == 0)
+    assert(div(most, one) == most and rem(most, one) == 0)
+    assert(div(most, most) == 1 and rem(most, most) == 0)
+    assert(div(most, big) == 1 and rem(most, big) == 1073741823)
+    assert(div(most, ten) == 214748364 and rem(most, ten) == 7)
+    assert(div(-most, ten) == -214748364 and rem(-most, ten) == -7)
+    assert(div(most, -ten) == -214748364 and rem(most, -ten) == 7)
+    assert(div(one, most) == 0 and rem(one, most) == 1)
+    assert(div(-one, most) == 0 and rem(-one, most) == -1)
+    assert(div(ten, three) == 3 and rem(ten, three) == 1)
+    assert(div(three, ten) == 0 and rem(three, ten) == 3)
+    assert(div(big, two) == 536870912 and rem(big, two) == 0)
+    assert(div(big, -three) == -357913941 and rem(big, -three) == 1)
+
+    var a = i32(1)
+    var steps = i32(0)
+    loop {
+        # every size of the quotient: 'most / a' times 'a' plus the rest
+        let q = div(most, a)
+        let r = rem(most, a)
+        assert(r >= 0 and r < a)
+        assert(i32(q * a + r) == most)
+        steps = steps + 1
+        if a > big / 2 break
+        a = i32(a * 2 + steps % 2)
+    }
+    assert(steps == 30)
+}

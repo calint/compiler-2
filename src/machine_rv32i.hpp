@@ -230,8 +230,8 @@ class machine_rv32i : public machine {
         "ra", "a0", "a1", "a2", "a3", "a4",
     };
 
-    static constexpr std::array<std::string_view, 8> divide_clobbers_{
-        "ra", "a0", "a1", "a2", "a3", "a4", "a5", "a6",
+    static constexpr std::array<std::string_view, 7> divide_clobbers_{
+        "ra", "a0", "a1", "a2", "a3", "a4", "a5",
     };
 
     // in the order 'emit_target_routines' emits them
@@ -2482,9 +2482,11 @@ class machine_rv32i : public machine {
 
     // divide and remainder share magnitude division and sign restoration:
     // 'a4' is the sign of the dividend and of the remainder, 'a3' that of the
-    // divisor then of the quotient, the dividend shifts out of 'a0' into the
-    // remainder 'a2' while the quotient bits shift into 'a0'; the magnitudes
-    // are unsigned, so that of the minimum, 2^31, is exact
+    // divisor then of the quotient; the divisor 'a1' and its bit 'a5' shift
+    // up to the dividend, then down again while the divisor is subtracted
+    // from the dividend 'a0', which leaves the remainder, and its bit is set
+    // in the quotient 'a2', so the steps follow the bits of the quotient; the
+    // magnitudes are unsigned, so that of the minimum, 2^31, is exact
     auto emit_divide_body() -> void {
         assembler_.beqz(1, "a1", "5f");
         assembler_.srai(1, "a4", "a0", sign_shift_);
@@ -2493,21 +2495,28 @@ class machine_rv32i : public machine {
         apply_sign("a1", "a1", "a3");
         assembler_.xor_op(1, "a3", "a3", "a4");
         assembler_.li(1, "a2", 0);
-        assembler_.li(1, "a5", register_bits_);
-        // note: one quotient bit per step
+        assembler_.li(1, "a5", 1);
+        assembler_.bgeu(1, "a1", "a0", "2f");
+
+        // note: a divisor with its top bit set cannot shift up, it is below
+        //       the dividend only when that has the bit too
+
         assembler_.label(0, "1");
-        assembler_.srli(1, "a6", "a0", sign_shift_);
-        assembler_.slli(1, "a2", "a2", 1);
-        assembler_.or_op(1, "a2", "a2", "a6");
-        assembler_.slli(1, "a0", "a0", 1);
-        assembler_.bltu(1, "a2", "a1", "2f");
-        assembler_.sub(1, "a2", "a2", "a1");
-        assembler_.ori(1, "a0", "a0", 1);
+        assembler_.bltz(1, "a1", "2f");
+        assembler_.slli(1, "a1", "a1", 1);
+        assembler_.slli(1, "a5", "a5", 1);
+        assembler_.bltu(1, "a1", "a0", "1b");
+        // note: one quotient bit per step
         assembler_.label(0, "2");
-        assembler_.addi(1, "a5", "a5", -1);
-        assembler_.bnez(1, "a5", "1b");
-        apply_sign("a0", "a0", "a3");
-        apply_sign("a1", "a2", "a4");
+        assembler_.bltu(1, "a0", "a1", "3f");
+        assembler_.sub(1, "a0", "a0", "a1");
+        assembler_.or_op(1, "a2", "a2", "a5");
+        assembler_.label(0, "3");
+        assembler_.srli(1, "a1", "a1", 1);
+        assembler_.srli(1, "a5", "a5", 1);
+        assembler_.bnez(1, "a5", "2b");
+        apply_sign("a1", "a0", "a4");
+        apply_sign("a0", "a2", "a3");
         assembler_.ret(1);
         assembler_.label(0, "5");
 

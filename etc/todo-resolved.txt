@@ -1,6 +1,40 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 599 (2026-11-25, the rv32i division routine, asked for by
+    the owner after the study of round 598)
+    => '.Lbaz_divide' follows the bits of the quotient: the divisor and its
+       bit shift up to the dividend (4 instructions a step), then down
+       again while the divisor is subtracted and the bit set in the
+       quotient (5 to 6 a step); it shifted the dividend through all 32
+       positions, 242 instructions a call; same length, one register less
+       ('a6' is no longer clobbered), the callers and the zero divisor
+       exit unchanged; the reciprocal routine of the item was not taken,
+       it is several times longer
+    => checked: the routine taken from a listing against the division of
+       C on 8.5 million pairs in qemu (every pair of 220 edge values around
+       the powers of two, every 'i8' pair, a grid of 'i16', random pairs
+       of every size); test 8520 (the minimum as divisor and dividend,
+       every size of the quotient); no expected file changed
+    => executed rv32i instructions, before to after (gcc -O1): 8402 5.05M
+       to 1.53M (1.17M), 8403 1.06M to 0.48M (0.25M), 8405 203K to 73K
+       (60K), 8407 47K to 12K (8K), 8410 3.65M to 1.94M (1.30M), 8412 19.4M
+       to 5.8M (4.5M); 8410 to 8414 together 3.88 to 1.34 times gcc -O1; the
+       tutorial 2990 to 2178; baz executes fewer than gcc -O0 again except
+       8408 and 8412 (division by a power of two, see 'etc/todo.txt')
+    => the worst case, a large dividend by 1, is about 330 instructions
+[x] medium: rv32i: '.Lbaz_divide' is a bit-per-step restoring division, 32
+    steps; benchmark a faster routine (e.g. RVINT reciprocal, see
+    https://needlesscomplexity.substack.com/p/rvint-integer-mathematical-algorithms)
+    before changing it
+    => measured (round 598, code quality study): 240 to 244 instructions
+       per call whatever the operands; libgcc's '__divsi3', which shifts
+       the divisor up to the dividend first, 36 to 56; the routine is 45%
+       to 90% of the executed rv32i instructions in 12 of the 15 programs
+       (8412: 74266 calls, 18.1M of 19.4M) and 60% to 95% of the gap to
+       gcc -O1; baz executes more than gcc -O0 on rv32i only because of it
+    => done (2026-11-25, round 599): see the entry above; the reciprocal
+       routine was not taken
 [x] easy: round 598 (2026-11-25, code quality study: the generated code of
     17 realistic programs against gcc 16.2)
     => no wrong result: tests 8400 to 8414, roome and the tutorial were

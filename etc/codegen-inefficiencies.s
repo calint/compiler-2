@@ -795,22 +795,25 @@ func.print_num:
     sub a1, a1, a3
     xor a3, a3, a4
     li a2, 0
-    li a5, 32
+    li a5, 1
+    bgeu a1, a0, 2f
 1:
-    srli a6, a0, 31
-    slli a2, a2, 1
-    or a2, a2, a6
-    slli a0, a0, 1
-    bltu a2, a1, 2f
-    sub a2, a2, a1
-    ori a0, a0, 1
+    bltz a1, 2f
+    slli a1, a1, 1
+    slli a5, a5, 1
+    bltu a1, a0, 1b
 2:
-    addi a5, a5, -1
-    bnez a5, 1b
-    xor a0, a0, a3
-    sub a0, a0, a3
-    xor a1, a2, a4
+    bltu a0, a1, 3f
+    sub a0, a0, a1
+    or a2, a2, a5
+3:
+    srli a1, a1, 1
+    srli a5, a5, 1
+    bnez a5, 2b
+    xor a1, a0, a4
     sub a1, a1, a4
+    xor a0, a2, a3
+    sub a0, a0, a3
     ret
 5:
     li a0, 253
@@ -856,4 +859,4 @@ vars.end:
 #                     dat size: 0 B
 #              dat var padding: 0 B
 #           max body vars size: 364 B
-#                 instructions: 262
+#                 instructions: 264

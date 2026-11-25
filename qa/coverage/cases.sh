@@ -9069,3 +9069,7 @@ SRC=8413 && OPTS="--vars=0x40000 --checks=noub" DIFF
 # chains, each pair of precedence levels, the zero value of each destination
 SRC=8414 && DIFF
 SRC=8414 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# round 599: the rv32i division routine follows the bits of the quotient: the
+# minimum as a divisor and as a dividend, every size of the quotient
+SRC=8520 && EXP=0 && RUN

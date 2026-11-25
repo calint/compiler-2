@@ -1712,16 +1712,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     significant bits (swap) in '.Lbaz_multiply_checked' and
     '.Lbaz_multiply'; a constant factor under the check always calls the
     helper, a shift and add sequence with a carry test would be shorter
-[ ] medium: rv32i: '.Lbaz_divide' is a bit-per-step restoring division, 32
-    steps; benchmark a faster routine (e.g. RVINT reciprocal, see
-    https://needlesscomplexity.substack.com/p/rvint-integer-mathematical-algorithms)
-    before changing it
-    => measured (round 598, code quality study): 240 to 244 instructions
-       per call whatever the operands; libgcc's '__divsi3', which shifts
-       the divisor up to the dividend first, 36 to 56; the routine is 45%
-       to 90% of the executed rv32i instructions in 12 of the 15 programs
-       (8412: 74266 calls, 18.1M of 19.4M) and 60% to 95% of the gap to
-       gcc -O1; baz executes more than gcc -O0 on rv32i only because of it
 [ ] medium: --checks=overflow: 0736.baz needs every rv32i scratch register and
     fails to compile under the check ('out of scratch registers');
     the memory source add or sub needs two registers, one would do with a
