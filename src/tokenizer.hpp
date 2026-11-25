@@ -291,7 +291,9 @@ class tokenizer final {
     // skips the next braced block and returns the source text from the end of
     // 'tk' to the end of the block; a block without its '}' is rejected as a
     // parsed one, see 'throw_unclosed_block'
-    auto skip_braced_block_after(const token& tk) -> std::string_view {
+    [[nodiscard]] auto skip_braced_block_after(const token& tk)
+        -> std::string_view {
+
         if (not skip_braced_block()) {
             throw_unclosed_block();
         }

@@ -1,0 +1,218 @@
+# loops over arrays that change under them: the count of a 'foo' is read once,
+# an element written ahead is seen; copies inside one array both ways
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+# 'c: ' then the values of the array on one line
+func show_array(c i8, a i32[]) {
+    out_ch(c)
+    out_ch(':')
+    foo a {
+        out_sp()
+        out_i32(e)
+    }
+    out_nl()
+}
+
+dat shared = i32[]{1, 2, 3, 4, 5, 6}
+
+func bump(v mut i32) {
+    v = v + 100
+}
+
+func noinline bump_called(v mut i32) {
+    v = v * 2
+}
+
+func clear_shared_from(at) {
+    foo shared {
+        if i >= at e = 0
+    }
+}
+
+func sum(a i32[]) res i32 {
+    res = 0
+    foo a {
+        res = res + e
+    }
+}
+
+type pair {
+    a i32,
+    b i32,
+}
+
+func main() {
+    # the count is read once, before the first element
+    var a = i32[]{1, 2, 3, 4, 5, 6, 7, 8}
+    var count = 3
+    var visits = 0
+    foo a, count {
+        count = count + 1
+        visits = visits + 1
+    }
+    out_int(visits)
+    out_sp()
+    out_int(count)
+    out_nl()
+
+    # elements written ahead of the loop are seen when it gets there
+    foo a {
+        if i + 1 < n a[i + 1] = a[i + 1] + e
+    }
+    show_array('a', a)
+    foo a {
+        a[n - 1 - i] = e
+    }
+    show_array('a', a)
+    foo a {
+        bump(e)
+        if i % 2 == 0 bump_called(e)
+    }
+    show_array('a', a)
+
+    # a callee and the loop over the same global
+    foo shared {
+        if e == 3 clear_shared_from(4)
+        e = e * 10
+    }
+    show_array('g', shared)
+    var total = i32(0)
+    foo shared {
+        total = total + e
+        shared[5] = shared[5] + 1
+    }
+    line(total)
+
+    # nested loops over one array
+    var small = i32[]{1, 2, 3}
+    var products = i32(0)
+    foo small {
+        let outer = e
+        foo small {
+            products = products + outer * e
+            if i == 1 and outer == 2 e = e + 10
+        }
+    }
+    item(products)
+    show_array('s', small)
+
+    # whole arrays and instances
+    var b = a
+    b[0] = -1
+    out_bool(a == b)
+    a = b
+    out_bool(a == b)
+    b = {}
+    out_bool(a != b)
+    line(sum(b))
+    var pairs = pair[4]{{1, 2}, {3, 4}, {5, 6}, {7, 8}}
+    pairs[0] = pairs[3]
+    pairs[3] = pairs[3]
+    pairs[1].a = pairs[1].b
+    var k = 2
+    pairs[k] = pairs[k - 1]
+    let from = pairs[k]
+    pairs[k - 1] = {from.b, from.a}
+    foo pairs {
+        out_i32(e.a)
+        out_ch(',')
+        out_i32(e.b)
+        out_sp()
+    }
+    out_nl()
+
+    # copies inside one array: down is always allowed, up only without overlap
+    var c = i32[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+    array_copy(c[2], c, 5)
+    show_array('c', c)
+    array_copy(c, c[6], 4)
+    show_array('c', c)
+    array_copy(c[4], c[4], 3)
+    show_array('c', c)
+    k = 1
+    array_copy(c[k + 4], c[k], 5)
+    show_array('c', c)
+    array_copy(c[k], c[k + 5], 4)
+    show_array('c', c)
+    out_bool(arrays_equal(c[1], c[6], 4))
+    out_bool(arrays_equal(c, c[5], 5))
+    out_bool(arrays_equal(c[k], c[k], 9))
+    out_nl()
+    out_flush()
+}

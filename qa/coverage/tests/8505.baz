@@ -1,0 +1,5 @@
+# 'struct' at the top level, the message names 'type'
+struct point {x, y}
+
+func main() {
+}

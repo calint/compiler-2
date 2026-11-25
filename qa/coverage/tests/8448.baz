@@ -1,0 +1,29 @@
+# a copy into a field of an element ends at the field: one that fits is done,
+# one that would reach the next field panics 'bounds'
+type cell {a i8[3], b i8[3]}
+type grid {rows cell[2]}
+func cp(g mut grid, s i8[], k, j, n) {
+    array_copy(s, g.rows[k].a[j], n)
+}
+func main() {
+    {
+        var g = grid
+        var s = i8[]{1, 2, 3}
+        var k = 1
+        var j = 1
+        var n = 2
+        cp(g, s, k, j, n)
+        if g.rows[1].a[2] != 2 exit(1)
+        if g.rows[1].b[0] != 0 exit(2)
+        if g.rows[1].a[0] != 0 exit(3)
+        cp(g, s, 0, 3, 0)
+        cp(g, s, k, 3, 0)
+    }
+    var g = grid
+    var s = i8[]{1, 2, 3}
+    var k = 0
+    var j = 1
+    var n = 3
+    cp(g, s, k, j, n)
+    exit(g.rows[0].b[0])
+}

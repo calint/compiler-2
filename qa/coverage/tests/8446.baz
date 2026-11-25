@@ -1,0 +1,26 @@
+# a noinline method calls itself on other elements inside a 'foo' over a
+# field of 'self': the element and 'self' are reached after each call
+type node {v i32, nk, kids[3]}
+func noinline node.sum(ns node[]) res i32 {
+    res = self.v
+    foo self.kids, self.nk {
+        res = res + ns[e].sum(ns) * 2
+        res = res + i32(e) + self.v
+    }
+    res = res + self.v * 1000
+}
+func main() {
+    var ns = node[6]
+    ns[0] = {1, 2, {1, 2}}
+    ns[1] = {2, 1, {3}}
+    ns[2] = {3, 3, {4, 5, 3}}
+    ns[3] = {4}
+    ns[4] = {5}
+    ns[5] = {6}
+    # s3 = 4004; s4 = 5005; s5 = 6006
+    # s1 = 2 + (4004*2 + 3 + 2) + 2000 = 10015
+    # s2 = 3 + (5005*2 + 4 + 3) + (6006*2 + 5 + 3) + (4004*2 + 3 + 3) + 3000 = 3 + 10017 + 12020 + 8014 + 3000 = 33054
+    # s0 = 1 + (10015*2 + 1 + 1) + (33054*2 + 2 + 1) + 1000 = 1 + 20032 + 66111 + 1000 = 87144
+    var r = ns[0].sum(ns)
+    if r != 87144 exit(1)
+}

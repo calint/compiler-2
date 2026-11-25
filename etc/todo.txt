@@ -13,6 +13,55 @@ is the test 'qa/coverage/tests/NNNN.baz'
 [ ] easy: (round 596, mutation tests of the calls and rules) code emitted
     under checks only is pinned by no case kind: 'LISTING' compiles
     without checks, 'DIFF' cases with '--checks' compare only the results
+[ ] easy: (round 597, hostile input) the command line, by design or minor
+    1. '--' and '-' are unknown options; a source that starts with '-' is
+       given as './-x.baz', which the help does not say
+    2. a token missing at the end of a file is marked after the last text,
+       a trailing comment included (8474), after blank lines at the last
+       token
+[ ] easy: (round 597, realistic programs) x86_64: "register rax holds a
+    value computed at ... and is needed here too" for the dividend of
+    'v % 2' in a chain of 5 inlined calls advises "compute a part of the
+    expression with 'let'", which cannot be followed there (see the item
+    of round 478 RA)
+[ ] easy: (round 597, fresh checkout) found and not fixed
+    1. 'etc/readme/reflection.md': "## Why no memory allocation?" has no
+       body (the owner's text); it cites 'etc/from'
+    2. 'scripts/fpga-config-*.sh' and 'fpga-emulator/src/main_config.hpp'
+       say "see 'configuration.py'", which is not in this repository
+    3. 'etc/readme/README.1.md' and '--help' write "runtime" where
+       'etc/docs/README.md' writes "run time"
+    4. 'check-doc-examples.py', 'test-arena.py' and each fuzzer run alone
+       end in a python traceback when 'nasm' is missing; 'fuzz-ub.sh
+       --help' gives a traceback
+    5. the generated files in git ('prog.s', 'prog-without-comments.s',
+       'etc/codegen-inefficiencies*.s', the listings of 'README.md') go
+       stale with any change of 'src/'; no check compares them, so the
+       first command of the README can dirty a fresh checkout
+[ ] easy: (round 597, newcomer walk) messages that a newcomer could not
+    act on, not done; each rewording changes the expected output of the
+    tests named
+    1. a type or 'mut' in the wrong place: 'func add(int a) res' and
+       'func add(a, b) int' say "'int' is a built-in type" without "the
+       name comes first"; 'func main() -> int {' says "expected '{' to
+       begin block"; 'func fill(a[] mut, v)' and 'func add(a: int)' say
+       "expected ',' or ')' after parameter 'a'" (0172, 0437, 0446, 1512,
+       1544, 1871, 1889); 'var small i8 = big' shows the example
+       'var x = i32' where 'var x = i32(5)' is what is needed (13 tests)
+    2. a name defined further down says only "not found" (43 tests have
+       the message); naming the later definition needs a scan ahead
+    3. 'var x' then 'x = 5' on the next line reports the missing '=' on
+       the line that has one; 2211 pins the place on purpose, the message
+       could name 'x'
+    4. 'var grid = [3][3]' says "an array literal is not an operand here,
+       store it in a variable first", a hint that cannot be followed
+    5. 'x = x++' says "expected a constant, a name or a call" where the
+       statement 'i++' names the fix; 'res = x ? 1 : 2' says "'?' is not a
+       valid name"
+    6. '// comment' at the top level says "got '/'" without naming '#'
+    7. '[]{a, b}' of two 'point' says "expected type 'i64', got 'point'"
+       without naming 'point[]{...}'
+    8. '2.' at the end of a line reads the next line as a field
 [ ] easy: (round 596, diagnostics audit) messages that mislead, the
     program is rejected either way
     1. 'return 0' in 'main' or in a function without a result says "a

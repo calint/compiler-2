@@ -358,7 +358,7 @@ class stmt_if final : public statement {
     // reads what follows a branch: 'else if' continues the chain and is
     // returned, 'else' ends it and its block is kept in 'else_', anything
     // else is a new statement
-    auto parse_else(parse_toc& tc, tokenizer& tz)
+    [[nodiscard]] auto parse_else(parse_toc& tc, tokenizer& tz)
         -> std::optional<else_if_tokens> {
 
         const std::optional<token> else_tk{tz.accept_word_token("else")};

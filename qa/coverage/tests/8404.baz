@@ -1,0 +1,324 @@
+# bit manipulation at the edges of 'i8', 'i16' and 'i32': counts, reversal,
+# rotation, gray code, bit fields, shifts at the width of the destination
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+func out_str(s i8[]) {
+    foo s {
+        out_ch(e)
+    }
+}
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+dat hex_digits = "0123456789abcdef"
+
+# 8 hex digits of the 32 bits
+func noinline out_hex32(v i32) {
+    var shift = 28
+    loop {
+        out_ch(hex_digits[v >> shift & 15])
+        if shift == 0 break
+        shift = shift - 4
+    }
+}
+
+func show_hex(label i8[], v i32) {
+    out_str(label)
+    out_sp()
+    out_hex32(v)
+    out_nl()
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+dat edges = i32[]{0, 1, -1, 2, 0x7fffffff, -2147483647 - 1, 0x55555555, 0x0f0f0f0f, 0x12345678, -0x12345678, 0x00010000, 0x7fff, -32768, 255, -256, 0x40000000}
+
+func lsr(v i32, count i32) res i32 {
+    res = v
+    if count == 0 return
+    res = v >> count & ~(i32(-1) << (32 - count))
+}
+
+func popcount(v i32) res i32 {
+    res = 0
+    var rest = v
+    loop {
+        if rest == 0 break
+        # note: wraps at the minimum, clears the lowest set bit
+        rest = rest & i32(rest - 1)
+        res = res + 1
+    }
+}
+
+# the same count by adding neighbors in parallel
+func noinline popcount_parallel(v i32) res i32 {
+    # note: wraps at the minimum
+    res = i32(v - (v >> 1 & 0x55555555))
+    res = (res & 0x33333333) + (res >> 2 & 0x33333333)
+    res = (res + (res >> 4)) & 0x0f0f0f0f
+    res = i32(res * 0x01010101) >> 24 & 0xff
+}
+
+func reverse_bits(v i32) res i32 {
+    res = 0
+    var bit = i32(0)
+    loop {
+        if bit == 32 break
+        res = res << 1 | (v >> bit & 1)
+        bit = bit + 1
+    }
+}
+
+func byte_swap(v i32) res i32 {
+    res = v << 24 | (v << 8 & 0x00ff0000) | (v >> 8 & 0x0000ff00) | (v >> 24 & 0xff)
+}
+
+func leading_zeros(v i32) res i32 {
+    res = 0
+    if v == 0 {
+        res = 32
+        return
+    }
+    var probe = v
+    loop {
+        if probe < 0 break
+        probe = probe << 1
+        res = res + 1
+    }
+}
+
+func noinline trailing_zeros(v i32) res i32 {
+    res = 32
+    if v == 0 return
+    res = 0
+    loop {
+        if v >> res & 1 == 1 break
+        res = res + 1
+    }
+}
+
+func rotate_left(v i32, count i32) res i32 {
+    res = v
+    if count == 0 return
+    let low = lsr(v, 32 - count)
+    res = v << count | low
+}
+
+func parity(v i32) res i32 {
+    var fold = v ^ (v >> 16)
+    fold = fold ^ (fold >> 8)
+    fold = fold ^ (fold >> 4)
+    fold = fold ^ (fold >> 2)
+    fold = fold ^ (fold >> 1)
+    res = fold & 1
+}
+
+func to_gray(v i32) res i32 {
+    let half = lsr(v, 1)
+    res = v ^ half
+}
+
+func from_gray(g i32) res i32 {
+    res = g
+    var shift = i32(1)
+    loop {
+        if shift == 32 break
+        let down = lsr(res, shift)
+        res = res ^ down
+        shift = shift << 1
+    }
+}
+
+# the 'width' bits at 'start', sign extended
+func field(v i32, start i32, width i32) res i32 {
+    res = v << (32 - start - width) >> (32 - width)
+}
+
+func with_field(v i32, start i32, width i32, bits i32) res i32 {
+    let mask = ~(i32(-1) << width) << start
+    res = v & ~mask | (bits << start & mask)
+}
+
+func lowest_set(v i32) res i32 {
+    res = v & i32(0 - v)
+}
+
+func narrow_edges() {
+    var b = i8(-128)
+    var h = i16(-32768)
+    var w = i32(0)
+
+    # the shift happens at the width of the destination
+    w = b << 1
+    item(w)
+    h = b << 1
+    item(i32(h))
+    b = b << 1
+    item(i32(b))
+    b = 127
+    b = b << 1
+    item(i32(b))
+    b = b >> 7
+    item(i32(b))
+    b = 64
+    w = b << 25
+    item(w)
+    w = b << 24
+    item(w)
+    h = 0x4000
+    h = h << 1
+    item(i32(h))
+    h = h >> 15
+    item(i32(h))
+    out_nl()
+
+    # each bit of an 'i8' walked up and back down
+    b = 1
+    var count = 0
+    loop {
+        out_i32(i32(b))
+        out_sp()
+        if b < 0 break
+        b = b << 1
+        count = count + 1
+    }
+    loop {
+        if count == 0 break
+        b = b >> 1
+        count = count - 1
+    }
+    line(i32(b))
+
+    # conversions keep the low bits
+    let big = i32(0x12345678)
+    item(i32(i8(big)))
+    item(i32(i16(big)))
+    item(i32(i8(big >> 8)))
+    item(i32(i16(big >> 12)))
+    item(i32(i8(i16(big) >> 4)))
+    let negative = i32(-0x12345678)
+    item(i32(i8(negative)))
+    item(i32(i16(negative)))
+    item(i32(i8(negative >> 31)))
+    out_nl()
+
+    # '~' and '-' of narrow values widen first
+    b = -128
+    w = -b
+    item(w)
+    w = ~b
+    item(w)
+    h = -b
+    item(i32(h))
+    h = -32768
+    w = -h
+    item(w)
+    w = ~h + 1
+    item(w)
+    w = b * h
+    item(w)
+    w = b * b * b * b
+    item(w)
+    out_nl()
+}
+
+func main() {
+    foo edges {
+        out_hex32(e)
+        out_sp()
+        let ones = popcount(e)
+        if ones != popcount_parallel(e) exit(2)
+        item(ones)
+        out_hex32(reverse_bits(e))
+        out_sp()
+        out_hex32(byte_swap(e))
+        out_sp()
+        item(leading_zeros(e))
+        item(trailing_zeros(e))
+        item(parity(e))
+        out_hex32(lowest_set(e))
+        out_nl()
+    }
+
+    var sum = i32(0)
+    foo edges {
+        let v = e
+        var count = i32(0)
+        loop {
+            if count == 32 break
+            let turned = rotate_left(v, count)
+            if popcount(turned) != popcount(v) exit(3)
+            sum = i32(sum * 3 + turned)
+            count = count + 1
+        }
+        let gray = to_gray(v)
+        if from_gray(gray) != v exit(4)
+        sum = sum ^ gray
+    }
+    show_hex(hex_digits, sum)
+
+    let packed = i32(0x1234f6b8)
+    item(field(packed, 0, 4))
+    item(field(packed, 4, 4))
+    item(field(packed, 8, 8))
+    item(field(packed, 3, 13))
+    item(field(packed, 0, 32))
+    item(field(packed, 31, 1))
+    item(field(-1, 31, 1))
+    out_nl()
+    out_hex32(with_field(packed, 8, 8, 0xab))
+    out_sp()
+    out_hex32(with_field(packed, 28, 4, -1))
+    out_sp()
+    out_hex32(with_field(packed, 0, 31, 0))
+    out_sp()
+    out_hex32(with_field(-1, 13, 7, 0x55))
+    out_nl()
+
+    narrow_edges()
+    out_flush()
+}

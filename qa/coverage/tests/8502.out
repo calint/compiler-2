@@ -1,0 +1,4 @@
+
+8502.baz:4:5: 'for' not found, use 'loop' with a 'break' or 'foo' over an array
+    for e in a {
+    ^~~

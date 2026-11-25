@@ -1424,7 +1424,7 @@ baz_report_line:
     dec rdi
     mov rcx, 10
 .convert_loop:
-    xor rdx, rdx
+    xor edx, edx
     div rcx
     add dl, '0'
     mov [rdi], dl
@@ -1443,7 +1443,7 @@ baz_exit:
     mov rax, 60
     syscall
 baz_read:
-    cmp rdi, 0
+    test rdi, rdi
     jne baz_bad_descriptor
     xor eax, eax
     syscall

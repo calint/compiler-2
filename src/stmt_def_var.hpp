@@ -552,8 +552,9 @@ class stmt_def_var final : public statement {
 // reads the name and the initializer and makes the statement of the kind they
 // give: a constant for a 'let' that folds, e.g. 'let n = 2 * 3', else a
 // variable
-inline auto make_stmt_def_var(parse_toc& tc, const token& keyword_tk,
-                              tokenizer& tz) -> std::unique_ptr<statement> {
+[[nodiscard]] inline auto
+make_stmt_def_var(parse_toc& tc, const token& keyword_tk, tokenizer& tz)
+    -> std::unique_ptr<statement> {
 
     const initializer_declaration declaration{
         tc,

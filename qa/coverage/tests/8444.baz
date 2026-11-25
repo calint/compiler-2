@@ -1,0 +1,31 @@
+# a recursive call in a list writes the global the list is assigned to: the
+# global is read first; the count of a 'foo' is read once, before its body
+dat g = i32(0)
+func noinline r(n i32) res i32 {
+    res = 1
+    if n == 0 return
+    g = g + r(n - 1)
+    g = g + 10
+    res = g
+}
+dat c = 1
+dat a = i32[]{1, 2, 3, 4}
+func noinline rc(m i32) res i32 {
+    res = 0
+    if m == 0 return
+    foo a, c {
+        res = res + e + rc(m - 1)
+    }
+    c = c + 2
+}
+func main() {
+    var y = r(2)
+    # r(1): g = 0 + 1, then 11; r(2): 'g' is read as 0, then r(1) is 11:
+    # g = 11, then 21
+    if y != 21 exit(1)
+    if g != 21 exit(2)
+    # rc(1): one element, 1; c = 3; rc(2): the count is 1 though rc(1) made
+    # 'c' 3: 1 + 1
+    var z = rc(2)
+    if z != 2 exit(3)
+}

@@ -17,8 +17,8 @@ For a reviewer:
    every target with a coverage and sanitizer build, many times slower, see
    its header and AGENTS.md "Tests" (needs nasm, ld, llvm-mc, llvm-objcopy,
    llvm-objdump, ld.lld, llvm-profdata, llvm-cov, qemu-riscv32,
-   qemu-system-riscv32, g++ and python3); a four-digit number in this document, e.g. (1711), is the
-   test 'qa/coverage/tests/1711.baz'
+   qemu-system-riscv32, g++ and python3); a four-digit number in this
+   document, e.g. (1711), is the test 'qa/coverage/tests/1711.baz'
 5. lint and format: 'qa/lint/clang-tidy.sh', 'qa/lint/cppcheck.sh',
    'qa/lint/check-all.sh' (the design rules), 'qa/lint/format-source.sh',
    'qa/lint/fix-source.py' ('format-source.py' and 'fix-source.py' need the
@@ -473,8 +473,9 @@ A statement after a path that cannot continue is rejected at the parse: after
 'loop' without 'break' ('stmt_block::trace_assignment', on the conditions known
 where the code is written). A constant parameter of a generic type is known
 where each instance is parsed (7.4), so a method of 'box<N>' with 'if N == 2
-return' before a statement is rejected for 'box<2>' alone. The compile knows more, the conditions that constant
-arguments of an inlined call decide: a branch whose condition folds to false is
+return' before a statement is rejected for 'box<2>' alone. The compile knows
+more, the conditions that constant arguments of an inlined call decide: a
+branch whose condition folds to false is
 not compiled, nor is the code after a statement that leaves on every path, e.g.
 after the 'return' of 'if n > 5 return' in an inlined 'count(6)', which ends the
 expansion of a recursion with constant arguments, or after a 'loop' whose
@@ -756,7 +757,8 @@ An error is a 'compile_error' ('compile_error.hpp') at the token that caused it,
 or where the next token starts when a token is missing. Its location is
 'file:line:column', the column counts bytes, e.g. 'é' counts 2; the caret under
 the source line is placed by characters, so a double-width character before it
-moves it one cell left. The first error ends the
+moves it one cell left and a combining one, e.g. the accent of 'e' + U+0301,
+one cell right. The first error ends the
 compile (7.8), 'main.cpp' prints it with its frames, then the includes that
 loaded its file ("included from", 'print_include_chain') and then its 'detail',
 e.g. the register use at the failure that 'machine::register_error' adds.
@@ -1104,9 +1106,10 @@ order. The examples use 'make' and 'same' from the start of 2.10 and a type
    for ahead and takes the destination, e.g. 'b = make(2)' and 'b = t.to()'
    (3360), not 'b = t.to() or c' and not a part of a condition, e.g. 'if
    make() {', 'b = not make()' and 'b = (make())'; a 'bool' parameter, field
-   or element is a destination like any other. A result of another type, which an
-   argument told, is rejected as a condition is: "'same(x)' of type 'i8' is
-   not a 'bool'" (3370, 3371); the call is parsed as the condition it is, so
+   or element is a destination like any other. A result of another type,
+   which an argument told, is rejected as a condition is: "'same(x)' of type
+   'i8' is not a 'bool'" (3370, 3371); the call is parsed as the condition it
+   is, so
    what follows it is reported as after any other, e.g. "expected '=='" for
    'b = make() = true' (3450 to 3452).
 
@@ -1798,8 +1801,9 @@ The variables base points a fixed distance past the start of 'vars'
 padding that aligns them ('dat var padding' in the report), so the dats are at
 negative offsets from 'vars', and 'baz.ld' asserts the order. x86_64
 addresses variables from 'rbp', which points at 'vars' and is loaded as an
-absolute address: 'vars' may be beyond the 2 GiB of a 'rip' relative 'lea'. rv32i addresses them
-from 's0', which points 2032 B past 'vars', so the 12-bit offsets, -2048 to
+absolute address: 'vars' may be beyond the 2 GiB of a 'rip' relative 'lea'.
+rv32i addresses them from 's0', which points 2032 B past 'vars', so the
+12-bit offsets, -2048 to
 2047, reach the first 4080 B of variables directly, the next 2048 B through an
 'addi' of 2047, further ones need a 'lui'.
 A noinline body addresses its locals from its frame base, 'rbx' or 's1'.

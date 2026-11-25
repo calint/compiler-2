@@ -951,7 +951,7 @@ class assembler_rv32i final : public assembler {
     //       entry, so no other path reaches them and no line after them reads
     //       the copy
 
-    auto fold_copy(const std::span<line> block) -> bool override {
+    [[nodiscard]] auto fold_copy(const std::span<line> block) -> bool override {
         const instruction* const copy{
             records_.find<instruction>(block.front()),
         };
@@ -1456,9 +1456,11 @@ class assembler_rv32i final : public assembler {
 
     // returns the end address of the section, 'written' is where the image
     // written so far ends
-    auto write_section(std::ostream& os, const image_layout& image,
-                       const symbol_table& symbols, const section which,
-                       size_t written) const -> size_t {
+    [[nodiscard]] auto write_section(std::ostream& os,
+                                     const image_layout& image,
+                                     const symbol_table& symbols,
+                                     const section which, size_t written) const
+        -> size_t {
 
         const size_t base{image.bases.at(section_index(which))};
         for (size_t index{}; index < lines().size(); ++index) {

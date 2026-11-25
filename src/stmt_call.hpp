@@ -2856,17 +2856,16 @@ class stmt_call final : public statement {
 
         const type& param_type{param.get_type()};
 
-        // e.g. an 'i64' variable for an 'i32' parameter, a converted value is
-        // passed like 'a + 1'; widths compared as the narrowing checks see
-        // them, so the default type of a 32-bit target gets the hint too
-        const bool is_narrowing{
+        // e.g. an 'i64' or an 'i8' variable for an 'i32' parameter, a
+        // converted value is passed like 'a + 1'
+        const bool is_convertible{
             param.is_value() and param_type.is_integer() and
-                arg_type.is_integer() and arg_type.is_wider_than(param_type),
+                arg_type.is_integer(),
         };
 
         const std::string hint{
-            is_narrowing ? std::format(", use '{}(...)'", param_type.name())
-                         : "",
+            is_convertible ? std::format(", use '{}(...)'", param_type.name())
+                           : "",
         };
 
         throw compile_error{

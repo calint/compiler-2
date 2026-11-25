@@ -684,6 +684,25 @@ auto parse_option(const std::string_view arg, options& opts) -> void {
         }
     }
 
+    // e.g. '--target rv32i' or '--nopt=1'
+    for (const command_option& option : command_options) {
+        const bool takes_value{option.name.ends_with('=')};
+
+        if (takes_value and
+            arg == option.name.substr(0, option.name.size() - 1)) {
+
+            throw option_error{std::format("option {} needs a value: '{}...'",
+                                           in_quotes(arg), option.name)};
+        }
+
+        if (not takes_value and
+            arg.starts_with(std::format("{}=", option.name))) {
+
+            throw option_error{std::format("option {} takes no value",
+                                           in_quotes(option.name))};
+        }
+    }
+
     if (arg.starts_with('-')) {
         throw option_error{std::format("unknown option: {}", in_quotes(arg))};
     }

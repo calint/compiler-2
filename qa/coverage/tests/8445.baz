@@ -1,0 +1,25 @@
+# 'read' in a list fills the array an earlier element of the list and the
+# destination are in: the element is read first, the sum is stored after
+func rd(b mut i8[]) res i8 {
+    res = i8(read(0, b))
+}
+func main() {
+    var a = i8[]{1, 2, 3, 4, 5, 6}
+    var k = 0
+    a[k] = a[1] + i8(read(0, a, 4))
+    # 2 + 4 bytes, the first byte read is replaced by the sum
+    if a[0] != 6 exit(1)
+    if a[1] != 'b' exit(2)
+    write(1, a, 3, 1)
+    var c = i8[]{1, 2, 3, 4, 5, 6}
+    c[k] = c[1] + rd(c)
+    # 2 + 4 bytes of the second line
+    if c[0] != 6 exit(3)
+    if c[2] != 'g' exit(4)
+    write(1, c, 3, 1)
+    var x = 0
+    x = c[1] + read(0, c, 4)
+    # 'f' of the second line + 4 bytes of the third
+    if x != 'f' + 4 exit(5)
+    write(1, c, 4)
+}

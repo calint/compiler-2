@@ -455,6 +455,34 @@ throw_condition_not_operand(const token& src_loc_tk,
                                     maker)};
 }
 
+// what follows the message about 'word', a keyword of another language that
+// baz writes differently, e.g. ", use 'let'" for 'const'; empty for any
+// other word
+[[nodiscard]] inline auto other_language_hint(const std::string_view word)
+    -> std::string_view {
+
+    constexpr auto hints{
+        std::to_array<std::pair<std::string_view, std::string_view>>({
+            {"while", ", use 'loop' with a 'break'"},
+            {"for", ", use 'loop' with a 'break' or 'foo' over an array"},
+            {"elif", ", use 'else if'"},
+            {"const", ", use 'let'"},
+            {"struct", ", use 'type'"},
+            {"fn", ", use 'func'"},
+            {"def", ", use 'func'"},
+            {"function", ", use 'func'"},
+        }),
+    };
+
+    for (const auto& [other, hint] : hints) {
+        if (word == other) {
+            return hint;
+        }
+    }
+
+    return "";
+}
+
 // a literal or a call result has no storage, e.g. 'literal' is "an array
 // literal", "an instance literal of 'point'" or "'mk()'"
 [[noreturn]] inline auto

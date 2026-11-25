@@ -1,0 +1,69 @@
+# --checks=noub: every operator of 'i8' on a grid of pairs with both limits,
+# each computed where its result is defined; no check fires and the values,
+# mixed into a checksum, are those of a model
+let LO = i8(-128)
+func mix(acc mut i32, v i32) {
+    acc = (acc ^ v & 0xffff) * 31
+    acc = acc & 0xffff
+}
+func noinline ops(a i8, b i8, acc mut i32) {
+    var t = i8(0)
+    if i16(a) + b >= -128 and i16(a) + b <= 127 {
+        t = a + b
+        mix(acc, i32(t))
+    }
+    if i16(a) - b >= -128 and i16(a) - b <= 127 {
+        t = a - b
+        mix(acc, i32(t))
+    }
+    if i16(a) * b >= -128 and i16(a) * b <= 127 {
+        t = a * b
+        mix(acc, i32(t))
+    }
+    if b != 0 and not (a == LO and b == -1) {
+        t = a / b
+        mix(acc, i32(t))
+        t = a % b
+        mix(acc, i32(t))
+    }
+    if b >= 0 and b < 8 {
+        t = a << b
+        mix(acc, i32(t))
+        t = a >> b
+        mix(acc, i32(t))
+    }
+    t = a & b
+    mix(acc, i32(t))
+    t = a | b
+    mix(acc, i32(t))
+    t = a ^ b
+    mix(acc, i32(t))
+    var c = i32(0)
+    if a < b c = c + 1
+    if a <= b c = c + 2
+    if a == b c = c + 4
+    mix(acc, c)
+    if a != LO {
+        t = -a
+        mix(acc, i32(t))
+    }
+    t = ~a
+    mix(acc, i32(t))
+    t = i8(a * b + a)
+    mix(acc, i32(t))
+}
+func main() {
+    var acc = i32(0)
+    var a = i8(-128)
+    loop {
+        var b = i8(-128)
+        loop {
+            ops(a, b, acc)
+            if b == 127 break
+            b = b + 3
+        }
+        if a == 127 break
+        a = a + 5
+    }
+    if acc != 53320 exit(1)
+}

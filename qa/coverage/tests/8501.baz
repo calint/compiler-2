@@ -1,0 +1,7 @@
+# 'while' is no keyword, the message names the loop
+func main() {
+    var i = 0
+    while i < 3 {
+        i = i + 1
+    }
+}

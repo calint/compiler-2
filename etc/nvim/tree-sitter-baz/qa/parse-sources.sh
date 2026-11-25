@@ -12,9 +12,12 @@ cd "$(dirname "$0")/.."
 
 ROOT=../../..
 
-# valid programs that the grammar does not parse on purpose
-# 1575.baz: a raw NUL in a literal, the lexer reads NUL as the end of input
-SKIP="qa/coverage/tests/1575.baz"
+# programs that the grammar does not parse on purpose
+# 1575.baz: valid, a raw NUL in a literal, the lexer reads NUL as the end of
+#           input
+# include/unclosed.baz: the included file of the error test 7141, which has
+#                       no '.out' of its own
+SKIP="qa/coverage/tests/1575.baz qa/coverage/tests/include/unclosed.baz"
 
 LIST="$(mktemp)"
 LOG="$(mktemp)"

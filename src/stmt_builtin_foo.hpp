@@ -314,9 +314,11 @@ class stmt_builtin_foo final : public statement {
 
     // 'e', 'i' and 'n' are declared and the counter 'i' is returned, a
     // register or a variable in memory, as the machine prefers
-    auto declare_loop_names(compile_toc& tc, const ident_info& array_info,
-                            const operand& reg_iter,
-                            machine::held_registers& held) const -> operand {
+    [[nodiscard]] auto declare_loop_names(compile_toc& tc,
+                                          const ident_info& array_info,
+                                          const operand& reg_iter,
+                                          machine::held_registers& held) const
+        -> operand {
 
         const machine& x{tc.machine()};
 

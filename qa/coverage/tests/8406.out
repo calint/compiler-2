@@ -1,0 +1,25 @@
+9
+ann@garden {c3 k1} 7 1 0
+bob@tower {r4} 36 2 1
+cat@cellar {} 0 0 0
+hall {c3} 1
+cellar {s4} 0
+tower {a3 b2 x2 g1000} 1
+garden {c2} 1
+25
+ann@cellar {s2 k1} 23 3 0
+bob@tower {r4 a3 b1 x2} 89 2 3
+cat@cellar {s2 c3} 28 0 3
+hall {c3} 2
+cellar {} 1
+tower {g1000 b1} 1
+garden {c2} 1
+36
+ann@cellar {s4 k1} 45 3 0
+bob@tower {x2 a2 r1} 25 2 6
+cat@hall {c3} 6 1 4
+hall {c3} 3
+cellar {} 1
+tower {g1000 b2 r3 a1} 1
+garden {c2} 1
+TFTF

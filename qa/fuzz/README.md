@@ -1,7 +1,8 @@
 # fuzzers
 
 Fuzzers of the compiler and of the programs it builds. Every fuzzer prints the
-first example of each finding and keeps it in `findings/` (ignored by git), and
+first example of each finding and keeps it in `findings/` (ignored by git,
+`FUZZ_FINDINGS=DIR` names another directory), and
 ends with 1 when the run had a finding, also one kept by an earlier run.
 `fuzz-all.sh [scale] [seed]` runs them all and prints the seed first, the same
 seed and scale repeat the run; its work directories are in a temporary

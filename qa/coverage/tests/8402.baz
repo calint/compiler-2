@@ -1,0 +1,391 @@
+# big numbers as limbs in arrays: base 10000 in 'i32' with add, subtract,
+# multiply, divide and compare, base 2^15 in 'i16' written in decimal
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+let base = 10000
+let limbs_count = 40
+
+type num {
+    limbs i32[limbs_count],
+    len,
+}
+
+func num.of(v i32) self {
+    self.limbs = {}
+    self.len = 0
+    var rest = v
+    loop {
+        if rest == 0 break
+        self.limbs[self.len] = rest % base
+        self.len = self.len + 1
+        rest = rest / base
+    }
+}
+
+func num.print() {
+    if self.len == 0 {
+        out_ch('0')
+        out_nl()
+        return
+    }
+    var ix = self.len - 1
+    out_i32(self.limbs[ix])
+    loop {
+        if ix == 0 break
+        ix = ix - 1
+        let limb = self.limbs[ix]
+        out_ch(i8('0' + limb / 1000))
+        out_ch(i8('0' + limb / 100 % 10))
+        out_ch(i8('0' + limb / 10 % 10))
+        out_ch(i8('0' + limb % 10))
+    }
+    out_nl()
+}
+
+func mut num.trim() {
+    loop {
+        if self.len == 0 break
+        if self.limbs[self.len - 1] != 0 break
+        self.len = self.len - 1
+    }
+}
+
+func mut num.set_sum(a num, b num) {
+    var carry = i32(0)
+    var ix = 0
+    loop {
+        if ix >= a.len and ix >= b.len and carry == 0 break
+        let sum = a.limbs[ix] + b.limbs[ix] + carry
+        self.limbs[ix] = sum % base
+        carry = sum / base
+        ix = ix + 1
+    }
+    self.len = ix
+    loop {
+        if ix == limbs_count break
+        self.limbs[ix] = 0
+        ix = ix + 1
+    }
+}
+
+# 'a - b', 'a' must not be below 'b'
+func mut num.set_difference(a num, b num) {
+    self = {}
+    var borrow = i32(0)
+    foo a.limbs, a.len {
+        var d = e - b.limbs[i] - borrow
+        borrow = 0
+        if d < 0 {
+            d = d + base
+            borrow = 1
+        }
+        self.limbs[i] = d
+    }
+    self.len = a.len
+    self.trim()
+}
+
+func mut num.mul_small(k i32) {
+    var carry = i32(0)
+    foo self.limbs, self.len {
+        let product = e * k + carry
+        e = product % base
+        carry = product / base
+    }
+    loop {
+        if carry == 0 break
+        self.limbs[self.len] = carry % base
+        self.len = self.len + 1
+        carry = carry / base
+    }
+}
+
+# divides by 'k' and returns the remainder
+func mut num.div_small(k i32) res i32 {
+    res = 0
+    var ix = self.len
+    loop {
+        if ix == 0 break
+        ix = ix - 1
+        let cur = res * base + self.limbs[ix]
+        self.limbs[ix] = cur / k
+        res = cur % k
+    }
+    self.trim()
+}
+
+func noinline mul(a num, b num, product mut num) {
+    product = {}
+    foo a.limbs, a.len {
+        let x = e
+        let at = i
+        var carry = i32(0)
+        var j = 0
+        loop {
+            if j >= b.len and carry == 0 break
+            let cur = product.limbs[at + j] + x * b.limbs[j] + carry
+            product.limbs[at + j] = cur % base
+            carry = cur / base
+            j = j + 1
+        }
+    }
+    product.len = a.len + b.len
+    product.trim()
+}
+
+# -1, 0 or 1
+func compare(a num, b num) res {
+    res = 0
+    if a.len != b.len {
+        res = 1
+        if a.len < b.len res = -1
+        return
+    }
+    var ix = a.len
+    loop {
+        if ix == 0 break
+        ix = ix - 1
+        if a.limbs[ix] != b.limbs[ix] {
+            res = 1
+            if a.limbs[ix] < b.limbs[ix] res = -1
+            return
+        }
+    }
+}
+
+func num.digit_sum() res i32 {
+    res = 0
+    foo self.limbs, self.len {
+        var rest = e
+        loop {
+            if rest == 0 break
+            res = res + rest % 10
+            rest = rest / 10
+        }
+    }
+}
+
+func factorial(n i32) res num {
+    res = num.of(1)
+    var k = i32(2)
+    loop {
+        if k > n break
+        res.mul_small(k)
+        k = k + 1
+    }
+}
+
+func power(b i32, exponent) res num {
+    res = num.of(1)
+    var k = 0
+    loop {
+        if k == exponent break
+        res.mul_small(b)
+        k = k + 1
+    }
+}
+
+func fibonacci(n) res num {
+    var a = num.of(0)
+    res = num.of(1)
+    var k = 1
+    loop {
+        if k == n break
+        var next = num
+        next.set_sum(a, res)
+        a = res
+        res = next
+        k = k + 1
+    }
+}
+
+# base 2^15 in 'i16' limbs
+type wide {
+    limbs i16[24],
+}
+
+# 'self = self * 3 + add', the carry is computed at 32 bits
+func mut wide.triple_plus(add i16) {
+    var carry = i32(add)
+    foo self.limbs {
+        let cur = i32(e) * 3 + carry
+        e = i16(cur & 0x7fff)
+        carry = cur >> 15
+    }
+}
+
+func wide.is_zero() res bool {
+    res = true
+    foo self.limbs {
+        if e != 0 {
+            res = false
+            return
+        }
+    }
+}
+
+func mut wide.div10() res i32 {
+    res = 0
+    var ix = array_length(self.limbs)
+    loop {
+        if ix == 0 break
+        ix = ix - 1
+        let cur = res << 15 | self.limbs[ix]
+        self.limbs[ix] = i16(cur / 10)
+        res = cur % 10
+    }
+}
+
+func wide.print() {
+    var copy = self
+    var digits = i8[120]
+    var count = 0
+    loop {
+        digits[count] = i8('0' + copy.div10())
+        count = count + 1
+        if copy.is_zero() break
+    }
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+    out_nl()
+}
+
+func main() {
+    let f50 = factorial(50)
+    f50.print()
+    let f25 = factorial(25)
+    f25.print()
+    line(f50.digit_sum())
+
+    let p2 = power(2, 200)
+    p2.print()
+    let p3 = power(3, 100)
+    var p7 = power(7, 50)
+    var product = num
+    mul(p3, p7, product)
+    product.print()
+    var square = num
+    mul(product, f25, square)
+    square.print()
+    out_int(square.len)
+    out_nl()
+
+    out_int(compare(f50, p2))
+    out_sp()
+    out_int(compare(p2, f50))
+    out_sp()
+    out_int(compare(p3, p3))
+    out_sp()
+    out_int(compare(p7, p3))
+    out_nl()
+
+    var difference = num
+    difference.set_difference(f50, p2)
+    difference.print()
+    var back = num
+    back.set_sum(difference, p2)
+    out_bool(back == f50)
+    out_bool(compare(back, f50) == 0)
+    out_nl()
+
+    let f300 = fibonacci(300)
+    f300.print()
+
+    # 50! / 25! by dividing by each factor, the remainders are all 0
+    var quotient = f50
+    var remainders = i32(0)
+    var k = i32(25)
+    loop {
+        if k == 1 break
+        remainders = remainders + quotient.div_small(k)
+        k = k - 1
+    }
+    quotient.print()
+    line(remainders)
+    line(p7.div_small(9973))
+    p7.print()
+
+    var w = wide
+    var step = 0
+    loop {
+        if step == 200 break
+        w.triple_plus(i16(step * 163 & 0x7fff))
+        step = step + 1
+    }
+    w.print()
+    out_flush()
+}

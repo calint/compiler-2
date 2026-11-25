@@ -1,4 +1,4 @@
 
-1610.baz:7:13: expected type 'i16' for parameter 'x', got 'i8'
+1610.baz:7:13: expected type 'i16' for parameter 'x', got 'i8', use 'i16(...)'
     res = f(y)
             ^

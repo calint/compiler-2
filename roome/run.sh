@@ -1,6 +1,7 @@
 #!/bin/sh
 # compiles roome and runs it on the fpga emulator, the uart is the terminal
 # the emulator exits with the program's exit code
+# usage: roome/run.sh [options of baz]
 set -eu
 cd "$(dirname "$0")"
 

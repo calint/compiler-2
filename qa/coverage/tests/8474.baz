@@ -1,0 +1,6 @@
+# a value missing at the end of a file is marked where the text of the file
+# ends, here after a comment without a line end
+
+func main() {
+    var a = 1 +
+    # the file ends here

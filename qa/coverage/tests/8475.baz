@@ -1,0 +1,15 @@
+# a value follows its operator or its '=' on a later line, with blank lines
+# and comments between them
+
+func main() {
+    var a =
+
+        # the value
+        -
+        3
+    var b = 1 +
+        # the second operand
+
+        a
+    exit(b + 9)
+}

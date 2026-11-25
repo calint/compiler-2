@@ -1,0 +1,5 @@
+# a number with a fraction names the missing floating point type
+func main() {
+    var f = 1.5
+    exit(f)
+}

@@ -435,7 +435,7 @@ class assembler_x86_64 final : public assembler {
     //
 
     // todo: the lines are text, a copy is folded once they are structured
-    auto fold_copy([[maybe_unused]] const std::span<line> block)
+    [[nodiscard]] auto fold_copy([[maybe_unused]] const std::span<line> block)
         -> bool override {
 
         return false;

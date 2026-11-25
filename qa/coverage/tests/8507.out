@@ -1,0 +1,4 @@
+
+8507.baz:2:1: expected a definition ('func', 'type', 'var', 'let', 'dat' or 'include'), got 'def', use 'func'
+def main() {
+^~~

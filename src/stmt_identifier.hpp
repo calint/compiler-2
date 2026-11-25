@@ -1254,6 +1254,14 @@ class stmt_identifier final : public statement {
             return prefix.type_ref().field(name_tk, name_tk.text());
         }
 
+        // e.g. '1.5'
+        if (starts_number(root) and starts_number(name_tk.text())) {
+            throw compile_error{
+                name_tk, std::format("'{}.{}' has a fraction, there is no "
+                                     "floating point type",
+                                     root, name_tk.text())};
+        }
+
         // e.g. '1.x', ''a'.x' or 'k.x' of 'let k = 3'
         throw compile_error{
             name_tk, std::format("{} is a constant, it has no field {}",

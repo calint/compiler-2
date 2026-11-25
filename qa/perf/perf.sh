@@ -97,8 +97,12 @@ if ! printf '%s' "$PERF_REPEATS" | grep -Eq '^[1-9][0-9]*$'; then
     invalid_usage 'PERF_REPEATS must be a positive integer.'
 fi
 
-command -v perf >/dev/null
-command -v python3 >/dev/null
+for tool in perf python3; do
+    command -v "$tool" >/dev/null || {
+        printf '[perf] required tool not found: %s\n' "$tool" >&2
+        exit 1
+    }
+done
 SUFFIX=""
 if [ "$SCOPE" = compile-only ]; then
     SUFFIX="-compile-only"

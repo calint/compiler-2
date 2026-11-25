@@ -1,0 +1,260 @@
+# a line reader over 'read' that works whatever the chunks are, lines longer
+# than its buffer, 'write' with a count and a start, descriptors that fail
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+func out_str(s i8[]) {
+    foo s {
+        out_ch(e)
+    }
+}
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+type reader {
+    chunk i8[32],
+    len,
+    pos,
+    ended bool,
+    reads,
+}
+
+dat input = reader
+
+# the next byte or -1 at the end of the input
+func mut reader.next() res {
+    res = -1
+    if self.pos == self.len {
+        if self.ended return
+        self.len = read(0, self.chunk, 32)
+        self.pos = 0
+        self.reads = self.reads + 1
+        if self.len <= 0 {
+            self.len = 0
+            self.ended = true
+            return
+        }
+    }
+    res = self.chunk[self.pos] & 0xff
+    self.pos = self.pos + 1
+}
+
+# reads a line without its end into 'line', returns its length or -1 at the
+# end of the input; what does not fit is counted in 'dropped'
+func read_line(line mut i8[], dropped mut) res {
+    res = 0
+    dropped = 0
+    loop {
+        let c = input.next()
+        if c < 0 {
+            if res == 0 and dropped == 0 res = -1
+            return
+        }
+        if c == '\n' return
+        if res == array_length(line) {
+            dropped = dropped + 1
+        } else {
+            line[res] = i8(c)
+            res = res + 1
+        }
+    }
+}
+
+func is_digit(c i8) res bool {
+    res = c >= '0' and c <= '9'
+}
+
+type totals {
+    sum i32,
+    count,
+    bad,
+}
+
+# the numbers of a line separated by spaces, a word that is no number counts
+# as bad
+func add_numbers(line i8[], len) res totals {
+    res = {}
+    var at = 0
+    loop {
+        loop {
+            if at == len break
+            if line[at] != ' ' break
+            at = at + 1
+        }
+        if at == len break
+        var negative = false
+        if line[at] == '-' {
+            negative = true
+            at = at + 1
+        }
+        var value = i32(0)
+        var digits = 0
+        loop {
+            if at == len break
+            if not is_digit(line[at]) break
+            value = value * 10 + (line[at] - '0')
+            digits = digits + 1
+            at = at + 1
+        }
+        if digits == 0 or (at < len and line[at] != ' ') {
+            res.bad = res.bad + 1
+            loop {
+                if at == len break
+                if line[at] == ' ' break
+                at = at + 1
+            }
+            continue
+        }
+        if negative value = -value
+        res.sum = res.sum + value
+        res.count = res.count + 1
+    }
+}
+
+func count_words(line i8[], len) res {
+    res = 0
+    var inside = false
+    foo line, len {
+        if e == ' ' or e == '\t' {
+            inside = false
+        } else if not inside {
+            inside = true
+            res = res + 1
+        }
+    }
+}
+
+dat text_quit = "quit"
+dat text_sum = "sum "
+dat text_bad = " bad "
+dat text_end = "end "
+dat text_fd = "descriptors "
+
+func main() {
+    var line = i8[48]
+    var number = 0
+    var bytes = 0
+    loop {
+        var dropped = 0
+        let len = read_line(line, dropped)
+        if len < 0 break
+        number = number + 1
+        bytes = bytes + len + dropped
+        out_int(number)
+        out_ch(':')
+        out_int(len)
+        if dropped > 0 {
+            out_ch('+')
+            out_int(dropped)
+        }
+        out_sp()
+        if len == 4 and arrays_equal(line, text_quit, 4) {
+            out_nl()
+            break
+        }
+        if len > 0 and (is_digit(line[0]) or line[0] == '-') {
+            let t = add_numbers(line, len)
+            out_str(text_sum)
+            out_i32(t.sum)
+            out_ch('/')
+            out_int(t.count)
+            if t.bad > 0 {
+                out_str(text_bad)
+                out_int(t.bad)
+            }
+            out_nl()
+            continue
+        }
+        out_int(count_words(line, len))
+        out_sp()
+        # the line as it is, then its second half by a start index
+        out_flush()
+        if write(1, line, len) != len exit(2)
+        out_ch('|')
+        out_flush()
+        let half = len / 2
+        if write(1, line, len - half, half) != len - half exit(3)
+        out_nl()
+    }
+    out_str(text_end)
+    out_int(number)
+    out_sp()
+    out_int(bytes)
+    out_nl()
+
+    # only 0 reads and only 1 and 2 write
+    out_str(text_fd)
+    out_int(read(1, line, 4))
+    out_sp()
+    out_int(read(7, line, 4))
+    out_sp()
+    out_int(write(0, line, 4))
+    out_sp()
+    out_int(write(3, line, 4))
+    out_sp()
+    out_int(write(-1, line, 4))
+    out_sp()
+    out_int(write(1, line, 0))
+    out_nl()
+    out_flush()
+}

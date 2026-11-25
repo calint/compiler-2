@@ -100,8 +100,9 @@ inline auto assert_not_string_argument(tokenizer& tz) -> void {
         return;
     }
 
-    throw compile_error{tz.next_token(), "a string is not an argument, it "
-                                         "would refer to read-only data"};
+    throw compile_error{tz.next_token(),
+                        "a string is not an argument, it would refer to "
+                        "read-only data; pass a variable initialized with it"};
 }
 
 // a '(' or a unary operator makes a value and a 'not' a condition where

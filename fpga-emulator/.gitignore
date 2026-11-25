@@ -1,4 +1,6 @@
 osqa
+# the sd card image of the README
+sdcard.img
 qa/ram.bin
 qa/ram.lst
 qa/osqa-test

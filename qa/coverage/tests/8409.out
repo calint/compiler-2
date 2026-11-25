@@ -1,0 +1,18 @@
+1:11 2 hello world| world
+2:5 sum 6/3
+3:23 4   the   quick brown	fox|ck brown	fox
+4:16 sum 12/3 bad 3
+5:0 0 |
+6:48+45 10 this line is much longer than the forty eight by| than the forty eight by
+7:24 sum 2147000001/3
+8:1 1 a|a
+9:2 1 ab|b
+10:32 6 exactly thirty two bytes long ..|wo bytes long ..
+11:31 6 exactly thirty one bytes long .|one bytes long .
+12:33 6 exactly thirty three bytes long .|hree bytes long .
+13:1 sum 0/1
+14:1 sum 0/0 bad 1
+15:24 4 tab	separated	words here|d	words here
+16:4 
+end 16 301
+descriptors -9 -9 -9 -9 -9 0

@@ -1,0 +1,50 @@
+# the address of a destination element is computed before its value: a call
+# in the value that changes the index writes the element the index named
+func noinline bump(i mut) res i32 {
+    i = i + 1
+    res = i32(i)
+}
+type fl {on bool, v i32}
+func bumpb(i mut) res bool {
+    i = i + 1
+    res = i == 1
+}
+func main() {
+    {
+        var a = i32[]{10, 20, 30}
+        var i = 0
+        a[i] = a[i] + bump(i)
+        # dst a[0], a[0] read as 10, bump gives 1: a[0] = 11
+        if a[0] != 11 exit(1)
+        if a[1] != 20 exit(2)
+    }
+    {
+        var a = i32[]{10, 20, 30}
+        var i = 0
+        a[i] = bump(i) + a[i]
+        # dst a[0]; bump 1; a[1] 20: a[0] = 21
+        if a[0] != 21 exit(11)
+        if a[1] != 20 exit(12)
+        if a[2] != 30 exit(13)
+    }
+    {
+        var a = i32[]{10, 20, 30, 40}
+        var i = 0
+        a[i] = a[i + 1] * bump(i) + a[i] - bump(i) * a[i]
+        # dst a[0]; 20 * 1 + a[1]=20 - 2 * a[2]=30 -> 40 - 60 = -20
+        if a[0] != -20 exit(21)
+        if a[1] != 20 exit(22)
+        if a[2] != 30 exit(23)
+    }
+    {
+        var a = fl[3]
+        var i = 0
+        a[i].on = bumpb(i) and a[i].v == 0
+        if not a[0].on exit(31)
+        if a[1].on exit(32)
+        a[i].on = a[i].v == 0 and bumpb(i)
+        # dst a[1].on; a[1].v == 0 true; bump: i=2, false
+        if a[1].on exit(33)
+        if a[2].on exit(34)
+    }
+}

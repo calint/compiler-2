@@ -39,7 +39,8 @@ inline auto stmt_identifier::ident_elem::source_to(std::ostream& os) const
     }
 }
 
-inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz)
+inline stmt_identifier::stmt_identifier(parse_toc& tc, const token tk,
+                                        tokenizer& tz)
     : stmt_identifier{tc, tk, tz, path_reach::element} {}
 
 inline stmt_identifier::stmt_identifier(parse_toc& tc, token tk, tokenizer& tz,

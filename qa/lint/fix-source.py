@@ -240,6 +240,19 @@ def direct_reference(cursor):
     return cursor.referenced.get_usr()
 
 
+def is_move_call(call):
+    if call.spelling in MOVE_NAMES:
+        return True
+
+    # in a template the call is not resolved and has no name, its text
+    # starts with 'std::move(' or 'std::forward<'
+    if call.spelling != "":
+        return False
+
+    head = [t.spelling for _, t in zip(range(3), call.get_tokens())]
+    return head[:2] == ["std", "::"] and head[2] in MOVE_NAMES
+
+
 def moved_usrs(body):
     # 'std::move(p)' and 'std::forward(p)' move explicitly, 'return p' and
     # 'throw p' move implicitly
@@ -250,7 +263,7 @@ def moved_usrs(body):
                 usrs.add(direct_reference(child))
             continue
 
-        if c.kind != K.CALL_EXPR or c.spelling not in MOVE_NAMES:
+        if c.kind != K.CALL_EXPR or not is_move_call(c):
             continue
 
         for d in c.walk_preorder():

@@ -619,7 +619,7 @@ class assembler {
     // run, to take its source, see above the class; the caller removes the
     // copy; false, changing nothing, when the first line is no copy or its
     // reads cannot take the source
-    virtual auto fold_copy(std::span<line> block) -> bool = 0;
+    [[nodiscard]] virtual auto fold_copy(std::span<line> block) -> bool = 0;
 
     // the code size of one instruction in the target's unit
     [[nodiscard]] virtual auto instruction_size() const -> size_t = 0;

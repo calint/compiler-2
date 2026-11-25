@@ -1,0 +1,4 @@
+
+8501.baz:4:5: 'while' not found, use 'loop' with a 'break'
+    while i < 3 {
+    ^~~~~

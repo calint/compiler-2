@@ -1,0 +1,1061 @@
+# an integer library with every function inlined and noinline: both agree on
+# every pair of a table of edge values, the inlined one also with constants
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+dat hex_digits = "0123456789abcdef"
+
+# 8 hex digits of the 32 bits
+func noinline out_hex32(v i32) {
+    var shift = 28
+    loop {
+        out_ch(hex_digits[v >> shift & 15])
+        if shift == 0 break
+        shift = shift - 4
+    }
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+func absolute(a i32, b i32) res i32 {
+    res = a
+    # note: the minimum wraps to itself
+    if a < 0 res = i32(0 - a)
+}
+
+func minimum(a i32, b i32) res i32 {
+    res = a
+    if b < a res = b
+}
+
+func maximum(a i32, b i32) res i32 {
+    res = b
+    if a > b res = a
+}
+
+func sign_product(a i32, b i32) res i32 {
+    res = 0
+    if a == 0 or b == 0 return
+    res = 1
+    let a_negative = a < 0
+    let b_negative = b < 0
+    if a_negative != b_negative res = -1
+}
+
+func average(a i32, b i32) res i32 {
+    res = (a & b) + ((a ^ b) >> 1)
+}
+
+func saturating_add(a i32, b i32) res i32 {
+    res = i32(a + b)
+    if a >= 0 and b >= 0 and res < 0 {
+        res = 2147483647
+    } else if a < 0 and b < 0 and res >= 0 {
+        res = -2147483647 - 1
+    }
+}
+
+func saturating_sub(a i32, b i32) res i32 {
+    res = i32(a - b)
+    if a >= 0 and b < 0 and res < 0 {
+        res = 2147483647
+    } else if a < 0 and b >= 0 and res >= 0 {
+        res = -2147483647 - 1
+    }
+}
+
+func divide_floor(a i32, b i32) res i32 {
+    res = 0
+    if b == 0 return
+    if b == -1 {
+        res = i32(0 - a)
+        return
+    }
+    res = a / b
+    let a_negative = a < 0
+    let b_negative = b < 0
+    if a % b != 0 and a_negative != b_negative res = res - 1
+}
+
+func divide_ceiling(a i32, b i32) res i32 {
+    res = 0
+    if b == 0 return
+    if b == -1 {
+        res = i32(0 - a)
+        return
+    }
+    res = a / b
+    let a_negative = a < 0
+    let b_negative = b < 0
+    if a % b != 0 and a_negative == b_negative res = res + 1
+}
+
+func modulo_euclid(a i32, b i32) res i32 {
+    res = 0
+    if b == 0 or b == -1 return
+    res = a % b
+    if res < 0 {
+        if b < 0 {
+            res = i32(res - b)
+        } else {
+            res = res + b
+        }
+    }
+}
+
+func remainder_parts(a i32, b i32) res i32 {
+    res = -1
+    if b == 0 or b == -1 return
+    # the identity of truncated division, 1 when it holds
+    res = 0
+    if a / b * b + a % b == a res = 1
+}
+
+func clamp_between(a i32, b i32) res i32 {
+    res = a
+    if res < -1000 res = -1000
+    if res > b and b >= -1000 res = b
+}
+
+func shift_mix(a i32, b i32) res i32 {
+    let count = b & 31
+    res = a << count ^ (a >> count) ^ (b >> (31 - count))
+}
+
+func compare_chain(a i32, b i32) res i32 {
+    res = 0
+    if a < b res = res | 1
+    if a <= b res = res | 2
+    if a == b res = res | 4
+    if a != b res = res | 8
+    if a >= b res = res | 16
+    if a > b res = res | 32
+    if not (a < b or a == b) res = res | 64
+    if a < 0 and (b < 0 or a + 1 < 0) res = res | 128
+    if (a > 100 or b > 100) and not (a > 100 and b > 100) res = res | 256
+}
+
+func narrow_mix(a i32, b i32) res i32 {
+    let small = i8(a)
+    let medium = i16(b)
+    let sum = i16(small) + medium / 2
+    let product = i32(small) * medium
+    let folded = i8(product >> 8 ^ product)
+    res = product - sum + folded
+}
+
+func saturating_narrow(a i32, b i32) res i32 {
+    let x = i8(a)
+    let y = i8(b >> 3)
+    var wide = i16(x) + y
+    if wide > 127 wide = 127
+    if wide < -128 wide = -128
+    let narrow = i8(wide)
+    var product = i16(x) * y
+    if product > 127 product = 127
+    if product < -128 product = -128
+    res = i32(narrow) * 1000 + product
+}
+
+func digits_and_power(a i32, b i32) res i32 {
+    var digits = i32(1)
+    var rest = a / 10
+    loop {
+        if rest == 0 break
+        digits = digits + 1
+        rest = rest / 10
+    }
+    var power = i32(1)
+    var count = b & 7
+    loop {
+        if count == 0 break
+        power = i32(power * a)
+        count = count - 1
+    }
+    res = i32(power * 16 + digits)
+}
+
+func power_of_two(a i32, b i32) res i32 {
+    res = 0
+    if a > 0 and a & i32(a - 1) == 0 res = 1
+    if b > 0 and b & i32(b - 1) == 0 res = res + 2
+    if a ^ b < 0 res = res + 4
+}
+
+
+func noinline absolute_n(a i32, b i32) res i32 {
+    res = a
+    # note: the minimum wraps to itself
+    if a < 0 res = i32(0 - a)
+}
+
+func noinline minimum_n(a i32, b i32) res i32 {
+    res = a
+    if b < a res = b
+}
+
+func noinline maximum_n(a i32, b i32) res i32 {
+    res = b
+    if a > b res = a
+}
+
+func noinline sign_product_n(a i32, b i32) res i32 {
+    res = 0
+    if a == 0 or b == 0 return
+    res = 1
+    let a_negative = a < 0
+    let b_negative = b < 0
+    if a_negative != b_negative res = -1
+}
+
+func noinline average_n(a i32, b i32) res i32 {
+    res = (a & b) + ((a ^ b) >> 1)
+}
+
+func noinline saturating_add_n(a i32, b i32) res i32 {
+    res = i32(a + b)
+    if a >= 0 and b >= 0 and res < 0 {
+        res = 2147483647
+    } else if a < 0 and b < 0 and res >= 0 {
+        res = -2147483647 - 1
+    }
+}
+
+func noinline saturating_sub_n(a i32, b i32) res i32 {
+    res = i32(a - b)
+    if a >= 0 and b < 0 and res < 0 {
+        res = 2147483647
+    } else if a < 0 and b >= 0 and res >= 0 {
+        res = -2147483647 - 1
+    }
+}
+
+func noinline divide_floor_n(a i32, b i32) res i32 {
+    res = 0
+    if b == 0 return
+    if b == -1 {
+        res = i32(0 - a)
+        return
+    }
+    res = a / b
+    let a_negative = a < 0
+    let b_negative = b < 0
+    if a % b != 0 and a_negative != b_negative res = res - 1
+}
+
+func noinline divide_ceiling_n(a i32, b i32) res i32 {
+    res = 0
+    if b == 0 return
+    if b == -1 {
+        res = i32(0 - a)
+        return
+    }
+    res = a / b
+    let a_negative = a < 0
+    let b_negative = b < 0
+    if a % b != 0 and a_negative == b_negative res = res + 1
+}
+
+func noinline modulo_euclid_n(a i32, b i32) res i32 {
+    res = 0
+    if b == 0 or b == -1 return
+    res = a % b
+    if res < 0 {
+        if b < 0 {
+            res = i32(res - b)
+        } else {
+            res = res + b
+        }
+    }
+}
+
+func noinline remainder_parts_n(a i32, b i32) res i32 {
+    res = -1
+    if b == 0 or b == -1 return
+    # the identity of truncated division, 1 when it holds
+    res = 0
+    if a / b * b + a % b == a res = 1
+}
+
+func noinline clamp_between_n(a i32, b i32) res i32 {
+    res = a
+    if res < -1000 res = -1000
+    if res > b and b >= -1000 res = b
+}
+
+func noinline shift_mix_n(a i32, b i32) res i32 {
+    let count = b & 31
+    res = a << count ^ (a >> count) ^ (b >> (31 - count))
+}
+
+func noinline compare_chain_n(a i32, b i32) res i32 {
+    res = 0
+    if a < b res = res | 1
+    if a <= b res = res | 2
+    if a == b res = res | 4
+    if a != b res = res | 8
+    if a >= b res = res | 16
+    if a > b res = res | 32
+    if not (a < b or a == b) res = res | 64
+    if a < 0 and (b < 0 or a + 1 < 0) res = res | 128
+    if (a > 100 or b > 100) and not (a > 100 and b > 100) res = res | 256
+}
+
+func noinline narrow_mix_n(a i32, b i32) res i32 {
+    let small = i8(a)
+    let medium = i16(b)
+    let sum = i16(small) + medium / 2
+    let product = i32(small) * medium
+    let folded = i8(product >> 8 ^ product)
+    res = product - sum + folded
+}
+
+func noinline saturating_narrow_n(a i32, b i32) res i32 {
+    let x = i8(a)
+    let y = i8(b >> 3)
+    var wide = i16(x) + y
+    if wide > 127 wide = 127
+    if wide < -128 wide = -128
+    let narrow = i8(wide)
+    var product = i16(x) * y
+    if product > 127 product = 127
+    if product < -128 product = -128
+    res = i32(narrow) * 1000 + product
+}
+
+func noinline digits_and_power_n(a i32, b i32) res i32 {
+    var digits = i32(1)
+    var rest = a / 10
+    loop {
+        if rest == 0 break
+        digits = digits + 1
+        rest = rest / 10
+    }
+    var power = i32(1)
+    var count = b & 7
+    loop {
+        if count == 0 break
+        power = i32(power * a)
+        count = count - 1
+    }
+    res = i32(power * 16 + digits)
+}
+
+func noinline power_of_two_n(a i32, b i32) res i32 {
+    res = 0
+    if a > 0 and a & i32(a - 1) == 0 res = 1
+    if b > 0 and b & i32(b - 1) == 0 res = res + 2
+    if a ^ b < 0 res = res + 4
+}
+
+dat edges = i32[]{0, 1, -1, 2, -2, 7, -7, 100, -100, 32767, -32768, 65536, 2147483647, -2147483647 - 1, 46340, -46341, 12345678, 255, -129}
+
+func check_absolute() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = absolute(a, e)
+            let called = absolute_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_absolute() {
+    item(absolute(0, 0))
+    item(absolute(1, -2147483647 - 1))
+    item(absolute(-1, 2))
+    item(absolute(2, 12345678))
+    item(absolute(-2, -7))
+    item(absolute(-7, 32767))
+    item(absolute(-100, 2147483647))
+    item(absolute(32767, -1))
+    item(absolute(-32768, -46341))
+    item(absolute(65536, 7))
+    item(absolute(2147483647, -129))
+    item(absolute(-2147483647 - 1, -100))
+    item(absolute(-46341, 65536))
+    item(absolute(12345678, 1))
+    item(absolute(255, 46340))
+    item(absolute(-129, -2))
+    out_nl()
+}
+
+func check_minimum() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = minimum(a, e)
+            let called = minimum_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_minimum() {
+    item(minimum(0, 0))
+    item(minimum(1, -2147483647 - 1))
+    item(minimum(-1, 2))
+    item(minimum(2, 12345678))
+    item(minimum(-2, -7))
+    item(minimum(-7, 32767))
+    item(minimum(-100, 2147483647))
+    item(minimum(32767, -1))
+    item(minimum(-32768, -46341))
+    item(minimum(65536, 7))
+    item(minimum(2147483647, -129))
+    item(minimum(-2147483647 - 1, -100))
+    item(minimum(-46341, 65536))
+    item(minimum(12345678, 1))
+    item(minimum(255, 46340))
+    item(minimum(-129, -2))
+    out_nl()
+}
+
+func check_maximum() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = maximum(a, e)
+            let called = maximum_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_maximum() {
+    item(maximum(0, 0))
+    item(maximum(1, -2147483647 - 1))
+    item(maximum(-1, 2))
+    item(maximum(2, 12345678))
+    item(maximum(-2, -7))
+    item(maximum(-7, 32767))
+    item(maximum(-100, 2147483647))
+    item(maximum(32767, -1))
+    item(maximum(-32768, -46341))
+    item(maximum(65536, 7))
+    item(maximum(2147483647, -129))
+    item(maximum(-2147483647 - 1, -100))
+    item(maximum(-46341, 65536))
+    item(maximum(12345678, 1))
+    item(maximum(255, 46340))
+    item(maximum(-129, -2))
+    out_nl()
+}
+
+func check_sign_product() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = sign_product(a, e)
+            let called = sign_product_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_sign_product() {
+    item(sign_product(0, 0))
+    item(sign_product(1, -2147483647 - 1))
+    item(sign_product(-1, 2))
+    item(sign_product(2, 12345678))
+    item(sign_product(-2, -7))
+    item(sign_product(-7, 32767))
+    item(sign_product(-100, 2147483647))
+    item(sign_product(32767, -1))
+    item(sign_product(-32768, -46341))
+    item(sign_product(65536, 7))
+    item(sign_product(2147483647, -129))
+    item(sign_product(-2147483647 - 1, -100))
+    item(sign_product(-46341, 65536))
+    item(sign_product(12345678, 1))
+    item(sign_product(255, 46340))
+    item(sign_product(-129, -2))
+    out_nl()
+}
+
+func check_average() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = average(a, e)
+            let called = average_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_average() {
+    item(average(0, 0))
+    item(average(1, -2147483647 - 1))
+    item(average(-1, 2))
+    item(average(2, 12345678))
+    item(average(-2, -7))
+    item(average(-7, 32767))
+    item(average(-100, 2147483647))
+    item(average(32767, -1))
+    item(average(-32768, -46341))
+    item(average(65536, 7))
+    item(average(2147483647, -129))
+    item(average(-2147483647 - 1, -100))
+    item(average(-46341, 65536))
+    item(average(12345678, 1))
+    item(average(255, 46340))
+    item(average(-129, -2))
+    out_nl()
+}
+
+func check_saturating_add() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = saturating_add(a, e)
+            let called = saturating_add_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_saturating_add() {
+    item(saturating_add(0, 0))
+    item(saturating_add(1, -2147483647 - 1))
+    item(saturating_add(-1, 2))
+    item(saturating_add(2, 12345678))
+    item(saturating_add(-2, -7))
+    item(saturating_add(-7, 32767))
+    item(saturating_add(-100, 2147483647))
+    item(saturating_add(32767, -1))
+    item(saturating_add(-32768, -46341))
+    item(saturating_add(65536, 7))
+    item(saturating_add(2147483647, -129))
+    item(saturating_add(-2147483647 - 1, -100))
+    item(saturating_add(-46341, 65536))
+    item(saturating_add(12345678, 1))
+    item(saturating_add(255, 46340))
+    item(saturating_add(-129, -2))
+    out_nl()
+}
+
+func check_saturating_sub() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = saturating_sub(a, e)
+            let called = saturating_sub_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_saturating_sub() {
+    item(saturating_sub(0, 0))
+    item(saturating_sub(1, -2147483647 - 1))
+    item(saturating_sub(-1, 2))
+    item(saturating_sub(2, 12345678))
+    item(saturating_sub(-2, -7))
+    item(saturating_sub(-7, 32767))
+    item(saturating_sub(-100, 2147483647))
+    item(saturating_sub(32767, -1))
+    item(saturating_sub(-32768, -46341))
+    item(saturating_sub(65536, 7))
+    item(saturating_sub(2147483647, -129))
+    item(saturating_sub(-2147483647 - 1, -100))
+    item(saturating_sub(-46341, 65536))
+    item(saturating_sub(12345678, 1))
+    item(saturating_sub(255, 46340))
+    item(saturating_sub(-129, -2))
+    out_nl()
+}
+
+func check_divide_floor() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = divide_floor(a, e)
+            let called = divide_floor_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_divide_floor() {
+    item(divide_floor(0, 0))
+    item(divide_floor(1, -2147483647 - 1))
+    item(divide_floor(-1, 2))
+    item(divide_floor(2, 12345678))
+    item(divide_floor(-2, -7))
+    item(divide_floor(-7, 32767))
+    item(divide_floor(-100, 2147483647))
+    item(divide_floor(32767, -1))
+    item(divide_floor(-32768, -46341))
+    item(divide_floor(65536, 7))
+    item(divide_floor(2147483647, -129))
+    item(divide_floor(-2147483647 - 1, -100))
+    item(divide_floor(-46341, 65536))
+    item(divide_floor(12345678, 1))
+    item(divide_floor(255, 46340))
+    item(divide_floor(-129, -2))
+    out_nl()
+}
+
+func check_divide_ceiling() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = divide_ceiling(a, e)
+            let called = divide_ceiling_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_divide_ceiling() {
+    item(divide_ceiling(0, 0))
+    item(divide_ceiling(1, -2147483647 - 1))
+    item(divide_ceiling(-1, 2))
+    item(divide_ceiling(2, 12345678))
+    item(divide_ceiling(-2, -7))
+    item(divide_ceiling(-7, 32767))
+    item(divide_ceiling(-100, 2147483647))
+    item(divide_ceiling(32767, -1))
+    item(divide_ceiling(-32768, -46341))
+    item(divide_ceiling(65536, 7))
+    item(divide_ceiling(2147483647, -129))
+    item(divide_ceiling(-2147483647 - 1, -100))
+    item(divide_ceiling(-46341, 65536))
+    item(divide_ceiling(12345678, 1))
+    item(divide_ceiling(255, 46340))
+    item(divide_ceiling(-129, -2))
+    out_nl()
+}
+
+func check_modulo_euclid() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = modulo_euclid(a, e)
+            let called = modulo_euclid_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_modulo_euclid() {
+    item(modulo_euclid(0, 0))
+    item(modulo_euclid(1, -2147483647 - 1))
+    item(modulo_euclid(-1, 2))
+    item(modulo_euclid(2, 12345678))
+    item(modulo_euclid(-2, -7))
+    item(modulo_euclid(-7, 32767))
+    item(modulo_euclid(-100, 2147483647))
+    item(modulo_euclid(32767, -1))
+    item(modulo_euclid(-32768, -46341))
+    item(modulo_euclid(65536, 7))
+    item(modulo_euclid(2147483647, -129))
+    item(modulo_euclid(-2147483647 - 1, -100))
+    item(modulo_euclid(-46341, 65536))
+    item(modulo_euclid(12345678, 1))
+    item(modulo_euclid(255, 46340))
+    item(modulo_euclid(-129, -2))
+    out_nl()
+}
+
+func check_remainder_parts() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = remainder_parts(a, e)
+            let called = remainder_parts_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_remainder_parts() {
+    item(remainder_parts(0, 0))
+    item(remainder_parts(1, -2147483647 - 1))
+    item(remainder_parts(-1, 2))
+    item(remainder_parts(2, 12345678))
+    item(remainder_parts(-2, -7))
+    item(remainder_parts(-7, 32767))
+    item(remainder_parts(-100, 2147483647))
+    item(remainder_parts(32767, -1))
+    item(remainder_parts(-32768, -46341))
+    item(remainder_parts(65536, 7))
+    item(remainder_parts(2147483647, -129))
+    item(remainder_parts(-2147483647 - 1, -100))
+    item(remainder_parts(-46341, 65536))
+    item(remainder_parts(12345678, 1))
+    item(remainder_parts(255, 46340))
+    item(remainder_parts(-129, -2))
+    out_nl()
+}
+
+func check_clamp_between() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = clamp_between(a, e)
+            let called = clamp_between_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_clamp_between() {
+    item(clamp_between(0, 0))
+    item(clamp_between(1, -2147483647 - 1))
+    item(clamp_between(-1, 2))
+    item(clamp_between(2, 12345678))
+    item(clamp_between(-2, -7))
+    item(clamp_between(-7, 32767))
+    item(clamp_between(-100, 2147483647))
+    item(clamp_between(32767, -1))
+    item(clamp_between(-32768, -46341))
+    item(clamp_between(65536, 7))
+    item(clamp_between(2147483647, -129))
+    item(clamp_between(-2147483647 - 1, -100))
+    item(clamp_between(-46341, 65536))
+    item(clamp_between(12345678, 1))
+    item(clamp_between(255, 46340))
+    item(clamp_between(-129, -2))
+    out_nl()
+}
+
+func check_shift_mix() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = shift_mix(a, e)
+            let called = shift_mix_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_shift_mix() {
+    item(shift_mix(0, 0))
+    item(shift_mix(1, -2147483647 - 1))
+    item(shift_mix(-1, 2))
+    item(shift_mix(2, 12345678))
+    item(shift_mix(-2, -7))
+    item(shift_mix(-7, 32767))
+    item(shift_mix(-100, 2147483647))
+    item(shift_mix(32767, -1))
+    item(shift_mix(-32768, -46341))
+    item(shift_mix(65536, 7))
+    item(shift_mix(2147483647, -129))
+    item(shift_mix(-2147483647 - 1, -100))
+    item(shift_mix(-46341, 65536))
+    item(shift_mix(12345678, 1))
+    item(shift_mix(255, 46340))
+    item(shift_mix(-129, -2))
+    out_nl()
+}
+
+func check_compare_chain() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = compare_chain(a, e)
+            let called = compare_chain_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_compare_chain() {
+    item(compare_chain(0, 0))
+    item(compare_chain(1, -2147483647 - 1))
+    item(compare_chain(-1, 2))
+    item(compare_chain(2, 12345678))
+    item(compare_chain(-2, -7))
+    item(compare_chain(-7, 32767))
+    item(compare_chain(-100, 2147483647))
+    item(compare_chain(32767, -1))
+    item(compare_chain(-32768, -46341))
+    item(compare_chain(65536, 7))
+    item(compare_chain(2147483647, -129))
+    item(compare_chain(-2147483647 - 1, -100))
+    item(compare_chain(-46341, 65536))
+    item(compare_chain(12345678, 1))
+    item(compare_chain(255, 46340))
+    item(compare_chain(-129, -2))
+    out_nl()
+}
+
+func check_narrow_mix() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = narrow_mix(a, e)
+            let called = narrow_mix_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_narrow_mix() {
+    item(narrow_mix(0, 0))
+    item(narrow_mix(1, -2147483647 - 1))
+    item(narrow_mix(-1, 2))
+    item(narrow_mix(2, 12345678))
+    item(narrow_mix(-2, -7))
+    item(narrow_mix(-7, 32767))
+    item(narrow_mix(-100, 2147483647))
+    item(narrow_mix(32767, -1))
+    item(narrow_mix(-32768, -46341))
+    item(narrow_mix(65536, 7))
+    item(narrow_mix(2147483647, -129))
+    item(narrow_mix(-2147483647 - 1, -100))
+    item(narrow_mix(-46341, 65536))
+    item(narrow_mix(12345678, 1))
+    item(narrow_mix(255, 46340))
+    item(narrow_mix(-129, -2))
+    out_nl()
+}
+
+func check_saturating_narrow() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = saturating_narrow(a, e)
+            let called = saturating_narrow_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_saturating_narrow() {
+    item(saturating_narrow(0, 0))
+    item(saturating_narrow(1, -2147483647 - 1))
+    item(saturating_narrow(-1, 2))
+    item(saturating_narrow(2, 12345678))
+    item(saturating_narrow(-2, -7))
+    item(saturating_narrow(-7, 32767))
+    item(saturating_narrow(-100, 2147483647))
+    item(saturating_narrow(32767, -1))
+    item(saturating_narrow(-32768, -46341))
+    item(saturating_narrow(65536, 7))
+    item(saturating_narrow(2147483647, -129))
+    item(saturating_narrow(-2147483647 - 1, -100))
+    item(saturating_narrow(-46341, 65536))
+    item(saturating_narrow(12345678, 1))
+    item(saturating_narrow(255, 46340))
+    item(saturating_narrow(-129, -2))
+    out_nl()
+}
+
+func check_digits_and_power() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = digits_and_power(a, e)
+            let called = digits_and_power_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_digits_and_power() {
+    item(digits_and_power(0, 0))
+    item(digits_and_power(1, -2147483647 - 1))
+    item(digits_and_power(-1, 2))
+    item(digits_and_power(2, 12345678))
+    item(digits_and_power(-2, -7))
+    item(digits_and_power(-7, 32767))
+    item(digits_and_power(-100, 2147483647))
+    item(digits_and_power(32767, -1))
+    item(digits_and_power(-32768, -46341))
+    item(digits_and_power(65536, 7))
+    item(digits_and_power(2147483647, -129))
+    item(digits_and_power(-2147483647 - 1, -100))
+    item(digits_and_power(-46341, 65536))
+    item(digits_and_power(12345678, 1))
+    item(digits_and_power(255, 46340))
+    item(digits_and_power(-129, -2))
+    out_nl()
+}
+
+func check_power_of_two() {
+    var fold = i32(0)
+    foo edges {
+        let a = e
+        foo edges {
+            let inlined = power_of_two(a, e)
+            let called = power_of_two_n(a, e)
+            if inlined != called exit(2)
+            fold = i32(fold * 31 + inlined)
+        }
+    }
+    out_hex32(fold)
+    out_nl()
+}
+
+func constants_power_of_two() {
+    item(power_of_two(0, 0))
+    item(power_of_two(1, -2147483647 - 1))
+    item(power_of_two(-1, 2))
+    item(power_of_two(2, 12345678))
+    item(power_of_two(-2, -7))
+    item(power_of_two(-7, 32767))
+    item(power_of_two(-100, 2147483647))
+    item(power_of_two(32767, -1))
+    item(power_of_two(-32768, -46341))
+    item(power_of_two(65536, 7))
+    item(power_of_two(2147483647, -129))
+    item(power_of_two(-2147483647 - 1, -100))
+    item(power_of_two(-46341, 65536))
+    item(power_of_two(12345678, 1))
+    item(power_of_two(255, 46340))
+    item(power_of_two(-129, -2))
+    out_nl()
+}
+
+func main() {
+    check_absolute()
+    constants_absolute()
+    check_minimum()
+    constants_minimum()
+    check_maximum()
+    constants_maximum()
+    check_sign_product()
+    constants_sign_product()
+    check_average()
+    constants_average()
+    check_saturating_add()
+    constants_saturating_add()
+    check_saturating_sub()
+    constants_saturating_sub()
+    check_divide_floor()
+    constants_divide_floor()
+    check_divide_ceiling()
+    constants_divide_ceiling()
+    check_modulo_euclid()
+    constants_modulo_euclid()
+    check_remainder_parts()
+    constants_remainder_parts()
+    check_clamp_between()
+    constants_clamp_between()
+    check_shift_mix()
+    constants_shift_mix()
+    check_compare_chain()
+    constants_compare_chain()
+    check_narrow_mix()
+    constants_narrow_mix()
+    check_saturating_narrow()
+    constants_saturating_narrow()
+    check_digits_and_power()
+    constants_digits_and_power()
+    check_power_of_two()
+    constants_power_of_two()
+    out_flush()
+}

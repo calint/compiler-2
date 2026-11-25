@@ -1,0 +1,4 @@
+
+8503.baz:6:7: 'elif' not found, use 'else if'
+    } elif i == 2 {
+      ^~~~

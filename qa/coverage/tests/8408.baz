@@ -1,0 +1,400 @@
+# deep call chains passing values, a 'mut' total and an instance: inlined and
+# noinline give equal results; ackermann, hanoi, permutations, depth 300
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+func out_str(s i8[]) {
+    foo s {
+        out_ch(e)
+    }
+}
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+dat hex_digits = "0123456789abcdef"
+
+# 8 hex digits of the 32 bits
+func noinline out_hex32(v i32) {
+    var shift = 28
+    loop {
+        out_ch(hex_digits[v >> shift & 15])
+        if shift == 0 break
+        shift = shift - 4
+    }
+}
+
+func show_hex(label i8[], v i32) {
+    out_str(label)
+    out_sp()
+    out_hex32(v)
+    out_nl()
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+type account {
+    balance i32,
+    moves i16,
+}
+
+func level10(v i32, total mut i32, a mut account) res i32 {
+    total = total + v
+    a.balance = a.balance + v
+    a.moves = a.moves + 1
+    res = v * 2 + 1
+}
+
+func level9(v i32, total mut i32, a mut account) res i32 {
+    res = level10(v + 9, total, a) - 9
+    total = total ^ res
+}
+
+func level8(v i32, total mut i32, a mut account) res i32 {
+    let down = level9(v * 3, total, a)
+    res = down + level9(v, total, a)
+}
+
+func level7(v i32, total mut i32, a mut account) res i32 {
+    res = 7
+    if v % 2 == 0 {
+        res = level8(v / 2, total, a)
+    } else {
+        res = level8(v + 1, total, a) + 1
+    }
+}
+
+func level6(v i32, total mut i32, a mut account) res i32 {
+    res = 0
+    var round = i32(0)
+    loop {
+        if round == 3 break
+        res = res + level7(v + round, total, a)
+        round = round + 1
+    }
+}
+
+func noinline level5(v i32, total mut i32, a mut account) res i32 {
+    var copy = a
+    res = level6(v, total, copy)
+    if copy.moves > a.moves a = copy
+}
+
+func level4(v i32, total mut i32, a mut account) res i32 {
+    res = level5(v - 4, total, a) % 10007
+}
+
+func level3(v i32, total mut i32, a mut account) res i32 {
+    var mine = i32(0)
+    res = level4(v, mine, a) + level4(v + 1, mine, a)
+    total = total + mine % 1000
+}
+
+func level2(v i32, total mut i32, a mut account) res i32 {
+    res = level3(v, total, a)
+    if res < 0 res = -res
+}
+
+func level1(v i32, total mut i32, a mut account) res i32 {
+    res = level2(v + 1, total, a) + level2(v + 2, total, a)
+}
+
+func noinline called10(v i32, total mut i32, a mut account) res i32 {
+    total = total + v
+    a.balance = a.balance + v
+    a.moves = a.moves + 1
+    res = v * 2 + 1
+}
+
+func noinline called9(v i32, total mut i32, a mut account) res i32 {
+    res = called10(v + 9, total, a) - 9
+    total = total ^ res
+}
+
+func noinline called8(v i32, total mut i32, a mut account) res i32 {
+    let down = called9(v * 3, total, a)
+    res = down + called9(v, total, a)
+}
+
+func noinline called7(v i32, total mut i32, a mut account) res i32 {
+    res = 7
+    if v % 2 == 0 {
+        res = called8(v / 2, total, a)
+    } else {
+        res = called8(v + 1, total, a) + 1
+    }
+}
+
+func noinline called6(v i32, total mut i32, a mut account) res i32 {
+    res = 0
+    var round = i32(0)
+    loop {
+        if round == 3 break
+        res = res + called7(v + round, total, a)
+        round = round + 1
+    }
+}
+
+func noinline called5(v i32, total mut i32, a mut account) res i32 {
+    var copy = a
+    res = called6(v, total, copy)
+    if copy.moves > a.moves a = copy
+}
+
+func noinline called4(v i32, total mut i32, a mut account) res i32 {
+    res = called5(v - 4, total, a) % 10007
+}
+
+func noinline called3(v i32, total mut i32, a mut account) res i32 {
+    var mine = i32(0)
+    res = called4(v, mine, a) + called4(v + 1, mine, a)
+    total = total + mine % 1000
+}
+
+func noinline called2(v i32, total mut i32, a mut account) res i32 {
+    res = called3(v, total, a)
+    if res < 0 res = -res
+}
+
+func noinline called1(v i32, total mut i32, a mut account) res i32 {
+    res = called2(v + 1, total, a) + called2(v + 2, total, a)
+}
+
+# inlined and noinline levels in turn
+func mixed3(v i32, total mut i32, a mut account) res i32 {
+    res = called9(v, total, a) + level9(v, total, a)
+}
+
+func noinline mixed2(v i32, total mut i32, a mut account) res i32 {
+    res = mixed3(v + 2, total, a) - mixed3(v, total, a)
+}
+
+func mixed1(v i32, total mut i32, a mut account) res i32 {
+    res = mixed2(v, total, a) * 3 + mixed2(v + 5, total, a)
+}
+
+func noinline ackermann(m i32, n i32) res i32 {
+    if m == 0 {
+        res = n + 1
+    } else if n == 0 {
+        res = ackermann(m - 1, 1)
+    } else {
+        let inner = ackermann(m, n - 1)
+        res = ackermann(m - 1, inner)
+    }
+}
+
+dat pegs = i8[]{0, 0, 0}
+dat hanoi_moves = i32(0)
+dat hanoi_fold = i32(0)
+
+func noinline hanoi(disks, from, to, via) {
+    if disks == 0 return
+    hanoi(disks - 1, from, via, to)
+    pegs[from] = pegs[from] - 1
+    pegs[to] = pegs[to] + 1
+    hanoi_moves = hanoi_moves + 1
+    hanoi_fold = i32(hanoi_fold * 5 + i32(from * 3 + to))
+    hanoi(disks - 1, via, to, from)
+}
+
+dat series = i32[]{3, -8, 5, 7, -2, 9, -20, 6, 4, -1, 8, -3, 2, -9, 10, 1}
+
+# the largest sum of a run of neighbors between 'low' and 'high'
+func noinline best_run(low, high) res i32 {
+    if low == high {
+        res = series[low]
+        return
+    }
+    let middle = (low + high) / 2
+    let left = best_run(low, middle)
+    let right = best_run(middle + 1, high)
+    var sum = i32(0)
+    var best_left = series[middle]
+    var at = middle
+    loop {
+        sum = sum + series[at]
+        if sum > best_left best_left = sum
+        if at == low break
+        at = at - 1
+    }
+    sum = 0
+    var best_right = series[middle + 1]
+    at = middle + 1
+    loop {
+        sum = sum + series[at]
+        if sum > best_right best_right = sum
+        if at == high break
+        at = at + 1
+    }
+    res = best_left + best_right
+    if left > res res = left
+    if right > res res = right
+}
+
+dat letters = "abcde"
+dat permutations = 0
+dat permutation_fold = i32(0)
+
+func noinline permute(from) {
+    if from == array_length(letters) - 1 {
+        permutations = permutations + 1
+        foo letters {
+            permutation_fold = i32(permutation_fold * 7 + e)
+        }
+        return
+    }
+    var at = from
+    loop {
+        if at == array_length(letters) break
+        let t = letters[from]
+        letters[from] = letters[at]
+        letters[at] = t
+        permute(from + 1)
+        letters[at] = letters[from]
+        letters[from] = t
+        at = at + 1
+    }
+}
+
+func noinline sum_down(n i32) res i32 {
+    res = 0
+    if n == 0 return
+    res = sum_down(n - 1) + n
+}
+
+func main() {
+    var total = i32(0)
+    var a = account
+    var v = i32(1)
+    loop {
+        if v > 40 break
+        let inlined = level1(v, total, a)
+        var total_called = total
+        var a_called = a
+        if v == 1 {
+            total_called = 0
+            a_called = {}
+            let called = called1(v, total_called, a_called)
+            if called != inlined exit(2)
+            if total_called != total or a_called != a exit(3)
+        }
+        if v % 13 == 1 {
+            item(inlined)
+            item(total)
+            item(a.balance)
+            line(i32(a.moves))
+        }
+        v = v + 3
+    }
+
+    total = 0
+    a = {}
+    var folded = i32(0)
+    v = 1
+    loop {
+        if v > 40 break
+        folded = i32(folded * 3 + called1(v, total, a))
+        v = v + 3
+    }
+    item(folded)
+    item(total)
+    item(a.balance)
+    line(i32(a.moves))
+
+    total = 5
+    a = {100, 0}
+    item(mixed1(10, total, a))
+    item(total)
+    item(a.balance)
+    line(i32(a.moves))
+
+    item(ackermann(2, 3))
+    item(ackermann(3, 3))
+    line(ackermann(1, 20))
+
+    pegs[0] = 9
+    hanoi(9, 0, 2, 1)
+    item(hanoi_moves)
+    item(i32(pegs[0]))
+    item(i32(pegs[1]))
+    item(i32(pegs[2]))
+    show_hex(hex_digits, hanoi_fold)
+
+    item(best_run(0, 15))
+    item(best_run(0, 6))
+    item(best_run(6, 6))
+    line(best_run(7, 15))
+
+    permute(0)
+    out_int(permutations)
+    out_sp()
+    out_str(letters)
+    out_sp()
+    show_hex(hex_digits, permutation_fold)
+
+    line(sum_down(300))
+    out_flush()
+}

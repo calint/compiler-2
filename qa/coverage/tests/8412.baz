@@ -1,0 +1,410 @@
+# programs driven by 'dat' tables: a calendar checked over four centuries,
+# roman numerals by rows of a user type, numbers in words, a recognizer
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+func out_str(s i8[]) {
+    foo s {
+        out_ch(e)
+    }
+}
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+dat month_days = i8[]{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+dat month_names = "JanFebMarAprMayJunJulAugSepOctNovDec"
+dat day_names = "SunMonTueWedThuFriSat"
+dat month_offsets = i8[]{0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4}
+
+type date {
+    year i16,
+    month i8,
+    day i8,
+}
+
+func is_leap(year i32) res bool {
+    res = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+}
+
+func days_in(year i32, month i32) res i32 {
+    res = month_days[month - 1]
+    if month == 2 and is_leap(year) res = 29
+}
+
+# 0 is sunday
+func weekday(d date) res i32 {
+    var y = i32(d.year)
+    if d.month < 3 y = y - 1
+    res = (y + y / 4 - y / 100 + y / 400 + month_offsets[d.month - 1] + d.day) % 7
+}
+
+# days since 1970-01-01
+func noinline to_days(d date) res i32 {
+    var y = i32(d.year)
+    let m = i32(d.month)
+    if m <= 2 y = y - 1
+    var era = y / 400
+    if y < 0 era = (y - 399) / 400
+    let year_of_era = y - era * 400
+    var shifted = m - 3
+    if m <= 2 shifted = m + 9
+    let day_of_year = (shifted * 153 + 2) / 5 + d.day - 1
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year
+    res = era * 146097 + day_of_era - 719468
+}
+
+func noinline from_days(days i32) res date {
+    let z = days + 719468
+    var era = z / 146097
+    if z < 0 era = (z - 146096) / 146097
+    let day_of_era = z - era * 146097
+    let year_of_era = (day_of_era - day_of_era / 1460 + day_of_era / 36524 - day_of_era / 146096) / 365
+    let day_of_year = day_of_era - (year_of_era * 365 + year_of_era / 4 - year_of_era / 100)
+    let shifted = (day_of_year * 5 + 2) / 153
+    let day = day_of_year - (shifted * 153 + 2) / 5 + 1
+    var month = shifted + 3
+    if shifted >= 10 month = shifted - 9
+    var year = year_of_era + era * 400
+    if month <= 2 year = year + 1
+    res = {i16(year), i8(month), i8(day)}
+}
+
+func print_two(v i32) {
+    out_ch(i8('0' + v / 10))
+    out_ch(i8('0' + v % 10))
+}
+
+func print_part(text i8[], start, count) {
+    var at = start
+    loop {
+        if at == start + count break
+        out_ch(text[at])
+        at = at + 1
+    }
+}
+
+func date.print() {
+    let name_at = int(weekday(self)) * 3
+    print_part(day_names, name_at, 3)
+    out_sp()
+    out_i32(i32(self.year))
+    out_ch('-')
+    print_part(month_names, (self.month - 1) * 3, 3)
+    out_ch('-')
+    print_two(i32(self.day))
+}
+
+func print_month(year i32, month i32) {
+    let first = date{i16(year), i8(month), 1}
+    var column = weekday(first)
+    var pad = 0
+    loop {
+        if pad == column break
+        out_sp()
+        out_sp()
+        out_sp()
+        pad = pad + 1
+    }
+    var day = i32(1)
+    loop {
+        if day > days_in(year, month) break
+        if day < 10 out_sp()
+        out_i32(day)
+        column = column + 1
+        if column == 7 {
+            column = 0
+            out_nl()
+        } else if day != days_in(year, month) {
+            out_sp()
+        }
+        day = day + 1
+    }
+    if column != 0 out_nl()
+}
+
+type numeral {
+    value i16,
+    letters i8[2],
+    len i8,
+}
+
+dat numerals = numeral[]{
+    {1000, "M", 1}, {900, "CM", 2}, {500, "D", 1}, {400, "CD", 2}, {100, "C", 1}, {90, "XC", 2}, {50, "L", 1},
+    {40, "XL", 2}, {10, "X", 1}, {9, "IX", 2}, {5, "V", 1}, {4, "IV", 2}, {1, "I", 1},
+}
+
+func print_roman(v i32) {
+    var rest = v
+    foo numerals {
+        loop {
+            if rest < e.value break
+            out_ch(e.letters[0])
+            if e.len == 2 out_ch(e.letters[1])
+            rest = rest - e.value
+        }
+    }
+}
+
+# writes the numeral of 'v' into 'out' and returns its length
+func roman_text(v i32, out mut i8[]) res {
+    res = 0
+    var rest = v
+    foo numerals {
+        loop {
+            if rest < e.value break
+            array_copy(e.letters, out[res], e.len)
+            res = res + e.len
+            rest = rest - e.value
+        }
+    }
+}
+
+# the value of the roman numeral in 'text', 0 when it is not the numeral
+# that is written for its value
+func parse_roman(text i8[], len) res i32 {
+    res = 0
+    var at = 0
+    foo numerals {
+        loop {
+            if at + e.len > len break
+            if not arrays_equal(text[at], e.letters, e.len) break
+            res = res + e.value
+            at = at + e.len
+        }
+    }
+    if at != len or res > 3999 {
+        res = 0
+        return
+    }
+    var again = i8[16]
+    let again_len = roman_text(res, again)
+    if again_len != len or not arrays_equal(again, text, len) res = 0
+}
+
+dat words_small = "zero     one      two      three    four     five     six      seven    eight    nine     ten      eleven   twelve   thirteen fourteen fifteen  sixteen  seventeeneighteen nineteen "
+dat words_tens = "twenty sixty  thirty seventyforty  eighty fifty  ninety "
+dat tens_order = i8[]{0, 2, 4, 6, 1, 3, 5, 7}
+dat word_hundred = "hundred"
+dat word_thousand = "thousand"
+
+func print_trimmed(text i8[], start, width) {
+    var at = start
+    loop {
+        if at == start + width break
+        if text[at] == ' ' break
+        out_ch(text[at])
+        at = at + 1
+    }
+}
+
+func noinline print_words(v i32) {
+    if v >= 1000 {
+        print_words(v / 1000)
+        out_sp()
+        out_str(word_thousand)
+        if v % 1000 == 0 return
+        out_sp()
+        print_words(v % 1000)
+    } else if v >= 100 {
+        print_trimmed(words_small, v / 100 * 9, 9)
+        out_sp()
+        out_str(word_hundred)
+        if v % 100 == 0 return
+        out_sp()
+        print_words(v % 100)
+    } else if v >= 20 {
+        print_trimmed(words_tens, tens_order[v / 10 - 2] * 7, 7)
+        if v % 10 == 0 return
+        out_ch('-')
+        print_trimmed(words_small, v % 10 * 9, 9)
+    } else {
+        print_trimmed(words_small, v * 9, 9)
+    }
+}
+
+# a recognizer of '-12', '3.5', '1e9', '0x1f': rows are states, columns the
+# classes digit, sign, dot, 'e', 'x', hex letter, other; 9 rejects
+dat transitions = i8[]{
+    2, 1, 9, 9, 9, 9, 9,
+    2, 9, 9, 9, 9, 9, 9,
+    2, 9, 3, 5, 8, 9, 9,
+    4, 9, 9, 9, 9, 9, 9,
+    4, 9, 9, 5, 9, 9, 9,
+    7, 6, 9, 9, 9, 9, 9,
+    7, 9, 9, 9, 9, 9, 9,
+    7, 9, 9, 9, 9, 9, 9,
+    8, 9, 9, 8, 9, 8, 9,
+}
+dat accepting = bool[]{false, false, true, false, true, false, false, true, true, false}
+
+func class_of(c i8) res {
+    res = 6
+    if c >= '0' and c <= '9' {
+        res = 0
+    } else if c == '-' or c == '+' {
+        res = 1
+    } else if c == '.' {
+        res = 2
+    } else if c == 'e' {
+        res = 3
+    } else if c == 'x' {
+        res = 4
+    } else if c >= 'a' and c <= 'f' {
+        res = 5
+    }
+}
+
+dat samples = "12 -7 +3.25 1e9 2.5e-3 0x1f 0xe 1.e5 .5 -e 7e 1e+ 12x 0xg 3.1.4 -0 9e9e 0x 5e-10 e"
+
+func recognize() {
+    var state = 0
+    foo samples {
+        if e == ' ' {
+            out_bool(accepting[state])
+            state = 0
+        } else if state != 9 {
+            # note: '0x' needs the digit before it to be the only one, the
+            #       table does not know and takes '12x' too
+            state = transitions[state * 7 + class_of(e)]
+        }
+    }
+    out_bool(accepting[state])
+    out_nl()
+}
+
+dat check_days = i32[]{0, 1, -1, 59, 60, 365, 10957, 11016, 19782, 20088, -719468, -25567, 47482, 2932896}
+dat roman_values = i32[]{1, 4, 9, 14, 40, 90, 400, 1994, 2024, 3888, 3999, 49, 944}
+dat roman_bad = "IIII VV IC XM MCMC IXI MMXXVI"
+dat word_values = i32[]{0, 7, 13, 20, 21, 99, 100, 101, 110, 999, 1000, 1001, 12345, 70018, 900000, 999999}
+
+func main() {
+    foo check_days {
+        let d = from_days(e)
+        d.print()
+        out_sp()
+        let back = to_days(d)
+        if back != e exit(2)
+        out_i32(e)
+        out_nl()
+    }
+    # every day of four centuries keeps the calendar and the weekday in step
+    var day = i32(-60000)
+    var expected_weekday = weekday(from_days(-60000))
+    var mismatches = 0
+    var leap_days = 0
+    loop {
+        if day > 90000 break
+        let d = from_days(day)
+        if to_days(d) != day mismatches = mismatches + 1
+        if weekday(d) != expected_weekday mismatches = mismatches + 1
+        if i32(d.day) > days_in(i32(d.year), i32(d.month)) mismatches = mismatches + 1
+        if d.month == 2 and d.day == 29 leap_days = leap_days + 1
+        expected_weekday = (expected_weekday + 37) % 7
+        day = day + 37
+    }
+    out_int(mismatches)
+    out_sp()
+    out_int(leap_days)
+    out_nl()
+    print_month(2024, 2)
+    print_month(2026, 11)
+    print_month(1900, 2)
+
+    foo roman_values {
+        print_roman(e)
+        out_sp()
+    }
+    out_nl()
+    var text = i8[16]
+    var len = 0
+    foo roman_bad {
+        if e == ' ' {
+            item(parse_roman(text, len))
+            len = 0
+        } else {
+            text[len] = e
+            len = len + 1
+        }
+    }
+    line(parse_roman(text, len))
+
+    foo word_values {
+        print_words(e)
+        out_nl()
+    }
+    recognize()
+    out_flush()
+}

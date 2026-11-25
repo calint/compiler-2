@@ -319,7 +319,8 @@ struct func_head {
 
     // 'keyword' before the name, e.g. 'noinline', then the next word is read
     // as the name; none when 'name_tk' is not it or is the name
-    auto read_modifier(tokenizer& tz, const std::string_view keyword)
+    [[nodiscard]] auto read_modifier(tokenizer& tz,
+                                     const std::string_view keyword)
         -> std::optional<token> {
 
         if (not name_tk.is_text(keyword) or not is_name_next(tz)) {
@@ -1789,8 +1790,9 @@ class stmt_def_func_generic final : public statement {
 };
 
 // reads the head and makes the statement of the kind that follows it
-inline auto make_stmt_def_func(parse_toc& tc, const token& src_loc_tk,
-                               tokenizer& tz) -> std::unique_ptr<statement> {
+[[nodiscard]] inline auto
+make_stmt_def_func(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
+    -> std::unique_ptr<statement> {
 
     const func_head head{func_head::read(tc, tz)};
 

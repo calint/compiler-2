@@ -1,0 +1,5 @@
+# a number has no digit separators
+
+func main() {
+    var a = 1_000
+}

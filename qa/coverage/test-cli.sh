@@ -18,6 +18,18 @@ cd "$SCRIPT_DIR/tests"
 BIN="$SCRIPT_DIR/../../baz"
 export LLVM_PROFILE_FILE="$SCRIPT_DIR/cli-%p.profraw"
 
+# a missing compiler or tool would fail the first check with an exit code only
+if [[ ! -x $BIN ]]; then
+    echo "'$BIN' is missing, build it with './make.sh -O3 build'" >&2
+    exit 1
+fi
+for tool in nasm ld llvm-mc; do
+    command -v "$tool" >/dev/null || {
+        echo "required tool not found: $tool" >&2
+        exit 1
+    }
+done
+
 # the programs that a case links and runs, also removed when a case fails
 WORK=$(mktemp -d)
 trap 'rm -rf -- "$WORK"' EXIT
@@ -1365,6 +1377,93 @@ CLI_NESTED_TYPE_CHAIN() {
     echo ok
 }
 
+# a source without a definition has no 'main': the message names the file,
+# it has no line to point at, and neither a listing nor an image is written
+CLI_EMPTY_SOURCE() {
+    echo -n "cli source without content: "
+    local content
+    for content in '' ' ' '\n' '\t\n\n' '# c' '# c\n'; do
+        # shellcheck disable=SC2059
+        printf "$content" >gen-empty.baz
+        expect_exit_1 "$BIN" gen-empty.baz >gen.s 2>err
+        [[ ! -s gen.s ]]
+        grep -Fxq "gen-empty.baz: function 'main' not found" err
+        rm -f gen-rv32i.bin
+        expect_exit_1 baz_at rv32i gen-empty.baz >gen.s 2>err
+        [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
+    done
+    rm -f gen-empty.baz
+    echo ok
+}
+
+# a source cut off at any byte is compiled or rejected with a message at a
+# place inside it, and a rejected one writes neither a listing nor an image;
+# 0624.baz has strings continued over line ends, character literals and
+# escapes
+CLI_CUT_SOURCE() {
+    echo -n "cli source cut off at every byte: "
+    local size
+    size=$(stat -c %s 0624.baz)
+    local length
+    for ((length = 0; length < size; length++)); do
+        head -c "$length" 0624.baz >gen-cut.baz
+        rm -f gen-rv32i.bin
+        local exit_code=0
+        baz_at rv32i gen-cut.baz >gen.s 2>err || exit_code=$?
+        if [[ $exit_code -eq 0 ]]; then
+            [[ ! -s err && -s gen.s && -s gen-rv32i.bin ]]
+            continue
+        fi
+        [[ $exit_code -eq 1 ]]
+        [[ ! -s gen.s && ! -e gen-rv32i.bin ]]
+        # the message follows an empty line
+        local message
+        message=$(sed -n 2p err)
+        if [[ $message == "gen-cut.baz: function 'main' not found" ]]; then
+            continue
+        fi
+        [[ $message =~ ^gen-cut\.baz:([0-9]+):([0-9]+):\ . ]]
+        local line=${BASH_REMATCH[1]}
+        local column=${BASH_REMATCH[2]}
+        # note: +1 because a missing token is marked right after the last one
+        [[ $line -ge 1 && $line -le $(($(wc -l <gen-cut.baz) + 1)) ]]
+        local text
+        text=$(sed -n "${line}p" gen-cut.baz)
+        [[ $column -ge 1 && $column -le $((${#text} + 1)) ]]
+    done
+    rm -f gen-cut.baz gen-rv32i.bin
+    echo ok
+}
+
+# the default image is named after the source: a '.' in a directory of the
+# path ends no name, and a name that is only an extension is kept; a source
+# that starts with '-' is given with its directory
+CLI_SOURCE_NAMES() {
+    echo -n "cli source names: "
+    rm -rf gen-dir.d
+    mkdir gen-dir.d
+    cp 0418.baz gen-dir.d/gen-plain
+    cp 0418.baz gen-dir.d/.baz
+    cp 0418.baz gen-dir.d/gen.a.baz
+    local name
+    for name in gen-plain .baz gen.a.baz; do
+        "$BIN" --target=rv32i "gen-dir.d/$name" >gen.s 2>err
+        [[ ! -s err ]]
+    done
+    [[ -s gen-dir.d/gen-plain-rv32i.bin ]]
+    [[ -s gen-dir.d/.baz-rv32i.bin ]]
+    [[ -s gen-dir.d/gen.a-rv32i.bin ]]
+    [[ $(find gen-dir.d -type f | wc -l) -eq 6 ]]
+    rm -rf gen-dir.d
+    cp 0015.baz ./-gen.baz
+    expect_exit_1 "$BIN" -gen.baz >gen.s 2>err
+    grep -Fq "error: unknown option: '-gen.baz'" err
+    "$BIN" ./-gen.baz >gen.s 2>err
+    [[ ! -s err && -s gen.s ]]
+    rm -f ./-gen.baz
+    echo ok
+}
+
 CLI -h 0
 # a flag takes no value
 CLI --nopt=1 1 --help
@@ -1423,6 +1522,19 @@ CLI --versions=last 0 0015.baz
 CLI --versions= 1 --help
 CLI --versions=unknown 1 --help
 CLI -x 1 --help
+# '--' ends no options and '-' names no file
+CLI -- 1 0015.baz
+CLI - 1 0015.baz
+# a value follows its option after '=', the next argument is not read as one
+CLI --vars 1 65536 0015.baz
+grep -Fq "error: option '--vars' needs a value: '--vars=...'" err
+CLI --target 1 x86_64 0015.baz
+grep -Fq "error: option '--target' needs a value: '--target=...'" err
+# a flag takes no value
+CLI --nopt=1 1 0015.baz
+grep -Fq "error: option '--nopt' takes no value" err
+CLI --reproduce-source= 1 0015.baz
+grep -Fq "error: option '--reproduce-source' takes no value" err
 CLI 0015.baz 1 0418.baz
 CLI 0015.baz 0 --nopt
 CLI_TARGETS
@@ -1471,6 +1583,9 @@ CLI_PADDING_ZERO_BY_TARGET
 CLI_SHARED_STRING_CONSTANT
 CLI_KEYWORD_NAMES
 CLI_NESTED_TYPE_CHAIN
+CLI_EMPTY_SOURCE
+CLI_CUT_SOURCE
+CLI_SOURCE_NAMES
 
 rm -f gen.s diff.baz out err gen-rv32i.bin
 

@@ -436,9 +436,9 @@ class expr_bool_op final : public statement {
 
     // a constant emits no comparison: it stores its value when the list is
     // stored and branches when the value is 'branch_on_true'
-    auto compile_constant(compile_toc& tc, const bool value,
-                          const machine::comparison_action& action) const
-        -> bool {
+    [[nodiscard]] auto
+    compile_constant(compile_toc& tc, const bool value,
+                     const machine::comparison_action& action) const -> bool {
 
         machine& x{tc.machine()};
 

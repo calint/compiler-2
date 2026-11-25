@@ -115,8 +115,10 @@ the binary image itself.
   for the fpga emulator of `rv32i-fpga`; the tests need `python3`,
   `llvm-objcopy` and `llvm-objdump`, the coverage report `llvm-profdata` and
   `llvm-cov`, the tests of the emulator (`fpga-emulator/qa/test.sh`)
-  `riscv64-elf-g++` with its `objcopy` and `objdump`; the versions last used
-  are in [`etc/tools.txt`](etc/tools.txt)
+  `riscv64-elf-g++` with its `objcopy` and `objdump`, the linters
+  (`qa/lint/`) `clang-tidy`, `clang-format`, `cppcheck`, `shfmt` and the
+  python libclang bindings, the writer of this file (`etc/readme/make.sh`)
+  `cloc`; the versions last used are in [`etc/tools.txt`](etc/tools.txt)
 * [`./make.sh`](make.sh) compiles the compiler then compiles and runs
   [`prog.baz`](prog.baz), `./make.sh build` only compiles the compiler
 * [`./run.sh`](run.sh) `[options] [NAME.baz]` compiles, assembles and runs

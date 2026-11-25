@@ -1,0 +1,4 @@
+
+8474.baz:6:25: expected a constant, a name or a call
+    # the file ends here
+                        ^

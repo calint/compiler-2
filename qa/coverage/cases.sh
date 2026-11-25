@@ -8908,3 +8908,164 @@ SRC=8385 && EXP=77 && RUN
 # rv32i: the reload of a stored quotient is removed before the copy of the
 # helper result is folded ('test-cli.sh' reads the counts)
 SRC=8386 && EXP=15 && RUN
+
+# round 597: hints for what a newcomer writes
+# a fraction, e.g. '1.5'
+SRC=8500 && COMPERR
+# 'while'
+SRC=8501 && COMPERR
+# 'for'
+SRC=8502 && COMPERR
+# 'elif'
+SRC=8503 && COMPERR
+# 'const' for 'let'
+SRC=8504 && COMPERR
+# 'struct' for 'type'
+SRC=8505 && COMPERR
+# 'fn' for 'func'
+SRC=8506 && COMPERR
+# 'def' for 'func'
+SRC=8507 && COMPERR
+# 'function' for 'func'
+SRC=8508 && COMPERR
+
+# 'array_copy' down an array, the ranges overlap: every element arrives for
+# counts around the block sizes of the targets, of 'i8', 'i16' and 'i32'
+SRC=8440 && EXP=0 && OPTS="--checks=noub" RUN
+
+# --checks=frame: the frame of a noinline body counts the local of a call
+# inlined in a list compiled in two versions, two such frames pass '--vars'
+SRC=8441 && EXP=254 && OPTS="--checks=frame" RUN
+
+# the array of a 'foo' is addressed once: an index of its path that the body
+# changes, also through a 'mut' parameter, moves no element
+SRC=8442 && EXP=0 && RUN
+
+# the address of a destination element is computed before its value: a call
+# in the value that changes the index writes the element the index named
+SRC=8443 && EXP=0 && RUN
+
+# a recursive call in a list writes the global the list is assigned to: the
+# global is read first; the count of a 'foo' is read once, before its body
+SRC=8444 && EXP=0 && RUN
+
+# 'read' in a list fills the array an earlier element of the list and the
+# destination are in: the element is read first, the sum is stored after
+SRC=8445 && DIFFLINES
+
+# a noinline method calls itself on other elements inside a 'foo' over a
+# field of 'self': the element and 'self' are reached after each call
+SRC=8446 && EXP=0 && RUN
+
+# inlined calls whose constant arguments fold a 'break', a 'return' or the
+# count of a 'foo' away: the code after the loop and after the call still runs
+SRC=8447 && EXP=0 && RUN
+
+# a copy into a field of an element ends at the field: one that fits is done,
+# one that would reach the next field panics 'bounds'
+SRC=8448 && EXP=255 && RUN
+
+# --checks=noub: every operator of 'i8' on a grid of pairs with both limits,
+# each computed where its result is defined; no check fires and the values,
+# mixed into a checksum, are those of a model
+SRC=8449 && EXP=0 && OPTS="--checks=noub" RUN
+
+# the least and the greatest value of 'i8', 'i16' and 'i32' are written in
+# every base, with leading zeros, the least one with its sign
+SRC=8470 && EXP=0 && RUN
+
+# one below the least 'i8' written in binary is rejected, named with its
+# sign and its digits as written
+SRC=8471 && COMPERR
+
+# a number has no digit separators
+SRC=8472 && COMPERR
+
+# a binary prefix without digits is no number
+SRC=8473 && COMPERR
+
+# a value missing at the end of a file is marked where the text of the file
+# ends, here after a comment without a line end
+SRC=8474 && COMPERR
+
+# a value follows its operator or its '=' on a later line, with blank lines
+# and comments between them
+SRC=8475 && EXP=7 && RUN
+
+# release round, realistic programs judged by an oracle written in python: each
+# runs with the default checks and with every check on
+
+# a tokenizer and two expression evaluators over a script, one recursive, one
+# by reverse polish notation; variables and wrapping 32 bit arithmetic
+SRC=8400 && DIFF
+SRC=8400 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# a stack machine interpreter, emitted per code length, runs byte code with
+# loops, recursion by call and return and each error it checks itself
+SRC=8401 && DIFF
+SRC=8401 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# big numbers as limbs in arrays: base 10000 in 'i32' with add, subtract,
+# multiply, divide and compare, base 2^15 in 'i16' written in decimal
+SRC=8402 && DIFF
+SRC=8402 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# checksums with exact 32 bit wrapping (crc32 two ways, adler32, fletcher16,
+# fnv1a, djb2, sdbm, jenkins, murmur3 finalizer), a logical shift from '>>'
+SRC=8403 && DIFF
+SRC=8403 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# bit manipulation at the edges of 'i8', 'i16' and 'i32': counts, reversal,
+# rotation, gray code, bit fields, shifts at the width of the destination
+SRC=8404 && DIFF
+SRC=8404 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# generics in depth: a vector by element type and capacity, types based on
+# generic types, deduced, explicit and result type arguments, generic methods
+SRC=8405 && DIFF
+SRC=8405 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# a world of rooms and actors as nested types with arrays of types: bags moved
+# between two paths of one global, driven by a 'dat' array of commands
+SRC=8406 && DIFF
+SRC=8406 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# evaluation order of calls that advance a global: operands, sides, arguments,
+# indexes, conditions that stop early; caller names an inlined callee reuses
+SRC=8407 && DIFF
+SRC=8407 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# deep call chains passing values, a 'mut' total and an instance: inlined and
+# noinline give equal results; ackermann, hanoi, permutations, depth 300
+SRC=8408 && DIFF
+SRC=8408 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# a line reader over 'read' that works whatever the chunks are, lines longer
+# than its buffer, 'write' with a count and a start, descriptors that fail
+SRC=8409 && DIFFINP
+SRC=8409 && OPTS="--vars=0x40000 --checks=noub" DIFFINP
+
+# an integer library with every function inlined and noinline: both agree on
+# every pair of a table of edge values, the inlined one also with constants
+SRC=8410 && DIFF
+SRC=8410 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# huffman coding: a tree built in an array of nodes, code lengths by a
+# recursion, canonical codes, the text packed into bits and decoded again
+SRC=8411 && DIFF
+SRC=8411 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# programs driven by 'dat' tables: a calendar checked over four centuries,
+# roman numerals by rows of a user type, numbers in words, a recognizer
+SRC=8412 && DIFF
+SRC=8412 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# loops over arrays that change under them: the count of a 'foo' is read once,
+# an element written ahead is seen; copies inside one array both ways
+SRC=8413 && DIFF
+SRC=8413 && OPTS="--vars=0x40000 --checks=noub" DIFF
+
+# literals and operators as written: every escape, a continued string, unary
+# chains, each pair of precedence levels, the zero value of each destination
+SRC=8414 && DIFF
+SRC=8414 && OPTS="--vars=0x40000 --checks=noub" DIFF

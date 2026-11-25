@@ -1517,10 +1517,11 @@ class machine_rv32i : public machine {
     // the bulk registers of an array copy or comparison of elements aligned
     // to 'alignment', the roles of the pointers name them in the comment,
     // e.g. 'source' and 'destination'
-    auto begin_array_operation(const emit_site site,
-                               const std::string_view first_role,
-                               const std::string_view second_role,
-                               const size_t alignment) -> bulk_operation {
+    [[nodiscard]] auto begin_array_operation(const emit_site site,
+                                             const std::string_view first_role,
+                                             const std::string_view second_role,
+                                             const size_t alignment)
+        -> bulk_operation {
 
         bulk_operation bulk{};
         bulk.alignment = alignment;
@@ -1974,9 +1975,11 @@ class machine_rv32i : public machine {
     }
 
     // 'src' in a register of the comparison width
-    auto comparison_operand(const emit_site site, const operand& src,
-                            const operand& other, const type& width_type,
-                            const operand& dst) -> operand {
+    [[nodiscard]] auto comparison_operand(const emit_site site,
+                                          const operand& src,
+                                          const operand& other,
+                                          const type& width_type,
+                                          const operand& dst) -> operand {
 
         // matching register representations need no conversion
         if (src.is_register() and
@@ -2067,9 +2070,10 @@ class machine_rv32i : public machine {
     }
 
     // prefer the output register or a temporary the comparison owns
-    auto comparison_result_register(const emit_site site, const operand& dst,
-                                    const operand& lhs, const operand& rhs,
-                                    const operand& left, const operand& right)
+    [[nodiscard]] auto
+    comparison_result_register(const emit_site site, const operand& dst,
+                               const operand& lhs, const operand& rhs,
+                               const operand& left, const operand& right)
         -> operand {
 
         if (dst.is_register()) {
@@ -2696,10 +2700,10 @@ class machine_rv32i : public machine {
     }
 
     // a register that is zero exactly when the operands are equal
-    auto equality_tested_register(const size_t indent,
-                                  const std::string_view result,
-                                  const operand& left, const operand& right,
-                                  const std::optional<int64_t> immediate)
+    [[nodiscard]] auto
+    equality_tested_register(const size_t indent, const std::string_view result,
+                             const operand& left, const operand& right,
+                             const std::optional<int64_t> immediate)
         -> std::string_view {
 
         // an immediate zero can be tested without transforming the input
@@ -3112,8 +3116,9 @@ class machine_rv32i : public machine {
     }
 
     // a register holding the result after the saved registers are restored
-    auto preserved_helper_result(const emit_site site, const operand& result,
-                                 const std::span<const std::string_view> saved)
+    [[nodiscard]] auto
+    preserved_helper_result(const emit_site site, const operand& result,
+                            const std::span<const std::string_view> saved)
         -> operand {
 
         const bool restored{
@@ -3211,8 +3216,9 @@ class machine_rv32i : public machine {
         assembler_.srai(indent, dst, dst, shift);
     }
 
-    auto source_register(const emit_site site, const operand& src,
-                         const std::optional<int32_t> constant) -> operand {
+    [[nodiscard]] auto source_register(const emit_site site, const operand& src,
+                                       const std::optional<int32_t> constant)
+        -> operand {
 
         if (src.is_register()) {
             return src;

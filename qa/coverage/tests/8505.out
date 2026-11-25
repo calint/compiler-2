@@ -1,0 +1,4 @@
+
+8505.baz:2:1: expected a definition ('func', 'type', 'var', 'let', 'dat' or 'include'), got 'struct', use 'type'
+struct point {x, y}
+^~~~~~

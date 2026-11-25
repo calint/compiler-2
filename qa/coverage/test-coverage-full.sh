@@ -2,6 +2,9 @@
 # like 'test-all.sh' for the targets that need no qemu system or fpga emulator:
 # the compiler cases on x86_64 and rv32i, then 'test-cli.sh' and
 # 'test-arena.py'
+#
+# usage: test-coverage-full.sh
+# replaces './baz' with the coverage build; run './make.sh -O3 build' afterwards
 set -e
 
 cd "$(dirname "$0")"

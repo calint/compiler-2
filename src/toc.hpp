@@ -2007,7 +2007,8 @@ class ident_resolver final {
         }
 
         throw compile_error{src_loc_tk,
-                            std::format("{} not found", in_quotes(ident))};
+                            std::format("{} not found{}", in_quotes(ident),
+                                        other_language_hint(ident))};
     }
 
     //
@@ -2433,7 +2434,9 @@ class toc {
 
     // the declaration that both phases make, the declared variable is in the
     // innermost scope
-    auto declare_var(const var_info& var, const var_kind kind) -> var_info& {
+    [[nodiscard]] auto declare_var(const var_info& var, const var_kind kind)
+        -> var_info& {
+
         toc_tables& t{tables()};
 
         // note: the names of a signature are told apart where it is read

@@ -1,0 +1,4 @@
+
+8472.baz:4:13: cannot parse constant '1_000'
+    var a = 1_000
+            ^~~~~

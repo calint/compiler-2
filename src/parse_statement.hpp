@@ -77,8 +77,8 @@ inline auto assert_builtin_place(const token& tk,
 }
 
 // the statement of the built-in function at 'tk'
-inline auto make_builtin_function(parse_toc& tc, tokenizer& tz, const token& tk,
-                                  unary_ops uops)
+[[nodiscard]] inline auto make_builtin_function(parse_toc& tc, tokenizer& tz,
+                                                const token& tk, unary_ops uops)
     -> std::unique_ptr<statement> {
 
     if (const stmt_builtin_io::io_function* const io{
@@ -113,9 +113,9 @@ inline auto make_builtin_function(parse_toc& tc, tokenizer& tz, const token& tk,
 
 // a call of the built-in at 'tk', classified as 'tm' ('is_builtin_term'); the
 // catalog says where a function may stand ('assert_builtin_place')
-inline auto parse_builtin(parse_toc& tc, tokenizer& tz, const token& tk,
-                          const term_kind tm, unary_ops uops,
-                          const builtin_place at)
+[[nodiscard]] inline auto parse_builtin(parse_toc& tc, tokenizer& tz,
+                                        const token& tk, const term_kind tm,
+                                        unary_ops uops, const builtin_place at)
     -> std::unique_ptr<statement> {
 
     assert(is_builtin_term(tm));
@@ -200,8 +200,8 @@ inline auto assert_return_without_value(const tokenizer& tz,
 
 // a statement that starts with a keyword, null for a name or for a keyword
 // the caller rejects, e.g. 'mut'
-inline auto parse_keyword_statement(parse_toc& tc, tokenizer& tz,
-                                    const token& tk)
+[[nodiscard]] inline auto parse_keyword_statement(parse_toc& tc, tokenizer& tz,
+                                                  const token& tk)
     -> std::unique_ptr<statement> {
 
     if (tk.is_text("var") or tk.is_text("let")) {
@@ -311,11 +311,9 @@ inline auto assert_value_or_call(const parse_toc& tc, const tokenizer& tz,
 // function, a generic function, a constructor or a method, otherwise as an
 // identifier, 'uops' go to the call or the identifier and 'expected_type' is
 // the type the call is assigned to or null
-inline auto parse_call_or_identifier(parse_toc& tc, tokenizer& tz,
-                                     const token& tk, const term_kind tm,
-                                     unary_ops uops,
-                                     const type* const expected_type)
-    -> call_or_identifier {
+[[nodiscard]] inline auto parse_call_or_identifier(
+    parse_toc& tc, tokenizer& tz, const token& tk, const term_kind tm,
+    unary_ops uops, const type* const expected_type) -> call_or_identifier {
 
     assert_value_or_call(tc, tz, tk, tm);
 
@@ -392,8 +390,9 @@ inline auto assert_not_compound_assignment(const tokenizer& tz,
 
 // a statement that starts with a name: a call without a result, e.g. 'f(x)'
 // or 'lst.add(x)', otherwise an assignment
-inline auto parse_name_statement(parse_toc& tc, tokenizer& tz, const token& tk,
-                                 const term_kind tm)
+[[nodiscard]] inline auto parse_name_statement(parse_toc& tc, tokenizer& tz,
+                                               const token& tk,
+                                               const term_kind tm)
     -> std::unique_ptr<statement> {
 
     // no destination: no type argument is deduced from it, and a result
@@ -605,5 +604,10 @@ inline auto parse_statement(parse_toc& tc, tokenizer& tz, const token& tk)
     // e.g. the ';' after 'type point {x, y}'
     throw_if_ends_with_semicolon(tk);
 
-    throw_expected_definition(tk, described_token(tk));
+    const std::string got{
+        std::format("{}{}", described_token(tk),
+                    other_language_hint(tk.text())),
+    };
+
+    throw_expected_definition(tk, got);
 }

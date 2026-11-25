@@ -10,6 +10,11 @@
 set -eu
 cd "$(dirname "$0")"
 
+if [[ $# -gt 1 || ($# -eq 1 && $1 != update) ]]; then
+    echo "usage: $0 [update]" >&2
+    exit 2
+fi
+
 EMULATOR=../../fpga-emulator/osqa
 # rebuilt when missing or older than a source
 if [[ ! -x $EMULATOR || -n "$(find ../../fpga-emulator/src -newer "$EMULATOR" -print -quit)" ]]; then

@@ -1,4 +1,4 @@
 
-1395.baz:9:13: expected type 'i16' for parameter 'b', got 'i8'
+1395.baz:9:13: expected type 'i16' for parameter 'b', got 'i8', use 'i16(...)'
     res = g(a)
             ^

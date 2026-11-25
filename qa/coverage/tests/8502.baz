@@ -1,0 +1,6 @@
+# 'for' is no keyword, the message names 'loop' and 'foo'
+func main() {
+    var a = [3]
+    for e in a {
+    }
+}

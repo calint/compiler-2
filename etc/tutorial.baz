@@ -35,6 +35,7 @@ func constants_and_variables() {
     count = count + answer
     assert(count == 43)
     # '=' assigns and '==' compares, statements need no semicolons
+    # there is no '+=' or '++': 'count += 1' is a compile error
 
     let doubled = count * 2
     assert(doubled == 86)
@@ -52,6 +53,8 @@ func literals() {
     var bin = 0b11111111
     assert(dec == hex and hex == bin)
     # hex values start with '0x' or '0X' and binary values with '0b' or '0B'
+    # a leading zero changes nothing, '077' is 77; a number has no fraction,
+    # there is no floating point type: 'dec = 1.5' is a compile error
 
     var letter = 'a'
     assert(letter == 97)
@@ -117,8 +120,9 @@ func arithmetic() {
 func sized_types() {
     var small = i8(100)
     # built-in integer types are 'i64', 'i32', 'i16' and 'i8', a conversion
-    # such as 'i8(100)' gives the variable that type
-    # 'i64' is not available on rv32i
+    # such as 'i8(100)' gives the variable that type, the type is not written
+    # after the name: 'var tiny i8 = 100' is a compile error
+    # 'i64' is not available on rv32i, there are no unsigned types
 
     small = i8(small + small)
     assert(small == -56)
@@ -241,7 +245,8 @@ func control_flow() {
     }
     assert(sum == 1 + 2 + 4 + 5)
     # 'loop' repeats until 'break', 'continue' starts the next iteration
-    # there is no 'while' or 'for'
+    # there is no 'while' or 'for'; 'break' and 'continue' act on the
+    # innermost loop, an outer loop is left through a 'bool' it tests
     # a statement after 'break', 'continue', 'return' or 'exit' in the same
     # block is never reached and is a compile error
 
@@ -304,6 +309,7 @@ func arrays() {
     #   'e': the current element
     #   'i': the index starting at 0
     #   'n': the constant size of the array
+    # in the body they hide a variable of the same name defined outside it
 
     foo primes {
         e = i + n
@@ -355,6 +361,10 @@ func strings() {
     var word = "baz\n"
     assert(array_length(word) == 4 and word[0] == 'b')
     # a string initializes an 'i8' array of its size
+    # it is only an initializer, an argument is a named array:
+    # 'write(1, "baz\n")' is a compile error
+    # no built-in writes a number: a function puts its digits into an 'i8'
+    # array and writes that
     # a '\' at the end of a line continues the string on the next line without
     # the line end, the indentation of that line is part of the string
 
@@ -399,7 +409,8 @@ func sectors() {
 func twice(v) res {
     res = v * 2
 }
-# the result 'res' is named and assigned like a variable
+# the result 'res' is named and assigned like a variable, 'return' takes no
+# value
 # argument and result types are the default type when omitted
 
 func increment(v mut) {
@@ -428,6 +439,14 @@ func first(arr i32[]) res i32 {
 }
 # an array argument has '[]' after the type, only '[]' for the default type,
 # its size comes from the caller
+
+func clear(arr mut i32[]) {
+    foo arr {
+        e = 0
+    }
+}
+# 'mut' stands between the name and the type; an array is not a result, a
+# function fills a 'mut' array of its caller instead
 
 func sum_of(a, b) res {
     res = a + b
@@ -477,6 +496,9 @@ func functions() {
     var arr = i32[]{9, 8}
     assert(first(arr) == 9)
     # functions are inlined at every call by default
+
+    clear(arr)
+    assert(arr[0] == 0 and arr[1] == 0)
 
     let fixed = 5
     assert(sum_of(x, fixed) == 9)
@@ -533,6 +555,9 @@ func user_types() {
     assert(q == px.pos)
     # copying an instance copies all fields, '==' and '!=' compare instances of
     # the same type
+    # a compared instance has a name: an instance literal or a call that
+    # returns an instance is stored in a variable first, 'q == point{5, 4}' is
+    # a compile error; so is a field read from a call, 'make().x'
 
     var points = point[3]{{1, 2}, {3, 4}}
     points[2] = points[0]
@@ -603,6 +628,8 @@ type stack {
     count,
 }
 # a field can be an array, its size is part of the type
+# there is no array of arrays such as 'int[3][3]', an array of a type with an
+# array field serves: 'var grid = stack[3]' and 'grid[1].items[2]'
 
 func mut stack.push(v) {
     self.items[self.count] = v
@@ -657,6 +684,11 @@ dat history = stack{{1, 2}, 2}
 # 'dat' is only allowed at the top level and the initializer is made of
 # constants, 'dat twice = calls' is a compile error
 
+var visits = calls + 1
+# a 'var' at the top level is global too, its initializer runs before 'main'
+# in the order of the source and may read what is defined above it, it holds
+# no call
+
 func count_call() {
     calls = calls + 1
 }
@@ -667,6 +699,10 @@ func data() {
     powers[0] = 3
     assert(powers[0] == 3)
     # data is indexed and assigned like variables
+
+    assert(visits == 1)
+    visits = visits + 1
+    assert(visits == 2)
 
     count_call()
     count_call()
@@ -702,6 +738,9 @@ func noinline factorial(n) res {
 # of any depth; an inlined function may call itself only when constant
 # arguments end the recursion within 64 calls
 # a call follows the same typing and aliasing rules as an inlined call
+# an inlined call keeps the registers its caller holds, so a chain of inlined
+# calls ends where the registers of the target do, sooner on x86_64 than on
+# rv32i; the error lists the calls and what making each 'noinline' frees
 
 func noinline add_all(a []) res {
     res = 0

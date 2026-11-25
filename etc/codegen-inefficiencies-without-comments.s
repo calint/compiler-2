@@ -152,7 +152,7 @@ main:
     func.assert..105.5:
         if.28.24.105.5:
         cmp.28.27.105.5:
-        lbu t0, -1700(s0)
+        lb t0, -1700(s0)
         bne t0, zero, if.28.24.105.5.end
         if.28.24.105.5.code:
             li a0, 1

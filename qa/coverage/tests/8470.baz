@@ -1,0 +1,31 @@
+# the least and the greatest value of 'i8', 'i16' and 'i32' are written in
+# every base, with leading zeros, the least one with its sign
+
+func assert(ok bool) { if not ok exit(1) }
+
+func main() {
+    var a = i8
+    a = 127
+    assert(a == 0x7f and a == 0X7F and a == 0b1111111 and a == 00127)
+    a = -128
+    assert(a == -0x80 and a == -0b10000000 and a == -0128)
+    a = -0x80
+    assert(a + 1 == -127)
+    a = -0B10000000
+    assert(a + 1 == -127)
+
+    var b = i16
+    b = 0x7fff
+    assert(b == 32767 and b == 0b111111111111111)
+    b = -0x8000
+    assert(b == -32768 and b == -0b1000000000000000)
+    assert(b + 1 == -32767)
+
+    var c = i32
+    c = 0x7fffffff
+    assert(c == 2147483647 and c == 0b1111111111111111111111111111111)
+    c = -0x80000000
+    assert(c == -2147483648)
+    assert(c == -0b10000000000000000000000000000000)
+    assert(c + 1 == -2147483647)
+}

@@ -1,0 +1,284 @@
+# checksums with exact 32 bit wrapping (crc32 two ways, adler32, fletcher16,
+# fnv1a, djb2, sdbm, jenkins, murmur3 finalizer), a logical shift from '>>'
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+func out_str(s i8[]) {
+    foo s {
+        out_ch(e)
+    }
+}
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+dat hex_digits = "0123456789abcdef"
+
+# 8 hex digits of the 32 bits
+func noinline out_hex32(v i32) {
+    var shift = 28
+    loop {
+        out_ch(hex_digits[v >> shift & 15])
+        if shift == 0 break
+        shift = shift - 4
+    }
+}
+
+func show_hex(label i8[], v i32) {
+    out_str(label)
+    out_sp()
+    out_hex32(v)
+    out_nl()
+}
+
+dat text_empty = i8[1]
+dat text_a = "a"
+dat text_check = "123456789"
+dat text_fox = "The quick brown fox jumps over the lazy dog"
+dat text_high = "\x80\xff\x7f\x00\x01caf\xc3\xa9\n\t"
+
+# 'v' shifted right by 'count' (1 to 31) with zeros shifted in
+func lsr(v i32, count i32) res i32 {
+    let mask = ~(i32(-1) << (32 - count))
+    res = v >> count & mask
+}
+
+dat crc_table = i32[256]
+
+func crc_init() {
+    let poly = i32(0xedb88320)
+    foo crc_table {
+        var c = i32(i)
+        var bit = 0
+        loop {
+            if bit == 8 break
+            let half = lsr(c, 1)
+            if c & 1 != 0 {
+                c = poly ^ half
+            } else {
+                c = half
+            }
+            bit = bit + 1
+        }
+        e = c
+    }
+}
+
+func crc32(s i8[], count) res i32 {
+    res = -1
+    foo s, count {
+        res = crc_table[res ^ e & 0xff] ^ (res >> 8 & 0xffffff)
+    }
+    res = ~res
+}
+
+func noinline crc32_bitwise(s i8[], count) res i32 {
+    let poly = i32(0xedb88320)
+    res = -1
+    foo s, count {
+        res = res ^ (i32(e) & 0xff)
+        var bit = 0
+        loop {
+            if bit == 8 break
+            let low = res & 1
+            res = res >> 1 & 0x7fffffff
+            if low == 1 res = res ^ poly
+            bit = bit + 1
+        }
+    }
+    res = ~res
+}
+
+func adler32(s i8[], count) res i32 {
+    var a = i32(1)
+    var b = i32(0)
+    foo s, count {
+        a = (a + (i32(e) & 0xff)) % 65521
+        b = (b + a) % 65521
+    }
+    res = b << 16 | a
+}
+
+func fletcher16(s i8[], count) res i32 {
+    var low = i16(0)
+    var high = i16(0)
+    foo s, count {
+        low = (low + (i16(e) & 0xff)) % 255
+        high = (high + low) % 255
+    }
+    res = i32(high) << 8 | low
+}
+
+func fnv1a(s i8[], count) res i32 {
+    res = i32(0x811c9dc5)
+    foo s, count {
+        res = i32(res ^ (i32(e) & 0xff) * 16777619)
+    }
+}
+
+func djb2(s i8[], count) res i32 {
+    res = 5381
+    foo s, count {
+        res = i32(res * 33 + (i32(e) & 0xff))
+    }
+}
+
+func sdbm(s i8[], count) res i32 {
+    res = 0
+    foo s, count {
+        res = i32((i32(e) & 0xff) + (res << 6) + (res << 16) - res)
+    }
+}
+
+func one_at_a_time(s i8[], count) res i32 {
+    res = 0
+    foo s, count {
+        res = i32(res + (i32(e) & 0xff))
+        res = i32(res + (res << 10))
+        res = res ^ lsr(res, 6)
+    }
+    res = i32(res + (res << 3))
+    res = res ^ lsr(res, 11)
+    res = i32(res + (res << 15))
+}
+
+func noinline fmix32(v i32) res i32 {
+    let c1 = i32(0x85ebca6b)
+    let c2 = i32(0xc2b2ae35)
+    res = v ^ lsr(v, 16)
+    res = i32(res * c1)
+    res = res ^ lsr(res, 13)
+    res = i32(res * c2)
+    res = res ^ lsr(res, 16)
+}
+
+func xor8(s i8[], count) res i8 {
+    res = 0
+    foo s, count {
+        res = res ^ e
+    }
+}
+
+func sum8(s i8[], count) res i8 {
+    res = 0
+    foo s, count {
+        res = i8(res + e)
+    }
+}
+
+func report(s i8[], count) {
+    out_int(count)
+    out_sp()
+    out_hex32(crc32(s, count))
+    out_sp()
+    out_hex32(crc32_bitwise(s, count))
+    out_sp()
+    out_hex32(adler32(s, count))
+    out_sp()
+    out_hex32(fletcher16(s, count))
+    out_sp()
+    out_hex32(fnv1a(s, count))
+    out_nl()
+    out_sp()
+    out_hex32(djb2(s, count))
+    out_sp()
+    out_hex32(sdbm(s, count))
+    out_sp()
+    out_hex32(one_at_a_time(s, count))
+    out_sp()
+    out_i32(i32(xor8(s, count)))
+    out_sp()
+    out_i32(i32(sum8(s, count)))
+    out_nl()
+}
+
+func main() {
+    crc_init()
+    show_hex(text_a, crc_table[1])
+    show_hex(text_a, crc_table[128])
+    show_hex(text_a, crc_table[255])
+
+    report(text_empty, 0)
+    report(text_a, array_length(text_a))
+    report(text_check, array_length(text_check))
+    report(text_fox, array_length(text_fox))
+    report(text_fox, 20)
+    report(text_high, array_length(text_high))
+
+    var block = i8[300]
+    var state = i32(7)
+    foo block {
+        state = fmix32(state + i32(i))
+        e = i8(state >> 11)
+    }
+    report(block, 300)
+    report(block, 255)
+
+    # the hash of the hashes
+    var chain = i32(0)
+    var round = 0
+    loop {
+        if round == 40 break
+        chain = fmix32(chain ^ crc32(block, round * 7))
+        round = round + 1
+    }
+    show_hex(text_a, chain)
+    show_hex(text_a, lsr(-1, 1))
+    show_hex(text_a, lsr(-1, 31))
+    show_hex(text_a, lsr(i32(0x80000000), 31))
+    out_flush()
+}

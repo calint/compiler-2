@@ -1,0 +1,330 @@
+# generics in depth: a vector by element type and capacity, types based on
+# generic types, deduced, explicit and result type arguments, generic methods
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+type optional<T type> {
+    value T,
+    present bool,
+}
+
+type vec<T type, capacity> {
+    items T[capacity],
+    len,
+}
+
+func mut vec.push(item T) res bool {
+    res = self.len < capacity
+    if not res return
+    self.items[self.len] = item
+    self.len = self.len + 1
+}
+
+func mut vec.pop() res T {
+    self.len = self.len - 1
+    res = self.items[self.len]
+}
+
+func vec.room() res {
+    res = capacity - self.len
+}
+
+# a vector of numbers adds what needs an order and a sum
+type numbers<T type, capacity> = vec<T, capacity>
+
+func mut numbers.sort() {
+    var at = 1
+    loop {
+        if at >= self.len break
+        let key = self.items[at]
+        var slot = at
+        loop {
+            if slot == 0 break
+            if self.items[slot - 1] <= key break
+            self.items[slot] = self.items[slot - 1]
+            slot = slot - 1
+        }
+        self.items[slot] = key
+        at = at + 1
+    }
+}
+
+func numbers.largest() res T {
+    res = self.items[0]
+    foo self.items, self.len {
+        if e > res res = e
+    }
+}
+
+# the sum at the element type, it wraps
+func numbers.sum() res T {
+    res = 0
+    foo self.items, self.len {
+        res = T(res + e)
+    }
+}
+
+# appends as many items of another vector of the same element type as fit
+func mut vec.take_from<V type>(other V) res {
+    res = other.len
+    if res > self.room() res = self.room()
+    array_copy(other.items, self.items[self.len], res)
+    self.len = self.len + res
+}
+
+type bytes = numbers<i8, 12>
+type shorts = numbers<i16, 6>
+type words = numbers<i32, 20>
+type more_bytes = numbers<i8, 40>
+
+type pair<A type, B type> {
+    first A,
+    second B,
+}
+
+type span = pair<i16, i16>
+type named_span = pair<i8, span>
+type tagged<A type> = pair<A, bool>
+type tagged_span = tagged<named_span>
+type spans<capacity> = vec<span, capacity>
+type three_spans = spans<3>
+
+func span.length() res i32 {
+    res = i32(self.second) - self.first
+}
+
+func mut spans.add(from i16, to i16) {
+    if not self.push({from, to}) exit(7)
+}
+
+func spans.total_length() res i32 {
+    res = 0
+    foo self.items, self.len {
+        res = res + e.length()
+    }
+}
+
+func smaller<T type>(a T, b T) res T {
+    res = a
+    if b < a res = b
+}
+
+func exchange<T type>(a mut T, b mut T) {
+    let t = a
+    a = b
+    b = t
+}
+
+func some<T type, O type>(value T) res O {
+    res = {value, true}
+}
+
+func none<O type>() res O {
+    res = {}
+}
+
+# the index of the first item above 'limit', as an optional
+func first_above<V type, T type, O type>(v V, limit T) res O {
+    res = {}
+    foo v.items, v.len {
+        if e > limit {
+            res = {T(i), true}
+            return
+        }
+    }
+}
+
+type optional_byte = optional<i8>
+type optional_word = optional<i32>
+
+func print_optional<O type>(o O) {
+    if o.present {
+        out_i32(i32(o.value))
+    } else {
+        out_ch('-')
+    }
+    out_sp()
+}
+
+func print_vec<V type>(v V) {
+    out_int(v.len)
+    out_ch(':')
+    foo v.items, v.len {
+        out_sp()
+        out_i32(i32(e))
+    }
+    out_nl()
+}
+
+func fill<V type, T type>(v mut V, start T, step T) {
+    var value = start
+    loop {
+        if not v.push(value) break
+        value = T(value * step + 1)
+    }
+}
+
+func main() {
+    var b = bytes
+    fill<bytes, i8>(b, 3, 5)
+    print_vec(b)
+    b.sort()
+    print_vec(b)
+    item(i32(b.largest()))
+    item(i32(b.sum()))
+    line(i32(b.pop()))
+
+    var s = shorts
+    fill<shorts, i16>(s, 100, -7)
+    print_vec(s)
+    s.sort()
+    print_vec(s)
+    item(i32(s.sum()))
+    line(i32(s.largest()))
+
+    var w = words
+    fill<words, i32>(w, 1, -3)
+    w.sort()
+    print_vec(w)
+    line(w.sum())
+
+    var many = more_bytes
+    out_int(many.take_from(b))
+    out_sp()
+    out_int(many.take_from(b))
+    out_sp()
+    out_int(many.take_from(b))
+    out_sp()
+    out_int(many.take_from(b))
+    out_sp()
+    out_int(many.room())
+    out_nl()
+    many.sort()
+    print_vec(many)
+
+    var low = i16(-5)
+    var high = i16(9)
+    exchange(low, high)
+    item(i32(low))
+    item(i32(high))
+    item(i32(smaller(low, high)))
+    item(smaller<i32>(7, -7))
+    let tiny = i8(-100)
+    line(i32(smaller(tiny, tiny)))
+
+    var sp = named_span{'x', {low, high}}
+    var other = named_span{'y', {high, low}}
+    exchange(sp, other)
+    out_ch(sp.first)
+    item(sp.second.length())
+    out_ch(other.first)
+    item(other.second.length())
+    exchange(sp.second.first, sp.second.second)
+    line(sp.second.length())
+
+    var t = tagged_span{sp, true}
+    t.first.second.first = 1000
+    out_bool(t.second)
+    out_bool(t.first == sp)
+    t.first.second.first = sp.second.first
+    out_bool(t.first == sp)
+    out_nl()
+
+    var three = three_spans
+    three.add(-10, 10)
+    three.add(low, high)
+    three.add(high, 32767)
+    item(three.total_length())
+    out_int(three.room())
+    out_nl()
+
+    let found = first_above<bytes, i8, optional_byte>(b, 50)
+    print_optional(found)
+    let missing = first_above<bytes, i8, optional_byte>(b, 127)
+    print_optional(missing)
+    var word = optional_word
+    print_optional(word)
+    word = first_above<words, i32, optional_word>(w, 0)
+    print_optional(word)
+    word = some<i32, optional_word>(-99)
+    print_optional(word)
+    word = none()
+    print_optional(word)
+    out_nl()
+    out_flush()
+}

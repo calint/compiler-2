@@ -1,0 +1,7 @@
+# one below the least 'i8' written in binary is rejected, named with its
+# sign and its digits as written
+
+func main() {
+    var a = i8
+    a = -0b10000001
+}

@@ -1,0 +1,303 @@
+# huffman coding: a tree built in an array of nodes, code lengths by a
+# recursion, canonical codes, the text packed into bits and decoded again
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+func out_str(s i8[]) {
+    foo s {
+        out_ch(e)
+    }
+}
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+dat hex_digits = "0123456789abcdef"
+
+# 8 hex digits of the 32 bits
+func noinline out_hex32(v i32) {
+    var shift = 28
+    loop {
+        out_ch(hex_digits[v >> shift & 15])
+        if shift == 0 break
+        shift = shift - 4
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func show_hex(label i8[], v i32) {
+    out_str(label)
+    out_sp()
+    out_hex32(v)
+    out_nl()
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+let symbols = 64
+let no_node = -1
+
+type tree_node {
+    weight i32,
+    left i16,
+    right i16,
+    symbol i16,
+    live bool,
+}
+
+type coder {
+    nodes tree_node[symbols * 2],
+    used,
+    root,
+    lengths i8[symbols],
+    codes i32[symbols],
+}
+
+dat c = coder
+
+# symbols are the characters from ' ' to '_'
+func symbol_of(ch i8) res {
+    res = (ch - ' ') & 63
+}
+
+func count_text(text i8[]) {
+    foo text {
+        let s = symbol_of(e)
+        c.nodes[s].weight = c.nodes[s].weight + 1
+    }
+    foo c.nodes, symbols {
+        e.left = no_node
+        e.right = no_node
+        e.symbol = i16(i)
+        e.live = e.weight > 0
+    }
+    c.used = symbols
+}
+
+# the lightest live node, the lower index on a tie, -1 when there is none
+func lightest() res {
+    res = -1
+    foo c.nodes, c.used {
+        if e.live and (res < 0 or e.weight < c.nodes[res].weight) res = i
+    }
+}
+
+func build() {
+    loop {
+        let first = lightest()
+        c.nodes[first].live = false
+        let second = lightest()
+        if second < 0 {
+            c.root = first
+            return
+        }
+        c.nodes[second].live = false
+        c.nodes[c.used] = {c.nodes[first].weight + c.nodes[second].weight, i16(first), i16(second), -1, true}
+        c.used = c.used + 1
+    }
+}
+
+func noinline measure(at, depth) {
+    if c.nodes[at].symbol >= 0 {
+        c.lengths[c.nodes[at].symbol] = i8(depth)
+        return
+    }
+    measure(int(c.nodes[at].left), depth + 1)
+    measure(int(c.nodes[at].right), depth + 1)
+}
+
+# codes in order of length, then of symbol
+func assign_codes() {
+    var code = i32(0)
+    var length = i8(1)
+    loop {
+        if length > 30 break
+        foo c.lengths {
+            if e == length {
+                c.codes[i] = code
+                code = code + 1
+            }
+        }
+        code = code << 1
+        length = length + 1
+    }
+}
+
+type packed {
+    bytes i8[400],
+    bit_count i32,
+}
+
+func mut packed.put_bit(bit i32) {
+    let at = self.bit_count >> 3
+    self.bytes[at] = self.bytes[at] | i8(bit << (7 - (self.bit_count & 7)))
+    self.bit_count = self.bit_count + 1
+}
+
+func packed.bit(at i32) res i32 {
+    res = self.bytes[at >> 3] >> (7 - (at & 7)) & 1
+}
+
+func encode(text i8[], out mut packed) {
+    foo text {
+        let s = symbol_of(e)
+        var left = i32(c.lengths[s])
+        loop {
+            if left == 0 break
+            left = left - 1
+            out.put_bit(c.codes[s] >> left & 1)
+        }
+    }
+}
+
+# reads codes bit by bit until the code of a length is known
+func decode(in packed, text mut i8[]) res {
+    res = 0
+    var at = i32(0)
+    loop {
+        if at == in.bit_count break
+        var code = i32(0)
+        var length = i8(0)
+        var found = -1
+        loop {
+            code = code << 1 | in.bit(at)
+            at = at + 1
+            length = length + 1
+            foo c.lengths {
+                if e == length and c.codes[i] == code {
+                    found = i
+                    break
+                }
+            }
+            if found >= 0 break
+        }
+        text[res] = i8(found + ' ')
+        res = res + 1
+    }
+}
+
+dat message = "IT WAS THE BEST OF TIMES, IT WAS THE WORST OF TIMES, IT WAS THE AGE OF WISDOM, IT WAS THE AGE OF FOOLISHNESS, IT WAS THE EPOCH OF BELIEF, IT WAS THE EPOCH OF INCREDULITY"
+
+func main() {
+    count_text(message)
+    build()
+    measure(c.root, 0)
+    assign_codes()
+
+    var total_bits = i32(0)
+    var kinds = 0
+    foo c.lengths {
+        if e > 0 {
+            kinds = kinds + 1
+            total_bits = total_bits + e * c.nodes[i].weight
+            out_ch(i8(i + ' '))
+            out_i32(c.nodes[i].weight)
+            out_ch(':')
+            out_i32(i32(e))
+            out_ch(':')
+            var left = i32(e)
+            loop {
+                if left == 0 break
+                left = left - 1
+                out_ch(i8('0' + (c.codes[i] >> left & 1)))
+            }
+            out_nl()
+        }
+    }
+    out_int(kinds)
+    out_sp()
+    out_int(c.used)
+    out_sp()
+    item(c.nodes[c.root].weight)
+    line(total_bits)
+
+    var bits = packed
+    encode(message, bits)
+    item(bits.bit_count)
+    var fold = i32(0)
+    foo bits.bytes {
+        fold = i32(fold * 257 + (i32(e) & 0xff))
+    }
+    show_hex(hex_digits, fold)
+
+    var text = i8[200]
+    let len = decode(bits, text)
+    out_int(len)
+    out_sp()
+    out_bool(len == array_length(message) and arrays_equal(text, message, len))
+    out_nl()
+    foo text, 40 {
+        out_ch(e)
+    }
+    out_nl()
+    out_flush()
+}

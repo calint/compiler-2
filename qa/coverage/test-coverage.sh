@@ -138,6 +138,24 @@ run) ;;
     ;;
 esac
 
+# a missing compiler or tool would fail every case with an exit code only
+if [[ ! -x $BIN ]]; then
+    echo "'$BIN' is missing, build it with './make.sh -O3 build'" >&2
+    exit 1
+fi
+case "$MACHINE" in
+x86_64) TOOLS="nasm ld" ;;
+rv32i) TOOLS="llvm-mc ld.lld llvm-objcopy qemu-riscv32" ;;
+rv32i-qemu) TOOLS="llvm-mc ld.lld llvm-objcopy qemu-system-riscv32" ;;
+rv32i-fpga) TOOLS="llvm-mc ld.lld llvm-objcopy" ;;
+esac
+for tool in $TOOLS python3; do
+    command -v "$tool" >/dev/null || {
+        echo "required tool not found: $tool" >&2
+        exit 1
+    }
+done
+
 # the expected outputs are those of the default version
 if [[ -n "$VERSION_OPTS" && -n "${UPDATE:-}" ]]; then
     echo "UPDATE is not supported with VERSIONS" >&2

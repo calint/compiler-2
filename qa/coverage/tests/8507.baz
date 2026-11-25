@@ -1,0 +1,3 @@
+# 'def' at the top level, the message names 'func'
+def main() {
+}

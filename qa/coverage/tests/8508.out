@@ -1,0 +1,4 @@
+
+8508.baz:2:1: expected a definition ('func', 'type', 'var', 'let', 'dat' or 'include'), got 'function', use 'func'
+function main() {
+^~~~~~~~

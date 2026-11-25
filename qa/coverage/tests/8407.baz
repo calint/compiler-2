@@ -1,0 +1,245 @@
+# evaluation order of calls that advance a global: operands, sides, arguments,
+# indexes, conditions that stop early; caller names an inlined callee reuses
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+dat count = 0
+dat total = i32(0)
+dat log = i8[64]
+dat log_len = 0
+
+# 1, 2, 3, ... and a mark in the log
+func next() res i32 {
+    count = count + 1
+    res = i32(count)
+    log[log_len] = i8('a' + count % 26)
+    log_len = log_len + 1
+}
+
+func noinline next_called() res i32 {
+    count = count + 1
+    res = i32(count)
+    log[log_len] = i8('A' + count % 26)
+    log_len = log_len + 1
+}
+
+func reset() {
+    count = 0
+    log_len = 0
+}
+
+func flush_log() {
+    out_sp()
+    foo log, log_len {
+        out_ch(e)
+    }
+    out_nl()
+    reset()
+}
+
+func pack(a i32, b i32, c i32) res i32 {
+    res = a * 100 + b * 10 + c
+}
+
+func noinline pack_called(a i32, b i32, c i32) res i32 {
+    res = a * 100 + b * 10 + c
+}
+
+# adds to the global 'total', its local 'count' hides the global
+func add_all(values i32[]) res i32 {
+    var count = i32(0)
+    foo values {
+        total = total + e
+        count = count + 1
+    }
+    res = count
+}
+
+# the parameter is named like a global and like locals of its callers
+func scaled(total i32, count i32) res i32 {
+    let e = total * count
+    let i = e + 1
+    res = i
+}
+
+func largest(values i32[]) res i32 {
+    res = values[0]
+    foo values {
+        # 'i' and 'e' are those of this loop also when the caller has its own
+        if i > 0 and e > res res = e
+    }
+}
+
+func index_of(values i32[], wanted i32) res {
+    res = -1
+    foo values {
+        if e == wanted {
+            res = i
+            return
+        }
+    }
+}
+
+dat table = i32[]{5, 3, 9, 1, 9, 4}
+
+func main() {
+    # operands of a list in order
+    var v = next() * 100 + next() * 10 + next()
+    out_i32(v)
+    flush_log()
+    v = next() - next() * next()
+    out_i32(v)
+    flush_log()
+    v = next() + next_called() * 10 - next() / next_called()
+    out_i32(v)
+    flush_log()
+    v = (next() + next()) * (next() + next()) - next()
+    out_i32(v)
+    flush_log()
+
+    # arguments in order, inlined and called
+    out_i32(pack(next(), next(), next()))
+    flush_log()
+    out_i32(pack_called(next(), next_called(), next()))
+    flush_log()
+    out_i32(pack(next() + next(), pack(next(), next(), next()) % 10, next()))
+    flush_log()
+
+    # the sides of a comparison in order, later conditions only when needed
+    out_bool(next() < next())
+    out_bool(next() > next_called())
+    flush_log()
+    if next() == 1 and next() == 2 and next() == 99 and next() == 4 out_ch('!')
+    out_int(count)
+    flush_log()
+    if next() == 1 or next() == 2 out_ch('+')
+    out_int(count)
+    flush_log()
+    if next() == 7 or (next() == 2 and next() == 3) or next() == 4 out_ch('+')
+    out_int(count)
+    flush_log()
+    if not (next() == 7 or next() == 2) out_ch('!')
+    out_int(count)
+    flush_log()
+    let both = next() == 1 and next_called() == 2
+    let neither = not (next() == 1 or next() == 4)
+    out_bool(both)
+    out_bool(neither)
+    flush_log()
+
+    # an index before the value assigned to it
+    var slots = i32[8]
+    slots[next()] = next() * 10
+    slots[next() + next()] = next()
+    foo slots {
+        out_i32(e)
+    }
+    flush_log()
+    slots[slots[next()] / 10] = slots[next() - 1] + next()
+    foo slots {
+        out_i32(e)
+    }
+    flush_log()
+
+    # a count and a start
+    var word = "abcdefgh"
+    out_flush()
+    if write(1, word, next_called() + 1, next_called() + 1) != 2 exit(2)
+    flush_log()
+
+    # names of the caller that the callees use for something else
+    let count = add_all(table)
+    var e = i32(2)
+    var i = i32(3)
+    let total = scaled(e, i)
+    item(count)
+    item(total)
+    item(scaled(total, count))
+    foo table {
+        let m = largest(table) + i32(index_of(table, e))
+        if i == 2 item(m)
+        if e == largest(table) item(i32(i))
+    }
+    item(e)
+    item(i)
+    {
+        let largest = index_of(table, 4)
+        var table = i32[]{7, 8}
+        table[0] = i32(largest)
+        item(add_all(table))
+        item(table[0] + table[1])
+    }
+    item(table[0])
+    out_nl()
+    out_flush()
+}

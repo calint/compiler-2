@@ -1,0 +1,297 @@
+# a stack machine interpreter, emitted per code length, runs byte code with
+# loops, recursion by call and return and each error it checks itself
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+let op_halt = 0
+let op_push = 1
+let op_add = 2
+let op_sub = 3
+let op_mul = 4
+let op_div = 5
+let op_mod = 6
+let op_dup = 7
+let op_swap = 8
+let op_drop = 9
+let op_over = 10
+let op_jmp = 11
+let op_jz = 12
+let op_jnz = 13
+let op_load = 14
+let op_store = 15
+let op_print = 16
+let op_call = 17
+let op_ret = 18
+let op_lt = 19
+let op_eq = 20
+let op_neg = 21
+
+let running = 0
+let halted = 1
+let stack_overflow = 2
+let stack_underflow = 3
+let division_by_zero = 4
+let bad_opcode = 5
+let step_limit = 6
+let bad_address = 7
+let call_overflow = 8
+let call_underflow = 9
+let bad_memory = 10
+
+let stack_size = 16
+let max_steps = 20000
+
+type machine {
+    stack i32[stack_size],
+    sp,
+    calls[20],
+    call_depth,
+    memory i32[4],
+    pc,
+    steps,
+    status,
+}
+
+# pops needed and pushes made by each opcode, as 'pops * 4 + pushes'
+dat stack_effect = i8[]{0, 1, 9, 9, 9, 9, 9, 6, 10, 4, 11, 0, 4, 4, 1, 4, 4, 0, 0, 9, 9, 5}
+dat has_argument = bool[]{false, true, false, false, false, false, false, false, false, false, false, true, true, true, true, true, false, true, false, false, false, false}
+
+func mut machine.push(v i32) {
+    self.stack[self.sp] = v
+    self.sp = self.sp + 1
+}
+
+func mut machine.pop() res i32 {
+    self.sp = self.sp - 1
+    res = self.stack[self.sp]
+}
+
+func mut machine.binary(op) {
+    let right = self.pop()
+    let left = self.pop()
+    var value = i32(0)
+    if op == op_add {
+        value = i32(left + right)
+    } else if op == op_sub {
+        value = i32(left - right)
+    } else if op == op_mul {
+        value = i32(left * right)
+    } else if op == op_lt {
+        if left < right value = 1
+    } else if op == op_eq {
+        let same = left == right
+        value = i32(same)
+    } else if right == 0 {
+        self.status = division_by_zero
+    } else if right == -1 {
+        if op == op_div value = i32(0 - left)
+    } else if op == op_div {
+        value = left / right
+    } else {
+        value = left % right
+    }
+    self.push(value)
+}
+
+func noinline execute(vm mut machine, code i32[]) {
+    loop {
+        if vm.status != running break
+        if vm.steps == max_steps {
+            vm.status = step_limit
+            break
+        }
+        if vm.pc < 0 or vm.pc >= array_length(code) {
+            vm.status = bad_address
+            break
+        }
+        let op = int(code[vm.pc])
+        if op < 0 or op > op_neg {
+            vm.status = bad_opcode
+            break
+        }
+        var argument = i32(0)
+        if has_argument[op] {
+            if vm.pc + 1 == array_length(code) {
+                vm.status = bad_address
+                break
+            }
+            argument = code[vm.pc + 1]
+            vm.pc = vm.pc + 2
+        } else {
+            vm.pc = vm.pc + 1
+        }
+        let pops = stack_effect[op] >> 2
+        let pushes = stack_effect[op] & 3
+        if vm.sp < pops {
+            vm.status = stack_underflow
+            break
+        }
+        if vm.sp - pops + pushes > stack_size {
+            vm.status = stack_overflow
+            break
+        }
+        vm.steps = vm.steps + 1
+
+        if op == op_halt {
+            vm.status = halted
+        } else if op == op_push {
+            vm.push(argument)
+        } else if op == op_dup {
+            let top = vm.stack[vm.sp - 1]
+            vm.push(top)
+        } else if op == op_swap {
+            let top = vm.stack[vm.sp - 1]
+            vm.stack[vm.sp - 1] = vm.stack[vm.sp - 2]
+            vm.stack[vm.sp - 2] = top
+        } else if op == op_drop {
+            vm.sp = vm.sp - 1
+        } else if op == op_over {
+            let second = vm.stack[vm.sp - 2]
+            vm.push(second)
+        } else if op == op_jmp {
+            vm.pc = argument
+        } else if op == op_jz or op == op_jnz {
+            let zero = vm.pop() == 0
+            let wanted = op == op_jz
+            if zero == wanted vm.pc = argument
+        } else if op == op_load or op == op_store {
+            if argument < 0 or argument >= 4 {
+                vm.status = bad_memory
+            } else if op == op_load {
+                vm.push(vm.memory[argument])
+            } else {
+                vm.memory[argument] = vm.pop()
+            }
+        } else if op == op_print {
+            line(vm.pop())
+        } else if op == op_call {
+            if vm.call_depth == array_length(vm.calls) {
+                vm.status = call_overflow
+            } else {
+                vm.calls[vm.call_depth] = vm.pc
+                vm.call_depth = vm.call_depth + 1
+                vm.pc = argument
+            }
+        } else if op == op_ret {
+            if vm.call_depth == 0 {
+                vm.status = call_underflow
+            } else {
+                vm.call_depth = vm.call_depth - 1
+                vm.pc = vm.calls[vm.call_depth]
+            }
+        } else if op == op_neg {
+            vm.stack[vm.sp - 1] = i32(0 - vm.stack[vm.sp - 1])
+        } else {
+            vm.binary(op)
+        }
+    }
+}
+
+dat code_factorials = i32[]{1, 1, 15, 0, 1, 1, 15, 1, 14, 1, 14, 0, 4, 7, 15, 1, 16, 14, 0, 1, 1, 2, 7, 15, 0, 1, 15, 19, 13, 8, 0}
+dat code_fibonacci = i32[]{1, 13, 17, 12, 16, 1, 1, 21, 17, 12, 16, 0, 7, 1, 2, 19, 13, 31, 7, 1, 1, 3, 17, 12, 8, 1, 2, 3, 17, 12, 2, 18}
+dat code_primes = i32[]{1, 2, 15, 0, 1, 2, 15, 1, 14, 1, 14, 1, 4, 14, 0, 8, 19, 13, 35, 14, 0, 14, 1, 6, 12, 38, 14, 1, 1, 1, 2, 15, 1, 11, 8, 14, 0, 16, 14, 0, 1, 1, 2, 7, 15, 0, 1, 60, 19, 13, 4, 0}
+dat code_gcd_collatz = i32[]{1, 1071, 1, 462, 7, 12, 12, 8, 10, 6, 11, 4, 9, 16, 1, 27, 15, 0, 1, 0, 15, 1, 14, 0, 1, 1, 20, 13, 64, 14, 1, 1, 1, 2, 15, 1, 14, 0, 1, 2, 6, 12, 55, 14, 0, 1, 3, 4, 1, 1, 2, 15, 0, 11, 22, 14, 0, 1, 2, 5, 15, 0, 11, 22, 14, 1, 16, 0}
+dat code_divide_by_zero = i32[]{1, 7, 1, 3, 1, 3, 3, 16, 1, 0, 5, 16, 0}
+dat code_underflow = i32[]{1, 1, 2, 0}
+dat code_runaway = i32[]{1, 1, 7, 7, 2, 7, 16, 11, 2}
+dat code_endless = i32[]{1, 5, 9, 11, 0}
+dat code_bad_opcode = i32[]{1, 3, 77, 18}
+dat code_deep = i32[]{17, 0}
+dat code_falls_off = i32[]{1, 2, 1, -9, 5, 16, 1, -9, 1, 2, 6, 16}
+dat code_bad_memory = i32[]{1, 6, 15, 3, 14, 3, 16, 14, 4, 0}
+
+func run_program(code i32[]) {
+    var vm = machine
+    execute(vm, code)
+    out_ch('#')
+    out_sp()
+    out_int(vm.status)
+    out_sp()
+    out_int(vm.steps)
+    out_sp()
+    out_int(vm.sp)
+    out_sp()
+    out_int(vm.call_depth)
+    out_sp()
+    var top = i32(0)
+    if vm.sp > 0 top = vm.stack[vm.sp - 1]
+    line(top)
+}
+
+func main() {
+    run_program(code_factorials)
+    run_program(code_fibonacci)
+    run_program(code_primes)
+    run_program(code_gcd_collatz)
+    run_program(code_divide_by_zero)
+    run_program(code_underflow)
+    run_program(code_runaway)
+    run_program(code_endless)
+    run_program(code_bad_opcode)
+    run_program(code_deep)
+    run_program(code_falls_off)
+    run_program(code_bad_memory)
+    out_flush()
+}

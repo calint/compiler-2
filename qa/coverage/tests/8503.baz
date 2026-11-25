@@ -1,0 +1,9 @@
+# 'elif' is no keyword, the message names 'else if'
+func main() {
+    var i = 0
+    if i == 1 {
+        i = 2
+    } elif i == 2 {
+        i = 3
+    }
+}

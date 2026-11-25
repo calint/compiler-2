@@ -11,6 +11,7 @@ for file in *.baz; do
     printf '%s: ' "$file"
     # baz may exit non-zero for tests that expect an error
     valgrind --tool=massif --massif-out-file=massif.out ../../../baz "$file" >/dev/null 2>/dev/null || true
-    grep mem_heap_B massif.out | sort -r | head -n 1 | awk '{printf "%s ", $2; print $1}'
+    # the largest snapshot, compared as a number
+    sed -n 's/^mem_heap_B=//p' massif.out | sort -n | tail -n 1 | awk '{print $1 " mem_heap_B"}'
     rm massif.out
 done

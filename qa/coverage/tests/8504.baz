@@ -1,0 +1,5 @@
+# 'const' at the top level, the message names 'let'
+const limit = 10
+
+func main() {
+}

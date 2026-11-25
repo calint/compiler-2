@@ -1,0 +1,330 @@
+# a world of rooms and actors as nested types with arrays of types: bags moved
+# between two paths of one global, driven by a 'dat' array of commands
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+type name {
+    bytes i8[10],
+    len,
+}
+
+func name.of(s i8[]) self {
+    self.bytes = {}
+    array_copy(s, self.bytes, array_length(s))
+    self.len = array_length(s)
+}
+
+func name.print() {
+    foo self.bytes, self.len {
+        out_ch(e)
+    }
+}
+
+type item {
+    kind i8,
+    count i16,
+    weight i16,
+}
+
+type bag {
+    items item[4],
+    used,
+}
+
+# the slot of 'kind' or -1
+func bag.find(kind i8) res {
+    res = -1
+    foo self.items, self.used {
+        if e.kind == kind {
+            res = i
+            return
+        }
+    }
+}
+
+func bag.weight() res i32 {
+    res = 0
+    foo self.items, self.used {
+        res = res + i32(e.count) * e.weight
+    }
+}
+
+# false when a new slot is needed and none is free
+func mut bag.add(kind i8, count i16, weight i16) res bool {
+    res = true
+    if count == 0 return
+    let slot = self.find(kind)
+    if slot >= 0 {
+        self.items[slot].count = self.items[slot].count + count
+        return
+    }
+    if self.used == array_length(self.items) {
+        res = false
+        return
+    }
+    self.items[self.used] = {kind, count, weight}
+    self.used = self.used + 1
+}
+
+# takes up to 'count' out and returns what was taken, an emptied slot is
+# filled by the last one
+func mut bag.remove(kind i8, count i16) res item {
+    res = {kind, 0, 0}
+    let slot = self.find(kind)
+    if slot < 0 return
+    res = self.items[slot]
+    if res.count > count res.count = count
+    self.items[slot].count = self.items[slot].count - res.count
+    if self.items[slot].count == 0 {
+        self.used = self.used - 1
+        self.items[slot] = self.items[self.used]
+        self.items[self.used] = {}
+    }
+}
+
+func bag.print() {
+    out_ch('{')
+    foo self.items, self.used {
+        if i > 0 out_ch(' ')
+        out_ch(e.kind)
+        out_i32(i32(e.count))
+    }
+    out_ch('}')
+}
+
+type room {
+    title name,
+    stock bag,
+    exits i8[4],
+    visits i32,
+}
+
+type actor {
+    title name,
+    at i8,
+    carried bag,
+    steps i32,
+    refused i32,
+}
+
+type world {
+    rooms room[4],
+    actors actor[3],
+    clock i32,
+}
+
+dat w = world
+
+let op_go = 0
+let op_take = 1
+let op_drop = 2
+let op_give = 3
+let op_show = 4
+
+type command {
+    who i8,
+    op i8,
+    arg i8,
+    amount i16,
+}
+
+let capacity = i32(100)
+
+dat script = command[]{
+    {0, op_take, 'c', 5}, {0, op_take, 'k', 1}, {0, op_go, 1, 0}, {1, op_take, 'r', 9},
+    {1, op_go, 0, 0}, {1, op_go, 0, 0}, {0, op_drop, 'c', 2}, {1, op_take, 'c', 99},
+    {0, op_show, 0, 0}, {2, op_take, 's', 3}, {2, op_take, 's', 1}, {2, op_go, 3, 0},
+    {2, op_go, 2, 0}, {2, op_give, 0, 0}, {0, op_go, 3, 0}, {0, op_go, 2, 0},
+    {2, op_give, 0, 2}, {0, op_give, 2, 77}, {1, op_take, 'a', 30}, {1, op_take, 'b', 30},
+    {1, op_take, 'x', 1}, {1, op_drop, 'c', 2}, {1, op_take, 'x', 1}, {1, op_take, 'g', 400},
+    {0, op_show, 0, 0}, {1, op_go, 1, 0}, {1, op_drop, 'r', 9}, {1, op_drop, 'a', 1},
+    {1, op_drop, 'b', 1}, {1, op_drop, 'x', 1}, {1, op_drop, 'c', 1}, {1, op_take, 'r', 1},
+    {2, op_drop, 'k', 5}, {2, op_drop, 's', 100}, {0, op_take, 's', 2}, {2, op_go, 0, 0},
+}
+
+func add_room(at, title i8[], north i8, east i8, south i8, west i8) {
+    w.rooms[at].title = name.of(title)
+    w.rooms[at].exits = {north, east, south, west}
+}
+
+dat s_hall = "hall"
+dat s_cellar = "cellar"
+dat s_tower = "tower"
+dat s_garden = "garden"
+dat s_ann = "ann"
+dat s_bob = "bob"
+dat s_cat = "cat"
+
+func setup() {
+    add_room(0, s_hall, 2, 3, 1, -1)
+    add_room(1, s_cellar, 0, -1, -1, -1)
+    add_room(2, s_tower, -1, -1, 0, -1)
+    add_room(3, s_garden, -1, -1, 2, 0)
+    if not w.rooms[0].stock.add('c', 8, 2) exit(2)
+    if not w.rooms[0].stock.add('k', 1, 1) exit(2)
+    if not w.rooms[1].stock.add('r', 4, 9) exit(2)
+    if not w.rooms[1].stock.add('s', 4, 11) exit(2)
+    if not w.rooms[2].stock.add('a', 3, 7) exit(2)
+    if not w.rooms[2].stock.add('b', 2, 30) exit(2)
+    if not w.rooms[2].stock.add('x', 2, 1) exit(2)
+    if not w.rooms[2].stock.add('g', 1000, 1) exit(2)
+    w.actors[0].title = name.of(s_ann)
+    w.actors[1].title = name.of(s_bob)
+    w.actors[2].title = name.of(s_cat)
+    w.actors[1].at = 1
+    w.actors[2].at = 1
+}
+
+# moves up to 'amount' of 'kind', limited by the weight the receiver may
+# still take (negative: no limit), and returns the count moved
+func move(from mut bag, to mut bag, kind i8, amount i16, room_left i32) res i16 {
+    res = 0
+    let slot = from.find(kind)
+    if slot < 0 return
+    var count = amount
+    if room_left >= 0 {
+        let fits = room_left / from.items[slot].weight
+        if fits < count count = i16(fits)
+    }
+    let taken = from.remove(kind, count)
+    if to.add(kind, taken.count, taken.weight) {
+        res = taken.count
+        return
+    }
+    # no slot: back to where it came from, which has room for it
+    if not from.add(kind, taken.count, taken.weight) exit(3)
+}
+
+func show_world() {
+    out_i32(w.clock)
+    out_nl()
+    foo w.actors {
+        e.title.print()
+        out_ch('@')
+        w.rooms[e.at].title.print()
+        out_sp()
+        e.carried.print()
+        out_sp()
+        out_i32(e.carried.weight())
+        out_sp()
+        out_i32(e.steps)
+        out_sp()
+        out_i32(e.refused)
+        out_nl()
+    }
+    foo w.rooms {
+        e.title.print()
+        out_sp()
+        e.stock.print()
+        out_sp()
+        out_i32(e.visits)
+        out_nl()
+    }
+}
+
+func run(c command) {
+    w.clock = w.clock + 1
+    let who = c.who
+    let here = w.actors[who].at
+    var moved = i16(1)
+    if c.op == op_go {
+        let to = w.rooms[here].exits[c.arg]
+        if to < 0 {
+            moved = 0
+        } else {
+            w.actors[who].at = to
+            w.actors[who].steps = w.actors[who].steps + 1
+            w.rooms[to].visits = w.rooms[to].visits + 1
+        }
+    } else if c.op == op_take {
+        let room_left = capacity - w.actors[who].carried.weight()
+        moved = move(w.rooms[here].stock, w.actors[who].carried, c.arg, c.amount, room_left)
+    } else if c.op == op_drop {
+        moved = move(w.actors[who].carried, w.rooms[here].stock, c.arg, c.amount, -1)
+    } else if c.op == op_give {
+        # everything of the first kind carried, to an actor in the same room
+        let other = c.arg
+        if other == who or w.actors[other].at != here or w.actors[who].carried.used == 0 {
+            moved = 0
+        } else {
+            var giver = w.actors[who].carried
+            var taker = w.actors[other].carried
+            let room_left = capacity - taker.weight()
+            let kind = giver.items[0].kind
+            var amount = c.amount
+            if amount == 0 amount = giver.items[0].count
+            moved = move(giver, taker, kind, amount, room_left)
+            w.actors[who].carried = giver
+            w.actors[other].carried = taker
+        }
+    } else {
+        show_world()
+    }
+    if moved == 0 w.actors[who].refused = w.actors[who].refused + 1
+}
+
+func main() {
+    setup()
+    foo script {
+        run(e)
+    }
+    show_world()
+    let copy = w
+    out_bool(copy == w)
+    w.rooms[3].stock.items[3].weight = 1
+    out_bool(copy == w)
+    out_bool(copy.rooms[2] == w.rooms[2])
+    out_bool(copy.rooms[3].stock == w.rooms[3].stock)
+    out_nl()
+    out_flush()
+}

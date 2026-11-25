@@ -85,8 +85,10 @@ class source_files final {
     // 'included_at', relative to the directory of that file; a file is loaded
     // once, a later 'include' of it, also from a file it includes, changes
     // nothing; the loaded file, none when it was loaded before
-    auto include(const size_t includer_ix, const std::string_view file_name,
-                 const source_span& included_at) -> std::optional<size_t> {
+    [[nodiscard]] auto include(const size_t includer_ix,
+                               const std::string_view file_name,
+                               const source_span& included_at)
+        -> std::optional<size_t> {
 
         const std::filesystem::path includer{name(includer_ix)};
 

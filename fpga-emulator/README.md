@@ -7,7 +7,8 @@ Emulates the FPGA program.
 `./make.sh` to build the emulator
 
 `./osqa ../prog-rv32i-fpga.bin sdcard.img` to run an image that
-`baz --target=rv32i-fpga` wrote, with an SD card image;
+`baz --target=rv32i-fpga` wrote, with an SD card image, which must exist,
+e.g. made with `truncate -s 8M sdcard.img`;
 `../run-rv32i-fpga.sh` does the same with a temporary card.
 
 ## todo

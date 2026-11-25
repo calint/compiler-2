@@ -119,7 +119,7 @@ class type_fields final {
 
   private:
     // e.g. the '}' of 'type point { x, y }', kept for 'source_to'
-    auto accept_close_brace(tokenizer& tz) -> bool {
+    [[nodiscard]] auto accept_close_brace(tokenizer& tz) -> bool {
         const std::optional<token> close_brace_tk{tz.accept_char_token('}')};
 
         if (not close_brace_tk) {
@@ -576,8 +576,9 @@ class stmt_def_type final : public statement {
 };
 
 // reads the name and makes the statement of the kind that follows it
-inline auto make_stmt_def_type(parse_toc& tc, const token& src_loc_tk,
-                               tokenizer& tz) -> std::unique_ptr<statement> {
+[[nodiscard]] inline auto
+make_stmt_def_type(parse_toc& tc, const token& src_loc_tk, tokenizer& tz)
+    -> std::unique_ptr<statement> {
 
     const token name_tk{tz.next_token()};
 

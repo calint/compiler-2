@@ -1,0 +1,27 @@
+# --checks=frame: the frame of a noinline body counts the local of a call
+# inlined in a list compiled in two versions, two such frames pass '--vars'
+func noinline leaf(n i32) res i32 {
+    var junk = i32[100]
+    foo junk { e = n }
+    res = junk[99]
+}
+func keep(n i32) res i32 {
+    var a = i32[9000]
+    a[8999] = n
+    res = a[8999] + leaf(n)
+}
+func noinline mid(n i32) res i32 {
+    var x = i32(1)
+    res = 0
+    x = x + keep(n) * 2
+    res = res + x
+}
+func noinline top(n i32) res i32 {
+    var b = i32[9000]
+    b[0] = n
+    res = mid(n) + b[0]
+}
+func main() {
+    var n = i32(3)
+    if top(n) < 0 exit(1)
+}

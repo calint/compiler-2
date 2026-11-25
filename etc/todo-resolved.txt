@@ -1,6 +1,55 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 597 (2026-11-25, release quality: realistic programs
+    against an oracle, an adversary of the standing goal, hostile input and
+    command line, the repository as a fresh checkout, a newcomer's walk)
+    => no wrong result, no undefined behavior accepted, no crash of the
+       compiler in any part; one wrong message of the command line fixed,
+       five messages given a hint
+    => realistic programs: 36 programs, about 10000 lines (sorts, hash
+       table, big numbers, checksums, an interpreter, generics, 'dat'
+       tables, io), each with a python oracle; about 3500 runs on the four
+       targets with 10 option sets, every function noinline and inlined:
+       all equal; tests 8400 to 8414, each also with '--checks=noub'
+    => adversary: about 450 programs by hand that reach a rule through two
+       or three features, on x86_64 and rv32i-qemu with '--nopt',
+       '--checks=noub', the versions and 'noinline': every difference was
+       an exception of docs chapter 8 or an error of the probe; tests 8440
+       to 8449
+    => hostile input: about 78000 runs of the sanitizer build (odd bytes and
+       encodings, file kinds, includes, a 5 MB source in 1.9 s and 711 MiB,
+       every token class and construct cut off, 6900 command lines): no
+       crash, report, hang or leftover output; found: '--target rv32i' and
+       '--nopt=1' were "unknown option"
+       fix: 'main.cpp' names a value option written without '=' ("needs a
+       value") and a flag written with one ("takes no value"); tests 8470
+       to 8475, 'test-cli.sh': sources without content, a source cut at
+       every byte, source names, the two messages
+    => fresh checkout: about 75 documented commands run as written; the
+       tracked listings ('prog.s', 'etc/codegen-inefficiencies*.s',
+       'README.md') were stale and are regenerated; the tree-sitter parse
+       check failed on the include of 7141 (skipped now, it is an error
+       test); 'run-tests-and-print-peak-mem-usage.sh' compared the peak as
+       text; the test scripts name a missing compiler or tool; files the
+       README's commands leave are ignored; the requirements name the
+       linters; 'fix-source.py' had 26 '[[nodiscard]]' and 3 'const' to
+       add: added, and 'check-all.sh' runs it now
+    => newcomer: 150 tasks from the documents alone, 203 programs, about 95
+       compile errors met; hints added: a word of another language
+       ('while', 'for', 'elif', 'const', 'struct', 'fn', 'def',
+       'function') names what baz writes, '1.5' says "has a fraction,
+       there is no floating point type" (it said "'1' is a constant, it
+       has no field '5'"), a string argument says to pass a variable, a
+       parameter of another integer type names the conversion for a
+       narrower argument too; tests 8500 to 8508; the tutorial says what
+       surprised (no '+=', a leading zero, 'mut' array parameters, the
+       names of a 'foo' hiding outer ones, a global 'var', no array of
+       arrays, a compared instance has a name, the end of a chain of
+       inlined calls)
+    => found and not done, in 'etc/todo.txt': eight messages a newcomer
+       could not act on, five notes of the fresh checkout, two of the
+       command line
 [x] easy: (round 596, mutation tests of the parse) candidates, none proven
     1. 'tokenizer::next_trailing_whitespace': the 'is_eos() or' case
     2. 'token::decode_escape': 'after.size() != 1' (no case matches a lead

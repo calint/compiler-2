@@ -1,0 +1,236 @@
+# literals and operators as written: every escape, a continued string, unary
+# chains, each pair of precedence levels, the zero value of each destination
+
+dat obuf = i8[512]
+dat olen = 0
+
+func out_flush() {
+    if olen == 0 return
+    write(1, obuf, olen)
+    olen = 0
+}
+
+func out_ch(c i8) {
+    if olen == array_length(obuf) out_flush()
+    obuf[olen] = c
+    olen = olen + 1
+}
+
+func out_nl() { out_ch('\n') }
+func out_sp() { out_ch(' ') }
+
+func out_str(s i8[]) {
+    foo s {
+        out_ch(e)
+    }
+}
+
+# decimal, the digits are made from the negative value so the minimum prints
+func noinline out_i32(v i32) {
+    var digits = i8[12]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func noinline out_int(v) {
+    var digits = i8[24]
+    var count = 0
+    var x = v
+    if v > 0 x = -v
+    loop {
+        let d = x % 10
+        digits[count] = i8('0' - d)
+        count = count + 1
+        x = x / 10
+        if x == 0 break
+    }
+    if v < 0 out_ch('-')
+    loop {
+        count = count - 1
+        out_ch(digits[count])
+        if count == 0 break
+    }
+}
+
+func out_bool(b bool) {
+    if b {
+        out_ch('T')
+    } else {
+        out_ch('F')
+    }
+}
+
+func line(v i32) {
+    out_i32(v)
+    out_nl()
+}
+
+func item(v i32) {
+    out_i32(v)
+    out_sp()
+}
+
+dat escapes = "\0\a\b\t\n\v\f\r\e\\\'\"\`\x41\x7f\xff\x00z"
+dat continued = "one \
+    two\
+three\\\n"
+dat quotes = "say \"hi\" 'now' `then` #not a comment"
+
+type point {x, y}
+type shape {
+    corners point[3],
+    name i8[4],
+    closed bool,
+    weight i16,   # a trailing comma and a comment
+}
+
+func twice(v i32) res i32 { res = v * 2 }
+func is_small(v i32) res bool { res = v < 10 and v > -10 }
+
+func main() {
+    foo escapes {
+        out_i32(i32(e))
+        out_sp()
+    }
+    out_nl()
+    out_int(array_length(escapes))
+    out_sp()
+    out_int(array_length(continued))
+    out_sp()
+    out_int(array_length(quotes))
+    out_nl()
+    out_str(continued)
+    out_str(quotes)
+    out_nl()
+
+    let chars = i8[]{'\0', '\a', '\b', '\t', '\n', '\v', '\f', '\r', '\e', '\\', '\'', '\"', '\`', '\x41', ' ', '#', '~'}
+    foo chars {
+        out_i32(i32(e))
+        out_sp()
+    }
+    out_nl()
+
+    item(0xff)
+    item(0XFF)
+    item(0b1010)
+    item(0B11111111)
+    item(010)
+    item(0x7fffffff)
+    item(-0x80000000)
+    item(i32(0xffffffff))
+    item(i32(0b10000000000000000000000000000000))
+    line(1000000007)
+
+    # unary chains
+    var v = i32(5)
+    item(-v)
+    item(~v)
+    item(- -v)
+    item(-~v)
+    item(~-v)
+    item(~~v)
+    item(-twice(v))
+    item(~twice(-v))
+    item(-i32(-v))
+    line(- - - -v)
+
+    # each pair of levels: '+ -' < '* / %' < '|' < '&' < '^' < '<< >>'
+    let a = i32(6)
+    let b = i32(3)
+    let c = i32(2)
+    item(a + b * c)
+    item(a - b - c)
+    item(a / b / c)
+    item(a - b * c + a % 4)
+    item(a * b | c)
+    item(a | b * c)
+    item(a + b | c)
+    item(a | b & c)
+    item(a & b | c)
+    item(a * b & c)
+    item(a & b ^ c)
+    item(a ^ b & c)
+    item(a + b ^ c)
+    item(a ^ b << c)
+    item(a << b ^ c)
+    item(a << c >> b)
+    item(a + b << c)
+    item(a << c + b)
+    item(a * b << c)
+    item(a & b << c)
+    item(a | b << c)
+    item(-a >> c * b)
+    item(a % 4 << c | b)
+    line(a | b ^ c & a << c * b - c)
+    item((a + b) * c)
+    item(a * (b | c))
+    item((a | b) & c)
+    item((a & b) ^ c)
+    item((a ^ b) << c)
+    item(((a + b) * (a - b)) << (c - 1))
+    line(a - (b - (c - (a - (b - c)))))
+
+    # comparisons bind looser than every operator, 'not' looser than those
+    out_bool(a + b == c * 4 + 1)
+    out_bool(a & b == c)
+    out_bool(a << c > b * 7)
+    out_bool(not a < b)
+    out_bool(not a == b and b == 3)
+    out_bool(not (a == b and b == 3))
+    let bigger = a > b
+    out_bool(bigger == true)
+    out_bool(is_small(a) != is_small(a * a))
+    out_bool(not is_small(a) or not is_small(-a))
+    out_bool((a > b or b > c) and (a < b or b > c))
+    out_nl()
+
+    # the zero value where the destination gives the type
+    var n = 7
+    var flag = true
+    var p = point{1, 2}
+    var s = shape{{{1, 2}, {3, 4}, {5, 6}}, "abc", true, 9}
+    var list = []{1, 2, 3}
+    out_int(n + p.x + p.y + s.corners[2].y + list[2])
+    out_bool(flag and s.closed)
+    out_ch(s.name[2])
+    out_i32(i32(s.name[3]))
+    out_sp()
+    n = {}
+    flag = {}
+    p = {}
+    s.corners[1] = {}
+    s.name = {}
+    list = {}
+    out_int(n + p.x + p.y + s.corners[1].x + s.corners[2].y + list[2])
+    out_bool(flag or s.closed)
+    out_i32(i32(s.name[0]) + s.weight)
+    s = {}
+    out_bool(s.closed)
+    let empty = shape
+    out_bool(s == empty)
+    out_nl()
+
+    # partial literals zero the rest
+    let partial = shape{{{1}, {}, {0, 6}}, "x"}
+    out_int(partial.corners[0].x + partial.corners[0].y + partial.corners[2].y)
+    out_i32(i32(partial.name[0]) + partial.name[1] + partial.weight)
+    out_bool(partial.closed)
+    let numbers = i16[6]{1, 2, 3}
+    out_i32(i32(numbers[2]) + numbers[5])
+    out_nl()
+    out_flush()
+}
