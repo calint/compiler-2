@@ -1395,10 +1395,87 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => 'lea r11, [rX]' that is a 'mov' (60 sites)
     => the saved registers of a call that the callee does not use
     => the other slots in registers: see the resolved item for the numbers
+    => measured (round 598, code quality study): 8408 x86_64: saves 10.3%,
+       slot addresses 9.9%, parameter address loads 11.4% of the executed
+       instructions; a call of 'ackermann' is 23.5 instructions, gcc -O0
+       20, -O1 9; 8410: 24% of the run, 15 caller instructions for a call
+       with two arguments against 3; roome all noinline executes 2.7
+       (x86_64) and 2.4 (rv32i) times the program as written
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
 --------------------------------------------------------------------------------
+[ ] medium: (round 598, code quality study) division and remainder by a
+    constant power of two are not reduced to shifts: 'q % 4' is
+    'li a1, 4; call .Lbaz_divide' on rv32i (242 instructions) and
+    'mov r15, 4; cqo; idiv r15' on x86_64; gcc -O0 emits 3 to 5
+    instructions; 18 sites in 10 of the 15 programs; on rv32i 29% of the
+    executed instructions of 8408 and 13.7% of 8410 to 8414; the signed
+    result rounds toward zero, so a negative dividend needs the bias
+    ('srai; srli; add; srai')
+[ ] medium: (round 598, code quality study) rv32i: a 'dat' is outside the
+    12-bit offsets of 's0', which points 2032 B past 'vars' (docs 6.6): the
+    variables of 'main' get 4080 B of the window, the dats 16 B, so each
+    access is 'addi t0, s0, -2048' first; 12% to 16% of all rv32i
+    instructions of the 15 programs (2906 of 23382 in 8400 to 8404, 4044 of
+    25806 in 8410 to 8414), up to 6% executed; the dats of all 15 programs
+    are below 2 KiB; a base chosen from the size of the dats, known when
+    the parse ends, puts them inside the window; roome, with larger data,
+    has the far form 'lui; add t0, t0, s0; lw' at 276 sites (5.6%), where
+    an absolute 'lui; lw' needs no 'add'
+[ ] medium: (round 598, code quality study) 'read' and 'write' with a
+    constant descriptor run the descriptor check of the routine at run
+    time, behind a call: 10 instructions on x86_64 and 12 on rv32i where 5
+    do; roome has 113 sites, the check is 8.9% (x86_64) and 4.2% (rv32i)
+    of its executed instructions, call and return 6.5% and 6.9%; a second
+    entry label after the check, called for a constant served descriptor,
+    removes the check at no size
+[ ] medium: (round 598, code quality study) rv32i: every 'call' is 'auipc'
+    and 'jalr', also in the image baz writes, though every target is
+    within the 1 MiB of a 'jal': 2.1% to 4.5% of the rv32i instructions
+    (1700 sites in the 17 programs), 0.2% to 1.8% executed (4.5% without
+    the helpers in 8410 to 8414); the listing must still assemble equal
+    with llvm, which does not relax
+[ ] medium: (round 598, code quality study) 'foo' steps the element address
+    and the index and compares the index, also when the body does not read
+    'i'; rv32i loads a constant length each iteration ('addi; addi; li;
+    bne'); one instruction per iteration on x86_64, two on rv32i; 97 sites
+    in 8400 to 8404 (up to 4.2% executed), 19 in roome; the bulk loops
+    compare against an end address already; the '[p]' item of round 396
+    is about where the counter lives
+[ ] easy: (round 598, code quality study) rv32i: an 'i8' array field at an
+    indexed address is zeroed byte by byte ('sb zero; addi; bne') though
+    element size and offset keep it word aligned; the whole array uses the
+    word loop; 3 sites in roome, 2.1% of its executed instructions
+[ ] easy: (round 598, code quality study) an operand read twice in one
+    statement is loaded twice: 'rest = rest & i32(rest - 1)' is
+    'mov r15d, [rest]; mov r14d, [rest]', 'a[s] = a[s - 1]' loads 's'
+    twice; 168 sites in 8400 to 8404, 7.6% of the executed instructions of
+    8404; gcc -O0 does the same
+[ ] easy: (round 598, code quality study) 'v >> 8 & 0xffffff' is a sign
+    shift and a mask where one logical shift does; on rv32i a mask wider
+    than 11 bits is a two-instruction 'li' where 'slli; srli' needs no
+    constant; 34 sites in 8403, 1.4% executed
+[ ] easy: (round 598, code quality study) small
+    1. a folded-true operand of 'and' is loaded, then overwritten:
+       'assert(level == 2 and x == 2)' with 'let level = 2' is
+       'mov r15b, 1; cmp ...; sete r15b' (3 sites in the tutorial)
+    2. a noinline body loads the address of every parameter at each
+       inlined call, also of one the callee never reads (roome
+       'parse_input', about 5 sites)
+    3. '--checks=upper' alone costs more than '--checks=upper,lower'
+       (roome rv32i 1240 against 972 instructions): with both one
+       unsigned compare serves
+    4. x86_64: 'i32' operands are divided with the 64-bit 'idiv'; a
+       constant divisor other than a power of two uses 'idiv' where gcc
+       multiplies by a reciprocal at -O0 too: fewer instructions, more
+       cycles (8412: baz 633k cycles, gcc -O0 510k, -O1 369k)
+    5. 'x % 10' then 'x / 10' divides twice, the routine and 'idiv' give
+       both results
+[ ] medium: (round 598, code quality study) a noinline function with an
+    array parameter has one body per array length (docs 4.1): 8401 has 11
+    bodies of 'execute' (1519 B each on x86_64) and is 2.8 (x86_64) and
+    3.6 (rv32i) times gcc -O1 in size, 1.2 and 1.5 with one body
 [ ] easy: (round 596, mutation tests of the assemblers) rv32i: reloads are
     removed before copies are folded, which is 28 instructions shorter over
     7 tests than the reverse order; test 0022 is 1 instruction shorter with
@@ -1639,6 +1716,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
     steps; benchmark a faster routine (e.g. RVINT reciprocal, see
     https://needlesscomplexity.substack.com/p/rvint-integer-mathematical-algorithms)
     before changing it
+    => measured (round 598, code quality study): 240 to 244 instructions
+       per call whatever the operands; libgcc's '__divsi3', which shifts
+       the divisor up to the dividend first, 36 to 56; the routine is 45%
+       to 90% of the executed rv32i instructions in 12 of the 15 programs
+       (8412: 74266 calls, 18.1M of 19.4M) and 60% to 95% of the gap to
+       gcc -O1; baz executes more than gcc -O0 on rv32i only because of it
 [ ] medium: --checks=overflow: 0736.baz needs every rv32i scratch register and
     fails to compile under the check ('out of scratch registers');
     the memory source add or sub needs two registers, one would do with a

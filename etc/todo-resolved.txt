@@ -1,6 +1,43 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 598 (2026-11-25, code quality study: the generated code of
+    17 realistic programs against gcc 16.2)
+    => no wrong result: tests 8400 to 8414, roome and the tutorial were
+       translated to C by hand (same algorithm, widths and inlining, no
+       libc) and give the same output on x86_64 and rv32i at -O0, -O1, -O2
+       and -Os; no source changed
+    => x86_64: baz executes fewer instructions than gcc -O0 in every
+       program but one (8408, a chain of noinline calls) and 1.0 to 2.1
+       times gcc -O1 (median 1.3); code bytes 0.9 to 1.4 times -O1 except
+       8401 (2.8, one body per array length) and the tutorial (3.8, gcc
+       folds its asserts); roome: bytes 1.06, executed 1.60
+    => rv32i: baz executes 1.5 to 5.9 times gcc -O1 and more than gcc -O0
+       in most programs; the division routine alone is 60% to 95% of that
+       gap; without the helpers the ratio to -O1 is about 1.6; code bytes
+       1.1 to 2.2 times -O1; roome: bytes 1.16, executed 1.52
+    => cost of the options on roome: '--nopt' +18% instructions and +5%
+       executed; '--checks=noub' +32% instructions, +14% (x86_64) and +11%
+       (rv32i) executed, bounds about 70% of it on x86_64; 'line' costs
+       size only; '--versions=smaller' equals 'nested' on x86_64
+    => what remains without an optimizer (variables in memory between
+       statements, loop shape, joining across statements) is 40% to 99% of
+       the x86_64 gap to -O1
+    => the notes 'etc/roome-inefficiencies-x86_64.txt' and
+       'etc/roome-inline-vs-noinline.txt' measured again: the mix as
+       written is still smallest; all noinline is no longer smaller in
+       instructions on x86_64 (1% above all inline, the note said 8%
+       below)
+    => patterns found, in 'etc/todo.txt' section 2 with their counts: new
+       are division by a power of two, the reach of a 'dat' on rv32i, the
+       descriptor check of a constant descriptor, 'auipc' and 'jalr' for
+       every call, the second counter of a 'foo', a byte loop for an
+       aligned field, an operand loaded twice, a sign shift and a mask;
+       known items got their numbers (the division routine, the noinline
+       call protocol)
+    => beside: gcc 16.2 at -O2 miscompiles the C of 8403 unless
+       '-fno-optimize-crc'; valgrind does not run baz code ('cmpsw'
+       without 'rep')
 [x] easy: round 597 (2026-11-25, release quality: realistic programs
     against an oracle, an adversary of the standing goal, hostile input and
     command line, the repository as a fresh checkout, a newcomer's walk)
