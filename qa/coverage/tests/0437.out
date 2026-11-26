@@ -1,4 +1,4 @@
 
-0437.baz:2:19: expected ',' or ')' after parameter 'value'
+0437.baz:2:19: expected ',' or ')' after parameter 'value', a parameter is a name, then 'mut' or not, then its type, e.g. 'a mut i8[]'
 func helper(value : i32) {}
                   ^

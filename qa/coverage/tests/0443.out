@@ -1,4 +1,4 @@
 
-0443.baz:3:12: expected '=' followed by an initializer, e.g. 'dat x = i32'
+0443.baz:3:12: expected '=' followed by an initializer, which gives the type, e.g. 'dat x = i32(1)'
 dat values i8[] = "x"
            ^

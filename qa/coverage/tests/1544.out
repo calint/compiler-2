@@ -1,4 +1,4 @@
 
-1544.baz:3:20: expected ',' or ')' after parameter 'x'
+1544.baz:3:20: expected ',' or ')' after parameter 'x', a parameter is a name, then 'mut' or not, then its type, e.g. 'a mut i8[]'
 func f<T type>(x T y) {}
                    ^

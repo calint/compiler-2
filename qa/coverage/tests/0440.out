@@ -1,4 +1,4 @@
 
-0440.baz:2:15: expected '{' to begin block
+0440.baz:2:15: expected '{' to begin block, a result is named after the ')', e.g. 'func f() res i32 {'
 func helper() : result i32 { result = 1 }
               ^

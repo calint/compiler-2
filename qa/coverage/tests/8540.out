@@ -1,0 +1,4 @@
+
+8540.baz:3:5: unexpected '/', a comment starts with '#'
+    // the exit code
+    ^

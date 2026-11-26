@@ -39,6 +39,17 @@ class stmt_block final : public statement {
         const parse_toc::parse_nesting_scope nesting{tc, tok()};
 
         if (is_one_statement() and braces == block_braces::required) {
+            const char next{tz.peek_char_after_whitespace()};
+
+            // note: only the body of a function requires them, e.g.
+            //       'func f() -> int {' or 'func f(): int {'
+
+            if (next == '-' or next == ':') {
+                throw compile_error{tz, "expected '{' to begin block, a "
+                                        "result is named after the ')', e.g. "
+                                        "'func f() res i32 {'"};
+            }
+
             throw compile_error{tz, "expected '{' to begin block"};
         }
 

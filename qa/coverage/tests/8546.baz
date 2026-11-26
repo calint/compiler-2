@@ -1,0 +1,18 @@
+# a constant parameter named like a global type: where a type is written the
+# global type is meant, in the body the name is the constant
+type N {x, }
+
+type box<N> {a i8[N], }
+
+type box2 = box<2>
+
+func box.f(p N) res {
+    res = p.x + N
+}
+
+func main() {
+    var v = box2
+    var n = N
+    n.x = 5
+    exit(v.f(n))
+}

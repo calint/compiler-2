@@ -1,0 +1,5 @@
+# 'i8{5}' in a declaration: the zero value is '{}', a value is converted
+func main() {
+    var r = i8{5}
+    exit(r)
+}

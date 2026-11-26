@@ -1,4 +1,4 @@
 
-1413.baz:4:6: 'int' is a built-in type
+1413.baz:4:6: 'int' is a built-in type, a name comes before its type, e.g. 'a int'
 func int(a) res {
      ^~~

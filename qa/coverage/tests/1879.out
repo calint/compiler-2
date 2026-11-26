@@ -1,4 +1,4 @@
 
-1879.baz:3:6: 'i8' is a built-in type
+1879.baz:3:6: 'i8' is a built-in type, a name comes before its type, e.g. 'a i8'
 func i8(.x) {}
      ^~

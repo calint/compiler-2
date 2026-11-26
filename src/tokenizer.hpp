@@ -140,8 +140,9 @@ class tokenizer final {
     // skip stops before the closer that ends it, e.g. the ')' of '{ f() ) }'
     auto assert_not_at_delimiter() const -> void {
         if (const std::optional<std::string_view> delimiter{delimiter_next()}) {
-            throw compile_error{
-                *this, std::format("unexpected {}", in_quotes(*delimiter))};
+            throw compile_error{*this, std::format("unexpected {}{}",
+                                                   in_quotes(*delimiter),
+                                                   slash_comment_hint())};
         }
     }
 
@@ -326,6 +327,19 @@ class tokenizer final {
         if (skip_to_unnested(")")) {
             std::ignore = seen_char_token(')');
         }
+    }
+
+    // what follows a message about the '/' next: the hint that a comment
+    // starts with '#' when '//' or '/*' is next, else nothing
+    [[nodiscard]] auto slash_comment_hint() const -> std::string_view {
+        const tokenizer probe{past_whitespace()};
+        const std::string_view rest{src_.substr(probe.char_ix_)};
+
+        if (rest.starts_with("//") or rest.starts_with("/*")) {
+            return ", a comment starts with '#'";
+        }
+
+        return "";
     }
 
     // the source text from the end of 'tk' to the current position

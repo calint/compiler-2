@@ -271,7 +271,9 @@ the context of the definition. A generic parameter hides a global of its name,
 a type, a generic type, a function, a generic function, a variable or a
 constant, defined before or after it: a constant parameter is a constant of
 the instance scope, a type parameter wins in the type table, in the lookup,
-which gives no value for it, and over a function in the parser
+which gives no value for it, and over a function in the parser; where a type
+is written, e.g. the 'N' of a parameter 'p N', a constant parameter is no
+type, so a global type of its name is meant there (8546)
 ('type_param_named'), e.g. 'T(5)' in 'func f<T type>()' converts also when a
 function 'T' exists, and as a generic argument it is the type also after
 'let T = 5' (tests 3940, 3941). A local
@@ -843,7 +845,8 @@ type list<T type, capacity> {
 'T type' is a type parameter, 'capacity' is a constant parameter. A parameter
 may not be a keyword, a built-in name, the name of the generic type, of its
 base (2.4) or of another parameter; it hides a global of its name (1.3), so
-that inside the recipe a name has one meaning. In a method of the type a 'var
+that inside the recipe a name has one meaning, except a constant parameter
+named like a global type where a type is written. In a method of the type a 'var
 n' at body level is rejected as hiding the parameter 'n', but the 'n' a 'foo'
 declares, the length of its array, hides it inside the 'foo' body.
 
@@ -2083,7 +2086,9 @@ rv32i, 'i32' gives up the width of x86_64 (decided 2026-10-26).
 
 Cost: the result of the default type's arithmetic, a panic included, depends on
 the target, e.g. 'x + x' with 'x' 2000000000 is 4000000000 on x86_64 and an
-overflow on rv32i (chapter 8); a program that writes its types does not.
+overflow on rv32i (chapter 8); a program that writes its types does not,
+outside the places computed in the default type whatever is written, e.g. an
+index or the code of 'exit' (chapter 8, item 1 of the target).
 
 ### 7.13 The kind of a value is checked where it is parsed
 
@@ -2233,7 +2238,10 @@ What depends on the target is listed here, nothing else does:
 
 So whether a program is accepted can depend on the target through 1 to 5,
 and its result through 1, 4 and 5; under 'noub' the result of an accepted
-program that writes its types and stays within the limits does not.
+program does not when it writes its types, stays within the limits and
+keeps what item 1 computes in the default type whatever is written (an
+index, a start, a count, the code of 'exit', a list led by a literal) within
+32 bits.
 
 '==' compares bytes, so the compiler keeps them determined by the fields: a
 declaration zeroes its variable, a value written in parts zeroes the bytes it

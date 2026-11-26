@@ -1,4 +1,4 @@
 
-2423.baz:5:17: 'return' takes no value, a result is assigned, e.g. 'res = a'
+2423.baz:5:17: 'return' takes no value, a result is assigned, e.g. 'res = a', and a program ends with 'exit'
     if b return not b
                 ^~~

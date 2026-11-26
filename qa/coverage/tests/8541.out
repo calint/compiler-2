@@ -1,0 +1,4 @@
+
+8541.baz:4:16: expected a constant, a name or a call, a comment starts with '#'
+    var x = 1 // one
+               ^

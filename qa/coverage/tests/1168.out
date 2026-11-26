@@ -1,4 +1,4 @@
 
-1168.baz:4:9: 'int' is a built-in type
+1168.baz:4:9: 'int' is a built-in type, a name comes before its type, e.g. 'a int'
     var int = int[2]{1, 2}
         ^~~

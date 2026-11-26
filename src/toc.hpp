@@ -2758,8 +2758,11 @@ class parse_toc final : public toc {
         // still converts after 'var i8 = 3'
         if (types().is_builtin(name_tk.text())) {
             throw compile_error{name_tk,
-                                std::format("{} is a built-in type",
-                                            in_quotes(name_tk.text()))};
+                                std::format("{} is a built-in type, a name "
+                                            "comes before its type, e.g. "
+                                            "'a {}'",
+                                            in_quotes(name_tk.text()),
+                                            name_tk.text())};
         }
 
         // a value would hide a type parameter only in some places, e.g.

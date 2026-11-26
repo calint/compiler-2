@@ -194,7 +194,8 @@ inline auto assert_return_without_value(const tokenizer& tz,
 
     if (is_literal or is_lone_name or is_operator_first) {
         throw compile_error{tk, "'return' takes no value, a result is "
-                                "assigned, e.g. 'res = a'"};
+                                "assigned, e.g. 'res = a', and a program "
+                                "ends with 'exit'"};
     }
 }
 
@@ -454,6 +455,12 @@ inline auto assert_not_compound_assignment(const tokenizer& tz,
         throw compile_error{tk, "expected an operand before '{', a '{...}' "
                                 "literal is not one here, store it in a "
                                 "variable first"};
+    }
+
+    // e.g. the second '/' of 'x = 1 // one', the first is a division
+    if (tz.peek_char_after_whitespace() == '/') {
+        throw compile_error{tk, "expected a constant, a name or a call, a "
+                                "comment starts with '#'"};
     }
 
     throw compile_error{tk, "expected a constant, a name or a call"};

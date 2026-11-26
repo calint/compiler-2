@@ -157,6 +157,23 @@ class initializer_declaration final {
         // 'var point = point[2]' is the variable
         const term_kind tm{classify_term(tc, tk, tz)};
 
+        // e.g. 'var r = i8{5}'; a '{' after a space or on a later line is a
+        // block, reported where it stands
+        const bool is_brace_at_type{
+            tk.end_index() == tk.source_end_index() and
+                tz.peek_char_after_whitespace() == '{',
+        };
+
+        if (tm == term_kind::builtin_type and is_brace_at_type and
+            not is_zero_value(tz)) {
+
+            throw compile_error{
+                tz, std::format("expected '}}', the zero value of a built-in "
+                                "type is '{{}}', a value is converted, e.g. "
+                                "'{}(1)'",
+                                tk.text())};
+        }
+
         // the type named first is the type, e.g. 'var p = point{1, 2}' or
         // 'var x = i8', which is 'i8(0)'; an instance literal that a
         // comparison or a connective continues is an operand, rejected below,
@@ -311,7 +328,7 @@ class initializer_declaration final {
         if (not tz.is_lone_equals_next()) {
             throw compile_error{
                 tz, std::format("expected '=' followed by an initializer, "
-                                "e.g. '{} x = i32'",
+                                "which gives the type, e.g. '{} x = i32(1)'",
                                 keyword)};
         }
 

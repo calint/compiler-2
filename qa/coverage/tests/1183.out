@@ -1,4 +1,4 @@
 
-1183.baz:3:5: 'int' is a built-in type
+1183.baz:3:5: 'int' is a built-in type, a name comes before its type, e.g. 'a int'
 dat int = int(5)
     ^~~

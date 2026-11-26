@@ -1,4 +1,4 @@
 
-1522.baz:4:9: 'i8' is a built-in type
+1522.baz:4:9: 'i8' is a built-in type, a name comes before its type, e.g. 'a i8'
     var i8 = 3
         ^~

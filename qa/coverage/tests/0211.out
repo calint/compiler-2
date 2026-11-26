@@ -1,4 +1,4 @@
 
-0211.baz:3:7: expected '=' followed by an initializer, e.g. 'let x = i32'
+0211.baz:3:7: expected '=' followed by an initializer, which gives the type, e.g. 'let x = i32(1)'
 let x 1
       ^

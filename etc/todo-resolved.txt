@@ -1,6 +1,61 @@
 --------------------------------------------------------------------------------
 [ ] open   [o] ongoing   [x] done   [-] discarded with reasoning   [p] pending
 --------------------------------------------------------------------------------
+[x] easy: round 602 (2026-11-26, the items of the triage of round 600 marked
+    "should", asked for by the owner)
+    => messages for what a newcomer writes in the first hour: a built-in
+       type where a name stands says "a name comes before its type, e.g.
+       'a int'"; '-> int' or ': int' after the parameters says "a result is
+       named after the ')', e.g. 'func f() res i32 {'"; a parameter that
+       does not end says its form, "a name, then 'mut' or not, then its
+       type"; a declaration without '=' shows 'var x = i32(1)' and says the
+       initializer gives the type; '//' and '/*' say "a comment starts
+       with '#'" at a statement, after a value and at the top level;
+       'return 0' adds "and a program ends with 'exit'"; 'var r = i8{5}'
+       says the zero value is '{}' and a value is converted (it said
+       "expected a statement"); tests 8540 to 8545, 54 expected files
+    => documents: the two sentences of 7.12 and chapter 8 that said a
+       program that writes its types does not depend on the target name
+       the places of item 1 computed in the default type; docs 1.3 and 2.3
+       state that a constant parameter named like a global type is no type
+       where a type is written (test 8546 pins it)
+    => not done, they need the owner: a 'LICENSE' at the root, the text of
+       "Why no memory allocation?" in 'etc/readme/reflection.md'
+[x] easy: user decision (round 407, the docs against the compiler):
+    chapter 8 says the result of "a program that writes its types" does
+    not depend on the target, but an index, a count or start of a bulk
+    operation, an io built-in or a 'foo', and the code of 'exit' are
+    computed at the default type whatever the type of their first element:
+    'var a = i32(2000000000)' 'exit(a + a)' ends with 0 on x86_64 and
+    panics 'overflow' on rv32i unless written 'exit(i32(a + a))'; the
+    sentence holds only if "writes its types" includes those places
+    => reword the sentence, or compute those places at the type of their
+       first element as an expression elsewhere
+    => checked (2026-11-26): "chapter 8 item 1 lists the places; open: the
+       sentences at 7.12 and after item 5 still say a program that writes its
+       types does not depend on the target"
+    => done (2026-11-26, round 602): the two sentences are reworded, they name
+       the places of item 1
+[x] easy: low priority (round 205 HC): 'var r = i8{5}' says "expected a
+    statement" at '5' ('{5}' is a block after 'var r = i8'), 'var r = i8{}'
+    is a declaration and an empty block; 'exit(i8{5})' and 'r = i8{5}' treat
+    'i8{5}' as a literal ('is_bare_builtin_type' in 'stmt_def_var.hpp'); see
+    the item of a block on the line after a declaration
+    => not done (2026-11-09, round 207): taking 'i8{5}' as a literal after
+       'var r =' decides the same '{' as the item of a block after a
+       declaration, which the user left as it is (2026-10-27)
+    => round 569: a message only would also do: 'parse_type_as_zero' could
+       throw "expected '}', the zero value of a built-in type is '{}'" when
+       a '{' that is not '{}' follows on the same line (about 4 lines and
+       a test), which would leave the block on a later line alone
+    => release (2026-11-26): SHOULD — a newcomer who writes 'i8{5}' for
+       'i8(5)' gets "expected a statement" at the '5'; the message of round
+       569 ("expected '}', the zero value of a built-in type is '{}'") is
+       about 4 lines and a test and leaves the block on a later line alone;
+       effort small
+    => done (2026-11-26, round 602): a '{' right after the type of a
+       declaration that is not '{}' says "expected '}', the zero value of a
+       built-in type is '{}', a value is converted, e.g. 'i8(1)'" (8544)
 [x] easy: round 601 (2026-11-26, the blocker of the triage of round 600,
     approved by the owner: "do the blocker")
     => defect: inlined calls that double per level had no limit; a

@@ -434,8 +434,12 @@ class program final {
                 file.tz.delimiter_next(),
             }) {
 
-            throw_expected_definition(file.tz.peek_token_position(),
-                                      in_quotes(*delimiter));
+            const std::string got{
+                std::format("{}{}", in_quotes(*delimiter),
+                            file.tz.slash_comment_hint()),
+            };
+
+            throw_expected_definition(file.tz.peek_token_position(), got);
         }
 
         file.parsed.end_tk = tk;

@@ -1,0 +1,6 @@
+# '//' after a value: the first '/' divides, the message at the second names
+# '#'
+func main() {
+    var x = 1 // one
+    exit(x)
+}

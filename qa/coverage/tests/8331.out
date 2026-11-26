@@ -1,4 +1,4 @@
 
-8331.baz:4:22: 'return' takes no value, a result is assigned, e.g. 'res = a'
+8331.baz:4:22: 'return' takes no value, a result is assigned, e.g. 'res = a', and a program ends with 'exit'
     if x == 2 return (x)
                      ^

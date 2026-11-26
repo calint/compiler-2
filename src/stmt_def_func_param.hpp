@@ -190,7 +190,9 @@ class stmt_def_func_param final : public statement {
 
             const token delimiter_tk{
                 tz.expect_char_token(
-                    ',', std::format("expected ',' or ')' after parameter {}",
+                    ',', std::format("expected ',' or ')' after parameter {}, "
+                                     "a parameter is a name, then 'mut' or "
+                                     "not, then its type, e.g. 'a mut i8[]'",
                                      in_quotes(previous.name_tk.text()))),
             };
 

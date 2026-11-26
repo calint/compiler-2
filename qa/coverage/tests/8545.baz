@@ -1,0 +1,8 @@
+# a result written with '->' after the parameters: the message shows the form
+func twice(a) -> int {
+    res = a * 2
+}
+
+func main() {
+    exit(twice(1))
+}

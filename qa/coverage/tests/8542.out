@@ -1,0 +1,4 @@
+
+8542.baz:1:1: expected a definition ('func', 'type', 'var', 'let', 'dat' or 'include'), got '/', a comment starts with '#'
+// '//' at the top level: the message names '#'
+^

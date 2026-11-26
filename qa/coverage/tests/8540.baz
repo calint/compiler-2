@@ -1,0 +1,5 @@
+# '//' where a statement starts: the message names '#'
+func main() {
+    // the exit code
+    exit(0)
+}

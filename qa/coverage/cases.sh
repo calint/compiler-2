@@ -9081,3 +9081,19 @@ SRC=8530 && COMPERR
 SRC=8531 && COMPERR
 # below the limit; each outermost call counts from zero
 SRC=8532 && EXP=40 && RUN
+
+# round 602: messages for what a newcomer writes
+# '//' at a statement
+SRC=8540 && COMPERR
+# '//' after a value
+SRC=8541 && COMPERR
+# '//' at the top level
+SRC=8542 && COMPERR
+# '/*' at the top level
+SRC=8543 && COMPERR
+# 'i8{5}' in a declaration
+SRC=8544 && COMPERR
+# '->' before the result
+SRC=8545 && COMPERR
+# a constant parameter named like a global type, where a type is written
+SRC=8546 && EXP=7 && RUN
