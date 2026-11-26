@@ -1,0 +1,10 @@
+
+8530.baz:7:28: more than 4096 calls are inlined inside one call, declare a function 'noinline'
+        res = fib(n - 1) + fib(n - 2)
+                           ^~~
+8530.baz:7:15: called from 'fib(n - 1)', 30 times
+        res = fib(n - 1) + fib(n - 2)
+              ^~~
+8530.baz:12:10: called from 'fib(40)'
+    exit(fib(40) & 127)
+         ^~~

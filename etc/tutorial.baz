@@ -736,7 +736,8 @@ func noinline factorial(n) res {
 }
 # 'noinline' emits the function once and calls it, which allows recursion
 # of any depth; an inlined function may call itself only when constant
-# arguments end the recursion within 64 calls
+# arguments end the recursion within 64 calls and no more than 4096 calls
+# are inlined inside one, which a function calling itself twice reaches fast
 # a call follows the same typing and aliasing rules as an inlined call
 # an inlined call keeps the registers its caller holds, so a chain of inlined
 # calls ends where the registers of the target do, sooner on x86_64 than on

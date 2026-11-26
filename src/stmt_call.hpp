@@ -855,6 +855,13 @@ class inline_call final {
     // makes its condition fold, otherwise it would expand without end
     static constexpr size_t max_inlined_nesting_{64};
 
+    // the most bodies inlined under one call that no inlined body holds:
+    // calls that double per level stay within the nesting, e.g. a recursion
+    // that calls itself twice expands 2^n bodies
+    static constexpr size_t max_inlined_body_count_{4096};
+    // note: 32 times the most of any test and of 'roome' (127), reached in
+    //       under a second
+
     call_site call_{};
 
   public:
@@ -903,6 +910,21 @@ class inline_call final {
             std::format("inlined call nested too deep, it is made inside {} "
                         "open blocks and calls, declare a function 'noinline'",
                         max_scope_count_),
+            compile_error::error_kind::inlining_limit,
+        };
+    }
+
+    // counts the body of this call, see 'max_inlined_body_count_'
+    auto assert_inlined_body_count(compile_toc& tc) const -> void {
+        if (tc.count_inlined_body() <= max_inlined_body_count_) {
+            return;
+        }
+
+        throw compile_error{
+            call_.name_tk,
+            std::format("more than {} calls are inlined inside one call, "
+                        "declare a function 'noinline'",
+                        max_inlined_body_count_),
             compile_error::error_kind::inlining_limit,
         };
     }
@@ -1159,6 +1181,7 @@ class inline_call final {
                                const size_t nesting) const -> void {
 
         assert_inline_nesting(tc, nesting);
+        assert_inlined_body_count(tc);
 
         try {
             compile_at_result_type(tc, dst);

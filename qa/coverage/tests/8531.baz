@@ -1,0 +1,76 @@
+# a chain of inlined functions that each call the next twice is rejected past
+# 4096 calls inside one call, though no function calls itself
+func f13(v mut) {
+    v = v + 1
+}
+
+func f12(v mut) {
+    f13(v)
+    f13(v)
+}
+
+func f11(v mut) {
+    f12(v)
+    f12(v)
+}
+
+func f10(v mut) {
+    f11(v)
+    f11(v)
+}
+
+func f9(v mut) {
+    f10(v)
+    f10(v)
+}
+
+func f8(v mut) {
+    f9(v)
+    f9(v)
+}
+
+func f7(v mut) {
+    f8(v)
+    f8(v)
+}
+
+func f6(v mut) {
+    f7(v)
+    f7(v)
+}
+
+func f5(v mut) {
+    f6(v)
+    f6(v)
+}
+
+func f4(v mut) {
+    f5(v)
+    f5(v)
+}
+
+func f3(v mut) {
+    f4(v)
+    f4(v)
+}
+
+func f2(v mut) {
+    f3(v)
+    f3(v)
+}
+
+func f1(v mut) {
+    f2(v)
+    f2(v)
+}
+
+func f0(v mut) {
+    f1(v)
+    f1(v)
+}
+
+func main() {
+    var v = 0
+    f0(v)
+    exit(v & 127)
+}

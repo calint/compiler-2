@@ -1106,6 +1106,13 @@ class scope_stack final {
             scopes_, [](const scope& scp) -> bool { return scp.is_func(); });
     }
 
+    // the body of an inlined call is open
+    [[nodiscard]] auto is_in_inlined_func() const -> bool {
+        return std::ranges::any_of(scopes_, [](const scope& scp) -> bool {
+            return scp.is_inlined_func();
+        });
+    }
+
     // what 'name' means in the innermost scope, the one rule of what a name
     // means: a type parameter of the instance being parsed names no value;
     // any other name is looked for in the scopes of the innermost function
@@ -3100,12 +3107,16 @@ class compile_toc final : public toc {
     size_t indent_{};
     // the most scopes open at once, see 'scope_entry'
     size_t max_scope_count_{};
+    // the bodies inlined so far under the outermost inlined call, see
+    // 'count_inlined_body'
+    size_t inlined_body_count_{};
 
     // what a dry run and a version that is not kept put back: the peaks that
     // compiling raises and whether the code after is reached, which an error
     // unwinding an inlined body ends ('pop_scope')
     struct compile_state {
         size_t max_scope_count{};
+        size_t inlined_body_count{};
         storage_layout::peaks storage{};
         scope_stack::reach_state reach{};
     };
@@ -3423,6 +3434,19 @@ class compile_toc final : public toc {
         return checked_bodies_;
     }
 
+    // one more body is inlined: the count of the bodies under the outermost
+    // inlined call, which starts it again, that call included; a dry run and
+    // a version that is not kept put the count back
+    [[nodiscard]] auto count_inlined_body() -> size_t {
+        if (not scopes().is_in_inlined_func()) {
+            inlined_body_count_ = 0;
+        }
+
+        ++inlined_body_count_;
+
+        return inlined_body_count_;
+    }
+
     [[nodiscard]] auto data() const -> const data_table& {
         return tables().data;
     }
@@ -3695,6 +3719,7 @@ class compile_toc final : public toc {
     [[nodiscard]] auto compile_state_now() const -> compile_state {
         return {
             .max_scope_count{max_scope_count_},
+            .inlined_body_count{inlined_body_count_},
             .storage{layout().peaks_now()},
             .reach{scopes().reach_state_now()},
         };
@@ -3733,6 +3758,7 @@ class compile_toc final : public toc {
         toc_tables& t{tables()};
 
         max_scope_count_ = state.max_scope_count;
+        inlined_body_count_ = state.inlined_body_count;
         t.storage.restore_peaks(state.storage);
         t.scopes.restore_reach_state(state.reach);
     }

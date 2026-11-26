@@ -1,0 +1,43 @@
+
+8531.baz:9:5: more than 4096 calls are inlined inside one call, declare a function 'noinline'
+    f13(v)
+    ^~~
+8531.baz:14:5: called from
+    f12(v)
+    ^~~
+8531.baz:19:5: called from
+    f11(v)
+    ^~~
+8531.baz:24:5: called from
+    f10(v)
+    ^~~
+8531.baz:29:5: called from
+    f9(v)
+    ^~
+8531.baz:34:5: called from
+    f8(v)
+    ^~
+8531.baz:39:5: called from
+    f7(v)
+    ^~
+8531.baz:44:5: called from
+    f6(v)
+    ^~
+8531.baz:49:5: called from
+    f5(v)
+    ^~
+8531.baz:54:5: called from
+    f4(v)
+    ^~
+8531.baz:59:5: called from
+    f3(v)
+    ^~
+8531.baz:63:5: called from
+    f2(v)
+    ^~
+8531.baz:68:5: called from
+    f1(v)
+    ^~
+8531.baz:74:5: called from
+    f0(v)
+    ^~

@@ -1,0 +1,25 @@
+# an inlined recursion that calls itself twice stays below the limit of calls
+# inlined inside one call: 'fib(12)' is 465 calls; each call of 'main' counts
+# from zero, so many such calls in a row are accepted
+func fib(n) res {
+    if n < 2 {
+        res = n
+    } else {
+        res = fib(n - 1) + fib(n - 2)
+    }
+}
+
+func main() {
+    var sum = fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    sum = sum + fib(12)
+    # 10 * 144
+    exit(sum - 1400)
+}

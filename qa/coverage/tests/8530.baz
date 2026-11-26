@@ -1,0 +1,13 @@
+# an inlined recursion that calls itself twice doubles per level: past 4096
+# calls inside one call it is rejected, 'noinline' is named
+func fib(n) res {
+    if n < 2 {
+        res = n
+    } else {
+        res = fib(n - 1) + fib(n - 2)
+    }
+}
+
+func main() {
+    exit(fib(40) & 127)
+}

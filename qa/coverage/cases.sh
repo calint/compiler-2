@@ -9073,3 +9073,11 @@ SRC=8414 && OPTS="--vars=0x40000 --checks=noub" DIFF
 # round 599: the rv32i division routine follows the bits of the quotient: the
 # minimum as a divisor and as a dividend, every size of the quotient
 SRC=8520 && EXP=0 && RUN
+
+# round 601: the limit of the calls inlined inside one call
+# a recursion that calls itself twice
+SRC=8530 && COMPERR
+# a chain of functions that each call the next twice
+SRC=8531 && COMPERR
+# below the limit; each outermost call counts from zero
+SRC=8532 && EXP=40 && RUN

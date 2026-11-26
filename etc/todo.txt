@@ -1143,36 +1143,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
        "stricter than needed"; need approval
     => checked (2026-11-26): 13 tests hold the message; the prototype patch no
        longer exists; L1004 is the same matter
-[ ] medium: user decision (round 226 UF1): inlined calls that double per
-    level have no limit, each limit bounds only one path (64 calls of a
-    name, 256 scopes), e.g. 'func r(v mut, n)' calling 'r(v, n - 1)' twice
-    with 'r(v, 60)' expands 2^60 bodies: about 10 GB in 12 s, then killed;
-    'r(v, 17)' in 'main' writes 718 MB of assembly in 7.6 s; a chain
-    'f0..f16' each calling the next twice does the same; proposal: count
-    the inlined bodies under a function body in 'compile_state' (put back
-    by dry runs and dropped versions) and throw 'inlining_limit' past a
-    measured bound (about 65536 bodies, about 6 s), README chapter 8 as
-    another place where acceptance depends on inlining
-    => round 315 AM, the same finding: 'r(a, k - 1)' called twice in 'r'
-       and entered as 'r(a, 40)': k 16 takes 2.6 s and 619 MB, k 20 42 s and
-       10.6 GB, k 40 ends in "internal error: std::bad_alloc"; the message
-       of the limit would advise to declare the function 'noinline'
-    => round 451, 'fuzz-mutate.py' seed 451001 index 6790: test 2911
-       with 'r(n - 1, a)' called twice, 'r(49, a)', killed at about 18
-       GB in 26 s ('--versions=nested') and 152 s ('first'), alike in
-       the build of round 448
-    => round 465: 'noinline' calls nested as arguments of themselves,
-       'f(n - 1, (f(n - 1, ...) + 1) & 255)', grow about 2.8 times per
-       level with '--versions=last' (10 levels 2.3 s, 12 levels 21 s, a
-       fuzzed program past 120 s); the default and 'first' stay under
-       15 ms; '--help' says the time doubles per level for 'first' and
-       'last'
-    => release (2026-11-26): BLOCKER — the compiler takes all memory (or ends
-       in an internal error) on an ordinary first program: a recursive
-       function without 'noinline' called with a literal; the fix is the limit
-       proposed in the item and waits on the owner (docs chapter 8 gets one
-       more place where acceptance depends on inlining); effort small to
-       medium (a counter in 'compile_state', a bound, a test, the docs)
+[ ] medium: (round 465) 'noinline' calls nested as arguments of themselves,
+    'f(n - 1, (f(n - 1, ...) + 1) & 255)', grow about 2.8 times per level
+    with '--versions=last' (10 levels 2.3 s, 12 levels 21 s, a fuzzed
+    program past 120 s); the default and 'first' stay under 15 ms; '--help'
+    says the time doubles per level for 'first' and 'last'; the limit of
+    round 601 counts inlined bodies only
 [p] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body

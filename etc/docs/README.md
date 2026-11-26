@@ -1953,8 +1953,9 @@ Cost:
    must add the same to 'compile_toc' each time (1.4), and a choice inside a
    version takes the first (5.2)
 5. an inlined body holds the registers of its caller (1.8), and the limits of
-   inlined calls ('inline_call', e.g. 64 levels of an inlined recursion) depend
-   on the caller
+   inlined calls ('inline_call': 64 levels of an inlined recursion, 256 open
+   blocks and calls, 4096 calls inlined inside one call, which a recursion
+   that calls itself twice reaches at 12 levels) depend on the caller
 
 ### 7.6 'toc' is one facade over the tables, typed by phase
 
