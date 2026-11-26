@@ -38,6 +38,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
        'etc/codegen-inefficiencies*.s', the listings of 'README.md') go
        stale with any change of 'src/'; no check compares them, so the
        first command of the README can dirty a fresh checkout
+    => release (2026-11-26): SHOULD for 1 — an empty section in a document a
+       reader of the release opens; the owner writes the text or the heading
+       goes; effort small. LATER for 2 to 5 — a stale comment, a spelling,
+       tracebacks only when a required tool is missing, and listings that are
+       current today
 [ ] easy: (round 597, newcomer walk) messages that a newcomer could not
     act on, not done; each rewording changes the expected output of the
     tests named
@@ -62,6 +67,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
     7. '[]{a, b}' of two 'point' says "expected type 'i64', got 'point'"
        without naming 'point[]{...}'
     8. '2.' at the end of a line reads the next line as a field
+    => release (2026-11-26): SHOULD for 1 and 6 — habits of C, Go, Rust and
+       Python that a newcomer types in the first hour ('int a', '-> int', 'a:
+       int', '// comment') get a message that does not name the baz form;
+       effort medium for 1 (about 20 expected files), small for 6. LATER for
+       2, 3, 4, 5, 7, 8 — the program is rejected at the right place, the hint
+       is missing or needs a scan ahead
 [ ] easy: (round 596, diagnostics audit) messages that mislead, the
     program is rejected either way
     1. 'return 0' in 'main' or in a function without a result says "a
@@ -75,6 +86,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     3. 'func f(x zz<3>) {}' with no 'zz' says "'zz' is not a generic type,
        it takes no type arguments" where 'x zz' says "type 'zz' not
        found"; test 1840 pins the first on purpose
+    => release (2026-11-26): SHOULD for 1 — 'return 0' at the end of 'main' is
+       the first habit of a C programmer; one more clause in the message ("a
+       program ends with 'exit(code)'") needs no knowledge of the function;
+       effort small (the expected files of the tests with the message). LATER
+       for 2 and 3 — rejected either way, 3 is pinned on purpose by 1840
 [ ] easy: (round 596, source audit) 'lut' keeps its values in a vector, so a
     reference from 'get_const_ref' dangles after a 'put'; the holders of
     long-lived references ('generic_call::generic_', 'func_instantiator',
@@ -98,6 +114,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
        fast enough ('fl.slowdown_from_x86', 'FASTER' and 'SLOWER' moved to
        'fuzzlib'); open: the narrower '<<' waiver, the judges on register
        limits and the mutants
+    => checked (2026-11-26): "... (65 of 2779 tests) ...; 'fuzzlib.judge'
+       exempts running out of scratch registers ('out_of_registers') but not a
+       register an operation fixes ("is always used by the operation"), which
+       only fuzz-combos, fuzz-versions and fuzz-whole exempt; open: the
+       narrower '<<' waiver, the fixed-register exemption of the judges and
+       the mutants"
 [p] easy: (round 582, the formatter) need approval: two rules of blank
     lines that AGENTS.md does not state; both patches are in the
     scratchpad 'keep/'
@@ -113,6 +135,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
        multiline loop, switch or try stays with the statement above it"
        or 'e-proposal-control-above.patch' removes the exception (+47
        blank lines in 9 files)
+    => checked (2026-11-26): the patch or worktree this item cites is gone
+       (it was in a session scratchpad); the proposal is written again when
+       approved
 [ ] easy: (round 579, lexical) 'include"e1.baz"' without a space is read
     as the word 'include"e1' ("expected a definition ... got
     'include"e1'"), as '"' does not end a word; no other keyword is
@@ -138,6 +163,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     at ..."; without checks and on rv32i it compiles (29 of 1500
     generated programs of the round 575 hunt); the bounds checks hold
     'rsi' that the compare needs (chapter 8, item 3)
+    => checked (2026-11-26): "... rejects a call of an inlined wrapper of
+       'arrays_equal' whose arguments index fields at run time once two more
+       registers are held, e.g. inside one 'foo': 'foo w { if not ae1(v1[k +
+       0].g1, v4[k + 0].g1, k + 0, k + 0, 1) exit(1) }' ...; the call alone
+       compiles with 13 of 14 registers live"
 [ ] easy: (round 575, listings) a 'foo' of a constant count of 0 ('foo a,
     0' or an inlined length of 0) still emits the iterator setup and the
     counter clear before its dry-run body (2 dead instructions per such
@@ -157,6 +187,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     test 7780, docs), a new capability; patch
     'scratchpad/r567-proposal-written-generic-arg.patch' (made before the
     round 567 simplification of 'value_type', to be merged); need approval
+    => checked (2026-11-26): the patch or worktree this item cites is gone
+       (it was in a session scratchpad); the proposal is written again when
+       approved
 [ ] easy: (round 567, messages) 'g<g<i8>>(5)' with 'g' a generic function
     says "name an instance first, e.g. 'type my_g = g<...>'", and doing so
     gives "'g' is not a generic type"; the check is
@@ -165,6 +198,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => 2026-11-23: knowing it needs the tables passed into the token-level
        parse ('generic_arg_tokens::parse' has none), for one message; a
        hint true for both would drop the useful one for a type; not done
+    => checked (2026-11-26): "... and doing so gives "'g' is not a generic
+       type, a generic type is defined before the alias that names it" ..."
 [ ] easy: (round 563, messages) compile-time checks that run out of
     evaluation order name a later fault than the first one (both reject
     the program, only the message differs): a constant index and the
@@ -205,6 +240,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     nothing instantiates, accepted today, is then rejected (as strings and
     characters there already are checked); tests 7520 to 7528, README 7.4;
     patch 'scratchpad/r555-proposal-semicolon.patch'; need approval
+    => checked (2026-11-26): the patch or worktree this item cites is gone
+       (it was in a session scratchpad); the proposal is written again when
+       approved
 [ ] easy: (round 554, types) 'type_fields' keeps a map of field names
     beside the name index of 'type::fields_'; adding each field to the
     type as it is read would leave one index ('add_to' and the alias token
@@ -214,6 +252,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     i64[1152921504606846975], y, z q }' names 'x', not 'q'); judged weak
     by its reviewer; patch kept as
     'scratchpad/r554/01-type-fields-add-where-read.patch'
+    => checked (2026-11-26): the patch or worktree this item cites is gone
+       (it was in a session scratchpad); the proposal is written again when
+       approved
 [ ] easy: (round 549, registers) on x86_64 a far operand takes a scratch
     register to lower its displacement, so the "out of scratch registers"
     limit is one level lower when the variables lie past 2 GiB: 'var x =
@@ -234,12 +275,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        length-only kind of array argument through 'builtin_arguments' and
        'stmt_identifier' (a third 'path_reach' with no storage) for one
        rare false rejection; not done
-[ ] easy: (round 541, folding) a 'let' and a statement report different
-    errors for one constant list with two faults: 'let k = i8(1) + 300 / 0'
-    says "divisor must not be zero", 'x = i8(1) + 300 / 0' says "constant
-    '300' does not fit"; 'let k = i8(127) + 1 + 5 / 0' under 'noub' says
-    the divisor, the statement the overflow; 'fold_checked' folds the list
-    whole before it checks, 'compile_checked' checks each element in order
 [ ] easy: (round 536, registers, needs an extreme input) without keeping
     the receiver register in 'call_function', x86_64 goes wrong only with
     a frame address past 4 GiB ('--vars=0x100000000', an
@@ -301,6 +336,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
        statement that ends in such a value stays rejected; the change is
        uncommitted in the worktree
        '.claude/worktrees/agent-a1b3de085ab7016c0' (base 67f731e6)
+    => checked (2026-11-26): the patch or worktree this item cites is gone
+       (it was in a session scratchpad); the proposal is written again when
+       approved
 [p] easy: need approval (round 393, preparation for a human review):
     files nothing refers to, the owner's notes: 'etc/clipboard.txt' (stale
     paths), 'etc/from/*.html', 'etc/notes/*.html' and
@@ -312,6 +350,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     => delete them; move the dated studies ('etc/baz-memory-usage.txt',
        'etc/compiling-baz-for-size.txt', 'etc/roome-*.txt') to
        'etc/studies/'; refresh the versions in 'etc/tools.txt'
+    => checked (2026-11-26): "files only the owner's notes refer to ...
+       ('etc/from' is cited by 'etc/readme/reflection.md',
+       'qa/perf/top-baz.txt' is written by 'qa/perf/perf.sh', which says it is
+       tracked) ..."
 [p] easy: need approval (round 393): a new file 'qa/README.md': what to
     run in five minutes, 'coverage/' ('cases.sh', the helpers, the expected
     files, 'UPDATE=1'), 'lint/', 'fuzz/' (a link), 'perf/', what
@@ -320,11 +362,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
 [p] easy: need approval (round 393): 'README.md' is about 5700 lines, the
     feature list is followed by the full listing of 'prog.s'
     => keep a short listing and link the file
+    => checked (2026-11-26): 'README.md' is 5639 lines
 [p] easy: need approval (round 393): 'qa/lint/cppcheck.sh' exits 0 after
     one 'syntaxError' at 'src/machine.hpp' ('static_assert([] -> bool {')
     and analyses nothing (cppcheck 2.22 on c++23 code)
     => remove the script and its mention in 'etc/docs/README.md', or write
        the lambda with '()' if cppcheck then gets through
+    => checked (2026-11-26): the error is reported at 'src/machine.hpp:912'
+       (lambda at 907); writing the lambda with '()' gets past the syntax
+       error and cppcheck then crashes
 [p] medium: need approval (round 395): a 'dat' laid out by the
     'write_plan' of its value instead of its own tree: 'stmt_def_dat' has
     'elem' with four forms, 'fold_data*' and six 'compile_data_*' beside
@@ -366,6 +412,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     generic types; they are kept in '/tmp' and the session scratchpad
     ('bulk', 'mixgen.py', 'iofuzz', 'bh', 'tyhunt') and are lost with them;
     each has the path of a removed worktree to replace
+    => checked (2026-11-26): the generators ('bulk', 'mixgen.py', 'iofuzz',
+       'bh', 'tyhunt') are lost with '/tmp' and the scratchpad; the item is a
+       request to rewrite them
 [p] easy: need approval (round 400): the rv32i assembler has 28 one-line
     emitters by mnemonic ('add', 'addi', 'beq', 'lw' ..., about 170 lines,
     about 190 call sites) over the five forms that take an op, while
@@ -378,6 +427,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'check_upper_bound', "note: 3" in 'check_divisor'); without the count
     about -25 lines and one more 'j' per check with several tests, growth
     not measured
+    => checked (2026-11-26): the "note: 3" of 'check_divisor' is now '1U' for
+       a constant divisor, else '3U'
 [ ] easy: user decision (round 410, a hunt of the fix of round 409): a
     register limit in skipped code in an argument of an inlined recursive
     call, e.g. 'res = f(k - 1, hb(1 == 1 or h(NEST) == 3)) + q' in 'f', is
@@ -386,28 +437,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     rejected, with 'noinline f' it is; the code never runs, so the
     guarantee holds. rejecting it needs the check of the recursion to tell
     a limit of skipped code from one of the recursion
-[p] medium: need approval (round 421, measurements for "generic
-    deduction by a trial parse", the item of round 395): a prototype
-    parses the deciding argument without a type as 'var' does:
-    'value_type' and 'constructor_call_type' go, 'src/stmt_call.hpp' 117
-    lines removed, about 29 added; the text skip of the arguments before
-    the deciding one stays (about 77 lines, the round 419 item stays
-    open). changes: 0838 ('second(1, a + 1)'), 2077 ('show(p.sum())') and
-    2095 become accepted; of 6000 corpus programs 12 kinds go from
-    rejected to accepted (an expression, a method call, a comparison, a
-    deduced call as the deciding argument), 4 from accepted to rejected
-    (a nested deduced call that takes its type from the outer
-    destination, 'x = mid(rr(1), i8(1))', unless "a deduced generic call
-    tells nothing" is kept), 4 take another instance ('exit(mid(x + 1,
-    k))'), 870 rejections get another first message; a nested deduced
-    call is parsed twice per level (not measured). the larger
-    alternative: one walk left to right that parses each argument at
-    'fixed_param_type' and hands the parsed arguments to 'stmt_call',
-    removes the text skip and the error walk and closes the round 419
-    item, changes the order of errors and what is accepted
-    => the larger alternative is done (round 452): one walk left to
-       right, the text skip and the error walk are gone; the trial
-       parse of the deducing argument stays a language decision
 [ ] easy: (round 455, a walk of 'expr_arith.hpp') under the overflow
     check 'plan_steps' skips every pass, but pass 2 (merging divisors)
     changes no result that overflows (a divisor of -1 is never merged),
@@ -454,6 +483,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'mut' arguments, results, 'foo' over the written array, changed
     index variables); 5000 programs found nothing, 6 of 6 mutants
     caught; kept in the session scratchpad as 'keep-alias-gen2.py'
+    => checked (2026-11-26): the generator is lost with the scratchpad
 [p] easy: (round 459, bug hunt of user types) need approval: a new
     fuzzer 'qa/fuzz/fuzz-types.py' (model based, 'fl.judge'): types of
     i8, i16, i32, bool, nested types and arrays, copies, literals,
@@ -463,6 +493,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     13000 programs found nothing, 6 of 7 mutants caught (padding,
     compare and copy bytes, storage sharing); kept in the session
     scratchpad as 'keep-types-gen.py'
+    => checked (2026-11-26): the generator is lost with the scratchpad
 [p] easy: (round 473, bug hunt of aliasing) need approval: a fuzzer of
     records and arrays copied over themselves and their parts, 'mut'
     record and array arguments, results into an argument, globals a
@@ -471,6 +502,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     verdict and result; about 7700 programs and 42000 runs found nothing,
     7 of 9 mutants caught (the eighth by tests 5460 and 5461 now); a new
     file in 'qa/fuzz'; kept in the session scratchpad as 'keep-alias/'
+    => checked (2026-11-26): the generator is lost with the scratchpad
 [p] easy: (round 465, bug hunt of frames) need approval: a fuzzer of
     'noinline' recursion with a model (records and arrays by value and
     'mut', methods, results of a type, panics from the deepest frame)
@@ -481,6 +513,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     check without the leaf bytes, which a model comparison misses; new
     files in 'qa/fuzz' and an emulator option; kept in the session
     scratchpad as 'keep-frames/'
+    => checked (2026-11-26): the generator and the emulator build are lost
+       with the scratchpad
 [p] easy: (round 461, bug hunt of compile-time values) need approval: a
     new fuzzer 'qa/fuzz/fuzz-constants.py' without a model: each program
     once with typed 'let' constants (folded) and once with the same
@@ -491,6 +525,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     current fuzzers miss ('<=' folded as '<', '>>' of -1 at 64 bits, an
     untyped-led list kept untyped, a conversion not wrapped to its use);
     kept in the session scratchpad as 'keep-const-gen.py'
+    => checked (2026-11-26): the generator is lost with the scratchpad
 [p] easy: (round 469, bug hunt of integer arithmetic) need approval: a
     wrap mode in the fuzzers; no fuzzer compares results under
     '--checks=noub,-overflow' with a wrapping model, the mode where
@@ -501,6 +536,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     generators kill 10 of 10 mutants (MIN / -1 unchecked, a shift by the
     width, divisors merged although their product wraps); kept in the
     session scratchpad as 'keep-arith/'
+    => checked (2026-11-26): the generators are lost with the scratchpad
 [ ] easy: (round 447, design of storage addresses) 'main.cpp' asks
     '--vars' to be a multiple of 16 ('vars_alignment'); no code or
     docs say why: tie it to the rule that needs it or relax it
@@ -618,22 +654,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
        rv32i-fpga 10 cases -40 instructions; 3: nasm already encodes
        'mov rax, 60' as 'mov eax'; 4: 'test rdi, rdi' and 'xor edx, edx';
        2 is open
-[p] medium: (round 433, bug hunt of 'int' beside the sized types) need
-    approval: a verdict depends on '--checks', alike on every target:
-    'v = -int(same(v))' (also '~', and 'v = -i32(f(v))' of an 'i32'
-    'v') is accepted with the overflow check and rejected without it;
-    'stmt_builtin_convert::is_made_at_type' makes the value in a
-    register only when the overflow check is enabled; docs chapter 8
-    exception 4 names only the other direction
-    => a. make it at the type whenever the conversion has unary ops and
-          the destination has its type: accepted everywhere; the
-          default listings of tests 1338, 1366, 2127, 2721 and 2723
-          change (rv32i images +8 B in four, -4 B in 1366; x86_64
-          lines 0, -1, +1, 0, +2); a scratch register for a memory
-          destination, against the scratch-register rule
-       b. store first, then apply the ops to the destination under the
-          check: rejected everywhere, removes an acceptance under
-          'noub'
 [ ] easy: (round 433, bug hunt of 'int' beside the sized types)
     1. the one more 'mv' of test 1218 on rv32i goes away when the
        argument is compiled into the target register viewed at the
@@ -710,6 +730,10 @@ is the test 'qa/coverage/tests/NNNN.baz'
     5. with these belong the round 429 item (a chain of generic types,
        memory quadratic), the round 427 item ('data_table::add_constant'
        quadratic) and the fan-out of inlined calls (round 226 UF1)
+    => checked (2026-11-26): point 1: "a chain of 48 inlined functions each
+       calling the next inside 120 parentheses overflows the stack (exit 139);
+       the recursive form 'r(60)' compiles"; point 2.1: "16384 to 32768
+       globals 0.75 s to 1.66 s"
 [ ] easy: (round 430, a walk of the arithmetic path) '-(-a)' without
     the overflow check emits two 'neg', pairs cancel inside one
     'unary_ops' but not between the unary operators of a list and those
@@ -721,6 +745,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     register is used); one list for the result and the argument bindings
     of an inlined call would drop 'inline_call::call_bindings' (about 10
     lines) and changes 72 rv32i listings
+    => checked (2026-11-26): drop "'constant_arith::eval_constant' compares
+       two constants"
 [ ] medium: (round 429, a hunt of type definitions and a review of the
     condition code) a chain of generic types each based on the one before
     uses memory quadratic in its length, 2000 levels 427 MiB, 8000 levels
@@ -744,6 +770,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        lines fewer; 'roome/src/main.baz' then compiles in 0.075 s
        instead of 0.060 s on rv32i-fpga (best of 7); docs 1.4 describes
        the skip as intended
+    => checked (2026-11-26): "the two 'is_dry_run' tests that skip comments
+       ('machine::comment' twice)"
 [ ] easy: (round 423, a hunt of the passes on the emitted lines and a
     learner's walk of the tutorial) 'assembler::copy_end' gives up when
     the source of a copy is written, also when no read of the copy
@@ -806,6 +834,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        comment comes before its 'andi'; 'memory_end_address' no longer
        exists; open: the scan of quoted tokens and the messages of a
        broken deducing argument
+    => checked (2026-11-26): open is only the scan of quoted tokens; the
+       messages of 'choose' and 'second' are those of the written form now
 [ ] easy: (round 419, a walk of the backend interface and a hunt of
     generics) 'check_bounds' could open the 'operation_scope' itself as
     the two capacity checks do, both backends would drop theirs (moves
@@ -858,6 +888,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'x / -v' reports the line of 'v', 'x / (-v)' and 'a[-b[i]]' the line of
     '-', 'a[-j]' the line of 'j'; the same on every target; making it one
     rule moves the column of some compile errors
+    => checked (2026-11-26): "'x / -v' reports the line of 'v', 'x / (-v)' the
+       line of '(', 'a[-j]' the line of '-'"
 [ ] medium: user decision (round 402 bug hunt of the no-UB rules): safe
     programs a user would write that the aliasing and assignment rules
     reject: 'x = inc(x)', 'x = max(x, y)', 'total = add(total, e)',
@@ -897,6 +929,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     (removing it deletes a file the compile did not touch); a default
     'sdcard.img' that is also a source file is reported as "invalid
     --sdcard" although the option was not given
+    => checked (2026-11-26): drop the second half (the message no longer names
+       '--sdcard')
 [ ] easy: user decision (round 407, the docs against the compiler):
     chapter 8 says the result of "a program that writes its types" does
     not depend on the target, but an index, a count or start of a bulk
@@ -907,6 +941,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     sentence holds only if "writes its types" includes those places
     => reword the sentence, or compute those places at the type of their
        first element as an expression elsewhere
+    => checked (2026-11-26): "chapter 8 item 1 lists the places; open: the
+       sentences at 7.12 and after item 5 still say a program that writes its
+       types does not depend on the target"
 [ ] easy: (round 407 design) 'generic_signature_param' is three fields
     copied from 'stmt_def_func_param::syntax' in 'read_signature', as the
     result was before round 402 (about -15 lines, mostly a move); its
@@ -920,6 +957,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        'site.indent'), and the versions of 'emit_most_efficient' and the
        noinline bodies (indent 0) would need indent scopes in the backend:
        mutable backend state across versions; measure before deciding
+    => checked (2026-11-26): "the 76 front-end wraps", "about 164
+       'site.indent'"
 [ ] easy: low priority (round 351) error wording: 'type a<x> = b<K, x>'
     with 'let K = 3' defined after it says "generic parameter 'p' of 'b'
     needs a constant, got 'K'" where a type in that place says "type 'pt'
@@ -931,6 +970,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     'test-coverage.sh', 'test-far-jumps.sh', 'test-far-jumps-no-scratch.sh',
     'test-cli.sh' and 'fuzzlib.py', the default options also in
     'compare-listings.sh'; about 20 duplicated lines fewer (round 364)
+    => checked (2026-11-26): "written 9 times"
 [p] easy: need approval: a differential test of the fpga emulator against
     qemu-riscv32 user mode as new files in 'fpga-emulator/qa' (random
     instructions from edge register values over random data, final
@@ -952,6 +992,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
     allows it, or chapter 8 item 4 names the limit
 [ ] easy: (round 315 AM) error output: an error on a 1 MB literal prints
     the constant, its line and the caret line (3 MB)
+    => checked (2026-11-26): "prints its line and the caret line (2 MB)"
 [ ] medium: user decision (round 307 ZY): in a function nothing calls, a
     noinline recursion that swaps its array arguments is checked per
     lengths ('len.4.u') and rejects an error at the swapped level, where
@@ -1001,15 +1042,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        rejected on x86_64, 171 of them accepted on rv32i-fpga; 13
        forwarded 'int' parameters give "out of scratch registers" on
        x86_64 for any inlined callee
-[ ] easy: user decision (round 478 RA): the later-operand rule
-    ('assert_not_written_later', 'ub_order.hpp') also checks the names in
-    the arguments of a call among the earlier operands, which ran before
-    the later ones: 'add(id(g + 1), w())' with 'w' writing the global 'g'
-    is rejected ("'g' may be written by the call of 'w' in a later
-    argument"), the same inlined and 'noinline', no UB either way; README
-    3.1 does not state it; either 3.1 says the arguments of an earlier
-    call count as read where it is used, or 'visit_operand_reads' skips
-    the arguments of a call operand (a special case in the walk)
+    => checked (2026-11-26): "always take 'rep'" -> "take 'rep' beyond 8 part
+       instructions when 'rax'/'rsi' is held"
 [ ] easy: user decision (round 288 ZC): 'foo g[k].it, bump()' with 'bump'
     writing 'k' is accepted (the address of 'g[k].it' is taken before the
     count, the same on every target), while 'array_copy(g[k].it, b,
@@ -1024,12 +1058,6 @@ is the test 'qa/coverage/tests/NNNN.baz'
     ('toc.hpp') keeps one call token; the index of the requesting body would
     let 'stmt_def_func::with_call_frame_on_error' add the chain (the inlined
     calls around a request would need a frame list taken at request time)
-[ ] easy: user decision (round 245 VI1): '--bin=out.s' with stdout
-    redirected to 'out.s' exits 0 and leaves the listing in 'out.s', the
-    image lost (the file is truncated twice); rejecting a regular '--bin'
-    file 'equivalent' to '/dev/stdout' ("invalid --bin: 'out.s' is the
-    standard output") is about 15 lines in 'main.cpp' and a test-cli case,
-    only a guard against a user mistake
 [ ] easy: (round 265 WT) compile time grows faster than linear in two
     places left as they are: 'source_files::contains' compares each
     include with every loaded file through 'std::filesystem::equivalent'
@@ -1041,15 +1069,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        fields 0.17 s, 8000 globals 0.42 s; an exact include set needs
        '(st_dev, st_ino)' from <sys/stat.h>, canonical paths miss hard
        links
-[ ] medium: user decision (round 264 WS): the check of a body without its
-    calls expands nested inlined recursions as the product of their
-    depths: 'r1' -> 'r2' -> 'r3', each bounded by 'array_length(a)', in a
-    noinline 'f(a i8[])' take 3.3 s at 3 levels and 87 s at 4, even when
-    nothing calls 'f' ('inline_call::check_recursion'); a recursion met
-    inside the dry run of another one's levels could compile only its
-    arguments (one condition and a flag), errors at a combination of levels
-    then found only at real calls; also an error in a per-length body does
-    not name the lengths ("'g<i8>' called from 'g(a)'"), see round 251 VT2
+    => checked (2026-11-26): the include half repeats L1224 (keep one);
+       numbers today: 2000 includes 0.89 s, 8000 fields 0.02 s
 [ ] medium: user decision (round 256 WF): x86_64 rejects a division whose
     destination is 'rdx' although nothing live is clobbered (test 1113
     'write(1, text, n / 2)'); skipping the reservation of 'rdx' when it is
@@ -1082,6 +1103,13 @@ is the test 'qa/coverage/tests/NNNN.baz'
        box<N> { a i8[N], z N, }', 'z N' is the global type 'N' (also 'func
        box.f(p N)'), while a method body treats 'N' as hiding the type;
        docs 1.3 and 2.3 say a parameter hides a global of its name
+    => release (2026-11-26): 1. OWNER — a message; 2. SHOULD —
+       etc/docs/README.md 1.3 (line 270) and 2.3 (line 845) say a generic
+       parameter hides a global type of its name, which is false where a type
+       is written; by the wording of the brief a false statement of a
+       document, but a corner (a constant parameter named like a global type)
+       with no UB and the same result on every target; effort small (one
+       sentence in 1.3 and 2.3, or reject the name clash)
 [p] medium: user decision (round 229 UL1): 'p.get() < p.bump()' is
     rejected ("'p' may be written by the call of 'bump' in a later
     operand"), also 'rd(p.x) < bumpx(p.x)' and 'add2(p.get(), p.bump())',
@@ -1113,6 +1141,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        the left-to-right result on x86_64 and rv32i under every
        '--versions' (132 runs); README 3.1 would state the rule instead of
        "stricter than needed"; need approval
+    => checked (2026-11-26): 13 tests hold the message; the prototype patch no
+       longer exists; L1004 is the same matter
 [ ] medium: user decision (round 226 UF1): inlined calls that double per
     level have no limit, each limit bounds only one path (64 calls of a
     name, 256 scopes), e.g. 'func r(v mut, n)' calling 'r(v, n - 1)' twice
@@ -1137,36 +1167,12 @@ is the test 'qa/coverage/tests/NNNN.baz'
        fuzzed program past 120 s); the default and 'first' stay under
        15 ms; '--help' says the time doubles per level for 'first' and
        'last'
-[ ] medium: user decision (round 224 UB1): a typed 'let' passed as a
-    generic constant loses its type, 'let K = i8(127)' and 'type B =
-    buf<K>' make 'N + 1' 128 at the default type inside the instance where
-    'K + 1' is rejected as an overflow (docs 1.7); 'resolve_const_arg'
-    ('toc.hpp') keeps the value only; keep the type ('buf<K>' and
-    'buf<127>' become different instances), reject a typed argument (test
-    2127 passes one) or document an untyped generic constant
-[ ] easy: low priority (round 218 TP1): an error at the end of the source
-    after a trailing comment shows the caret after the comment, e.g.
-    "expected '}' to close block" at 3:10 for 'func main() {\n exit(0)\n#
-    comment', 2:12 without the comment ('located_in_text', 'main.cpp',
-    takes the last byte that is not whitespace)
-    => not done (2026-11-09, round 218): 'stmt_block' reads the end with
-       'next_token', which skips the comment, so the tokenizer would keep
-       the end of the last token on every read path, or the error path
-       would tokenize the file again and must skip strings and characters
-       that hold '#'; both add more than this position is worth
-[ ] easy: low priority (round 190 GJ): an argument of a named, not
-    generic, parameter type of a generic call is parsed without its type
-    before "cannot deduce" ('g3(point, 1)')
-    => not done (2026-11-09, round 203): 'generic_signature_param' knows
-       neither whether its type name is a type parameter nor whether it is
-       'mut', so the parse at the type needs the signature and the
-       mutability threaded through 'assert_argument_present',
-       'assert_argument_valid' and 'assert_argument_parses' for a better
-       first message only; the call still rejects each case
-    => same cause (round 205 bug hunt HA): 'var x = g(true, 2)' for 'func
-       g<T type>(b) res T' says "'g' takes 1 argument" where the plain call
-       first reports the 'bool' argument; the surplus error names 'g'
-       without a destination and 'g<i8>' with one ('x = g(1, 2)')
+    => release (2026-11-26): BLOCKER — the compiler takes all memory (or ends
+       in an internal error) on an ordinary first program: a recursive
+       function without 'noinline' called with a literal; the fix is the limit
+       proposed in the item and waits on the owner (docs chapter 8 gets one
+       more place where acceptance depends on inlining); effort small to
+       medium (a counter in 'compile_state', a bound, a test, the docs)
 [p] medium: a chain of distinct inlined functions with deeply nested
     expressions overflows the compiler's stack (segfault on both targets,
     bug hunt round 6 S2): each limit holds alone, parse nesting 128 per body
@@ -1209,6 +1215,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
        throw "expected '}', the zero value of a built-in type is '{}'" when
        a '{' that is not '{}' follows on the same line (about 4 lines and
        a test), which would leave the block on a later line alone
+    => release (2026-11-26): SHOULD — a newcomer who writes 'i8{5}' for
+       'i8(5)' gets "expected a statement" at the '5'; the message of round
+       569 ("expected '}', the zero value of a built-in type is '{}'") is
+       about 4 lines and a test and leaves the block on a later line alone;
+       effort small
 [ ] easy: low priority: a block on the line after a declaration whose
     initializer ends with a type is parsed as a literal of that type (bug
     hunt round 9 W2-1): 'var a = i8[2]' then '{ f() }' on the next lines is
@@ -1236,10 +1247,15 @@ is the test 'qa/coverage/tests/NNNN.baz'
        size can be read (a pipe); standard C++ only; a file whose size
        changes during the compile is loaded twice (a duplicate definition
        error); not measured
+    => checked (2026-11-26): one item with the include half of L1033; today
+       0.89 s for 2000 includes
 [ ] easy: user decision: no LICENSE at the root and the README names none
     (only fpga-emulator/LICENSE, Apache-2.0); choose one, a LICENSE file and
     one README line (round 130 BJ11)
     => left open (2026-11-09, user)
+    => release (2026-11-26): SHOULD — a release without a license gives a
+       reader no right to use it; the choice is the owner's; effort small (a
+       file and one line in etc/readme)
 [ ] medium: low priority: one lexer (round 23 C.3, D1-4): 'one_line_source'
     ('statement.hpp') scans the source text of a statement again for the
     comments of the listing; 'source_to' writing through a 'source_sink' with
@@ -1302,6 +1318,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     a0, t0', x86_64 'sal r15, cl; mov dil, r15b'); a '<<' by a count below
     the narrower width keeps its low bits when narrowed, e.g. a constant
     count ('keeps_low_bits', an optimization)
+    => checked (2026-11-26): rv32i: 'sll t0, t0, t1; slli a0, t0, 24; srai a0,
+       a0, 24'
 [o] medium: fuzzers cover every construct of 'etc/tutorial.baz', then a
     night-long run
     => 1. 'fuzz-constructs.py': lists the constructs of the tutorial (tokens,
@@ -1401,6 +1419,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
        20, -O1 9; 8410: 24% of the run, 15 caller instructions for a call
        with two arguments against 3; roome all noinline executes 2.7
        (x86_64) and 2.4 (rv32i) times the program as written
+    => checked (2026-11-26): roome as written is 2971 instructions (x86_64, no
+       checks) on 2026-11-26; the all-noinline and all-inline counts need a
+       new measurement
 [ ] medium: instrumentation of the maximum heap and stack use of the compiler
 --------------------------------------------------------------------------------
 2. machine operations: fewer instructions, largest gain first
@@ -1413,6 +1434,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
     executed instructions of 8408 and 13.7% of 8410 to 8414; the signed
     result rounds toward zero, so a negative dividend needs the bias
     ('srai; srli; add; srai')
+    => checked (2026-11-26): drop "(242 instructions)": since round 599 the
+       routine follows the bits of the quotient (worst case about 330 a call,
+       per its entry); the shares "29% of 8408, 13.7% of 8410 to 8414" were
+       measured before round 599 and are lower now (not re-measured; round 599
+       still names 8408 and 8412 as slower than gcc -O0 because of this item)
 [ ] medium: (round 598, code quality study) rv32i: a 'dat' is outside the
     12-bit offsets of 's0', which points 2032 B past 'vars' (docs 6.6): the
     variables of 'main' get 4080 B of the window, the dats 16 B, so each
@@ -1436,6 +1462,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
     (1700 sites in the 17 programs), 0.2% to 1.8% executed (4.5% without
     the helpers in 8410 to 8414); the listing must still assemble equal
     with llvm, which does not relax
+    => checked (2026-11-26): "2614 sites in the 15 programs and roome, the
+       helper calls 'call a7, .Lbaz_write' included (1334 of them)"
 [ ] medium: (round 598, code quality study) 'foo' steps the element address
     and the index and compares the index, also when the body does not read
     'i'; rv32i loads a constant length each iteration ('addi; addi; li;
@@ -1508,6 +1536,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
 [ ] easy: (round 596, optimizer hunt) rv32i: a branch to a label whose only
     code is a jump is not threaded, e.g. 'beq t0, t1, if.29.13.code' with
     'if.29.13.code: j loop.26.9'; not measured
+    => checked (2026-11-26): replace "not measured" by the counts above (one
+       executed jump each, no instruction fewer)
 [ ] medium: (round 402, a walk of the backends against listings)
     sequences longer than needed that the front end asks for, 2145.baz:
     'exit(f(a, 1, 1, 1))' saves the argument register of 'exit' around the
@@ -1519,6 +1549,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
     never run); 'arrays_equal(a, c[1], y)' checks the count against 16
     then 15; rv32i loads 'li t0, 1' once per argument; a shift result goes
     through 'mv a1, t1' when a load stands between
+    => checked (2026-11-26): "'array_copy(a[i], a, 2)' under '--checks=noub'";
+       "'arrays_equal(a, c[1], y)' (not in 2145)"; suite: 'push rdi' 85 times,
+       rv32i 'sw a0, N(sp)' 82
 [ ] easy: (round 414, a walk of a noinline call) rv32i: a register
     allocated for the result of a call is saved and restored around the
     call, then overwritten by the load of the result ('lw t0, 0(sp)'
@@ -1537,6 +1570,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
        instructions on x86_64 (0.19 %) and 80 on rv32i (0.1 %); if
        reopened, design it with the item of a runtime bool argument of an
        inline function, both need a condition-shaped binding
+    => checked (2026-11-26): "x86 'sete; jne' (one instruction too many)"
 [ ] medium: rv32i: the same high part is built twice in one statement
     ('self.start = self.end': 'lui; add; lh; lui; add; sh'); done within one
     machine operation; left: 't.len = t.end - t.start' at an offset above
@@ -1612,6 +1646,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
        x86_64 instructions shorter, roome 1 rv32i; left: an operand computed
        before the other operand, e.g. 'a * (b + c)' (rv32i 62 'lw' sites), a
        saved register in between ('sw', 29), x86_64 'imul' producers (13)
+    => checked (2026-11-26): left: rv32i 310 copies into an argument register
+       (4 right after their load), x86_64 40 'mov rax, r' before 'cqo', in the
+       1134 and 1143 tests that compile with default options
 [ ] hard: a helper, 'idiv' or syscall result is copied out of its fixed
     register before the next operation ('mv t0, a0' right after a helper
     call, 328 rv32i sites; x86 'mov r15, rax' or 'mov r15, rdx' right after
@@ -1631,6 +1668,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        copy needs the register dead after the read, which the freeing of
        scratch registers does not tell: some are freed before their last
        read)
+    => checked (2026-11-26): "rv32i 410, x86_64 287 (1134 and 1143 tests)" for
+       "285" and "191"
 [ ] hard: a value is loaded again right after it was stored ('sw t0, 28(s1)'
     then 'lw t0, 28(s1)', 289 rv32i sites in the listings of the items
     above); needs to know which register still holds a variable between
@@ -1642,6 +1681,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
        which extend (rv32i 'sb'/'lb' 194, 'sh'/'lh' 188, x86_64 dword 98
        and byte 'movsx' 23 sites), a load into another register (rv32i 184,
        x86_64 qword 151), and a reload after a jumped-to label
+    => checked (2026-11-26): drop "x86_64 dword 98"; counts as above
 [ ] hard: multiply/divide helper chains ('r = a * b * c * d') pass the value
     through memory or a scratch register between the calls; needs register
     targeting for helper operands
@@ -1708,6 +1748,16 @@ is the test 'qa/coverage/tests/NNNN.baz'
        fuzzers in 'test-all.sh' with a short run
     => 'fuzz-programs.py' has no model: wrong code that both targets share
        is seen only through 'fuzz-exprs.py'
+    => checked (2026-11-26): [o] hard: fuzzing: extend 'qa/fuzz'
+       ('qa/fuzz/README.md' lists the fuzzers) => next: generics and methods
+       of generic types in 'fuzz-programs.py' (the model fuzzers
+       'fuzz-generics.py', 'fuzz-combos.py' and 'fuzz-whole.py' have them), a
+       coverage guided harness of the parser (libFuzzer), the fuzzers in
+       'test-all.sh' with a short run => the differential fuzzers run x86_64,
+       rv32i-fpga and one of rv32i and rv32i-qemu per program; 'fuzz-io.py'
+       gives input to programs that 'read' => 'fuzz-programs.py' has no model:
+       wrong code that every target shares is seen only through the model
+       fuzzers
 [ ] medium: --checks=overflow: rv32i multiply: loop on the operand with fewer
     significant bits (swap) in '.Lbaz_multiply_checked' and
     '.Lbaz_multiply'; a constant factor under the check always calls the
@@ -1729,6 +1779,11 @@ is the test 'qa/coverage/tests/NNNN.baz'
        plain parameter, 'a T[]' already gives one instance per length, a
        result 'res list<i8, n>' is not possible (an instance needs an alias)
     => no use case yet
+    => checked (2026-11-26): in the first "=> fits" line write "constants join
+       the scope of the body like those of a receiver
+       ('stmt_def_func::add_constants', 'toc::add_generic_const')" for
+       "constants join 'instance_->constants' like those of a receiver
+       ('add_constants')"
 [ ] medium: low priority: generics: a generic that is never instantiated is not
     checked, so an error in its body is silent until the first use
     => placeholder types would reject valid bodies, so the footer of the
@@ -1752,6 +1807,9 @@ is the test 'qa/coverage/tests/NNNN.baz'
        (kind "str") only when emitted
     => tree-sitter grammar; tests on both targets (runtime copy and compare,
        non-'i8' destination, count above the length, empty string)
+    => checked (2026-11-26): first "=>" line: "parse a string token as the
+       source (an identifier, e.g. a 'dat', is accepted already), treated as
+       'i8'; ..."
 [ ] hard: a way to specify a range in the array: 'foo arr(bgn_index, len,
     i_start)'
 [ ] hard: 'foo arr1, arr2, ... { e1 = e2 }' with injected variables 'e1', 'e2'
@@ -1765,6 +1823,8 @@ is the test 'qa/coverage/tests/NNNN.baz'
        division that conflicts with the syscall registers on x86 and uses the
        helper on rv32i
     => test with 'DIFFINP2' input split inside a record
+    => checked (2026-11-26): last "=>" line: "test with a new case kind whose
+       input is split inside a record ('DIFFLINES' gives one line per read)"
 [ ] hard: UB detection: conservative rejections: a write through a runtime index
     covers nothing, 'array_copy' into a result is not an assignment, 'foo'
     bodies do not count as assigning, a call argument reads its whole path
@@ -1817,3 +1877,7 @@ is the test 'qa/coverage/tests/NNNN.baz'
        reach; alignment pads text with 0x90
     => compare 'llvm-objcopy -O binary' of both plus 'readelf -lh'; risk:
        nasm's multipass jump sizing may reach another fixed point
+
+    => checked (2026-11-26): "so the --bin option also applies to x86_64"
+       stays; the on-hold line reads "nasm stays in the scripts and x86_64
+       rejects --bin ('target x86_64 does not use it')"
