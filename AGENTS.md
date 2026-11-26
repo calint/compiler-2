@@ -135,8 +135,6 @@
 
 ## Process
 
-- Search and lookup subagents use model 'sonnet'; review and bug-hunting
-  agents keep the default.
 - Standing loop: improve readability by humans, simplify the design and hunt
   bugs, round after round; implement what is recommended. Refactoring is
   allowed, large ones too, when the design improves. The loop ends when two
